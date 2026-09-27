@@ -21,40 +21,54 @@ const DEMO_SELF_PROFILE = {
   isSelf: true,
   email: "demo@nabad.app",
   phone: "",
+  profilePicture: "",
 };
 
 // Reads the list of profiles from localStorage (seeding the demo user if empty).
 // Throws an error if the stored data is not in the shape we expect.
 function loadProfiles() {
   const saved = localStorage.getItem(STORAGE_KEY);
+
   if (saved) {
     let data;
+
     try {
       data = JSON.parse(saved);
     } catch {
       throw new Error("Saved profile data is unreadable");
     }
+
     if (!data || !Array.isArray(data.profiles)) {
       throw new Error("Saved profile data is unreadable");
     }
+
     return data.profiles;
   }
+
   const profiles = [DEMO_SELF_PROFILE];
   saveProfiles(profiles);
+
   return profiles;
 }
 
 function saveProfiles(profiles) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ profiles }));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ profiles })
+  );
 }
 
-// Returns the account owner's profile from a list, or throws if it is missing
-// (like a real API answering "404 Not Found" instead of returning nothing).
+// Returns the account owner's profile from a list,
+// or throws if it is missing.
 function findSelf(profiles) {
-  const self = profiles.find((profile) => profile.isSelf);
+  const self = profiles.find(
+    (profile) => profile.isSelf
+  );
+
   if (!self) {
     throw new Error("Your profile was not found");
   }
+
   return self;
 }
 
@@ -62,74 +76,190 @@ export async function getMyProfile() {
   return findSelf(loadProfiles());
 }
 
-// Only name, phone, and date of birth can change. Email is read-only.
+// Only name, phone, and date of birth can change.
+// Email is read-only.
 export async function updateMyProfile(data) {
   const profiles = loadProfiles();
+
   findSelf(profiles);
+
   const updatedProfiles = profiles.map((profile) =>
     profile.isSelf
-      ? { ...profile, fullName: data.fullName, phone: data.phone, dateOfBirth: data.dateOfBirth }
+      ? {
+          ...profile,
+          fullName: data.fullName,
+          phone: data.phone,
+          dateOfBirth: data.dateOfBirth,
+        }
       : profile
   );
+
   saveProfiles(updatedProfiles);
+
   return findSelf(updatedProfiles);
 }
 
 export async function listLinkedProfiles() {
-  return loadProfiles().filter((profile) => !profile.isSelf);
+  return loadProfiles().filter(
+    (profile) => !profile.isSelf
+  );
 }
 
 export async function addLinkedProfile(data) {
   if (!data.fullName || !data.fullName.trim()) {
     throw new Error("Full name is required");
   }
+
   if (!data.dateOfBirth) {
     throw new Error("Date of birth is required");
   }
-  // Dates in "YYYY-MM-DD" format can be compared as plain strings.
+
+  // Dates in YYYY-MM-DD format can be compared as plain strings.
   if (data.dateOfBirth > todayString()) {
-    throw new Error("Date of birth cannot be in the future");
+    throw new Error(
+      "Date of birth cannot be in the future"
+    );
   }
+
   if (!RELATIONSHIPS.includes(data.relationship)) {
-    throw new Error("Relationship must be child, parent, spouse, or other");
+    throw new Error(
+      "Relationship must be child, parent, spouse, or other"
+    );
   }
+
   const profiles = loadProfiles();
-  if (profiles.filter((profile) => !profile.isSelf).length >= MAX_LINKED_PROFILES) {
-    throw new Error(`You can link up to ${MAX_LINKED_PROFILES} dependents`);
+
+  if (
+    profiles.filter((profile) => !profile.isSelf)
+      .length >= MAX_LINKED_PROFILES
+  ) {
+    throw new Error(
+      `You can link up to ${MAX_LINKED_PROFILES} dependents`
+    );
   }
+
   const newProfile = {
-    // Date.now() alone can repeat if two profiles are added in the same millisecond,
-    // so a few random letters are added to keep every id unique.
-    id: "p-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+    // Date.now() alone can repeat if two profiles
+    // are added in the same millisecond,
+    // so random letters are added to keep ids unique.
+    id:
+      "p-" +
+      Date.now() +
+      "-" +
+      Math.random().toString(36).slice(2, 7),
+
     fullName: data.fullName.trim(),
     dateOfBirth: data.dateOfBirth,
     relationship: data.relationship,
     isSelf: false,
+    profilePicture: "",
   };
-  saveProfiles([...profiles, newProfile]);
+
+  saveProfiles([
+    ...profiles,
+    newProfile,
+  ]);
+
   return newProfile;
 }
 
 export async function removeLinkedProfile(id) {
   const profiles = loadProfiles();
-  const profile = profiles.find((p) => p.id === id);
+
+  const profile = profiles.find(
+    (p) => p.id === id
+  );
+
   if (!profile) {
     throw new Error("Profile not found");
   }
+
   if (profile.isSelf) {
-    throw new Error("You cannot remove your own profile");
+    throw new Error(
+      "You cannot remove your own profile"
+    );
   }
-  saveProfiles(profiles.filter((p) => p.id !== id));
+
+  saveProfiles(
+    profiles.filter((p) => p.id !== id)
+  );
 }
 
-// The mock has no real accounts, so it accepts only the demo password "demo1234".
-// It checks the password before deleting, so a wrong password deletes nothing.
+// The mock has no real accounts,
+// so it accepts only the demo password "demo1234".
 export async function deleteAccount(password) {
   if (!password) {
     throw new Error("Password is required");
   }
+
   if (password !== "demo1234") {
     throw new Error("Incorrect password");
   }
+
   localStorage.removeItem(STORAGE_KEY);
+}
+
+// Saves a profile picture as a data URL in localStorage.
+export async function updateProfilePicture(
+  profileId,
+  profilePicture
+) {
+  const profiles = loadProfiles();
+
+  const profileExists = profiles.some(
+    (profile) => profile.id === profileId
+  );
+
+  if (!profileExists) {
+    throw new Error("Profile not found");
+  }
+
+  const updatedProfiles = profiles.map(
+    (profile) =>
+      profile.id === profileId
+        ? {
+            ...profile,
+            profilePicture,
+          }
+        : profile
+  );
+
+  saveProfiles(updatedProfiles);
+
+  return updatedProfiles.find(
+    (profile) =>
+      profile.id === profileId
+  );
+}
+
+// Removes the stored profile picture.
+export async function removeProfilePicture(
+  profileId
+) {
+  const profiles = loadProfiles();
+
+  const profileExists = profiles.some(
+    (profile) => profile.id === profileId
+  );
+
+  if (!profileExists) {
+    throw new Error("Profile not found");
+  }
+
+  const updatedProfiles = profiles.map(
+    (profile) =>
+      profile.id === profileId
+        ? {
+            ...profile,
+            profilePicture: "",
+          }
+        : profile
+  );
+
+  saveProfiles(updatedProfiles);
+
+  return updatedProfiles.find(
+    (profile) =>
+      profile.id === profileId
+  );
 }
