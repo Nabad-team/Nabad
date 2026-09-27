@@ -324,6 +324,12 @@ export default function ProfilePage() {
       )}
 
       <section style={{ marginTop: 40 }}>
+        <h2 style={{ color: TEAL }}>Account security</h2>
+        <p>Manage your sign-in verification settings.</p>
+        <a href="/security" style={{ color: TEAL }}>Open security settings</a>
+      </section>
+
+      <section style={{ marginTop: 40 }}>
         <h2 style={{ color: TEAL }}>Linked profiles</h2>
         {dependentMessage && <p style={{ color: TEAL, fontWeight: "bold" }}>{dependentMessage}</p>}
 

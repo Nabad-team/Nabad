@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     passwordHash: { type: String, required: true },
+    authVersion: { type: Number, default: 0 },
 
     // --- Login security (Task 4) ---
     failedLoginAttempts: { type: Number, default: 0 },
@@ -22,9 +23,10 @@ const userSchema = new mongoose.Schema(
 
     // --- Two-factor auth (Task 2) — fields ready to use ---
     twoFactorEnabled: { type: Boolean, default: false },
-    twoFactorSecret: { type: String, default: null }, // store encrypted in real deployment
+    twoFactorSecret: { type: String, default: null }, // AES-GCM encrypted with TOTP_ENCRYPTION_KEY
     twoFactorTempTokenHash: { type: String, default: null },
     twoFactorTempExpires: { type: Date, default: null },
+    twoFactorPendingSecret: { type: String, default: null },
   },
   { timestamps: true }
 );
