@@ -14,13 +14,23 @@ const LOCK_TIME_MS = 15 * 60 * 1000;
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many login attempts. Try again later." } });
 const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Too many code attempts. Try again later." } });
 const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many reset attempts. Try again later." } });
+const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
+
+function durationToMs(value, fallback = 15 * 60 * 1000) {
+  const match = String(value || "").trim().match(/^(\\d+)\\s*(s|m|h|d)$/i);
+  if (!match) return fallback;
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  const multiplier = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 }[unit];
+  return amount * multiplier;
+}
 
 function signAccessToken(user) {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error("JWT_SECRET must be set to a random value of at least 32 characters.");
   return jwt.sign({ sub: user._id, ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "15m" });
 }
 function setAuthCookie(res, token) {
-  res.cookie("accessToken", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 15 * 60 * 1000 });
+  res.cookie("accessToken", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: durationToMs(process.env.JWT_EXPIRES_IN) });
 }
 function hash(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
 function totpKey() {
@@ -63,18 +73,20 @@ function verifyTotp(secret, code) {
   return [-1, 0, 1].some((drift) => crypto.timingSafeEqual(Buffer.from(totp(secret, current + drift)), Buffer.from(String(code))));
 }
 function mailer() {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.MAIL_FROM) throw new Error("Email delivery is not configured.");
+  const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new Error("Email delivery is not configured.");
   return nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
 }
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", signupLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: "Name, email, and password are required." });
     if (!validator.isEmail(email)) return res.status(400).json({ error: "Please provide a valid email." });
     if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters." });
-    if (await User.findOne({ email: email.toLowerCase() })) return res.status(409).json({ error: "An account with this email already exists." });
-    const user = await User.create({ name, email: email.toLowerCase(), passwordHash: await bcrypt.hash(password, 12) });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (await User.findOne({ email: normalizedEmail })) return res.status(409).json({ error: "An account with this email already exists." });
+    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12) });
     setAuthCookie(res, signAccessToken(user));
     return res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) { console.error("Signup error:", err); return res.status(500).json({ error: "Something went wrong. Please try again." }); }
@@ -134,7 +146,10 @@ router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
 });
 router.post("/2fa/disable", codeLimiter, requireAuth, async (req, res) => {
   const user = await User.findById(req.userId);
-  if (!user || !user.twoFactorEnabled || !(await bcrypt.compare(req.body.password || "", user.passwordHash)) || !verifyTotp(decryptSecret(user.twoFactorSecret), req.body.code)) return res.status(400).json({ error: "Password or authenticator code is incorrect." });
+  if (!user || !user.twoFactorEnabled) return res.status(400).json({ error: "Two-factor authentication is not enabled." });
+  let secret;
+  try { secret = decryptSecret(user.twoFactorSecret); } catch { return res.status(503).json({ error: "Two-factor authentication is not configured correctly on this server." }); }
+  if (!(await bcrypt.compare(req.body.password || "", user.passwordHash)) || !verifyTotp(secret, req.body.code)) return res.status(400).json({ error: "Password or authenticator code is incorrect." });
   user.twoFactorEnabled = false; user.twoFactorSecret = null; user.twoFactorPendingSecret = null; await user.save();
   return res.json({ twoFactorEnabled: false });
 });
@@ -142,15 +157,15 @@ router.post("/2fa/disable", codeLimiter, requireAuth, async (req, res) => {
 router.post("/forgot-password", resetLimiter, async (req, res) => {
   const generic = { message: "If an account matches that email, reset instructions will be sent." };
   try {
-    const transport = mailer();
-    const email = String(req.body.email || "").toLowerCase();
+    const email = String(req.body.email || "").trim().toLowerCase();
     if (!validator.isEmail(email)) return res.json(generic);
+    const transport = mailer();
     const user = await User.findOne({ email });
     if (user) {
       const token = crypto.randomBytes(32).toString("hex");
       user.resetPasswordTokenHash = hash(token); user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); await user.save();
       const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-      await transport.sendMail({ from: process.env.MAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: `Use this link within one hour to reset your password: ${origin}/reset-password?token=${token}` });
+      await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: `Use this link within one hour to reset your password: ${origin}/reset-password?token=${token}` });
     }
     return res.json(generic);
   } catch (err) { console.error("Password reset request error:", err.message); return res.status(503).json({ error: "Password reset email is temporarily unavailable. Please try again later." }); }
@@ -164,7 +179,21 @@ router.post("/reset-password", resetLimiter, async (req, res) => {
   return res.json({ message: "Password updated. You can now log in." });
 });
 
-router.post("/logout", (req, res) => { res.clearCookie("accessToken", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" }); return res.json({ message: "Logged out." }); });
+router.post("/logout", async (req, res) => {
+  const token = req.cookies?.accessToken;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      if (payload.sub) {
+        await User.findByIdAndUpdate(payload.sub, { $inc: { authVersion: 1 } });
+      }
+    } catch {
+      // Always clear the browser cookie even when the token is already invalid or expired.
+    }
+  }
+  res.clearCookie("accessToken", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
+  return res.json({ message: "Logged out." });
+});
 router.get("/me", requireAuth, async (req, res) => {
   const user = await User.findById(req.userId).select("name email twoFactorEnabled");
   if (!user) return res.status(404).json({ error: "User not found." });
