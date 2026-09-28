@@ -1,29 +1,31 @@
 const mongoose = require("mongoose");
+const validator = require("validator");
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true, minlength: 1, maxlength: 100 },
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
       trim: true,
+      validate: {
+        validator: (value) => validator.isEmail(value),
+        message: "Please provide a valid email.",
+      },
     },
     passwordHash: { type: String, required: true },
     authVersion: { type: Number, default: 0 },
 
-    // --- Login security (Task 4) ---
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
 
-    // --- Password reset (Task 3) — fields ready to use ---
     resetPasswordTokenHash: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
 
-    // --- Two-factor auth (Task 2) — fields ready to use ---
     twoFactorEnabled: { type: Boolean, default: false },
-    twoFactorSecret: { type: String, default: null }, // AES-GCM encrypted with TOTP_ENCRYPTION_KEY
+    twoFactorSecret: { type: String, default: null },
     twoFactorTempTokenHash: { type: String, default: null },
     twoFactorTempExpires: { type: Date, default: null },
     twoFactorPendingSecret: { type: String, default: null },
@@ -36,4 +38,3 @@ userSchema.methods.isLocked = function () {
 };
 
 module.exports = mongoose.model("User", userSchema);
-
