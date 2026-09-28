@@ -17,7 +17,7 @@ const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { er
 const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
 
 function durationToMs(value, fallback = 15 * 60 * 1000) {
-  const match = String(value || "").trim().match(/^(\\d+)\\s*(s|m|h|d)$/i);
+  const match = String(value || "").trim().match(/^(\d+)\s*(s|m|h|d)$/i);
   if (!match) return fallback;
   const amount = Number(match[1]);
   const unit = match[2].toLowerCase();
