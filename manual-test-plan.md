@@ -35,13 +35,13 @@ Run these checks in staging before each release. Record build/commit, browser an
 3. Confirm the OAuth state is required and an invalid state cannot complete sign-in.
 4. For an account with 2FA enabled, confirm Google sign-in still requires the Nabad email verification code before a session is issued.
 
-## Triage and emergency routing — release gate
+## Triage and emergency routing
 
-The current workspace has no triage or emergency-routing implementation. These checks are blocked until those features are available in the release candidate. Once available, define approved test scenarios with the clinical/product owner and then verify:
-
-1. A non-emergency symptom scenario produces the expected urgency guidance and safety wording.
-2. A red-flag scenario produces the configured emergency guidance without delaying the user with unnecessary steps.
-3. Emergency routing uses the correct location, facility capability, availability, and destination; missing location or routing data produces a clear fallback.
-4. Confirm no scenario is presented as a definitive diagnosis, and verify the emergency contact instructions against the approved regional configuration.
-
-Do not approve a release containing triage or routing changes while the corresponding scenarios are blocked or failing.
+1. Open **Symptom triage** while authenticated and submit a short symptom description. Confirm the assessment endpoint returns guidance without presenting a diagnosis.
+2. Verify an empty or overlong description is rejected with a clear validation message.
+3. With an approved staging `TRIAGE_RULES_JSON`, test one routine, one urgent, and one emergency scenario. Confirm the configured rule determines the returned level.
+4. For an emergency result, confirm the emergency contact and instructions are shown immediately and the user is offered a nearby emergency-department search.
+5. Test emergency routing directly and confirm an unauthenticated request is rejected.
+6. Test an approved non-Lebanon configuration and confirm the fallback tells the user to contact local emergency services rather than inventing a facility or number.
+7. Confirm no scenario is presented as a definitive diagnosis and that all clinical rules used in staging have been approved by the clinical/product owner.
+8. Do not approve a release if the clinical rule configuration is missing, invalid, or has not been reviewed and approved.
