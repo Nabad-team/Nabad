@@ -11,20 +11,23 @@ const { requireAuth } = require("../middleware/authMiddleware");
 const router = express.Router();
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_TIME_MS = 15 * 60 * 1000;
+const TWO_FACTOR_CODE_TTL_MS = 10 * 60 * 1000;
+const TWO_FACTOR_RESEND_MS = 60 * 1000;
+const TWO_FACTOR_MAX_ATTEMPTS = 5;
+
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many login attempts. Try again later." } });
-const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Too many code attempts. Try again later." } });
+const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
 const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many reset attempts. Try again later." } });
 const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
+const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
 function durationToMs(value, fallback = 15 * 60 * 1000) {
   const match = String(value || "").trim().match(/^(\d+)\s*(s|m|h|d)$/i);
   if (!match) return fallback;
   const amount = Number(match[1]);
-  const unit = match[2].toLowerCase();
-  const multiplier = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 }[unit];
+  const multiplier = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 }[match[2].toLowerCase()];
   return amount * multiplier;
 }
-
 function signAccessToken(user) {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error("JWT_SECRET must be set to a random value of at least 32 characters.");
   return jwt.sign({ sub: user._id, ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "15m" });
@@ -32,50 +35,82 @@ function signAccessToken(user) {
 function setAuthCookie(res, token) {
   res.cookie("accessToken", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: durationToMs(process.env.JWT_EXPIRES_IN) });
 }
-function hash(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
-function totpKey() {
-  const key = process.env.TOTP_ENCRYPTION_KEY || "";
-  if (!/^[a-f0-9]{64}$/i.test(key)) throw new Error("TOTP_ENCRYPTION_KEY must be a 32-byte hex key.");
-  return Buffer.from(key, "hex");
-}
-function encryptSecret(secret) {
-  const iv = crypto.randomBytes(12); const cipher = crypto.createCipheriv("aes-256-gcm", totpKey(), iv);
-  const encrypted = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
-  return [iv.toString("hex"), cipher.getAuthTag().toString("hex"), encrypted.toString("hex")].join(":");
-}
-function decryptSecret(value) {
-  const [iv, tag, encrypted] = value.split(":");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", totpKey(), Buffer.from(iv, "hex"));
-  decipher.setAuthTag(Buffer.from(tag, "hex"));
-  return Buffer.concat([decipher.update(Buffer.from(encrypted, "hex")), decipher.final()]).toString("utf8");
-}
-function base32Encode(buffer) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  let bits = 0; let value = 0; let output = "";
-  for (const byte of buffer) { value = (value << 8) | byte; bits += 8; while (bits >= 5) { output += alphabet[(value >>> (bits - 5)) & 31]; bits -= 5; } }
-  if (bits) output += alphabet[(value << (5 - bits)) & 31];
-  return output;
-}
-function base32Decode(input) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = 0; let value = 0; const output = [];
-  for (const char of input.replace(/=+$/g, "")) { const index = alphabet.indexOf(char); if (index < 0) throw new Error("Invalid secret"); value = (value << 5) | index; bits += 5; if (bits >= 8) { output.push((value >>> (bits - 8)) & 255); bits -= 8; } }
-  return Buffer.from(output);
-}
-function totp(secret, counter) {
-  const message = Buffer.alloc(8); message.writeBigUInt64BE(BigInt(counter));
-  const digest = crypto.createHmac("sha1", base32Decode(secret)).update(message).digest();
-  const offset = digest[digest.length - 1] & 15;
-  return String((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, "0");
-}
-function verifyTotp(secret, code) {
-  if (!/^\d{6}$/.test(String(code || ""))) return false;
-  const current = Math.floor(Date.now() / 30000);
-  return [-1, 0, 1].some((drift) => crypto.timingSafeEqual(Buffer.from(totp(secret, current + drift)), Buffer.from(String(code))));
-}
+function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
 function mailer() {
   const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new Error("Email delivery is not configured.");
   return nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+}
+function generateTwoFactorCode() { return crypto.randomInt(0, 1000000).toString().padStart(6, "0"); }
+async function issueTwoFactorCode(user) {
+  const now = Date.now();
+  if (user.twoFactorCodeLastSent && now - user.twoFactorCodeLastSent.getTime() < TWO_FACTOR_RESEND_MS) {
+    const error = new Error("Please wait before requesting another verification code.");
+    error.status = 429;
+    error.retryAfter = Math.ceil((TWO_FACTOR_RESEND_MS - (now - user.twoFactorCodeLastSent.getTime())) / 1000);
+    throw error;
+  }
+  const code = generateTwoFactorCode();
+  user.twoFactorCodeHash = hash(code);
+  user.twoFactorCodeExpires = new Date(now + TWO_FACTOR_CODE_TTL_MS);
+  user.twoFactorCodeAttempts = 0;
+  user.twoFactorCodeLastSent = new Date(now);
+  await user.save();
+  await mailer().sendMail({
+    from: process.env.MAIL_FROM || process.env.EMAIL_FROM,
+    to: user.email,
+    subject: "Your Nabad verification code",
+    text: "Your Nabad verification code is " + code + ". It expires in 10 minutes and can be used only once."
+  });
+}
+function twoFactorChallenge(user) {
+  return jwt.sign({ sub: user._id, purpose: "2fa" }, process.env.JWT_SECRET, { expiresIn: "10m" });
+}
+async function completeTwoFactor(challenge, code, res) {
+  const payload = jwt.verify(challenge, process.env.JWT_SECRET);
+  if (payload.purpose !== "2fa") throw new Error("Invalid verification challenge.");
+  const user = await User.findById(payload.sub);
+  if (!user || !user.twoFactorEnabled || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new Error("Invalid or expired verification code.");
+  if (user.twoFactorCodeExpires.getTime() <= Date.now()) {
+    user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; await user.save();
+    throw new Error("This verification code has expired. Request a new code.");
+  }
+  const candidate = hash(code);
+  const valid = /^\d{6}$/.test(String(code || "")) && crypto.timingSafeEqual(Buffer.from(user.twoFactorCodeHash), Buffer.from(candidate));
+  if (!valid) {
+    user.twoFactorCodeAttempts = (user.twoFactorCodeAttempts || 0) + 1;
+    if (user.twoFactorCodeAttempts >= TWO_FACTOR_MAX_ATTEMPTS) {
+      user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; await user.save();
+      throw new Error("Too many incorrect attempts. This verification code has been cancelled. Request a new code.");
+    }
+    await user.save();
+    throw new Error("Invalid verification code.");
+  }
+  user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+  await user.save();
+  setAuthCookie(res, signAccessToken(user));
+  return { id: user._id, name: user.name, email: user.email };
+}
+
+async function exchangeGoogleCode(code) {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) throw new Error("Google sign-in is not configured.");
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ code, client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET, redirect_uri: process.env.GOOGLE_REDIRECT_URI, grant_type: "authorization_code" })
+  });
+  if (!tokenResponse.ok) throw new Error("Google authorization failed.");
+  const tokens = await tokenResponse.json();
+  const infoResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { Authorization: "Bearer " + tokens.access_token } });
+  if (!infoResponse.ok) throw new Error("Unable to verify Google account.");
+  const profile = await infoResponse.json();
+  if (!profile.sub || !profile.email || profile.email_verified !== true) throw new Error("Google account email could not be verified.");
+  if (!tokens.id_token) throw new Error("Google identity verification failed.");
+  const tokenInfo = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(tokens.id_token));
+  if (!tokenInfo.ok) throw new Error("Google identity verification failed.");
+  const verified = await tokenInfo.json();
+  if (verified.aud !== process.env.GOOGLE_CLIENT_ID || verified.sub !== profile.sub) throw new Error("Google identity verification failed.");
+  return { googleId: profile.sub, email: profile.email.trim().toLowerCase(), name: String(profile.name || profile.email.split("@")[0]).trim() };
 }
 
 router.post("/signup", signupLimiter, async (req, res) => {
@@ -92,65 +127,124 @@ router.post("/signup", signupLimiter, async (req, res) => {
   } catch (err) { console.error("Signup error:", err); return res.status(500).json({ error: "Something went wrong. Please try again." }); }
 });
 
+router.get("/google", googleLimiter, (req, res) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_REDIRECT_URI) return res.status(503).json({ error: "Google sign-in is not configured." });
+  const state = crypto.randomBytes(24).toString("hex");
+  res.cookie("googleOAuthState", state, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 10 * 60 * 1000 });
+  const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID, redirect_uri: process.env.GOOGLE_REDIRECT_URI, response_type: "code", scope: "openid email profile", state, access_type: "online", prompt: "select_account" });
+  return res.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + params.toString());
+});
+
+router.get("/google/callback", googleLimiter, async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    if (!code || !state || state !== req.cookies?.googleOAuthState) return res.status(400).send("Google sign-in could not be verified.");
+    res.clearCookie("googleOAuthState", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
+    const profile = await exchangeGoogleCode(code);
+    let user = await User.findOne({ $or: [{ googleId: profile.googleId }, { email: profile.email }] });
+    if (!user) {
+      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
+    } else {
+      user.googleId = profile.googleId;
+      await user.save();
+    }
+    if (user.twoFactorEnabled) {
+      await issueTwoFactorCode(user);
+      return res.redirect(process.env.CLIENT_ORIGIN + "/login?challenge=" + encodeURIComponent(twoFactorChallenge(user)));
+    }
+    setAuthCookie(res, signAccessToken(user));
+    return res.redirect(process.env.CLIENT_ORIGIN + "/dashboard");
+  } catch (err) {
+    console.error("Google sign-in error:", err);
+    return res.redirect((process.env.CLIENT_ORIGIN || "http://localhost:3000") + "/login?error=google_signin_failed");
+  }
+});
+
 router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email and password are required." });
-    const user = await User.findOne({ email: String(email).toLowerCase() });
+    const user = await User.findOne({ email: String(email).trim().toLowerCase() });
     const genericError = { error: "Invalid email or password." };
     if (!user) return res.status(401).json(genericError);
     if (user.isLocked()) return res.status(423).json({ error: "Account temporarily locked due to failed attempts. Try again later." });
     if (!(await bcrypt.compare(password, user.passwordHash))) {
       user.failedLoginAttempts += 1;
       if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) { user.lockUntil = new Date(Date.now() + LOCK_TIME_MS); user.failedLoginAttempts = 0; }
-      await user.save(); return res.status(401).json(genericError);
+      await user.save();
+      return res.status(401).json(genericError);
     }
     user.failedLoginAttempts = 0; user.lockUntil = null; await user.save();
     if (user.twoFactorEnabled) {
-      const challenge = jwt.sign({ sub: user._id, purpose: "2fa" }, process.env.JWT_SECRET, { expiresIn: "5m" });
-      return res.json({ twoFactorRequired: true, challenge });
+      await issueTwoFactorCode(user);
+      return res.json({ twoFactorRequired: true, challenge: twoFactorChallenge(user), codeDelivery: "email", expiresInSeconds: 600 });
     }
     setAuthCookie(res, signAccessToken(user));
     return res.json({ user: { id: user._id, name: user.name, email: user.email } });
-  } catch (err) { console.error("Login error:", err); return res.status(500).json({ error: "Something went wrong. Please try again." }); }
+  } catch (err) {
+    console.error("Login error:", err);
+    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
+    if (err.message === "Email delivery is not configured.") return res.status(503).json({ error: "Two-factor email delivery is not configured." });
+    return res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
 });
 
 router.post("/2fa/verify", codeLimiter, async (req, res) => {
+  try { return res.json({ user: await completeTwoFactor(req.body.challenge, req.body.code, res) }); }
+  catch (err) { return res.status(401).json({ error: err.message || "Invalid or expired verification code." }); }
+});
+
+router.post("/2fa/resend", codeLimiter, async (req, res) => {
   try {
     const payload = jwt.verify(req.body.challenge, process.env.JWT_SECRET);
-    if (payload.purpose !== "2fa") return res.status(401).json({ error: "Invalid or expired sign-in challenge." });
+    if (payload.purpose !== "2fa") return res.status(401).json({ error: "Invalid verification challenge." });
     const user = await User.findById(payload.sub);
-    if (!user || !user.twoFactorEnabled || !verifyTotp(decryptSecret(user.twoFactorSecret), req.body.code)) return res.status(401).json({ error: "Invalid or expired sign-in challenge or code." });
-    setAuthCookie(res, signAccessToken(user));
-    return res.json({ user: { id: user._id, name: user.name, email: user.email } });
-  } catch { return res.status(401).json({ error: "Invalid or expired sign-in challenge." }); }
+    if (!user || !user.twoFactorEnabled) return res.status(401).json({ error: "Invalid verification challenge." });
+    await issueTwoFactorCode(user);
+    return res.json({ message: "A new verification code was sent.", expiresInSeconds: 600 });
+  } catch (err) {
+    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
+    return res.status(401).json({ error: err.message || "Unable to send a new verification code." });
+  }
 });
 
 router.post("/2fa/setup", requireAuth, async (req, res) => {
-  const user = await User.findById(req.userId);
-  if (!user) return res.status(404).json({ error: "User not found." });
-  const secret = base32Encode(crypto.randomBytes(20));
-  try { user.twoFactorPendingSecret = encryptSecret(secret); } catch (err) { return res.status(503).json({ error: "Two-factor setup is not configured on this server." }); }
-  await user.save();
-  const label = encodeURIComponent(`Nabad:${user.email}`);
-  return res.json({ secret, otpauthUrl: `otpauth://totp/${label}?secret=${secret}&issuer=Nabad&algorithm=SHA1&digits=6&period=30` });
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found." });
+    await issueTwoFactorCode(user);
+    return res.json({ message: "A verification code was sent to your email.", expiresInSeconds: 600 });
+  } catch (err) {
+    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
+    return res.status(503).json({ error: "Unable to send the verification code." });
+  }
 });
+
 router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
-  const user = await User.findById(req.userId);
-  if (!user || !user.twoFactorPendingSecret) return res.status(400).json({ error: "Start two-factor setup first." });
-  let pendingSecret;
-  try { pendingSecret = decryptSecret(user.twoFactorPendingSecret); } catch { return res.status(503).json({ error: "Two-factor setup is not configured on this server." }); }
-  if (!verifyTotp(pendingSecret, req.body.code)) return res.status(400).json({ error: "Enter a valid code from your authenticator app." });
-  user.twoFactorSecret = user.twoFactorPendingSecret; user.twoFactorPendingSecret = null; user.twoFactorEnabled = true; await user.save();
-  return res.json({ twoFactorEnabled: true });
+  try {
+    const user = await User.findById(req.userId);
+    if (!user || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) return res.status(400).json({ error: "Start two-factor setup first." });
+    if (user.twoFactorCodeExpires.getTime() <= Date.now()) return res.status(400).json({ error: "The verification code has expired. Start setup again." });
+    const candidate = hash(req.body.code);
+    const valid = /^\d{6}$/.test(String(req.body.code || "")) && crypto.timingSafeEqual(Buffer.from(user.twoFactorCodeHash), Buffer.from(candidate));
+    if (!valid) {
+      user.twoFactorCodeAttempts = (user.twoFactorCodeAttempts || 0) + 1;
+      if (user.twoFactorCodeAttempts >= TWO_FACTOR_MAX_ATTEMPTS) { user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; }
+      await user.save();
+      return res.status(400).json({ error: user.twoFactorCodeHash ? "Invalid verification code." : "Too many incorrect attempts. The verification code has been cancelled." });
+    }
+    user.twoFactorEnabled = true; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+    await user.save();
+    return res.json({ twoFactorEnabled: true });
+  } catch (err) { return res.status(400).json({ error: err.message || "Unable to enable two-factor authentication." }); }
 });
+
 router.post("/2fa/disable", codeLimiter, requireAuth, async (req, res) => {
   const user = await User.findById(req.userId);
   if (!user || !user.twoFactorEnabled) return res.status(400).json({ error: "Two-factor authentication is not enabled." });
-  let secret;
-  try { secret = decryptSecret(user.twoFactorSecret); } catch { return res.status(503).json({ error: "Two-factor authentication is not configured correctly on this server." }); }
-  if (!(await bcrypt.compare(req.body.password || "", user.passwordHash)) || !verifyTotp(secret, req.body.code)) return res.status(400).json({ error: "Password or authenticator code is incorrect." });
-  user.twoFactorEnabled = false; user.twoFactorSecret = null; user.twoFactorPendingSecret = null; await user.save();
+  if (!(await bcrypt.compare(req.body.password || "", user.passwordHash))) return res.status(400).json({ error: "Password is incorrect." });
+  user.twoFactorEnabled = false; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+  await user.save();
   return res.json({ twoFactorEnabled: false });
 });
 
@@ -165,11 +259,12 @@ router.post("/forgot-password", resetLimiter, async (req, res) => {
       const token = crypto.randomBytes(32).toString("hex");
       user.resetPasswordTokenHash = hash(token); user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); await user.save();
       const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-      await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: `Use this link within one hour to reset your password: ${origin}/reset-password?token=${token}` });
+      await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: "Use this link within one hour to reset your password: " + origin + "/reset-password?token=" + token });
     }
     return res.json(generic);
   } catch (err) { console.error("Password reset request error:", err.message); return res.status(503).json({ error: "Password reset email is temporarily unavailable. Please try again later." }); }
 });
+
 router.post("/reset-password", resetLimiter, async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password || password.length < 8) return res.status(400).json({ error: "A reset link and a password of at least 8 characters are required." });
@@ -181,22 +276,20 @@ router.post("/reset-password", resetLimiter, async (req, res) => {
 
 router.post("/logout", async (req, res) => {
   const token = req.cookies?.accessToken;
-  if (token) {
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      if (payload.sub) {
-        await User.findByIdAndUpdate(payload.sub, { $inc: { authVersion: 1 } });
-      }
-    } catch {
-      // Always clear the browser cookie even when the token is already invalid or expired.
-    }
-  }
+  if (token) { try { const payload = jwt.verify(token, process.env.JWT_SECRET); if (payload.sub) await User.findByIdAndUpdate(payload.sub, { $inc: { authVersion: 1 } }); } catch {} }
   res.clearCookie("accessToken", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
   return res.json({ message: "Logged out." });
 });
+
 router.get("/me", requireAuth, async (req, res) => {
-  const user = await User.findById(req.userId).select("name email twoFactorEnabled");
+  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted");
   if (!user) return res.status(404).json({ error: "User not found." });
   return res.json({ user });
 });
+
+router.post("/onboarding/complete", requireAuth, async (req, res) => {
+  await User.findByIdAndUpdate(req.userId, { onboardingCompleted: true });
+  return res.json({ onboardingCompleted: true });
+});
+
 module.exports = router;
