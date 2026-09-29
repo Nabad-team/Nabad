@@ -1,0 +1,48 @@
+# Render Blueprint for the backend API (https://render.com/docs/blueprint-spec).
+# Values marked "sync: false" are secrets: Render asks for them in the dashboard; they never go in git.
+services:
+  - type: web
+    name: nabad-backend
+    runtime: node
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health/ready
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: MONGO_DB_NAME
+        value: nabad_production
+      - key: CLIENT_ORIGIN
+        value: https://nabad-psi.vercel.app
+      # Browser -> Vercel rewrite -> Render load balancer -> app.
+      - key: TRUST_PROXY
+        value: "2"
+      - key: SESSION_IDLE_TIMEOUT
+        value: 30m
+      - key: SESSION_ABSOLUTE_TIMEOUT
+        value: 12h
+      - key: SESSION_WARNING_BEFORE
+        value: 2m
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false

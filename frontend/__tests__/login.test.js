@@ -15,7 +15,7 @@ jest.mock("../lib/api", () => ({
   login: (...args) => login(...args),
   verifyTwoFactor: (...args) => verifyTwoFactor(...args),
   resendTwoFactor: (...args) => resendTwoFactor(...args),
-  googleLoginUrl: () => "http://localhost:5000/api/auth/google",
+  googleLoginUrl: () => "/api/auth/google",
 }));
 
 describe("Login Page", () => {
@@ -42,7 +42,7 @@ describe("Login Page", () => {
   test("shows Continue with Google", () => {
     render(<LoginPage />);
     const link = screen.getByRole("link", { name: "Continue with Google" });
-    expect(link).toHaveAttribute("href", "http://localhost:5000/api/auth/google");
+    expect(link).toHaveAttribute("href", "/api/auth/google");
   });
 
   test("shows the 2FA form after login requires a code", async () => {

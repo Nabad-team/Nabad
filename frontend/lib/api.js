@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+// Same-site path, forwarded to the backend by the rewrite in next.config.js.
+const API_BASE = "/api";
 
 async function request(path, options = {}) {
   const res = await fetch(API_BASE + path, {
