@@ -20,11 +20,20 @@ Run these checks in staging before each release. Record build/commit, browser an
 
 ## Two-factor authentication
 
-1. Sign in, open Profile → Account security, and begin setup. Add the displayed secret to an authenticator app.
-2. Submit an incorrect code; confirm setup stays disabled. Submit a valid current code; confirm the UI reports enabled.
-3. Sign out and sign back in. Confirm the password alone does not create a session; a valid authenticator code completes login.
-4. Try an incorrect code and an expired challenge. Confirm no authenticated session is issued.
-5. Disable 2FA with the correct password and code. Confirm incorrect password or code is rejected and subsequent sign-in no longer prompts for 2FA.
+1. Sign in, open Profile → Account security, and begin setup. Confirm a 6-digit code is emailed to the account address.
+2. Submit an incorrect code. Confirm setup remains disabled. Submit the valid code and confirm 2FA becomes enabled.
+3. Sign out and sign back in. Confirm password alone does not create a session and a valid emailed code completes login.
+4. Confirm each 2FA code expires after 10 minutes, succeeds only once, and cannot be reused after successful verification.
+5. Enter an incorrect code five times. Confirm the current code is cancelled and a new code is required.
+6. Request a replacement code twice within 60 seconds. Confirm the second request is rejected with a retry message. After 60 seconds, confirm a new code can be requested.
+7. Disable 2FA with the correct password. Confirm subsequent sign-in no longer prompts for a code.
+
+## Google sign-in
+
+1. From the login page, select Continue with Google and choose a Google account.
+2. Confirm the OAuth callback creates or links the Nabad account using the verified Google identity and signs the user in.
+3. Confirm the OAuth state is required and an invalid state cannot complete sign-in.
+4. For an account with 2FA enabled, confirm Google sign-in still requires the Nabad email verification code before a session is issued.
 
 ## Triage and emergency routing — release gate
 
