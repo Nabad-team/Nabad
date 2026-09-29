@@ -4,6 +4,7 @@ import { login, verifyTwoFactor, resendTwoFactor, googleLoginUrl } from "../lib/
 
 export default function LoginPage() {
   const router = useRouter();
+  const query = router.query || {};
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
