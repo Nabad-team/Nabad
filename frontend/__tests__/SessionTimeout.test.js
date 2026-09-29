@@ -165,6 +165,31 @@ describe("SessionTimeout", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
+  test("after Sign out in this tab, the timer stops (no second sign-out later)", async () => {
+    render(
+      <ActiveProfileProvider>
+        <SessionTimeout>
+          <ProfileHeader />
+        </SessionTimeout>
+      </ActiveProfileProvider>
+    );
+    await wait(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await wait(0);
+    expect(replace).toHaveBeenCalledWith("/login");
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+
+    // Before the fix, activity here sent a heartbeat that got a 401 and signed out a second time.
+    getSession.mockRejectedValue(Object.assign(new Error("Not authenticated."), { status: 401 }));
+    fireEvent.keyDown(window, { key: "a" });
+    await wait(31 * MINUTE);
+
+    expect(logout).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(getSession).toHaveBeenCalledTimes(1);
+  });
+
   test("hides the Sign out button while signed out", async () => {
     getSession.mockRejectedValue(Object.assign(new Error("Not authenticated."), { status: 401 }));
     render(

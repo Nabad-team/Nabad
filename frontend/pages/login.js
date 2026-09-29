@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { login, verifyTwoFactor, resendTwoFactor, googleLoginUrl } from "../lib/api";
-import { minutesText } from "../lib/session";
+import { minutesText, safeNextPath } from "../lib/session";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,7 +42,8 @@ export default function LoginPage() {
           return;
         }
       }
-      router.push("/dashboard");
+      // Back to the page that asked for sign-in (only pages on our own site), otherwise the dashboard.
+      router.push(safeNextPath(query.next));
     } catch (err) {
       setError(err.message);
     } finally {

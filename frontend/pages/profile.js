@@ -482,3 +482,6 @@ export default function ProfilePage() {
     </main>
   );
 }
+
+// Health data: only for signed-in users (see components/RequireSignIn.js).
+ProfilePage.requireSignIn = true;

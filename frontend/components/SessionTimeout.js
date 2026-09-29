@@ -7,6 +7,7 @@ import {
   lastActivity,
   signOut,
   onSignOutInOtherTab,
+  onSignOutInThisTab,
   inactivityLoginUrl,
   SESSION_ENDED_LOGIN_URL,
   minutesText,
@@ -17,10 +18,16 @@ const TEAL = "#0f766e";
 // Things that count as "the user is still here".
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
-// Lets any component ask "is the user signed in?" (for example to show the Sign out button).
-const SignedInContext = createContext(false);
+// Lets any component ask about the sign-in state:
+// "checking" until the server answers, then "signedIn" or "signedOut".
+// "ended" means this tab just signed out (timeout or Sign out) and is on its way to /login.
+const SessionStatusContext = createContext("signedOut");
+export function useSessionStatus() {
+  return useContext(SessionStatusContext);
+}
+// For example to show the Sign out button.
 export function useSignedIn() {
-  return useContext(SignedInContext);
+  return useSessionStatus() === "signedIn";
 }
 
 // Signs the user out after a period of inactivity (30 minutes by default).
@@ -31,15 +38,24 @@ export default function SessionTimeout({ children }) {
   const router = useRouter();
   // The timeout settings from the server, or null while signed out.
   const [settings, setSettings] = useState(null);
+  // The last answer while signed out, and the page it was for.
+  const [answer, setAnswer] = useState({ path: null, status: "checking" });
   const [showWarning, setShowWarning] = useState(false);
   const settingsRef = useRef(null);
+  const pathRef = useRef(router.asPath);
+  pathRef.current = router.asPath;
   const staySignedInRef = useRef(() => {});
+
+  // An answer given for another page counts as "checking". Otherwise, right after logging in,
+  // the new page would briefly see the login page's "signedOut" and send the user back to /login.
+  const status = settings ? "signedIn" : answer.path === router.asPath ? answer.status : "checking";
 
   // Checks whether the user is signed in: on first load and after each page change
   // (for example right after logging in). A 401 means signed out, so the timer stays off.
   useEffect(() => {
     if (settingsRef.current) return;
     let cancelled = false;
+    const path = router.asPath;
     getSession()
       .then((result) => {
         if (cancelled) return;
@@ -47,7 +63,9 @@ export default function SessionTimeout({ children }) {
         settingsRef.current = result;
         setSettings(result);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setAnswer({ path, status: "signedOut" });
+      });
     return () => {
       cancelled = true;
     };
@@ -68,6 +86,7 @@ export default function SessionTimeout({ children }) {
       ended = true;
       settingsRef.current = null;
       setSettings(null);
+      setAnswer({ path: pathRef.current, status: "ended" });
       setShowWarning(false);
     }
 
@@ -121,17 +140,20 @@ export default function SessionTimeout({ children }) {
       stop();
       router.replace(url);
     });
+    // Signing out in this tab (the Sign out button): stop the timer; signOut() does the navigation.
+    const stopListeningHere = onSignOutInThisTab(stop);
 
     return () => {
       ACTIVITY_EVENTS.forEach((name) => window.removeEventListener(name, handleActivity));
       clearInterval(interval);
       clearTimeout(heartbeatTimer);
       stopListening();
+      stopListeningHere();
     };
   }, [settings]);
 
   return (
-    <SignedInContext.Provider value={Boolean(settings)}>
+    <SessionStatusContext.Provider value={status}>
       {children}
       {settings && showWarning && (
         // The pages set their font on <main>; this dialog is outside it, so it sets the same font itself.
@@ -148,6 +170,6 @@ export default function SessionTimeout({ children }) {
           </Dialog>
         </div>
       )}
-    </SignedInContext.Provider>
+    </SessionStatusContext.Provider>
   );
 }

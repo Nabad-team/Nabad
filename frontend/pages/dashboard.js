@@ -31,3 +31,6 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+// Health data: only for signed-in users (see components/RequireSignIn.js).
+DashboardPage.requireSignIn = true;

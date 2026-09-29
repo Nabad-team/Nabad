@@ -78,6 +78,30 @@ describe("Login Page", () => {
     expect(screen.getByRole("status")).toHaveTextContent("You were signed out after 30 minutes of inactivity.");
   });
 
+  test("returns to the page that asked for sign-in", async () => {
+    const router = require("next/router");
+    router.useRouter = () => ({ push, query: { next: "/profile" } });
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "user@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/profile"));
+  });
+
+  test("never follows a next link to another site", async () => {
+    const router = require("next/router");
+    router.useRouter = () => ({ push, query: { next: "https://evil.example" } });
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "user@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
+  });
+
   test("shows Google sign-in failure from callback", () => {
     const router = require("next/router");
     router.useRouter = () => ({ push, query: { error: "google_signin_failed" } });
