@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./db");
 const authRoutes = require("./routes/auth");
+const triageRoutes = require("./routes/triage");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use(
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
+app.use("/api/triage", triageRoutes);
 
 const PORT = process.env.PORT || 5000;
 
