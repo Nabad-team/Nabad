@@ -10,13 +10,13 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      validate: {
-        validator: (value) => validator.isEmail(value),
-        message: "Please provide a valid email.",
-      },
+      validate: { validator: (value) => validator.isEmail(value), message: "Please provide a valid email." },
     },
     passwordHash: { type: String, required: true },
+    authProvider: { type: String, enum: ["password", "google"], default: "password" },
+    googleId: { type: String, unique: true, sparse: true, default: null },
     authVersion: { type: Number, default: 0 },
+    onboardingCompleted: { type: Boolean, default: false },
 
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
@@ -25,10 +25,10 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date, default: null },
 
     twoFactorEnabled: { type: Boolean, default: false },
-    twoFactorSecret: { type: String, default: null },
-    twoFactorTempTokenHash: { type: String, default: null },
-    twoFactorTempExpires: { type: Date, default: null },
-    twoFactorPendingSecret: { type: String, default: null },
+    twoFactorCodeHash: { type: String, default: null },
+    twoFactorCodeExpires: { type: Date, default: null },
+    twoFactorCodeAttempts: { type: Number, default: 0 },
+    twoFactorCodeLastSent: { type: Date, default: null },
   },
   { timestamps: true }
 );
