@@ -27,7 +27,7 @@ export default function DashboardPage() {
       {activeProfile && <h1>Welcome, {activeProfile.fullName}</h1>}
       {error && <p style={{ color: "crimson" }}>{error}</p>}
       {loading && <p>Loading...</p>}
-      <a href="/profile" style={buttonStyle}>My Profile</a>
+      <a href="/profile" style={buttonStyle}>My Profile</a>\n      <a href="/triage" style={{ ...buttonStyle, marginLeft: 12 }}>Symptom triage</a>
     </main>
   );
 }
