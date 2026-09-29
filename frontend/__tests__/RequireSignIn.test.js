@@ -72,6 +72,22 @@ describe("Pages that need sign-in", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  test("after logging in, the next page is shown instead of bouncing back to /login", async () => {
+    // On the login page, signed out.
+    asPath = "/login?next=%2Fprofile";
+    getSession.mockImplementation(signedOut);
+    const { rerender } = render(<MyApp Component={PublicPage} pageProps={{}} />);
+    await act(async () => {});
+
+    // Logged in; the login page now opens /profile.
+    getSession.mockResolvedValue(SESSION);
+    asPath = "/profile";
+    rerender(<MyApp Component={PrivatePage} pageProps={{}} />);
+
+    expect(await screen.findByText("Private health data")).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   test("public pages are shown straight away, signed in or not", async () => {
     asPath = "/";
     getSession.mockImplementation(signedOut);

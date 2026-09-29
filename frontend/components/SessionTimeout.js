@@ -38,28 +38,33 @@ export default function SessionTimeout({ children }) {
   const router = useRouter();
   // The timeout settings from the server, or null while signed out.
   const [settings, setSettings] = useState(null);
-  const [status, setStatus] = useState("checking");
+  // The last answer while signed out, and the page it was for.
+  const [answer, setAnswer] = useState({ path: null, status: "checking" });
   const [showWarning, setShowWarning] = useState(false);
   const settingsRef = useRef(null);
+  const pathRef = useRef(router.asPath);
+  pathRef.current = router.asPath;
   const staySignedInRef = useRef(() => {});
+
+  // An answer given for another page counts as "checking". Otherwise, right after logging in,
+  // the new page would briefly see the login page's "signedOut" and send the user back to /login.
+  const status = settings ? "signedIn" : answer.path === router.asPath ? answer.status : "checking";
 
   // Checks whether the user is signed in: on first load and after each page change
   // (for example right after logging in). A 401 means signed out, so the timer stays off.
   useEffect(() => {
     if (settingsRef.current) return;
     let cancelled = false;
-    // Back to "checking" first, so a page that needs sign-in never acts on the answer for the previous page.
-    setStatus("checking");
+    const path = router.asPath;
     getSession()
       .then((result) => {
         if (cancelled) return;
         recordActivity();
         settingsRef.current = result;
         setSettings(result);
-        setStatus("signedIn");
       })
       .catch(() => {
-        if (!cancelled) setStatus("signedOut");
+        if (!cancelled) setAnswer({ path, status: "signedOut" });
       });
     return () => {
       cancelled = true;
@@ -81,7 +86,7 @@ export default function SessionTimeout({ children }) {
       ended = true;
       settingsRef.current = null;
       setSettings(null);
-      setStatus("ended");
+      setAnswer({ path: pathRef.current, status: "ended" });
       setShowWarning(false);
     }
 
