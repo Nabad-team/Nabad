@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const { contactSchema } = require("./contactSchema");
 
 const userSchema = new mongoose.Schema(
   {
@@ -14,7 +15,9 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true },
     authProvider: { type: String, enum: ["password", "google"], default: "password" },
-    googleId: { type: String, unique: true, sparse: true, default: null },
+    // Sparse unique indexes skip absent fields, but not explicit null values.
+    googleId: { type: String, unique: true, sparse: true, default: undefined },
+    emergencyContact: { type: contactSchema, default: undefined },
     authVersion: { type: Number, default: 0 },
     onboardingCompleted: { type: Boolean, default: false },
 
