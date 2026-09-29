@@ -7,6 +7,8 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
 const { requireAuth } = require("../middleware/authMiddleware");
+const { signAccessToken, setAuthCookie } = require("../session");
+const { sessionConfig } = require("../sessionConfig");
 const { cookieOptions } = require("../config");
 const { logError } = require("../logger");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
@@ -24,20 +26,6 @@ const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { er
 const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
 const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
-function durationToMs(value, fallback = 15 * 60 * 1000) {
-  const match = String(value || "").trim().match(/^(\d+)\s*(s|m|h|d)$/i);
-  if (!match) return fallback;
-  const amount = Number(match[1]);
-  const multiplier = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 }[match[2].toLowerCase()];
-  return amount * multiplier;
-}
-function signAccessToken(user) {
-  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error("JWT_SECRET must be set to a random value of at least 32 characters.");
-  return jwt.sign({ sub: user._id, ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "15m" });
-}
-function setAuthCookie(res, token) {
-  res.cookie("accessToken", token, { ...cookieOptions(), maxAge: durationToMs(process.env.JWT_EXPIRES_IN) });
-}
 function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
 function mailer() {
   const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
@@ -303,6 +291,13 @@ router.get("/me", requireAuth, asyncRoute(async (req, res) => {
   if (!user) return res.status(404).json({ error: "User not found." });
   return res.json({ user });
 }));
+
+// Called by the browser's inactivity timer: confirms the user is signed in, renews the
+// session (requireAuth re-issues the cookie) and tells the browser the timeout settings.
+router.get("/session", requireAuth, (req, res) => {
+  const { idleTimeoutMs, warningBeforeMs, absoluteTimeoutMs } = sessionConfig();
+  return res.json({ idleTimeoutMs, warningBeforeMs, absoluteExpiresAt: req.sessionStart + absoluteTimeoutMs });
+});
 
 router.post("/onboarding/complete", requireAuth, asyncRoute(async (req, res) => {
   await User.findByIdAndUpdate(req.userId, { onboardingCompleted: true });

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import { useActiveProfile } from "../context/ActiveProfileContext";
+import { signOut } from "../lib/session";
+import { useSignedIn } from "./SessionTimeout";
 import {
   updateProfilePicture,
   removeProfilePicture,
@@ -14,6 +16,7 @@ export default function ProfileHeader() {
   const { selfProfile, linkedProfiles, activeProfile, switchProfile } =
     useActiveProfile();
 
+  const signedIn = useSignedIn();
   const fileInputRef = useRef(null);
 
   const [previewUrl, setPreviewUrl] = useState("");
@@ -111,30 +114,50 @@ export default function ProfileHeader() {
       >
         <Logo />
 
-        {selfProfile && activeProfile && (
-          <select
-            aria-label="Active profile"
-            value={activeProfile.id}
-            onChange={(e) => switchProfile(e.target.value)}
-            style={{
-              padding: 8,
-              borderRadius: 8,
-              border: `2px solid ${TEAL}`,
-              color: TEAL,
-              maxWidth: "100%",
-            }}
-          >
-            <option value={selfProfile.id}>
-              {selfProfile.fullName} (you)
-            </option>
-
-            {linkedProfiles.map((profile) => (
-              <option key={profile.id} value={profile.id}>
-                {profile.fullName} ({profile.relationship})
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {selfProfile && activeProfile && (
+            <select
+              aria-label="Active profile"
+              value={activeProfile.id}
+              onChange={(e) => switchProfile(e.target.value)}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                border: `2px solid ${TEAL}`,
+                color: TEAL,
+                maxWidth: "100%",
+              }}
+            >
+              <option value={selfProfile.id}>
+                {selfProfile.fullName} (you)
               </option>
-            ))}
-          </select>
-        )}
+
+              {linkedProfiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.fullName} ({profile.relationship})
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Signs out in every open tab (see lib/session.js). Only shown while signed in. */}
+          {signedIn && (
+            <button
+              type="button"
+              onClick={() => signOut()}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                border: `1px solid ${TEAL}`,
+                background: "white",
+                color: TEAL,
+                cursor: "pointer",
+              }}
+            >
+              Sign out
+            </button>
+          )}
+        </div>
       </nav>
 
       {activeProfile && (
