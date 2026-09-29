@@ -28,3 +28,6 @@ export default function OnboardingPage() {
     </div>
   </main>;
 }
+
+// Shown right after signup: only for signed-in users (see components/RequireSignIn.js).
+OnboardingPage.requireSignIn = true;

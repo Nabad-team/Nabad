@@ -59,3 +59,6 @@ export default function SecurityPage() {
     </main>
   );
 }
+
+// Account security settings: only for signed-in users (see components/RequireSignIn.js).
+SecurityPage.requireSignIn = true;

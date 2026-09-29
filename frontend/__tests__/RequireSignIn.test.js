@@ -3,6 +3,8 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import MyApp from "../pages/_app";
 import DashboardPage from "../pages/dashboard";
 import ProfilePage from "../pages/profile";
+import SecurityPage from "../pages/security";
+import OnboardingPage from "../pages/onboarding";
 import HomePage from "../pages/index";
 import LoginPage from "../pages/login";
 import SignupPage from "../pages/signup";
@@ -113,9 +115,40 @@ describe("Pages that need sign-in", () => {
     expect(replace).toHaveBeenCalledWith("/login");
   });
 
-  test("only the dashboard and profile pages need sign-in", () => {
-    expect(DashboardPage.requireSignIn).toBe(true);
-    expect(ProfilePage.requireSignIn).toBe(true);
+  test.each([
+    ["/dashboard", DashboardPage],
+    ["/profile", ProfilePage],
+    ["/security", SecurityPage],
+    ["/onboarding", OnboardingPage],
+  ])("the real %s page sends a signed-out visitor to log in without showing anything", async (path, Page) => {
+    asPath = path;
+    getSession.mockImplementation(signedOut);
+    const { container } = render(<MyApp Component={Page} pageProps={{}} />);
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/login?next=" + encodeURIComponent(path)));
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test("onboarding still opens right after signing up", async () => {
+    // On the signup page, signed out.
+    asPath = "/signup";
+    getSession.mockImplementation(signedOut);
+    const { rerender } = render(<MyApp Component={SignupPage} pageProps={{}} />);
+    await act(async () => {});
+
+    // Signing up signs the user in, and the signup page opens /onboarding.
+    getSession.mockResolvedValue(SESSION);
+    asPath = "/onboarding";
+    rerender(<MyApp Component={OnboardingPage} pageProps={{}} />);
+
+    expect(await screen.findByRole("heading", { name: "Welcome to Nabad" })).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  test("the dashboard, profile, security and onboarding pages need sign-in", () => {
+    for (const page of [DashboardPage, ProfilePage, SecurityPage, OnboardingPage]) {
+      expect(page.requireSignIn).toBe(true);
+    }
     for (const page of [HomePage, LoginPage, SignupPage, ForgotPasswordPage, ResetPasswordPage]) {
       expect(page.requireSignIn).toBeUndefined();
     }
