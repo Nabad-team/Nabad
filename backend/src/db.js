@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const fixGoogleIdIndex = require("./migrations/fixGoogleIdIndex");
 
 async function connectDB() {
   const uri = process.env.MONGO_URI;
@@ -7,6 +8,7 @@ async function connectDB() {
   }
   await mongoose.connect(uri);
   console.log("MongoDB connected:", mongoose.connection.name);
+  await fixGoogleIdIndex();
 }
 
 module.exports = connectDB;

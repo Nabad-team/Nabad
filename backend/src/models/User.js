@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true },
     authProvider: { type: String, enum: ["password", "google"], default: "password" },
-    googleId: { type: String, unique: true, sparse: true, default: null },
+    googleId: { type: String },
     authVersion: { type: Number, default: 0 },
     onboardingCompleted: { type: Boolean, default: false },
 
@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Unique only among users that actually have a Google ID, so any number of
+// email/password users (no googleId) can exist.
+userSchema.index({ googleId: 1 }, { unique: true, partialFilterExpression: { googleId: { $type: "string" } } });
 
 userSchema.methods.isLocked = function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
