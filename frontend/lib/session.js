@@ -7,12 +7,34 @@ import { logout } from "./api";
 
 export const LAST_ACTIVITY_KEY = "nabad-last-activity";
 export const SIGN_OUT_KEY = "nabad-signout";
+const THIS_TAB_SIGN_OUT_EVENT = "nabad-signout-this-tab";
 
 // Where each kind of sign-out sends the user.
 export function inactivityLoginUrl(idleTimeoutMs) {
   return "/login?reason=inactivity&minutes=" + Math.round(idleTimeoutMs / 60000);
 }
 export const SESSION_ENDED_LOGIN_URL = "/login?reason=expired";
+// Where a page that needs sign-in sends a signed-out visitor; they come back here after logging in.
+export function signInRequiredUrl(path) {
+  return "/login?next=" + encodeURIComponent(path);
+}
+
+// The page to open after logging in. Only a path on our own site is allowed, never an outside URL
+// (otherwise a link like /login?next=https://evil.example could send users to a fake site).
+// The URL parser applies the same rules as the browser, so tricks like "//evil.example",
+// "/\evil.example" or a hidden tab in "/\t/evil.example" are caught too.
+const SAFE_BASE = "https://nabad.invalid";
+export function safeNextPath(next, fallback = "/dashboard") {
+  if (typeof next !== "string" || !next.startsWith("/")) return fallback;
+  let url;
+  try {
+    url = new URL(next, SAFE_BASE);
+  } catch {
+    return fallback;
+  }
+  if (url.origin !== SAFE_BASE) return fallback;
+  return url.pathname + url.search + url.hash;
+}
 
 // "1 minute", "30 minutes".
 export function minutesText(minutes) {
@@ -35,8 +57,11 @@ export function lastActivity() {
 }
 
 // Ends the session on the server (which also invalidates the cookie for every tab),
-// tells the other tabs, then goes to the login page.
+// tells this tab and the other tabs, then goes to the login page.
 export async function signOut(url = "/login") {
+  // "storage" events only reach the other tabs, so this tab is told with its own event.
+  // It comes first so pages that need sign-in hide their content straight away.
+  window.dispatchEvent(new Event(THIS_TAB_SIGN_OUT_EVENT));
   try {
     await logout();
   } catch {}
@@ -59,4 +84,10 @@ export function onSignOutInOtherTab(onSignOut) {
   }
   window.addEventListener("storage", handleStorage);
   return () => window.removeEventListener("storage", handleStorage);
+}
+
+// Runs onSignOut() when signOut() is called in this tab. Returns a function that stops listening.
+export function onSignOutInThisTab(onSignOut) {
+  window.addEventListener(THIS_TAB_SIGN_OUT_EVENT, onSignOut);
+  return () => window.removeEventListener(THIS_TAB_SIGN_OUT_EVENT, onSignOut);
 }
