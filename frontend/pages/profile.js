@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import ProfileHeader from "../components/ProfileHeader";
 import Dialog from "../components/Dialog";
+import EmergencyContact from "../components/EmergencyContact";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
   getMyProfile,
@@ -408,11 +409,7 @@ export default function ProfilePage() {
         )}
       </section>
 
-      {/* PLACEHOLDER: Emergency contact section, being built by a teammate. Replace this box. */}
-      <section style={{ border: `2px dashed ${TEAL}`, borderRadius: 12, padding: 20, marginTop: 40 }}>
-        <h2 style={{ marginTop: 0, color: TEAL }}>Emergency contact</h2>
-        <p style={{ margin: 0, color: "#6b7280" }}>Coming soon.</p>
-      </section>
+      <EmergencyContact />
 
       <section style={{ border: `2px solid ${RED}`, borderRadius: 12, padding: 20, marginTop: 40 }}>
         <h2 style={{ marginTop: 0, color: RED }}>Danger zone</h2>
