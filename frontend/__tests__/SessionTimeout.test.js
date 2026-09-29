@@ -2,6 +2,8 @@
 // Jest's fake timers let us jump 30 minutes ahead instantly.
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import SessionTimeout from "../components/SessionTimeout";
+import ProfileHeader from "../components/ProfileHeader";
+import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { LAST_ACTIVITY_KEY, SIGN_OUT_KEY } from "../lib/session";
 
 const replace = jest.fn();
@@ -57,6 +59,8 @@ describe("SessionTimeout", () => {
     await wait(1000);
     expect(screen.getByRole("dialog")).toHaveTextContent(WARNING_TEXT);
     expect(screen.getByRole("button", { name: "Stay signed in" })).toBeInTheDocument();
+    // Same font as the pages (they set it on <main>, which the dialog is outside of).
+    expect(screen.getByRole("dialog").closest('[style*="font-family"]')).toHaveStyle({ fontFamily: "sans-serif" });
   });
 
   test("signs out after 30 minutes of inactivity and tells the other tabs", async () => {
@@ -146,5 +150,33 @@ describe("SessionTimeout", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(logout).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  test("shows the Sign out button while signed in", async () => {
+    render(
+      <ActiveProfileProvider>
+        <SessionTimeout>
+          <ProfileHeader />
+        </SessionTimeout>
+      </ActiveProfileProvider>
+    );
+    await wait(0);
+
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+  });
+
+  test("hides the Sign out button while signed out", async () => {
+    getSession.mockRejectedValue(Object.assign(new Error("Not authenticated."), { status: 401 }));
+    render(
+      <ActiveProfileProvider>
+        <SessionTimeout>
+          <ProfileHeader />
+        </SessionTimeout>
+      </ActiveProfileProvider>
+    );
+    await wait(0);
+
+    expect(await screen.findByRole("option", { name: "Demo User (you)" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
   });
 });

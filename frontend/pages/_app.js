@@ -6,8 +6,9 @@ import SessionTimeout from "../components/SessionTimeout";
 export default function MyApp({ Component, pageProps }) {
   return (
     <ActiveProfileProvider>
-      <Component {...pageProps} />
-      <SessionTimeout />
+      <SessionTimeout>
+        <Component {...pageProps} />
+      </SessionTimeout>
     </ActiveProfileProvider>
   );
 }

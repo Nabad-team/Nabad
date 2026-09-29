@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { signOut } from "../lib/session";
+import { useSignedIn } from "./SessionTimeout";
 import {
   updateProfilePicture,
   removeProfilePicture,
@@ -15,6 +16,7 @@ export default function ProfileHeader() {
   const { selfProfile, linkedProfiles, activeProfile, switchProfile } =
     useActiveProfile();
 
+  const signedIn = useSignedIn();
   const fileInputRef = useRef(null);
 
   const [previewUrl, setPreviewUrl] = useState("");
@@ -138,21 +140,23 @@ export default function ProfileHeader() {
             </select>
           )}
 
-          {/* Signs out in every open tab (see lib/session.js). */}
-          <button
-            type="button"
-            onClick={() => signOut()}
-            style={{
-              padding: 8,
-              borderRadius: 8,
-              border: `1px solid ${TEAL}`,
-              background: "white",
-              color: TEAL,
-              cursor: "pointer",
-            }}
-          >
-            Sign out
-          </button>
+          {/* Signs out in every open tab (see lib/session.js). Only shown while signed in. */}
+          {signedIn && (
+            <button
+              type="button"
+              onClick={() => signOut()}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                border: `1px solid ${TEAL}`,
+                background: "white",
+                color: TEAL,
+                cursor: "pointer",
+              }}
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </nav>
 

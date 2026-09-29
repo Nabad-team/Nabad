@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Dialog from "./Dialog";
 import { getSession } from "../lib/api";
@@ -17,11 +17,17 @@ const TEAL = "#0f766e";
 // Things that count as "the user is still here".
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
+// Lets any component ask "is the user signed in?" (for example to show the Sign out button).
+const SignedInContext = createContext(false);
+export function useSignedIn() {
+  return useContext(SignedInContext);
+}
+
 // Signs the user out after a period of inactivity (30 minutes by default).
 // The timeout values come from the server (GET /api/auth/session), which also enforces them:
 // the server session expires if the browser stops reporting activity.
-// Rendered once in _app.js, so it runs on every page but only does anything while signed in.
-export default function SessionTimeout() {
+// Wraps every page in _app.js, but the timer only runs while signed in.
+export default function SessionTimeout({ children }) {
   const router = useRouter();
   // The timeout settings from the server, or null while signed out.
   const [settings, setSettings] = useState(null);
@@ -124,18 +130,24 @@ export default function SessionTimeout() {
     };
   }, [settings]);
 
-  if (!settings || !showWarning) return null;
-
   return (
-    <Dialog title="Are you still there?">
-      <p>You'll be signed out in {minutesText(Math.round(settings.warningBeforeMs / 60000))} for your privacy.</p>
-      <button
-        type="button"
-        onClick={() => staySignedInRef.current()}
-        style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: TEAL, color: "white", fontWeight: "bold", cursor: "pointer" }}
-      >
-        Stay signed in
-      </button>
-    </Dialog>
+    <SignedInContext.Provider value={Boolean(settings)}>
+      {children}
+      {settings && showWarning && (
+        // The pages set their font on <main>; this dialog is outside it, so it sets the same font itself.
+        <div style={{ fontFamily: "sans-serif" }}>
+          <Dialog title="Are you still there?">
+            <p>You'll be signed out in {minutesText(Math.round(settings.warningBeforeMs / 60000))} for your privacy.</p>
+            <button
+              type="button"
+              onClick={() => staySignedInRef.current()}
+              style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: TEAL, color: "white", fontWeight: "bold", cursor: "pointer" }}
+            >
+              Stay signed in
+            </button>
+          </Dialog>
+        </div>
+      )}
+    </SignedInContext.Provider>
   );
 }
