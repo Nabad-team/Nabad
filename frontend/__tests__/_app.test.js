@@ -5,6 +5,15 @@ import { render, screen } from "@testing-library/react";
 import MyApp from "../pages/_app";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 
+// The app also runs the inactivity timer, which needs a router and asks the server
+// whether the user is signed in. Here the user is signed out, so the timer stays off.
+jest.mock("next/router", () => ({
+  useRouter: () => ({ asPath: "/", replace: jest.fn() }),
+}));
+jest.mock("../lib/api", () => ({
+  getSession: () => Promise.reject(new Error("Not authenticated.")),
+}));
+
 // A tiny fake page that shows the active profile's name from the context.
 function FakePage({ greeting }) {
   const { activeProfile } = useActiveProfile();

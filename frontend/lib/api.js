@@ -7,7 +7,11 @@ async function request(path, options = {}) {
     ...options,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Request failed.");
+  if (!res.ok) {
+    const error = new Error(data.error || "Request failed.");
+    error.status = res.status; // lets callers tell "signed out" (401) apart from a network problem
+    throw error;
+  }
   return data;
 }
 
@@ -22,6 +26,7 @@ export const enableTwoFactor = (code) => request("/auth/2fa/enable", { method: "
 export const disableTwoFactor = (password) => request("/auth/2fa/disable", { method: "POST", body: JSON.stringify({ password }) });
 export const logout = () => request("/auth/logout", { method: "POST" });
 export const getMe = () => request("/auth/me");
+export const getSession = () => request("/auth/session");
 export const completeOnboarding = () => request("/auth/onboarding/complete", { method: "POST" });
 export const googleLoginUrl = () => API_BASE + "/auth/google";
 export const getEmergencyContact = () => request("/profile/emergency-contact");

@@ -70,6 +70,14 @@ describe("Login Page", () => {
     await waitFor(() => expect(verifyTwoFactor).toHaveBeenCalledWith("challenge-123", "123456"));
   });
 
+  test("explains an automatic sign-out after inactivity", () => {
+    const router = require("next/router");
+    router.useRouter = () => ({ push, query: { reason: "inactivity", minutes: "30" } });
+
+    render(<LoginPage />);
+    expect(screen.getByRole("status")).toHaveTextContent("You were signed out after 30 minutes of inactivity.");
+  });
+
   test("shows Google sign-in failure from callback", () => {
     const router = require("next/router");
     router.useRouter = () => ({ push, query: { error: "google_signin_failed" } });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { login, verifyTwoFactor, resendTwoFactor, googleLoginUrl } from "../lib/api";
+import { minutesText } from "../lib/session";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,14 @@ export default function LoginPage() {
   const [challenge, setChallenge] = useState("");
   const [code, setCode] = useState("");
   const [resendBusy, setResendBusy] = useState(false);
+  // Why the user was sent here by the session timer (see components/SessionTimeout.js).
+  const minutes = Number(query.minutes);
+  const signedOutMessage =
+    query.reason === "inactivity" && Number.isInteger(minutes) && minutes > 0
+      ? "You were signed out after " + minutesText(minutes) + " of inactivity."
+      : query.reason === "expired"
+        ? "Your session has ended. Please sign in again."
+        : "";
 
   useEffect(() => {
     if (typeof query.challenge === "string") setChallenge(query.challenge);
@@ -57,6 +66,7 @@ export default function LoginPage() {
   return (
     <main style={{ maxWidth: 380, margin: "80px auto", fontFamily: "sans-serif" }}>
       <h1>Log in to Nabad</h1>
+      {signedOutMessage && <p role="status">{signedOutMessage}</p>}
       {challenge ? (
         <>
           <p>We sent a 6-digit verification code to your email. It expires in 10 minutes, works only once, and is cancelled after 5 incorrect tries.</p>
