@@ -72,12 +72,35 @@ export default function LoginPage() {
       ) : (
         <>
           <form onSubmit={handleSubmit}>
-            <label>Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-            <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-            {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
-            <button type="submit" disabled={loading} style={{ width: "100%", padding: 10 }}>{loading ? "Please wait..." : "Log in"}</button>
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ width: "100%", padding: 8, margin: "6px 0 16px" }}
+            />
+
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: "100%", padding: 8, margin: "6px 0 16px" }}
+            />
+
+            {error && (
+              <p role="alert" style={{ color: "crimson" }}>
+                {error}
+              </p>
+            )}
+
+            <button type="submit" disabled={loading} style={{ width: "100%", padding: 10 }}>
+              {loading ? "Please wait..." : "Log in"}
+            </button>
           </form>
           <div style={{ textAlign: "center", margin: "20px 0" }}>or</div>
           <a href={googleLoginUrl()} style={{ display: "block", textAlign: "center", padding: 10, border: "1px solid #ccc", borderRadius: 6, textDecoration: "none" }}>Continue with Google</a>
