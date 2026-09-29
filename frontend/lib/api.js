@@ -24,3 +24,5 @@ export const logout = () => request("/auth/logout", { method: "POST" });
 export const getMe = () => request("/auth/me");
 export const completeOnboarding = () => request("/auth/onboarding/complete", { method: "POST" });
 export const googleLoginUrl = () => API_BASE + "/auth/google";
+export const getEmergencyContact = () => request("/profile/emergency-contact");
+export const addEmergencyContact = (name, phone) => request("/profile/emergency-contact", { method: "POST", body: JSON.stringify({ name, phone }) });
