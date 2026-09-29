@@ -16,4 +16,4 @@ npx vercel --prod
 
 The backend requires `MONGO_URI` and a random `JWT_SECRET` of at least 32 characters. Set `CLIENT_ORIGIN` to the frontend origin. Password reset email also requires `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM` (optionally `SMTP_SECURE=true`). Two-factor authentication requires `TOTP_ENCRYPTION_KEY`, a 32-byte key encoded as 64 hex characters; generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` and keep it in the deployment secret store. Back up that key securely: losing it makes enrolled authenticator secrets unreadable.
 
-Set `NEXT_PUBLIC_API_URL` in the frontend deployment to the backend API URL. See [manual-test-plan.md](./manual-test-plan.md) for release checks and known triage/routing blockers.
+Set `NEXT_PUBLIC_API_URL` in the frontend deployment to the backend API URL. See [manual-test-plan.md](./manual-test-plan.md) for release checks. Triage uses clinician/product-approved rules supplied through `TRIAGE_RULES_JSON`.
