@@ -13,9 +13,9 @@ export default function LoginPage() {
   const [resendBusy, setResendBusy] = useState(false);
 
   useEffect(() => {
-    if (typeof router.query.challenge === "string") setChallenge(router.query.challenge);
-    if (router.query.error === "google_signin_failed") setError("Google sign-in could not be completed. Please try again.");
-  }, [router.query.challenge, router.query.error]);
+    if (typeof query.challenge === "string") setChallenge(query.challenge);
+    if (query.error === "google_signin_failed") setError("Google sign-in could not be completed. Please try again.");
+  }, [query.challenge, query.error]);
 
   async function handleSubmit(e) {
     e.preventDefault();
