@@ -109,4 +109,12 @@ describe("Login Page", () => {
     render(<LoginPage />);
     expect(screen.getByRole("alert")).toHaveTextContent("Google sign-in could not be completed");
   });
+
+  test("tells a Google user whose email already has an account to sign in with their password", () => {
+    const router = require("next/router");
+    router.useRouter = () => ({ push, query: { error: "google_account_exists" } });
+
+    render(<LoginPage />);
+    expect(screen.getByRole("alert")).toHaveTextContent("An account with this email already exists. Sign in with your password.");
+  });
 });
