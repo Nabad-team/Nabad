@@ -10,7 +10,7 @@ const { requireAuth } = require("../middleware/authMiddleware");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
 const { cookieOptions } = require("../config");
-const { logError } = require("../logger");
+const { logEvent, logError } = require("../logger");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 const router = express.Router();
@@ -19,6 +19,8 @@ const LOCK_TIME_MS = 15 * 60 * 1000;
 const TWO_FACTOR_CODE_TTL_MS = 10 * 60 * 1000;
 const TWO_FACTOR_RESEND_MS = 60 * 1000;
 const TWO_FACTOR_MAX_ATTEMPTS = 5;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const SMTP_TIMEOUT_MS = 10 * 1000;
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many login attempts. Try again later." } });
 const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
@@ -30,10 +32,22 @@ function hash(value) { return crypto.createHash("sha256").update(String(value)).
 function mailer() {
   const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new Error("Email delivery is not configured.");
-  return nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", requireTLS: cookieOptions().secure, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", requireTLS: cookieOptions().secure,
+    connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+}
+// Email is never awaited by a request: a slow or blocked SMTP server must not hold the response.
+// Only the error name and code are logged; SMTP error messages can echo server responses.
+function logEmailFailure(req, error) {
+  logEvent("email_failed", { requestId: req?.requestId, errorType: error?.name || "Error", errorCode: error?.code });
+}
+function sendInBackground(req, transport, message) {
+  transport.sendMail(message).catch((error) => logEmailFailure(req, error));
 }
 function generateTwoFactorCode() { return crypto.randomInt(0, 1000000).toString().padStart(6, "0"); }
-async function issueTwoFactorCode(user) {
+async function issueTwoFactorCode(req, user) {
   const now = Date.now();
   if (user.twoFactorCodeLastSent && now - user.twoFactorCodeLastSent.getTime() < TWO_FACTOR_RESEND_MS) {
     const error = new Error("Please wait before requesting another verification code.");
@@ -41,13 +55,14 @@ async function issueTwoFactorCode(user) {
     error.retryAfter = Math.ceil((TWO_FACTOR_RESEND_MS - (now - user.twoFactorCodeLastSent.getTime())) / 1000);
     throw error;
   }
+  const transport = mailer();
   const code = generateTwoFactorCode();
   user.twoFactorCodeHash = hash(code);
   user.twoFactorCodeExpires = new Date(now + TWO_FACTOR_CODE_TTL_MS);
   user.twoFactorCodeAttempts = 0;
   user.twoFactorCodeLastSent = new Date(now);
   await user.save();
-  await mailer().sendMail({
+  sendInBackground(req, transport, {
     from: process.env.MAIL_FROM || process.env.EMAIL_FROM,
     to: user.email,
     subject: "Your Nabad verification code",
@@ -144,7 +159,7 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
       await user.save();
     }
     if (user.twoFactorEnabled) {
-      await issueTwoFactorCode(user);
+      await issueTwoFactorCode(req, user);
       return res.redirect(process.env.CLIENT_ORIGIN + "/login?challenge=" + encodeURIComponent(twoFactorChallenge(user)));
     }
     setAuthCookie(res, signAccessToken(user));
@@ -171,7 +186,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
     user.failedLoginAttempts = 0; user.lockUntil = null; await user.save();
     if (user.twoFactorEnabled) {
-      await issueTwoFactorCode(user);
+      await issueTwoFactorCode(req, user);
       return res.json({ twoFactorRequired: true, challenge: twoFactorChallenge(user), codeDelivery: "email", expiresInSeconds: 600 });
     }
     setAuthCookie(res, signAccessToken(user));
@@ -195,7 +210,7 @@ router.post("/2fa/resend", codeLimiter, async (req, res) => {
     if (payload.purpose !== "2fa") return res.status(401).json({ error: "Invalid verification challenge." });
     const user = await User.findById(payload.sub);
     if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) return res.status(401).json({ error: "Invalid verification challenge." });
-    await issueTwoFactorCode(user);
+    await issueTwoFactorCode(req, user);
     return res.json({ message: "A new verification code was sent.", expiresInSeconds: 600 });
   } catch (err) {
     if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
@@ -207,7 +222,7 @@ router.post("/2fa/setup", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: "User not found." });
-    await issueTwoFactorCode(user);
+    await issueTwoFactorCode(req, user);
     return res.json({ message: "A verification code was sent to your email.", expiresInSeconds: 600 });
   } catch (err) {
     if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
@@ -243,21 +258,25 @@ router.post("/2fa/disable", codeLimiter, requireAuth, asyncRoute(async (req, res
   return res.json({ twoFactorEnabled: false });
 }));
 
-router.post("/forgot-password", resetLimiter, async (req, res) => {
+// A new token overwrites the previous hash, so only the latest link works.
+async function sendPasswordReset(email, transport) {
+  const user = await User.findOne({ email });
+  if (!user) return;
+  const token = crypto.randomBytes(32).toString("hex");
+  user.resetPasswordTokenHash = hash(token); user.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS); await user.save();
+  const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: "Use this link within one hour to reset your password: " + origin + "/reset-password?token=" + token });
+}
+
+router.post("/forgot-password", resetLimiter, (req, res) => {
   const generic = { message: "If an account matches that email, reset instructions will be sent." };
-  try {
-    const email = String(req.body.email || "").trim().toLowerCase();
-    if (!validator.isEmail(email)) return res.json(generic);
-    const transport = mailer();
-    const user = await User.findOne({ email });
-    if (user) {
-      const token = crypto.randomBytes(32).toString("hex");
-      user.resetPasswordTokenHash = hash(token); user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); await user.save();
-      const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-      await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: "Use this link within one hour to reset your password: " + origin + "/reset-password?token=" + token });
-    }
-    return res.json(generic);
-  } catch (err) { logError(req, err); return res.status(503).json({ error: "Password reset email is temporarily unavailable. Please try again later." }); }
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!validator.isEmail(email)) return res.json(generic);
+  let transport;
+  try { transport = mailer(); } catch (err) { logError(req, err); return res.status(503).json({ error: "Password reset email is temporarily unavailable. Please try again later." }); }
+  // Respond before the account lookup so the reply and its timing are the same whether or not the email exists.
+  res.json(generic);
+  sendPasswordReset(email, transport).catch((error) => logEmailFailure(req, error));
 });
 
 router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
