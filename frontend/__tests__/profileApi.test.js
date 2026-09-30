@@ -1,5 +1,6 @@
-// Automated tests for the temporary profile mock API (lib/profileApi.js).
-// These tests run automatically on every pull request.
+// Automated tests for the profile API client (lib/profileApi.js).
+// fetch is replaced by a fake, so these tests check exactly what is sent to the backend
+// and what the pages get back.
 
 import {
   getMyProfile,
@@ -8,106 +9,155 @@ import {
   addLinkedProfile,
   removeLinkedProfile,
   deleteAccount,
+  updateProfilePicture,
+  removeProfilePicture,
+  RELATIONSHIPS,
+  MAX_LINKED_PROFILES,
 } from "../lib/profileApi";
 
-describe("Profile API (mock)", () => {
+const SELF = { id: "self", fullName: "Layla", email: "layla@example.test", phone: "", dateOfBirth: "", relationship: "self", isSelf: true, profilePicture: "", authProvider: "password" };
+const CHILD = { id: "65f000000000000000000001", fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child", isSelf: false, profilePicture: "" };
+
+// Makes the next fetch answer with this status and JSON body (no body for 204).
+function answer(status, body) {
+  global.fetch.mockResolvedValueOnce({
+    ok: status >= 200 && status < 300,
+    status,
+    json: body === undefined ? () => Promise.reject(new Error("no body")) : () => Promise.resolve(body),
+  });
+}
+
+// The URL, method and parsed body of the last request.
+function lastRequest() {
+  const [url, options = {}] = global.fetch.mock.calls.at(-1);
+  return { url, method: options.method || "GET", body: options.body ? JSON.parse(options.body) : undefined, options };
+}
+
+describe("profileApi", () => {
   beforeEach(() => {
-    localStorage.clear();
+    global.fetch = jest.fn();
   });
 
-  test("seeds a demo profile when nothing is stored", async () => {
-    const profile = await getMyProfile();
-
-    expect(profile.fullName).toBe("Demo User");
-    expect(profile.email).toBe("demo@nabad.app");
-    expect(profile.isSelf).toBe(true);
+  afterEach(() => {
+    delete global.fetch;
   });
 
-  test("getMyProfile rejects instead of returning nothing when data is broken", async () => {
-    localStorage.setItem("nabad-profiles", JSON.stringify({ profiles: [] }));
-    await expect(getMyProfile()).rejects.toThrow("Your profile was not found");
-
-    localStorage.setItem("nabad-profiles", "{oops");
-    await expect(getMyProfile()).rejects.toThrow("Saved profile data is unreadable");
+  test("keeps the constants the pages use", () => {
+    expect(RELATIONSHIPS).toEqual(["child", "parent", "spouse", "other"]);
+    expect(MAX_LINKED_PROFILES).toBe(10);
   });
 
-  test("updating the profile does not change the email", async () => {
-    await updateMyProfile({
-      fullName: "Layla Haddad",
-      phone: "71123456",
-      dateOfBirth: "1990-05-01",
-      email: "hacker@example.com",
-    });
+  test("getMyProfile loads the signed-in user's profile with the login cookie", async () => {
+    answer(200, { profile: SELF });
 
-    const profile = await getMyProfile();
-    expect(profile.fullName).toBe("Layla Haddad");
-    expect(profile.email).toBe("demo@nabad.app");
+    expect(await getMyProfile()).toEqual(SELF);
+    const { url, method, options } = lastRequest();
+    expect(url).toBe("/api/profile/me");
+    expect(method).toBe("GET");
+    expect(options.credentials).toBe("include");
   });
 
-  test("adds, lists, and removes linked profiles", async () => {
-    const child = await addLinkedProfile({
-      fullName: "Sami",
-      dateOfBirth: "2015-03-10",
-      relationship: "child",
-    });
+  test("updateMyProfile sends only name, phone and date of birth", async () => {
+    answer(200, { profile: { ...SELF, fullName: "Layla H" } });
 
-    expect(await listLinkedProfiles()).toEqual([child]);
+    const saved = await updateMyProfile({ ...SELF, fullName: "Layla H", phone: "71123456", dateOfBirth: "1990-01-02" });
 
-    await removeLinkedProfile(child.id);
-    expect(await listLinkedProfiles()).toEqual([]);
+    expect(saved.fullName).toBe("Layla H");
+    expect(lastRequest()).toMatchObject({ url: "/api/profile/me", method: "PATCH", body: { fullName: "Layla H", phone: "71123456", dateOfBirth: "1990-01-02" } });
+    // Email, id and other fields are never sent.
+    expect(Object.keys(lastRequest().body)).toEqual(["fullName", "phone", "dateOfBirth"]);
   });
 
-  test("rejects a linked profile with an invalid relationship", async () => {
-    await expect(
-      addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "self" })
-    ).rejects.toThrow("Relationship must be child, parent, spouse, or other");
+  test("listLinkedProfiles returns the dependents", async () => {
+    answer(200, { profiles: [CHILD] });
+
+    expect(await listLinkedProfiles()).toEqual([CHILD]);
+    expect(lastRequest()).toMatchObject({ url: "/api/profile/linked", method: "GET" });
   });
 
-  test("rejects a linked profile without a date of birth or with a future one", async () => {
-    await expect(
-      addLinkedProfile({ fullName: "Sami", dateOfBirth: "", relationship: "child" })
-    ).rejects.toThrow("Date of birth is required");
+  test("addLinkedProfile sends the dependent's details and returns the saved profile", async () => {
+    answer(201, { profile: CHILD });
 
-    await expect(
-      addLinkedProfile({ fullName: "Sami", dateOfBirth: "2999-01-01", relationship: "child" })
-    ).rejects.toThrow("Date of birth cannot be in the future");
+    expect(await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child", owner: "someone-else" })).toEqual(CHILD);
+    expect(lastRequest()).toMatchObject({ url: "/api/profile/linked", method: "POST" });
+    expect(lastRequest().body).toEqual({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
   });
 
-  test("allows at most 10 linked profiles, each with its own id", async () => {
-    for (let i = 1; i <= 10; i++) {
-      await addLinkedProfile({ fullName: "Child " + i, dateOfBirth: "2015-03-10", relationship: "child" });
-    }
+  test("addLinkedProfile passes on the backend's error message", async () => {
+    answer(400, { error: "You can link up to 10 dependents." });
 
-    const ids = (await listLinkedProfiles()).map((profile) => profile.id);
-    expect(new Set(ids).size).toBe(10);
-
-    await expect(
-      addLinkedProfile({ fullName: "Child 11", dateOfBirth: "2015-03-10", relationship: "child" })
-    ).rejects.toThrow("You can link up to 10 dependents");
+    await expect(addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" })).rejects.toThrow("You can link up to 10 dependents.");
   });
 
-  test("cannot remove the self profile", async () => {
-    await expect(removeLinkedProfile("self")).rejects.toThrow(
-      "You cannot remove your own profile"
-    );
+  test("removeLinkedProfile deletes by id", async () => {
+    answer(204);
+
+    await expect(removeLinkedProfile(CHILD.id)).resolves.toBeUndefined();
+    expect(lastRequest()).toMatchObject({ url: `/api/profile/linked/${CHILD.id}`, method: "DELETE" });
   });
 
-  test("deleteAccount requires a password and then resets the data", async () => {
-    await updateMyProfile({ fullName: "Layla Haddad", phone: "", dateOfBirth: "" });
+  test("removeLinkedProfile passes on 'Profile not found.' for someone else's profile", async () => {
+    answer(404, { error: "Profile not found." });
 
-    await expect(deleteAccount("")).rejects.toThrow("Password is required");
-
-    await deleteAccount("demo1234");
-    expect(localStorage.getItem("nabad-profiles")).toBeNull();
-    // Loading again starts over with a fresh demo user.
-    expect((await getMyProfile()).fullName).toBe("Demo User");
+    await expect(removeLinkedProfile("65f0000000000000000000ff")).rejects.toThrow("Profile not found.");
   });
 
-  test("deleteAccount rejects a wrong password and deletes nothing", async () => {
-    await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
+  test("ids are escaped in the URL", async () => {
+    answer(404, { error: "Profile not found." });
 
-    await expect(deleteAccount("wrong")).rejects.toThrow("Incorrect password");
+    await expect(removeLinkedProfile("../me")).rejects.toThrow();
+    expect(lastRequest().url).toBe("/api/profile/linked/..%2Fme");
+  });
 
-    expect((await listLinkedProfiles())[0].fullName).toBe("Sami");
+  test("deleteAccount confirms with the password for password accounts", async () => {
+    answer(204);
+
+    await deleteAccount("my password");
+
+    expect(lastRequest()).toMatchObject({ url: "/api/profile/me", method: "DELETE", body: { confirm: "DELETE", password: "my password" } });
+    expect(lastRequest().body.email).toBeUndefined();
+  });
+
+  test("deleteAccount confirms with the email for Google-only accounts", async () => {
+    answer(204);
+
+    await deleteAccount("layla@example.test", { google: true });
+
+    expect(lastRequest().body).toEqual({ confirm: "DELETE", email: "layla@example.test" });
+  });
+
+  test("deleteAccount passes on a wrong password", async () => {
+    answer(400, { error: "Password is incorrect." });
+
+    await expect(deleteAccount("wrong")).rejects.toThrow("Password is incorrect.");
+  });
+
+  test("pictures go to /me/picture for the account owner", async () => {
+    answer(200, { profile: { ...SELF, profilePicture: "data:image/png;base64,AAAA" } });
+
+    const saved = await updateProfilePicture("self", "data:image/png;base64,AAAA");
+
+    expect(saved.profilePicture).toBe("data:image/png;base64,AAAA");
+    expect(lastRequest()).toMatchObject({ url: "/api/profile/me/picture", method: "PUT", body: { profilePicture: "data:image/png;base64,AAAA" } });
+
+    answer(200, { profile: SELF });
+    await removeProfilePicture("self");
+    expect(lastRequest()).toMatchObject({ url: "/api/profile/me/picture", method: "DELETE" });
+  });
+
+  test("pictures go to /linked/:id/picture for a dependent", async () => {
+    answer(200, { profile: CHILD });
+    await updateProfilePicture(CHILD.id, "data:image/jpeg;base64,AAAA");
+    expect(lastRequest()).toMatchObject({ url: `/api/profile/linked/${CHILD.id}/picture`, method: "PUT" });
+
+    answer(200, { profile: CHILD });
+    await removeProfilePicture(CHILD.id);
+    expect(lastRequest()).toMatchObject({ url: `/api/profile/linked/${CHILD.id}/picture`, method: "DELETE" });
+  });
+
+  test("a signed-out request fails with status 401", async () => {
+    answer(401, { error: "Not authenticated." });
+
+    await expect(getMyProfile()).rejects.toMatchObject({ message: "Not authenticated.", status: 401 });
   });
 });

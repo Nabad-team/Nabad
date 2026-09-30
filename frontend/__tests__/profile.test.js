@@ -6,11 +6,26 @@ import userEvent from "@testing-library/user-event";
 import ProfilePage from "../pages/profile";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, addLinkedProfile, listLinkedProfiles } from "../lib/profileApi";
+import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 
-// A fake router, so tests can check where the page tries to go.
-const mockPush = jest.fn();
+// The profile API is replaced by an in-memory fake of the backend.
+jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+
+// The profile provider loads profiles only while signed in; here the user is signed in.
+jest.mock("../components/SessionTimeout", () => ({
+  ...jest.requireActual("../components/SessionTimeout"),
+  useSessionStatus: () => "signedIn",
+}));
+
+// A fake sign-out, so tests can check where the page goes after deleting the account.
+const mockSignOut = jest.fn();
+jest.mock("../lib/session", () => ({
+  ...jest.requireActual("../lib/session"),
+  signOut: (...args) => mockSignOut(...args),
+}));
+
 jest.mock("next/router", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
 // The page reads linked profiles from the provider, just like in _app.js.
@@ -31,10 +46,11 @@ async function renderInEditMode() {
 }
 
 describe("Profile Page", () => {
-  // Start every test with empty storage, so the demo user is seeded fresh.
+  // Start every test with empty storage and a fresh demo user on the fake backend.
   beforeEach(() => {
     localStorage.clear();
-    mockPush.mockClear();
+    fakeProfileApi.resetFakeProfiles();
+    mockSignOut.mockClear();
   });
 
   test("shows the user's name and email", async () => {
@@ -53,7 +69,7 @@ describe("Profile Page", () => {
   });
 
   test("loading ends with an error message when the profile cannot be loaded", async () => {
-    localStorage.setItem("nabad-profiles", JSON.stringify({ profiles: [] }));
+    fakeProfileApi.failFakeLoading();
 
     renderProfilePage();
 
@@ -338,9 +354,9 @@ describe("Profile Page", () => {
       await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
       await user.click(confirmButton);
 
-      expect(await screen.findByText("Incorrect password")).toBeInTheDocument();
+      expect(await screen.findByText("Password is incorrect.")).toBeInTheDocument();
       expect((await listLinkedProfiles())[0].fullName).toBe("Maya");
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockSignOut).not.toHaveBeenCalled();
     });
 
     test("a successful deletion clears all data and goes to the landing page", async () => {
@@ -352,10 +368,30 @@ describe("Profile Page", () => {
       await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
       await user.click(confirmButton);
 
-      expect(mockPush).toHaveBeenCalledWith("/?deleted=1");
-      expect(localStorage.getItem("nabad-profiles")).toBeNull();
+      // Signing out also stops the inactivity timer and tells the other tabs.
+      expect(mockSignOut).toHaveBeenCalledWith("/?deleted=1");
+      expect(fakeProfileApi.accountDeleted).toBe(true);
       expect(localStorage.getItem("nabad-active-profile-id")).toBeNull();
       expect(screen.queryByText(/Acting as/)).not.toBeInTheDocument();
+    });
+
+    test("a Google-only account confirms with its email instead of a password", async () => {
+      fakeProfileApi.resetFakeProfiles({ authProvider: "google" });
+      const { user, confirmButton } = await openDeleteDialog();
+
+      expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+      await user.type(screen.getByLabelText("Email"), "someone@else.test");
+      await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+      await user.click(confirmButton);
+      expect(await screen.findByText("Email does not match.")).toBeInTheDocument();
+      expect(fakeProfileApi.accountDeleted).toBe(false);
+
+      await user.clear(screen.getByLabelText("Email"));
+      await user.type(screen.getByLabelText("Email"), "demo@nabad.app");
+      await user.click(confirmButton);
+
+      expect(mockSignOut).toHaveBeenCalledWith("/?deleted=1");
+      expect(fakeProfileApi.accountDeleted).toBe(true);
     });
   });
 });

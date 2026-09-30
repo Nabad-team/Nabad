@@ -13,7 +13,7 @@ const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 export default function ProfileHeader() {
-  const { selfProfile, linkedProfiles, activeProfile, switchProfile } =
+  const { selfProfile, linkedProfiles, activeProfile, switchProfile, refreshProfiles } =
     useActiveProfile();
 
   const signedIn = useSignedIn();
@@ -45,8 +45,7 @@ export default function ProfileHeader() {
       return;
     }
 
-    // Keep the file small because the temporary profile system
-    // stores the image in localStorage.
+    // Keep the file small: the backend accepts pictures up to 1 MB.
     if (file.size > MAX_FILE_SIZE) {
       setError("Image must be smaller than 1 MB.");
       e.target.value = "";
@@ -59,12 +58,13 @@ export default function ProfileHeader() {
       try {
         const imageData = reader.result;
 
-        // Save picture in the temporary localStorage profile API.
         await updateProfilePicture(activeProfile.id, imageData);
 
         // Show the new picture immediately.
         setSavedPicture(imageData);
         setPreviewUrl(imageData);
+        // Reload the shared profiles so the picture is still there after switching profiles.
+        refreshProfiles();
       } catch (err) {
         setError(err.message);
       }
@@ -84,6 +84,7 @@ export default function ProfileHeader() {
       setSavedPicture("");
       setPreviewUrl("");
       setError("");
+      refreshProfiles();
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";

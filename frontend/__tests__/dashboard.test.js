@@ -1,14 +1,25 @@
 // Automated tests for the Nabad dashboard page.
 // These tests run automatically on every pull request.
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import DashboardPage from "../pages/dashboard";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileApi";
+import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+
+// The profile API is replaced by an in-memory fake of the backend.
+jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+
+// The sign-in state the profile provider sees; tests can change it.
+let mockStatus = "signedIn";
+jest.mock("../components/SessionTimeout", () => ({
+  ...jest.requireActual("../components/SessionTimeout"),
+  useSessionStatus: () => mockStatus,
+}));
 
 // The dashboard reads the active profile from the provider, just like in _app.js.
 function renderDashboard() {
-  render(
+  return render(
     <ActiveProfileProvider>
       <DashboardPage />
     </ActiveProfileProvider>
@@ -16,9 +27,11 @@ function renderDashboard() {
 }
 
 describe("Dashboard Page", () => {
-  // Start every test with empty storage, so the demo user is seeded fresh.
+  // Start every test signed in, with empty storage and a fresh demo user on the fake backend.
   beforeEach(() => {
     localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockStatus = "signedIn";
   });
 
   test("welcomes the demo user by name", async () => {
@@ -48,12 +61,45 @@ describe("Dashboard Page", () => {
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
   });
 
-  test.each([
-    ["no self profile", JSON.stringify({ profiles: [] })],
-    ["unexpected shape", JSON.stringify([{ id: "self", isSelf: true }])],
-    ["corrupt JSON", "{oops"],
-  ])("loading ends with an error message when data has %s", async (_, storedValue) => {
-    localStorage.setItem("nabad-profiles", storedValue);
+  test("greets the signed-in user by the name the backend returns, not a demo name", async () => {
+    fakeProfileApi.resetFakeProfiles({ fullName: "Rami Khoury", email: "rami@example.test" });
+
+    renderDashboard();
+
+    expect(await screen.findByText("Welcome, Rami Khoury")).toBeInTheDocument();
+    expect(screen.queryByText(/Demo User/)).not.toBeInTheDocument();
+  });
+
+  test("does not load any profile while signed out", async () => {
+    mockStatus = "signedOut";
+
+    renderDashboard();
+    await act(async () => {});
+
+    expect(fakeProfileApi.profileLoads).toBe(0);
+    expect(screen.queryByText(/Welcome/)).not.toBeInTheDocument();
+  });
+
+  test("forgets the profiles after signing out", async () => {
+    const child = await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
+    localStorage.setItem("nabad-active-profile-id", child.id);
+    const { rerender } = renderDashboard();
+    await screen.findByText("Welcome, Sami");
+
+    mockStatus = "ended";
+    rerender(
+      <ActiveProfileProvider>
+        <DashboardPage />
+      </ActiveProfileProvider>
+    );
+
+    await act(async () => {});
+    expect(screen.queryByText(/Welcome/)).not.toBeInTheDocument();
+    expect(localStorage.getItem("nabad-active-profile-id")).toBeNull();
+  });
+
+  test("loading ends with an error message when the profile cannot be loaded", async () => {
+    fakeProfileApi.failFakeLoading();
 
     renderDashboard();
 
