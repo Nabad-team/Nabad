@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
-const { contactSchema } = require("./contactSchema");
+const { contactSchema, normalizePhone, validPhone } = require("./contactSchema");
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
     // Sparse unique indexes skip absent fields, but not explicit null values.
     googleId: { type: String, unique: true, sparse: true, default: undefined },
     emergencyContact: { type: contactSchema, default: undefined },
+    // Editable on the profile page. An empty phone or null date means "not set".
+    phone: { type: String, default: "", set: normalizePhone, validate: { validator: (value) => value === "" || validPhone(value), message: "Invalid phone." } },
+    dateOfBirth: { type: Date, default: null, validate: { validator: (date) => date === null || date <= new Date(), message: "Date of birth cannot be in the future." } },
+    profilePicture: { type: String, default: "" },
     authVersion: { type: Number, default: 0 },
     onboardingCompleted: { type: Boolean, default: false },
 

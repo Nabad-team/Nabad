@@ -1,7 +1,7 @@
 // Same-site path, forwarded to the backend by the rewrite in next.config.js.
 const API_BASE = "/api";
 
-async function request(path, options = {}) {
+export async function request(path, options = {}) {
   const res = await fetch(API_BASE + path, {
     credentials: "include",
     headers: { "Content-Type": "application/json" },

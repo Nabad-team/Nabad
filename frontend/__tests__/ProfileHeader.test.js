@@ -9,6 +9,16 @@ import {
   addLinkedProfile,
   getMyProfile,
 } from "../lib/profileApi";
+import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+
+// The profile API is replaced by an in-memory fake of the backend.
+jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+
+// The profile provider loads profiles only while signed in; here the user is signed in.
+jest.mock("../components/SessionTimeout", () => ({
+  ...jest.requireActual("../components/SessionTimeout"),
+  useSessionStatus: () => "signedIn",
+}));
 
 // Renders the header inside the provider, like every page gets from _app.js.
 // Returns unmount so a test can "reload the page" by rendering again.
@@ -29,6 +39,7 @@ describe("Profile switcher", () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
 
     child = await addLinkedProfile({
       fullName: "Sami",
@@ -156,6 +167,7 @@ describe("Profile switcher", () => {
 describe("Profile picture upload", () => {
   beforeEach(() => {
     localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
   });
 
   test("shows the upload picture button", async () => {
@@ -356,5 +368,32 @@ describe("Profile picture upload", () => {
         name: "Upload picture",
       })
     ).toBeInTheDocument();
+  });
+});
+describe("Profile picture after switching profiles", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+  });
+
+  test("the saved picture is still shown after switching away and back", async () => {
+    const child = await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("button", { name: "Upload picture" });
+
+    await user.upload(
+      screen.getByTestId("profile-picture-input"),
+      new File(["fake image content"], "profile.png", { type: "image/png" })
+    );
+    await screen.findByRole("button", { name: "Change picture" });
+    // The picture was saved through the profile API.
+    await waitFor(async () => expect((await getMyProfile()).profilePicture).not.toBe(""));
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), child.id);
+    expect(await screen.findByRole("button", { name: "Upload picture" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), "self");
+    expect(await screen.findByRole("button", { name: "Change picture" })).toBeInTheDocument();
   });
 });

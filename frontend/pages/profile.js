@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import Head from "next/head";
 import ProfileHeader from "../components/ProfileHeader";
 import Dialog from "../components/Dialog";
@@ -15,6 +14,7 @@ import {
   MAX_LINKED_PROFILES,
 } from "../lib/profileApi";
 import { todayString, calculateAge } from "../lib/dates";
+import { signOut } from "../lib/session";
 
 const TEAL = "#0f766e";
 const RED = "#b91c1c";
@@ -50,8 +50,9 @@ function validate(form) {
   // Phone is optional. Ignore spaces, dashes, and brackets, then accept either
   // an international number (+ and 8 to 15 digits, e.g. +961 71 123 456)
   // or a Lebanese local number (7 or 8 digits, e.g. 71 123 456 or 03 123 456).
-  const phone = form.phone.replace(/[\s\-()]/g, "");
-  if (phone && !/^(\+\d{8,15}|0?\d{7,8})$/.test(phone)) {
+  // Same rule as the backend (validPhone in backend/src/models/contactSchema.js).
+  const phone = form.phone.replace(/[\s\-().]/g, "");
+  if (phone && !/^(\+[1-9]\d{7,14}|\d{7,8})$/.test(phone)) {
     errors.phone = "Enter a valid Lebanese or international phone number";
   }
 
@@ -111,9 +112,10 @@ export default function ProfilePage() {
   const [removeError, setRemoveError] = useState("");
 
   // "Delete my account" dialog.
-  const router = useRouter();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
+  // The password, or the email for accounts that only sign in with Google (they have no password).
+  const [deleteCredential, setDeleteCredential] = useState("");
+  const isGoogleAccount = profile?.authProvider === "google";
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
@@ -222,7 +224,7 @@ export default function ProfilePage() {
   }
 
   function openDeleteAccount() {
-    setDeletePassword("");
+    setDeleteCredential("");
     setDeleteConfirmText("");
     setDeleteError("");
     setIsDeletingAccount(true);
@@ -236,12 +238,13 @@ export default function ProfilePage() {
     }
     setDeleteError("");
     try {
-      await deleteAccount(deletePassword);
+      await deleteAccount(deleteCredential, { google: isGoogleAccount });
       resetActiveProfile();
+      // Signing out stops the inactivity timer and signs out other tabs too.
       // The landing page reads "?deleted=1" and shows a confirmation message.
-      router.push("/?deleted=1");
+      await signOut("/?deleted=1");
     } catch (err) {
-      // e.g. "Incorrect password". Nothing was deleted.
+      // e.g. "Password is incorrect." Nothing was deleted.
       setDeleteError(err.message);
     }
   }
@@ -440,12 +443,14 @@ export default function ProfilePage() {
             <li>Your emergency contacts</li>
           </ul>
           <form onSubmit={handleDeleteAccount} noValidate>
-            <label htmlFor="deletePassword">Password</label>
+            {/* Google-only accounts have no password, so they type their email instead. */}
+            <label htmlFor="deleteCredential">{isGoogleAccount ? "Email" : "Password"}</label>
             <input
-              id="deletePassword"
-              type="password"
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
+              id="deleteCredential"
+              type={isGoogleAccount ? "email" : "password"}
+              autoComplete={isGoogleAccount ? "off" : "current-password"}
+              value={deleteCredential}
+              onChange={(e) => setDeleteCredential(e.target.value)}
               style={inputStyle}
             />
 

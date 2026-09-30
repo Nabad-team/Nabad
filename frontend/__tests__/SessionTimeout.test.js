@@ -21,6 +21,10 @@ jest.mock("../lib/api", () => ({
   logout: (...args) => logout(...args),
 }));
 
+// The profile API is replaced by an in-memory fake of the backend.
+jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+
 const MINUTE = 60 * 1000;
 const WARNING_TEXT = "You'll be signed out in 2 minutes for your privacy.";
 
@@ -190,18 +194,38 @@ describe("SessionTimeout", () => {
     expect(getSession).toHaveBeenCalledTimes(1);
   });
 
-  test("hides the Sign out button while signed out", async () => {
-    getSession.mockRejectedValue(Object.assign(new Error("Not authenticated."), { status: 401 }));
+  // Nested like in _app.js: the profile provider reads the sign-in state from SessionTimeout.
+  function renderWithProfiles() {
     render(
-      <ActiveProfileProvider>
-        <SessionTimeout>
+      <SessionTimeout>
+        <ActiveProfileProvider>
           <ProfileHeader />
-        </SessionTimeout>
-      </ActiveProfileProvider>
+        </ActiveProfileProvider>
+      </SessionTimeout>
     );
+  }
+
+  test("hides the Sign out button and loads no profile while signed out", async () => {
+    fakeProfileApi.resetFakeProfiles();
+    getSession.mockRejectedValue(Object.assign(new Error("Not authenticated."), { status: 401 }));
+    renderWithProfiles();
+    await wait(0);
+
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Demo User (you)" })).not.toBeInTheDocument();
+    expect(fakeProfileApi.profileLoads).toBe(0);
+  });
+
+  test("loads the profiles once signed in and forgets them after timing out", async () => {
+    fakeProfileApi.resetFakeProfiles();
+    renderWithProfiles();
     await wait(0);
 
     expect(await screen.findByRole("option", { name: "Demo User (you)" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+
+    await wait(30 * MINUTE);
+
+    expect(screen.queryByRole("option", { name: "Demo User (you)" })).not.toBeInTheDocument();
   });
 });
