@@ -151,12 +151,15 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
     if (!code || !state || state !== req.cookies?.googleOAuthState) return res.status(400).send("Google sign-in could not be verified.");
     res.clearCookie("googleOAuthState", cookieOptions());
     const profile = await exchangeGoogleCode(code);
-    let user = await User.findOne({ $or: [{ googleId: profile.googleId }, { email: profile.email }] });
+    let user = await User.findOne({ googleId: profile.googleId });
     if (!user) {
+      // Never link by email: signup does not prove email ownership, so a matching account may not belong to this Google user.
+      const existing = await User.findOne({ email: profile.email }).select("googleId");
+      if (existing) {
+        logEvent("google_signin_refused", { requestId: req.requestId, reason: existing.googleId ? "google_id_conflict" : "email_exists" });
+        return res.redirect(process.env.CLIENT_ORIGIN + "/login?error=" + (existing.googleId ? "google_signin_failed" : "google_account_exists"));
+      }
       user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
-    } else {
-      user.googleId = profile.googleId;
-      await user.save();
     }
     if (user.twoFactorEnabled) {
       await issueTwoFactorCode(req, user);

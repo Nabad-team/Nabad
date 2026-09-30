@@ -25,6 +25,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof query.challenge === "string") setChallenge(query.challenge);
     if (query.error === "google_signin_failed") setError("Google sign-in could not be completed. Please try again.");
+    if (query.error === "google_account_exists") setError("An account with this email already exists. Sign in with your password.");
   }, [query.challenge, query.error]);
 
   async function handleSubmit(e) {
