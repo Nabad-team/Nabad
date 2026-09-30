@@ -10,6 +10,6 @@ async function start() {
   }));
 }
 if (require.main === module) {
-  start().catch((error) => { logEvent("startup_failed", { errorType: error.name }); process.exitCode = 1; });
+  start().catch((error) => { logEvent("startup_failed", { errorType: error.name, errorMessage: error.message }); process.exitCode = 1; });
 }
 module.exports = { start };
