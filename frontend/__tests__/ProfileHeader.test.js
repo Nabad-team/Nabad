@@ -1,7 +1,7 @@
 // Automated tests for switching profiles and profile picture upload.
 // These tests run automatically on every pull request.
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProfileHeader from "../components/ProfileHeader";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
@@ -395,5 +395,53 @@ describe("Profile picture after switching profiles", () => {
 
     await user.selectOptions(screen.getByLabelText("Active profile"), "self");
     expect(await screen.findByRole("button", { name: "Change picture" })).toBeInTheDocument();
+  });
+});
+
+/* =========================================================
+   DEFAULT AVATAR TESTS
+   ========================================================= */
+
+describe("Default avatar", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+  });
+
+  // No image may come from another site (via.placeholder.com used to, and it went offline).
+  function externalUrls(container) {
+    return [...container.querySelectorAll("[src],[href]")]
+      .map((el) => el.getAttribute("src") || el.getAttribute("href"))
+      .filter((url) => /^(https?:)?\/\//i.test(url));
+  }
+
+  test("shows initials for you and for a linked profile, without external images", async () => {
+    await addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2015-03-10", relationship: "child" });
+    const user = userEvent.setup();
+    const { container } = renderHeader();
+
+    const own = await screen.findByRole("img", { name: "Profile picture of Demo User" });
+    expect(own).toHaveTextContent("DU");
+    expect(container.querySelector("img")).toBeNull();
+    expect(externalUrls(container)).toEqual([]);
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), screen.getByRole("option", { name: "Sami Haddad (child)" }));
+    expect(await screen.findByRole("img", { name: "Profile picture of Sami Haddad" })).toHaveTextContent("SH");
+    expect(externalUrls(container)).toEqual([]);
+  });
+
+  test("falls back to initials when the saved picture cannot be loaded", async () => {
+    fakeProfileApi.resetFakeProfiles({ profilePicture: "data:image/png;base64,broken" });
+    const { container } = renderHeader();
+
+    await waitFor(() => expect(container.querySelector("img")).not.toBeNull());
+    const picture = screen.getByRole("img", { name: "Profile picture of Demo User" });
+    expect(picture).toHaveAttribute("src", "data:image/png;base64,broken");
+    fireEvent.error(picture);
+
+    expect(screen.getByRole("img", { name: "Profile picture of Demo User" })).toHaveTextContent("DU");
+    expect(container.querySelector("img")).toBeNull();
+    // The picture is still saved, so it can still be changed or removed.
+    expect(screen.getByRole("button", { name: "Remove picture" })).toBeInTheDocument();
   });
 });
