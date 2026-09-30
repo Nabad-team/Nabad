@@ -1,10 +1,14 @@
 const crypto = require("crypto");
+// Greedy up to the last "@" so unescaped "@" or "/" in a password is still covered.
+const redactCredentials = (text) => String(text).replace(/\/\/\S*@/g, "//***@");
 // Allowlisted fields only: exclude credentials, contact details, query strings and DB messages.
+// errorMessage is for startup failures only and always has connection-string credentials redacted.
 function logEvent(event, fields = {}) {
   const entry = { time: new Date().toISOString(), event };
   for (const key of ["requestId", "method", "route", "status", "durationMs", "errorType", "environment"]) {
     if (fields[key] !== undefined) entry[key] = fields[key];
   }
+  if (fields.errorMessage !== undefined) entry.errorMessage = redactCredentials(fields.errorMessage);
   process.stdout.write(JSON.stringify(entry) + "\n");
 }
 function logError(req, error) {
