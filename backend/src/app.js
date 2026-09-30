@@ -7,6 +7,8 @@ function createApp() {
   const config = loadConfig();
   const app = express();
   app.disable("x-powered-by");
+  // Number of proxies in front of the app (Vercel rewrite + Render = 2), so rate limits see the visitor's IP.
+  if (config.trustProxy) app.set("trust proxy", config.trustProxy);
   app.use(requestLogger);
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");

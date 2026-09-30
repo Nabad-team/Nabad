@@ -175,3 +175,18 @@ test("upgraded mail package can generate reset email content",async()=>{
   const result=await transport.sendMail({from:"nabad@example.test",to:"elias@example.test",subject:"Reset password",text:"Test reset message"});
   assert.match(result.message.toString(),/Test reset message/);
 });
+test("behind the Vercel and Render proxies, login rate limits count each visitor separately",async()=>{
+  assert.throws(()=>loadConfig({MONGO_URI:"mongodb://localhost:27017",JWT_SECRET:"x".repeat(32),TRUST_PROXY:"yes"}));
+  process.env.TRUST_PROXY="2";
+  const { createApp } = require("../src/app");
+  const proxied=createApp().listen(0,"127.0.0.1"); delete process.env.TRUST_PROXY;
+  await new Promise(resolve=>proxied.once("listening",resolve));
+  const login=visitor=>fetch(`http://127.0.0.1:${proxied.address().port}/api/auth/login`,{method:"POST",
+    headers:{"Content-Type":"application/json",Origin:process.env.CLIENT_ORIGIN,"X-Forwarded-For":`${visitor}, 76.76.21.1`},
+    body:JSON.stringify({email:"nobody@example.test",password:"wrong password"})});
+  try {
+    for (let i=0;i<20;i++) assert.equal((await login("203.0.113.1")).status,401);
+    assert.equal((await login("203.0.113.1")).status,429);
+    assert.equal((await login("203.0.113.2")).status,401);
+  } finally { await new Promise(resolve=>proxied.close(resolve)); }
+});
