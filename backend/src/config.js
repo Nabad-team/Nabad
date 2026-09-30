@@ -9,6 +9,9 @@ function missingProductionVars(env) {
   return PRODUCTION_REQUIRED.filter((key) => !present(env, key) && !(key === "EMAIL_FROM" && present(env, "MAIL_FROM")));
 }
 function missingGoogleCredentials(env = process.env) { return GOOGLE_CREDENTIALS.filter((key) => !present(env, key)); }
+// Turns email 2FA on for new email/password accounts at signup. OFF unless set to exactly "true".
+// Keep it off until signup verifies the email: a mistyped email would lock the user out at their next sign-in.
+function twoFactorOnSignup(env = process.env) { return env.TWO_FACTOR_ON_SIGNUP === "true"; }
 function loadConfig(env = process.env) {
   const environment = env.APP_ENV || env.NODE_ENV || "development";
   if (!["development", "test", "staging", "production"].includes(environment)) throw new Error("Invalid APP_ENV.");
@@ -29,6 +32,7 @@ function loadConfig(env = process.env) {
   if (env.APP_ENV && secure && (!env.MONGO_DB_NAME || !env.MONGO_DB_NAME.endsWith(`_${environment}`))) {
     throw new Error("MONGO_DB_NAME must end with the selected environment, such as nabad_staging.");
   }
+  if (![undefined, "", "true", "false"].includes(env.TWO_FACTOR_ON_SIGNUP)) throw new Error('TWO_FACTOR_ON_SIGNUP must be "true" or "false".');
   const trustProxy = Number(env.TRUST_PROXY || 0);
   if (!Number.isInteger(trustProxy) || trustProxy < 0) throw new Error("TRUST_PROXY must be a whole number of proxy hops.");
   return { environment, secure, clientOrigin, databaseName: env.MONGO_DB_NAME, trustProxy };
@@ -42,4 +46,4 @@ const TRUSTED_DEVICE_COOKIE = "trustedDevice";
 function trustedDeviceCookieOptions() {
   return { httpOnly: true, secure: true, sameSite: "lax", path: "/api/auth" };
 }
-module.exports = { loadConfig, cookieOptions, missingGoogleCredentials, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions };
+module.exports = { loadConfig, cookieOptions, missingGoogleCredentials, twoFactorOnSignup, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions };

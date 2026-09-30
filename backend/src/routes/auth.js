@@ -9,7 +9,7 @@ const User = require("../models/User");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
-const { cookieOptions, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
+const { cookieOptions, twoFactorOnSignup, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
 const { logEvent, logError } = require("../logger");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
@@ -148,7 +148,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
     if (password.length < 8 || Buffer.byteLength(password) > 72) return res.status(400).json({ error: "Password must be at least 8 characters and at most 72 bytes." });
     const normalizedEmail = String(email).trim().toLowerCase();
     if (await User.findOne({ email: normalizedEmail })) return res.status(409).json({ error: "An account with this email already exists." });
-    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12) });
+    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup() });
     setAuthCookie(res, signAccessToken(user));
     return res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) { logError(req, err); if (err.code === 11000) return res.status(409).json({ error: "An account with this email already exists." }); return res.status(500).json({ error: "Something went wrong. Please try again." }); }

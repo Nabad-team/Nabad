@@ -30,6 +30,9 @@ services:
         value: 12h
       - key: SESSION_WARNING_BEFORE
         value: 2m
+      # Keep "false" until signup verifies the email; with "true" a mistyped email locks the user out.
+      - key: TWO_FACTOR_ON_SIGNUP
+        value: "false"
       # Render's free tier blocks outbound SMTP on 25, 465 and 587, so sending hung until it timed out.
       # Brevo also accepts SMTP on 2525 (STARTTLS, so SMTP_SECURE stays false).
       - key: SMTP_PORT
