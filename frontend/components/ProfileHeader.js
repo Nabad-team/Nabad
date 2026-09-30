@@ -139,6 +139,12 @@ export default function ProfileHeader() {
             </select>
           )}
 
+          {signedIn && (
+            <a href="/security" style={{ padding: 8, color: TEAL, fontWeight: "bold" }}>
+              Security
+            </a>
+          )}
+
           {/* Signs out in every open tab (see lib/session.js). Only shown while signed in. */}
           {signedIn && (
             <button

@@ -36,6 +36,8 @@ const userSchema = new mongoose.Schema(
     twoFactorCodeExpires: { type: Date, default: null },
     twoFactorCodeAttempts: { type: Number, default: 0 },
     twoFactorCodeLastSent: { type: Date, default: null },
+    // Browsers that passed 2FA with "remember this device". Only a hash of each random token is stored.
+    trustedDevices: { type: [{ _id: false, tokenHash: { type: String, required: true }, expiresAt: { type: Date, required: true } }], default: [] },
   },
   { timestamps: true }
 );

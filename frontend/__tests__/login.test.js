@@ -67,7 +67,22 @@ describe("Login Page", () => {
     fireEvent.change(screen.getByLabelText("Verification code"), { target: { value: "123456" } });
     fireEvent.click(screen.getByRole("button", { name: "Verify code" }));
 
-    await waitFor(() => expect(verifyTwoFactor).toHaveBeenCalledWith("challenge-123", "123456"));
+    await waitFor(() => expect(verifyTwoFactor).toHaveBeenCalledWith("challenge-123", "123456", false));
+  });
+
+  test("sends the remember-this-device choice with the 2FA code", async () => {
+    const router = require("next/router");
+    router.useRouter = () => ({ push, query: { challenge: "challenge-123" } });
+    verifyTwoFactor.mockResolvedValue({ user: { id: "1" } });
+
+    render(<LoginPage />);
+    const remember = screen.getByLabelText("Remember this device for 30 days");
+    expect(remember).not.toBeChecked();
+    fireEvent.click(remember);
+    fireEvent.change(screen.getByLabelText("Verification code"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Verify code" }));
+
+    await waitFor(() => expect(verifyTwoFactor).toHaveBeenCalledWith("challenge-123", "123456", true));
   });
 
   test("explains an automatic sign-out after inactivity", () => {

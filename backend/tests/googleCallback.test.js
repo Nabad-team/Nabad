@@ -144,6 +144,13 @@ test("a refused sign-in logs only the reason and the existing account's id, neve
   for (const secret of ["private@example.test", "google-secret-1", "google-secret-2", "google-kept"]) assert.equal(text.includes(secret), false, secret);
 });
 
+test("Google sign-in skips the email 2FA step, even for an account that turned 2FA on earlier", async () => {
+  await User.create({ name: "G", email: "g2fa@example.test", googleId: "google-2fa", authProvider: "google", twoFactorEnabled: true, passwordHash: await bcrypt.hash(password, 4) });
+  const res = await googleSignIn({ sub: "google-2fa", email: "g2fa@example.test", name: "G" });
+  assert.equal(res.location, "http://localhost:3000/dashboard");
+  assert.match(res.cookie, /accessToken=/);
+});
+
 test("the users collection has unique indexes on email and googleId", async () => {
   const indexes = await User.collection.indexes();
   const email = indexes.find(index => index.key.email === 1);

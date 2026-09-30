@@ -3,6 +3,7 @@ import { beginTwoFactorSetup, enableTwoFactor, disableTwoFactor, getMe } from ".
 
 export default function SecurityPage() {
   const [enabled, setEnabled] = useState(false);
+  const [authProvider, setAuthProvider] = useState("");
   const [setupStarted, setSetupStarted] = useState(false);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -10,7 +11,7 @@ export default function SecurityPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    getMe().then(({ user }) => setEnabled(user.twoFactorEnabled)).catch((err) => setError(err.message));
+    getMe().then(({ user }) => { setEnabled(user.twoFactorEnabled); setAuthProvider(user.authProvider || "password"); }).catch((err) => setError(err.message));
   }, []);
 
   async function setup() {
@@ -34,13 +35,17 @@ export default function SecurityPage() {
   return (
     <main style={{ maxWidth: 560, margin: "40px auto", padding: 16, fontFamily: "sans-serif" }}>
       <h1>Account security</h1>
-      <p>Two-factor authentication sends a one-time verification code to your email when you sign in.</p>
       {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
+      {authProvider === "google" && (
+        <p>You sign in with Google, so Google protects your sign-in and Nabad does not send email codes. To add a second step, turn on 2-Step Verification in your Google account.</p>
+      )}
+      {authProvider === "password" && <>
+      <p>Two-factor authentication sends a one-time verification code to your email when you sign in.</p>
       {message && <p role="status">{message}</p>}
       {enabled ? (
         <form onSubmit={disable}>
           <h2>Two-factor authentication is on</h2>
-          <p>A fresh code is sent at each sign-in. You need your password to turn 2FA off.</p>
+          <p>A fresh code is sent at each sign-in, unless you chose to remember the device. You need your password to turn 2FA off, which also forgets every remembered device.</p>
           <label htmlFor="password">Password</label>
           <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           <button style={{ marginTop: 12 }}>Turn off 2FA</button>
@@ -55,6 +60,7 @@ export default function SecurityPage() {
           <button style={{ marginTop: 12 }}>Enable 2FA</button>
         </form>
       )}
+      </>}
       <p><a href="/profile">Back to profile</a></p>
     </main>
   );

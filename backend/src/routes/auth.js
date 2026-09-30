@@ -9,7 +9,7 @@ const User = require("../models/User");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
-const { cookieOptions } = require("../config");
+const { cookieOptions, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
 const { logEvent, logError } = require("../logger");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
@@ -20,7 +20,10 @@ const TWO_FACTOR_CODE_TTL_MS = 10 * 60 * 1000;
 const TWO_FACTOR_RESEND_MS = 60 * 1000;
 const TWO_FACTOR_MAX_ATTEMPTS = 5;
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const GOOGLE_2FA_MESSAGE = "Google accounts are protected by Google sign-in and do not use email codes.";
 const SMTP_TIMEOUT_MS = 10 * 1000;
+const TRUSTED_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_TRUSTED_DEVICES = 10;
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many login attempts. Try again later." } });
 const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
@@ -72,7 +75,20 @@ async function issueTwoFactorCode(req, user) {
 function twoFactorChallenge(user) {
   return jwt.sign({ sub: user._id, purpose: "2fa", ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "10m" });
 }
-async function completeTwoFactor(challenge, code, res) {
+// True when the request carries a remembered-device token for this user that has not expired.
+function isTrustedDevice(user, token) {
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return false;
+  const candidate = Buffer.from(hash(token));
+  return (user.trustedDevices || []).some((device) => device.expiresAt > new Date() && crypto.timingSafeEqual(Buffer.from(device.tokenHash), candidate));
+}
+// Stores a hash of a new random token (keeping the newest MAX_TRUSTED_DEVICES) and gives the browser the token.
+async function rememberDevice(user, res) {
+  const token = crypto.randomBytes(32).toString("hex");
+  await User.updateOne({ _id: user._id }, { $pull: { trustedDevices: { expiresAt: { $lte: new Date() } } } });
+  await User.updateOne({ _id: user._id }, { $push: { trustedDevices: { $each: [{ tokenHash: hash(token), expiresAt: new Date(Date.now() + TRUSTED_DEVICE_TTL_MS) }], $sort: { expiresAt: 1 }, $slice: -MAX_TRUSTED_DEVICES } } });
+  res.cookie(TRUSTED_DEVICE_COOKIE, token, { ...trustedDeviceCookieOptions(), maxAge: TRUSTED_DEVICE_TTL_MS });
+}
+async function completeTwoFactor(challenge, code, res, remember) {
   const payload = jwt.verify(challenge, process.env.JWT_SECRET);
   if (payload.purpose !== "2fa") throw new Error("Invalid verification challenge.");
   const user = await User.findById(payload.sub);
@@ -98,6 +114,7 @@ async function completeTwoFactor(challenge, code, res) {
     { new: true }
   );
   if (!verifiedUser) throw new Error("Invalid or expired verification code.");
+  if (remember === true) await rememberDevice(verifiedUser, res);
   setAuthCookie(res, signAccessToken(verifiedUser));
   return { id: verifiedUser._id, name: verifiedUser.name, email: verifiedUser.email };
 }
@@ -161,10 +178,7 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
       }
       user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
     }
-    if (user.twoFactorEnabled) {
-      await issueTwoFactorCode(req, user);
-      return res.redirect(process.env.CLIENT_ORIGIN + "/login?challenge=" + encodeURIComponent(twoFactorChallenge(user)));
-    }
+    // No email code here: Google has already verified the person, with its own 2-step verification.
     setAuthCookie(res, signAccessToken(user));
     return res.redirect(process.env.CLIENT_ORIGIN + "/dashboard");
   } catch (err) {
@@ -188,7 +202,7 @@ router.post("/login", loginLimiter, async (req, res) => {
       return res.status(401).json(genericError);
     }
     user.failedLoginAttempts = 0; user.lockUntil = null; await user.save();
-    if (user.twoFactorEnabled) {
+    if (user.twoFactorEnabled && !isTrustedDevice(user, req.cookies?.[TRUSTED_DEVICE_COOKIE])) {
       await issueTwoFactorCode(req, user);
       return res.json({ twoFactorRequired: true, challenge: twoFactorChallenge(user), codeDelivery: "email", expiresInSeconds: 600 });
     }
@@ -203,7 +217,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 });
 
 router.post("/2fa/verify", codeLimiter, async (req, res) => {
-  try { return res.json({ user: await completeTwoFactor(req.body.challenge, req.body.code, res) }); }
+  try { return res.json({ user: await completeTwoFactor(req.body.challenge, req.body.code, res, req.body.rememberDevice) }); }
   catch (err) { return res.status(401).json({ error: err.message || "Invalid or expired verification code." }); }
 });
 
@@ -225,6 +239,7 @@ router.post("/2fa/setup", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: "User not found." });
+    if (user.authProvider === "google") return res.status(400).json({ error: GOOGLE_2FA_MESSAGE });
     await issueTwoFactorCode(req, user);
     return res.json({ message: "A verification code was sent to your email.", expiresInSeconds: 600 });
   } catch (err) {
@@ -236,6 +251,7 @@ router.post("/2fa/setup", requireAuth, async (req, res) => {
 router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
+    if (user?.authProvider === "google") return res.status(400).json({ error: GOOGLE_2FA_MESSAGE });
     if (!user || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) return res.status(400).json({ error: "Start two-factor setup first." });
     if (user.twoFactorCodeExpires.getTime() <= Date.now()) return res.status(400).json({ error: "The verification code has expired. Start setup again." });
     const candidate = hash(req.body.code);
@@ -257,7 +273,9 @@ router.post("/2fa/disable", codeLimiter, requireAuth, asyncRoute(async (req, res
   if (!user || !user.twoFactorEnabled) return res.status(400).json({ error: "Two-factor authentication is not enabled." });
   if (!(await bcrypt.compare(req.body.password || "", user.passwordHash))) return res.status(400).json({ error: "Password is incorrect." });
   user.twoFactorEnabled = false; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+  user.trustedDevices = [];
   await user.save();
+  res.clearCookie(TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions());
   return res.json({ twoFactorEnabled: false });
 }));
 
@@ -288,7 +306,7 @@ router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await User.findOneAndUpdate(
     { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },
-    { $set: { passwordHash, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null }, $inc: { authVersion: 1 } }
+    { $set: { passwordHash, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [] }, $inc: { authVersion: 1 } }
   );
   if (!user) return res.status(400).json({ error: "This reset link is invalid or expired. Request a new one." });
   return res.json({ message: "Password updated. You can now log in." });

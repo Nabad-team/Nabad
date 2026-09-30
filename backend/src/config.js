@@ -37,4 +37,9 @@ function cookieOptions() {
   const environment = process.env.APP_ENV || process.env.NODE_ENV;
   return { httpOnly: true, secure: ["staging", "production"].includes(environment), sameSite: "lax", path: "/" };
 }
-module.exports = { loadConfig, cookieOptions, missingGoogleCredentials };
+// "Remember this device" cookie: always Secure, and sent only to the auth routes that read it.
+const TRUSTED_DEVICE_COOKIE = "trustedDevice";
+function trustedDeviceCookieOptions() {
+  return { httpOnly: true, secure: true, sameSite: "lax", path: "/api/auth" };
+}
+module.exports = { loadConfig, cookieOptions, missingGoogleCredentials, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions };
