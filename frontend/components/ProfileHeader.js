@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
+import Avatar from "./Avatar";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { signOut } from "../lib/session";
 import { useSignedIn } from "./SessionTimeout";
@@ -94,10 +95,7 @@ export default function ProfileHeader() {
     }
   }
 
-  const displayedPicture =
-    previewUrl ||
-    savedPicture ||
-    "https://via.placeholder.com/100?text=Profile";
+  const displayedPicture = previewUrl || savedPicture;
 
   const hasPicture =
     Boolean(previewUrl) || Boolean(savedPicture);
@@ -171,17 +169,7 @@ export default function ProfileHeader() {
             flexWrap: "wrap",
           }}
         >
-          <img
-            src={displayedPicture}
-            alt="Profile"
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: `3px solid ${TEAL}`,
-            }}
-          />
+          <Avatar name={activeProfile.fullName} src={displayedPicture} size={100} borderColor={TEAL} />
 
           <div>
             <input
