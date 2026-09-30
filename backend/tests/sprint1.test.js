@@ -120,11 +120,12 @@ test("expired access tokens are rejected",async()=>{
 });
 test("staging and production require distinct database names and secure cookies",()=>{
   const common={MONGO_URI:"mongodb://localhost:27017",JWT_SECRET:"x".repeat(32),CLIENT_ORIGIN:"https://app.example"};
+  const prodVars={SMTP_HOST:"smtp",SMTP_PORT:"2525",SMTP_USER:"u",SMTP_PASS:"p",EMAIL_FROM:"f",GOOGLE_CLIENT_ID:"id",GOOGLE_CLIENT_SECRET:"s",GOOGLE_REDIRECT_URI:"https://app.example/cb"};
   const stage=loadConfig({...common,APP_ENV:"staging",MONGO_DB_NAME:"nabad_staging"});
-  const prod=loadConfig({...common,APP_ENV:"production",MONGO_DB_NAME:"nabad_production"});
+  const prod=loadConfig({...common,...prodVars,APP_ENV:"production",MONGO_DB_NAME:"nabad_production"});
   assert.notEqual(stage.databaseName,prod.databaseName);
   assert.throws(()=>loadConfig({...common,APP_ENV:"staging",MONGO_DB_NAME:"nabad_production"}));
-  assert.throws(()=>loadConfig({...common,APP_ENV:"production",CLIENT_ORIGIN:"http://app.example"}));
+  assert.throws(()=>loadConfig({...common,...prodVars,APP_ENV:"production",MONGO_DB_NAME:"nabad_production",CLIENT_ORIGIN:"http://app.example"}),/HTTPS/);
   process.env.APP_ENV="staging"; assert.equal(cookieOptions().secure,true); process.env.APP_ENV="test";
 });
 test("readiness checks MongoDB and reports failure without leaking details",async(t)=>{
