@@ -113,6 +113,11 @@ test("password reset consumes its token atomically and invalidates sessions and 
   assert.equal((await request("/auth/me",{cookie})).status,401);
   assert.equal(await bcrypt.compare("New password 123!",(await User.findById(account._id)).passwordHash),true);
 });
+test("google sign-in answers 503 with a readable message when it is not configured",async()=>{
+  delete process.env.GOOGLE_CLIENT_ID; delete process.env.GOOGLE_CLIENT_SECRET;
+  const res=await request("/auth/google");
+  assert.equal(res.status,503); assert.equal(res.body.error,"Google sign-in is not configured.");
+});
 test("expired access tokens are rejected",async()=>{
   const account=await user();
   const cookie=jwt.sign({sub:String(account._id),ver:0},process.env.JWT_SECRET,{expiresIn:-1});
@@ -120,11 +125,12 @@ test("expired access tokens are rejected",async()=>{
 });
 test("staging and production require distinct database names and secure cookies",()=>{
   const common={MONGO_URI:"mongodb://localhost:27017",JWT_SECRET:"x".repeat(32),CLIENT_ORIGIN:"https://app.example"};
+  const prodVars={SMTP_HOST:"smtp",SMTP_PORT:"2525",SMTP_USER:"u",SMTP_PASS:"p",EMAIL_FROM:"f",GOOGLE_REDIRECT_URI:"https://app.example/cb"};
   const stage=loadConfig({...common,APP_ENV:"staging",MONGO_DB_NAME:"nabad_staging"});
-  const prod=loadConfig({...common,APP_ENV:"production",MONGO_DB_NAME:"nabad_production"});
+  const prod=loadConfig({...common,...prodVars,APP_ENV:"production",MONGO_DB_NAME:"nabad_production"});
   assert.notEqual(stage.databaseName,prod.databaseName);
   assert.throws(()=>loadConfig({...common,APP_ENV:"staging",MONGO_DB_NAME:"nabad_production"}));
-  assert.throws(()=>loadConfig({...common,APP_ENV:"production",CLIENT_ORIGIN:"http://app.example"}));
+  assert.throws(()=>loadConfig({...common,...prodVars,APP_ENV:"production",MONGO_DB_NAME:"nabad_production",CLIENT_ORIGIN:"http://app.example"}),/HTTPS/);
   process.env.APP_ENV="staging"; assert.equal(cookieOptions().secure,true); process.env.APP_ENV="test";
 });
 test("readiness checks MongoDB and reports failure without leaking details",async(t)=>{

@@ -30,8 +30,10 @@ services:
         value: 12h
       - key: SESSION_WARNING_BEFORE
         value: 2m
+      # Render's free tier blocks outbound SMTP on 25, 465 and 587, so sending hung until it timed out.
+      # Brevo also accepts SMTP on 2525 (STARTTLS, so SMTP_SECURE stays false).
       - key: SMTP_PORT
-        value: "587"
+        value: "2525"
       - key: SMTP_SECURE
         value: "false"
       - key: MONGO_URI
@@ -44,5 +46,14 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
-      - key: MAIL_FROM
+      - key: EMAIL_FROM
         sync: false
+      # Optional: leave both Google credentials empty to disable Google sign-in (never set just one).
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # Goes through the frontend's /api rewrite so the OAuth state cookie is on the same site.
+      # Must also be listed as an authorized redirect URI on the Google OAuth client.
+      - key: GOOGLE_REDIRECT_URI
+        value: https://nabad-psi.vercel.app/api/auth/google/callback

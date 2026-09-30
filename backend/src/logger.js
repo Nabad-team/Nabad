@@ -5,7 +5,7 @@ const redactCredentials = (text) => String(text).replace(/\/\/\S*@/g, "//***@");
 // errorMessage is for startup failures only and always has connection-string credentials redacted.
 function logEvent(event, fields = {}) {
   const entry = { time: new Date().toISOString(), event };
-  for (const key of ["requestId", "method", "route", "status", "durationMs", "errorType", "errorCode", "environment"]) {
+  for (const key of ["requestId", "method", "route", "status", "durationMs", "errorType", "errorCode", "environment", "missingVariables"]) {
     if (fields[key] !== undefined) entry[key] = fields[key];
   }
   if (fields.errorMessage !== undefined) entry.errorMessage = redactCredentials(fields.errorMessage);
