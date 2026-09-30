@@ -156,7 +156,7 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
       // Never link by email: signup does not prove email ownership, so a matching account may not belong to this Google user.
       const existing = await User.findOne({ email: profile.email }).select("googleId");
       if (existing) {
-        logEvent("google_signin_refused", { requestId: req.requestId, reason: existing.googleId ? "google_id_conflict" : "email_exists" });
+        logEvent("google_signin_refused", { requestId: req.requestId, reason: existing.googleId ? "google_id_conflict" : "email_exists", userId: String(existing._id) });
         return res.redirect(process.env.CLIENT_ORIGIN + "/login?error=" + (existing.googleId ? "google_signin_failed" : "google_account_exists"));
       }
       user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });

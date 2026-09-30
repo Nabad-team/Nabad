@@ -45,6 +45,14 @@ after(async () => {
 });
 beforeEach(async () => { await User.deleteMany({}); });
 
+// Captures the JSON log lines written while fn runs.
+async function captureLogs(fn) {
+  const lines = [], write = process.stdout.write;
+  process.stdout.write = (chunk, ...rest) => { lines.push(String(chunk)); return write.call(process.stdout, chunk, ...rest); };
+  try { await fn(); } finally { process.stdout.write = write; }
+  return lines.flatMap(line => line.split("\n")).filter(Boolean).map(line => { try { return JSON.parse(line); } catch { return null; } }).filter(Boolean);
+}
+
 async function googleSignIn(profile) {
   googleProfile = profile;
   const response = await realFetch(base + "/auth/google/callback?code=abc&state=s1", { redirect: "manual", headers: { Cookie: "googleOAuthState=s1" } });
@@ -116,6 +124,24 @@ test("a googleId match wins over an email match on another account", async () =>
   assert.equal(res.location, "http://localhost:3000/dashboard");
   assert.equal((await User.findById(linked._id)).googleId, "google-moved");
   assert.equal((await User.findById(other._id)).googleId, undefined);
+});
+
+test("a refused sign-in logs only the reason and the existing account's id, never the email or Google ID", async () => {
+  const unlinked = await User.create({ name: "Password User", email: "private@example.test", passwordHash: await bcrypt.hash(password, 4) });
+  const linked = await User.create({ name: "Linked", email: "linked.private@example.test", googleId: "google-kept", authProvider: "google", passwordHash: await bcrypt.hash(password, 4) });
+  const logs = await captureLogs(async () => {
+    await googleSignIn({ sub: "google-secret-1", email: "private@example.test", name: "A" });
+    await googleSignIn({ sub: "google-secret-2", email: "linked.private@example.test", name: "B" });
+  });
+  const refused = logs.filter(entry => entry.event === "google_signin_refused");
+  assert.equal(refused.length, 2);
+  assert.deepEqual(refused.map(({ reason, userId }) => ({ reason, userId })), [
+    { reason: "email_exists", userId: String(unlinked._id) },
+    { reason: "google_id_conflict", userId: String(linked._id) },
+  ]);
+  for (const entry of refused) assert.deepEqual(Object.keys(entry).sort(), ["event", "reason", "requestId", "time", "userId"]);
+  const text = JSON.stringify(logs);
+  for (const secret of ["private@example.test", "google-secret-1", "google-secret-2", "google-kept"]) assert.equal(text.includes(secret), false, secret);
 });
 
 test("the users collection has unique indexes on email and googleId", async () => {
