@@ -1,7 +1,7 @@
 // The browser only ever talks to this site: /api/* is forwarded to the backend.
 // Keeping the API on the same site as the pages lets the login cookie (SameSite=Lax) work
 // even though the backend is hosted on a different domain.
-// BACKEND_URL is the backend origin without /api, e.g. https://nabad-backend.onrender.com.
+// BACKEND_URL is the backend origin without /api, e.g. https://nabad-backend-nhv5.onrender.com.
 // Rewrites are fixed at build time, so redeploy after changing it.
 const backendUrl = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
