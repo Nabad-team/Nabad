@@ -1,13 +1,16 @@
 // The browser only ever talks to this site: /api/* is forwarded to the backend.
 // Keeping the API on the same site as the pages lets the login cookie (SameSite=Lax) work
 // even though the backend is hosted on a different domain.
-// BACKEND_URL is the backend origin without /api, e.g. https://nabad-backend.onrender.com.
+// BACKEND_URL is the backend origin without /api, e.g. https://nabad-backend-nhv5.onrender.com.
 // Rewrites are fixed at build time, so redeploy after changing it.
-const backendUrl = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
-
+// Production must not build half-configured: without BACKEND_URL every /api request would fail.
+if (process.env.VERCEL_ENV === "production" && !process.env.BACKEND_URL?.trim()) {
+  throw new Error("Missing required environment variable: BACKEND_URL (the backend origin without /api).");
+}
 if (process.env.VERCEL && !process.env.BACKEND_URL) {
   console.warn("BACKEND_URL is not set: /api requests will not reach the backend.");
 }
+const backendUrl = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 module.exports = {
   async rewrites() {

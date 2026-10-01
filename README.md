@@ -12,7 +12,7 @@ npx vercel --prod
 
 (On Windows PowerShell, use `npx.cmd vercel --prod` if `npx` is blocked.) The first time on a new machine, run `npx vercel login`, then `npx vercel link --project nabad` to connect the folder to the project. You need to be a member of the `nabad3` Vercel team.
 
-The browser only talks to the frontend: `frontend/next.config.js` forwards every `/api/*` request to the backend, so the login cookie stays on the frontend site. Set `BACKEND_URL` in the Vercel project (Settings → Environment Variables) to the backend origin without `/api`, e.g. `https://nabad-backend.onrender.com`, then redeploy; the rewrite is fixed at build time. Locally it defaults to `http://localhost:5000`.
+The browser only talks to the frontend: `frontend/next.config.js` forwards every `/api/*` request to the backend, so the login cookie stays on the frontend site. Set `BACKEND_URL` in the Vercel project (Settings → Environment Variables) to the backend origin without `/api`, e.g. `https://nabad-backend-nhv5.onrender.com`, then redeploy; the rewrite is fixed at build time. Locally it defaults to `http://localhost:5000`.
 
 The backend runs on Render from [render.yaml](./render.yaml) (Blueprint). Secrets (`MONGO_URI`, `JWT_SECRET`, SMTP) are entered in the Render dashboard, never committed.
 
