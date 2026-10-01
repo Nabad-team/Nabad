@@ -18,6 +18,7 @@ jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../components/SessionTimeout", () => ({
   ...jest.requireActual("../components/SessionTimeout"),
   useSessionStatus: () => "signedIn",
+  useSignedIn: () => true,
 }));
 
 // Renders the header inside the provider, like every page gets from _app.js.
@@ -163,6 +164,13 @@ describe("Profile switcher", () => {
 /* =========================================================
    PROFILE PICTURE TESTS
    ========================================================= */
+
+describe("Account menu", () => {
+  test("has a Security link while signed in", async () => {
+    renderHeader();
+    expect(await screen.findByRole("link", { name: "Security" })).toHaveAttribute("href", "/security");
+  });
+});
 
 describe("Profile picture upload", () => {
   beforeEach(() => {

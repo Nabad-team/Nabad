@@ -18,7 +18,7 @@ export async function request(path, options = {}) {
 
 export const signup = (name, email, password) => request("/auth/signup", { method: "POST", body: JSON.stringify({ name, email, password }) });
 export const login = (email, password) => request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
-export const verifyTwoFactor = (challenge, code) => request("/auth/2fa/verify", { method: "POST", body: JSON.stringify({ challenge, code }) });
+export const verifyTwoFactor = (challenge, code, rememberDevice = false) => request("/auth/2fa/verify", { method: "POST", body: JSON.stringify({ challenge, code, rememberDevice }) });
 export const resendTwoFactor = (challenge) => request("/auth/2fa/resend", { method: "POST", body: JSON.stringify({ challenge }) });
 export const requestPasswordReset = (email) => request("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
 export const resetPassword = (token, password) => request("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password }) });

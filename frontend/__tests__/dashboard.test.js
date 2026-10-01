@@ -15,6 +15,7 @@ let mockStatus = "signedIn";
 jest.mock("../components/SessionTimeout", () => ({
   ...jest.requireActual("../components/SessionTimeout"),
   useSessionStatus: () => mockStatus,
+  useSignedIn: () => mockStatus === "signedIn",
 }));
 
 // The dashboard reads the active profile from the provider, just like in _app.js.
@@ -51,6 +52,15 @@ describe("Dashboard Page", () => {
     expect(
       await screen.findByText("Welcome, Layla Haddad")
     ).toBeInTheDocument();
+  });
+
+  test("links to the security settings from the page and the account menu", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo User");
+
+    const links = screen.getAllByRole("link", { name: "Security" });
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link).toHaveAttribute("href", "/security");
   });
 
   test("loading ends once the profile is shown", async () => {

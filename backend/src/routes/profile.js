@@ -6,7 +6,7 @@ const User = require("../models/User");
 const LinkedProfile = require("../models/LinkedProfile");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { normalizePhone, validPhone } = require("../models/contactSchema");
-const { cookieOptions } = require("../config");
+const { cookieOptions, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 // The signed-in user's own profile, their linked profiles (dependents) and account deletion.
@@ -149,8 +149,9 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   }
   // Linked profiles first: if deleting the user then fails, the account still exists and can be deleted again.
   await LinkedProfile.deleteMany({ owner: user._id });
-  // The emergency contact is stored inside the user document, so it is deleted with it.
+  // The emergency contact and trusted devices are stored inside the user document, so they are deleted with it.
   await User.deleteOne({ _id: user._id });
+  res.clearCookie(TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions());
   res.clearCookie("accessToken", cookieOptions());
   return res.status(204).end();
 }));

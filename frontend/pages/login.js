@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [challenge, setChallenge] = useState("");
   const [code, setCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
   const [resendBusy, setResendBusy] = useState(false);
   // Why the user was sent here by the session timer (see components/SessionTimeout.js).
   const minutes = Number(query.minutes);
@@ -34,7 +35,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (challenge) {
-        await verifyTwoFactor(challenge, code);
+        await verifyTwoFactor(challenge, code, rememberDevice);
       } else {
         const result = await login(email, password);
         if (result.twoFactorRequired) {
@@ -75,6 +76,10 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <label htmlFor="twoFactorCode">Verification code</label>
             <input id="twoFactorCode" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <input type="checkbox" checked={rememberDevice} onChange={(e) => setRememberDevice(e.target.checked)} />
+              Remember this device for 30 days
+            </label>
             {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
             <button type="submit" disabled={loading}>{loading ? "Verifying..." : "Verify code"}</button>
           </form>
