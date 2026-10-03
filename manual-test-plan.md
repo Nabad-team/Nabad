@@ -4,9 +4,9 @@ Run these checks in staging before each release. Record build/commit, browser an
 
 ## Signup and account access
 
-1. Sign up with a new valid email, a name, and an 8+ character password. Confirm the account is created and the user lands on onboarding.
+1. Sign up with a new valid email, a name, and a password of at least 12 characters that includes uppercase and lowercase letters, a number, and a symbol. Confirm the account is created and the user lands on onboarding.
 2. Complete each onboarding step, use Back, then finish. Confirm the dashboard appears. Repeat using Skip.
-3. Try invalid email, missing fields, short password, and an already registered email. Confirm useful validation and no duplicate account.
+3. Try invalid email, missing fields, a short password, a password missing each required character type, a password over 72 UTF-8 bytes, and an already registered email. Confirm useful validation and no duplicate account.
 4. Log out or use a private browser and sign in with the correct password. Confirm access to the dashboard. Try a wrong password and an unknown email; confirm the same generic credential error.
 5. Submit five incorrect passwords for a test account. Confirm temporary lockout, then verify a correct password cannot bypass it until the lock expires.
 6. Confirm the auth cookie is HttpOnly, Secure in production, SameSite=Lax, and expires as configured. Confirm unauthenticated requests to protected API routes are rejected.
@@ -16,7 +16,7 @@ Run these checks in staging before each release. Record build/commit, browser an
 1. Request a reset for a registered staging user. Confirm a reset email arrives with a one-hour link.
 2. Request a reset for an unknown address. Confirm the page displays the same generic response and does not reveal account existence.
 3. Open a valid link, set a new password, and sign in with it. Confirm the previous password no longer works.
-4. Try an expired, modified, and already-used link, plus a password shorter than eight characters. Confirm each is rejected and can’t change the account password.
+4. Try an expired, modified, and already-used link, plus passwords that are too short, miss a required character type, or exceed 72 UTF-8 bytes. Confirm each is rejected and can’t change the account password.
 
 ## Two-factor authentication
 
