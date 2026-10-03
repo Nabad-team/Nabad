@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+const { meetsPasswordPolicy, PASSWORD_POLICY_ERROR } = require("../passwordPolicy");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
@@ -145,7 +146,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
     const { name, email, password } = req.body;
     if (typeof name !== "string" || !name.trim() || name.trim().length > 100 || typeof email !== "string" || typeof password !== "string") return res.status(400).json({ error: "Name, email, and password are required." });
     if (!validator.isEmail(email)) return res.status(400).json({ error: "Please provide a valid email." });
-    if (password.length < 8 || Buffer.byteLength(password) > 72) return res.status(400).json({ error: "Password must be at least 8 characters and at most 72 bytes." });
+    if (!meetsPasswordPolicy(password)) return res.status(400).json({ error: PASSWORD_POLICY_ERROR });
     const normalizedEmail = String(email).trim().toLowerCase();
     if (await User.findOne({ email: normalizedEmail })) return res.status(409).json({ error: "An account with this email already exists." });
     const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup() });
@@ -302,7 +303,8 @@ router.post("/forgot-password", resetLimiter, (req, res) => {
 
 router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   const { token, password } = req.body;
-  if (typeof token !== "string" || !token || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password) > 72) return res.status(400).json({ error: "A reset link and a password of 8 characters to 72 bytes are required." });
+  if (typeof token !== "string" || !token) return res.status(400).json({ error: "A reset link is required." });
+  if (!meetsPasswordPolicy(password)) return res.status(400).json({ error: PASSWORD_POLICY_ERROR });
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await User.findOneAndUpdate(
     { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },

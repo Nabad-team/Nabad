@@ -45,6 +45,9 @@ async function request(path, {body, cookie, origin = process.env.CLIENT_ORIGIN, 
   return {status:response.status,body:await response.json(),headers:response.headers};
 }
 test("existing signup supports multiple password-only users and rejects duplicate email",async()=>{
+  for (const weakPassword of ["Short1!Aa", "lowercase123!", "UPPERCASE123!", "NoNumbersHere!", "NoSymbol12345"]) {
+    assert.equal((await request("/auth/signup",{body:{name:"Test",email:"weak@example.test",password:weakPassword}})).status,400);
+  }
   for (const email of ["one@example.test","two@example.test"]) assert.equal((await request("/auth/signup",{body:{name:"Test",email,password}})).status,201);
   assert.equal((await request("/auth/signup",{body:{name:"Again",email:"ONE@example.test",password}})).status,409);
   const saved=await User.findOne({email:"one@example.test"});
@@ -108,6 +111,7 @@ test("password reset consumes its token atomically and invalidates sessions and 
   const account=await user(), cookie=token(account);
   const reset="a".repeat(64);
   await User.updateOne({_id:account._id},{$set:{resetPasswordTokenHash:crypto.createHash("sha256").update(reset).digest("hex"),resetPasswordExpires:new Date(Date.now()+60000)}});
+  assert.equal((await request("/auth/reset-password",{body:{token:reset,password:"Weak password 123"}})).status,400);
   const responses=await Promise.all([1,2].map(()=>request("/auth/reset-password",{body:{token:reset,password:"New password 123!"}})));
   assert.deepEqual(responses.map(x=>x.status).sort(),[200,400]);
   assert.equal((await request("/auth/me",{cookie})).status,401);

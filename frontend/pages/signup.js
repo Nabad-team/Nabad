@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { signup } from "../lib/api";
+import { PASSWORD_HELP, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN } from "../lib/passwordPolicy";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -36,8 +37,9 @@ export default function SignupPage() {
         <label>Email</label>
         <input type="email" value={form.email} onChange={update("email")} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
 
-        <label>Password (min 8 characters)</label>
-        <input type="password" value={form.password} onChange={update("password")} required minLength={8} style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
+        <label htmlFor="password">Password</label>
+        <p id="password-help">{PASSWORD_HELP}</p>
+        <input id="password" type="password" value={form.password} onChange={update("password")} required minLength={PASSWORD_MIN_LENGTH} pattern={PASSWORD_PATTERN} aria-describedby="password-help" autoComplete="new-password" style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
 
         {error && <p style={{ color: "crimson" }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ width: "100%", padding: 10 }}>
