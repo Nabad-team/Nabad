@@ -6,7 +6,7 @@ const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
-const { meetsPasswordPolicy, PASSWORD_POLICY_ERROR } = require("../passwordPolicy");
+const { checkNewPassword, findPasswordProblem } = require("../passwordPolicy");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
@@ -146,9 +146,13 @@ router.post("/signup", signupLimiter, async (req, res) => {
     const { name, email, password } = req.body;
     if (typeof name !== "string" || !name.trim() || name.trim().length > 100 || typeof email !== "string" || typeof password !== "string") return res.status(400).json({ error: "Name, email, and password are required." });
     if (!validator.isEmail(email)) return res.status(400).json({ error: "Please provide a valid email." });
-    if (!meetsPasswordPolicy(password)) return res.status(400).json({ error: PASSWORD_POLICY_ERROR });
     const normalizedEmail = String(email).trim().toLowerCase();
+    const weakPassword = findPasswordProblem(password, { name, email: normalizedEmail });
+    if (weakPassword) return res.status(400).json({ error: weakPassword.message });
     if (await User.findOne({ email: normalizedEmail })) return res.status(409).json({ error: "An account with this email already exists." });
+    // The breach check calls an outside service, so it runs only once the request could otherwise succeed.
+    const breached = await checkNewPassword(password, { name, email: normalizedEmail }, { requestId: req.requestId });
+    if (breached) return res.status(400).json({ error: breached.message });
     const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup() });
     setAuthCookie(res, signAccessToken(user));
     return res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
@@ -304,13 +308,18 @@ router.post("/forgot-password", resetLimiter, (req, res) => {
 router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   const { token, password } = req.body;
   if (typeof token !== "string" || !token) return res.status(400).json({ error: "A reset link is required." });
-  if (!meetsPasswordPolicy(password)) return res.status(400).json({ error: PASSWORD_POLICY_ERROR });
+  const invalidLink = { error: "This reset link is invalid or expired. Request a new one." };
+  // Looked up first so the password can be checked against the account's own name and email.
+  const owner = await User.findOne({ resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } }).select("name email");
+  if (!owner) return res.status(400).json(invalidLink);
+  const weakPassword = await checkNewPassword(password, { name: owner.name, email: owner.email }, { requestId: req.requestId });
+  if (weakPassword) return res.status(400).json({ error: weakPassword.message });
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await User.findOneAndUpdate(
     { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },
     { $set: { passwordHash, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [] }, $inc: { authVersion: 1 } }
   );
-  if (!user) return res.status(400).json({ error: "This reset link is invalid or expired. Request a new one." });
+  if (!user) return res.status(400).json(invalidLink);
   return res.json({ message: "Password updated. You can now log in." });
 }));
 

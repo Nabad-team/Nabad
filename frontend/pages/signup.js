@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { signup } from "../lib/api";
-import { getPasswordStrength, PASSWORD_HELP, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN } from "../lib/passwordPolicy";
+import { findPasswordProblem } from "../lib/passwordPolicy";
+import NewPasswordField from "../components/NewPasswordField";
 
 export default function SignupPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const passwordStrength = getPasswordStrength(form.password);
+  const passwordRef = useRef(null);
 
   function update(field) {
     return (e) => setForm({ ...form, [field]: e.target.value });
@@ -16,6 +17,12 @@ export default function SignupPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const problem = findPasswordProblem(form.password, { name: form.name, email: form.email });
+    if (problem) {
+      setError(problem.message);
+      passwordRef.current?.focus();
+      return;
+    }
     setError("");
     setLoading(true);
     try {
@@ -38,23 +45,9 @@ export default function SignupPage() {
         <label>Email</label>
         <input type="email" value={form.email} onChange={update("email")} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
 
-        <label htmlFor="password">Password</label>
-        <p id="password-help">{PASSWORD_HELP}</p>
-        <input id="password" type="password" value={form.password} onChange={update("password")} required minLength={PASSWORD_MIN_LENGTH} pattern={PASSWORD_PATTERN} aria-describedby="password-help" autoComplete="new-password" style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-        {passwordStrength && (
-          <div style={{ marginTop: -8, marginBottom: 16 }}>
-            <div role="meter" aria-label="Password strength" aria-valuemin={1} aria-valuemax={5} aria-valuenow={passwordStrength.score} aria-valuetext={passwordStrength.label} style={{ display: "flex", gap: 4 }}>
-              {[1, 2, 3, 4, 5].map((segment) => (
-                <span key={segment} aria-hidden="true" style={{ height: 4, flex: 1, borderRadius: 2, backgroundColor: segment <= passwordStrength.score ? passwordStrength.color : "#d0d5dd" }} />
-              ))}
-            </div>
-            <p role="status" aria-live="polite" style={{ margin: "6px 0 0", color: passwordStrength.color }}>
-              Password strength: <strong>{passwordStrength.label}</strong>. {passwordStrength.detail}
-            </p>
-          </div>
-        )}
+        <NewPasswordField value={form.password} onChange={(password) => setForm({ ...form, password })} context={{ name: form.name, email: form.email }} inputRef={passwordRef} />
 
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
+        {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ width: "100%", padding: 10 }}>
           {loading ? "Creating account..." : "Sign up"}
         </button>

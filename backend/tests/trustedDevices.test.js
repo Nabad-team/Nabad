@@ -7,7 +7,7 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
 let mongod, server, base, sent = [];
-const password = "Trusted device password 123!";
+const password = "Remembered device password 123!";
 const DAY = 24 * 60 * 60 * 1000;
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 

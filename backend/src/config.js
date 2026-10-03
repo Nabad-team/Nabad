@@ -33,6 +33,7 @@ function loadConfig(env = process.env) {
     throw new Error("MONGO_DB_NAME must end with the selected environment, such as nabad_staging.");
   }
   if (![undefined, "", "true", "false"].includes(env.TWO_FACTOR_ON_SIGNUP)) throw new Error('TWO_FACTOR_ON_SIGNUP must be "true" or "false".');
+  if (![undefined, "", "on", "off"].includes(env.PWNED_PASSWORDS_CHECK)) throw new Error('PWNED_PASSWORDS_CHECK must be "on" or "off".');
   const trustProxy = Number(env.TRUST_PROXY || 0);
   if (!Number.isInteger(trustProxy) || trustProxy < 0) throw new Error("TRUST_PROXY must be a whole number of proxy hops.");
   return { environment, secure, clientOrigin, databaseName: env.MONGO_DB_NAME, trustProxy };
