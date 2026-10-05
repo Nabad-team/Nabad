@@ -1,5 +1,6 @@
 import Head from "next/head";
 import ProfileHeader from "../components/ProfileHeader";
+import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 
 const TEAL = "#0f766e";
@@ -24,6 +25,7 @@ export default function DashboardPage() {
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       <ProfileHeader />
+      <EmailVerificationBanner />
       {activeProfile && <h1>Welcome, {activeProfile.fullName}</h1>}
       {error && <p style={{ color: "crimson" }}>{error}</p>}
       {loading && <p>Loading...</p>}
