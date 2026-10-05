@@ -20,7 +20,7 @@ services:
       - key: MONGO_DB_NAME
         value: nabad_production
       - key: CLIENT_ORIGIN
-        value: https://nabad-psi.vercel.app
+        value: https://nabad-lemon.vercel.app
       # Browser -> Vercel rewrite -> Render load balancer -> app.
       - key: TRUST_PROXY
         value: "2"
@@ -59,4 +59,4 @@ services:
       # Goes through the frontend's /api rewrite so the OAuth state cookie is on the same site.
       # Must also be listed as an authorized redirect URI on the Google OAuth client.
       - key: GOOGLE_REDIRECT_URI
-        value: https://nabad-psi.vercel.app/api/auth/google/callback
+        value: https://nabad-lemon.vercel.app/api/auth/google/callback
