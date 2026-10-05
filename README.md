@@ -2,7 +2,7 @@
 
 ## Deployment
 
-The frontend is live at **https://nabad-psi.vercel.app** (Vercel project `nabad`, team `nabad3`).
+The frontend is live at **https://nabad-lemon.vercel.app** (Vercel project `nabad`, team `nabad3`).
 
 To redeploy to production, run this from the `frontend/` folder:
 
