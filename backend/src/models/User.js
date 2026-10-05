@@ -28,6 +28,13 @@ const userSchema = new mongoose.Schema(
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
 
+    // Email verification (story #2). Only a SHA-256 hash of the emailed token is stored, like the reset token,
+    // so a database leak cannot be used to verify someone else's address.
+    emailVerified: { type: Boolean, default: false },
+    emailVerifyTokenHash: { type: String, default: null },
+    emailVerifyExpires: { type: Date, default: null },
+    emailVerifyLastSent: { type: Date, default: null },
+
     resetPasswordTokenHash: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
 

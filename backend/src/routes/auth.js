@@ -21,6 +21,8 @@ const TWO_FACTOR_CODE_TTL_MS = 10 * 60 * 1000;
 const TWO_FACTOR_RESEND_MS = 60 * 1000;
 const TWO_FACTOR_MAX_ATTEMPTS = 5;
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const VERIFY_RESEND_MS = 60 * 1000;
 const GOOGLE_2FA_MESSAGE = "Google accounts are protected by Google sign-in and do not use email codes.";
 const SMTP_TIMEOUT_MS = 10 * 1000;
 const TRUSTED_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -30,6 +32,7 @@ const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { e
 const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
 const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many reset attempts. Try again later." } });
 const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
+const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
 const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
 function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
@@ -73,6 +76,27 @@ async function issueTwoFactorCode(req, user) {
     text: "Your Nabad verification code is " + code + ". It expires in 10 minutes and can be used only once."
   });
 }
+// ---- Email verification (story #2) ----
+// A random 32-byte token goes in the emailed link; the database keeps only its hash and an expiry.
+// Creating a new token overwrites the old hash, so only the most recent link works.
+function newEmailVerifyToken() {
+  const token = crypto.randomBytes(32).toString("hex");
+  return { token, fields: { emailVerifyTokenHash: hash(token), emailVerifyExpires: new Date(Date.now() + VERIFY_TOKEN_TTL_MS), emailVerifyLastSent: new Date() } };
+}
+function verificationMessage(email, token) {
+  const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  return {
+    from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: email, subject: "Verify your Nabad email",
+    text: "Welcome to Nabad. Confirm that this is your email address by opening this link within 24 hours: " + origin + "/verify-email?token=" + token + "\n\nIf you did not create a Nabad account, you can ignore this email.",
+  };
+}
+// Never blocks or fails the request: if email is not configured the user can resend later.
+function sendVerificationEmail(req, email, token) {
+  let transport;
+  try { transport = mailer(); } catch (err) { logEvent("verification_email_not_sent", { requestId: req.requestId, reason: "email_not_configured" }); return; }
+  sendInBackground(req, transport, verificationMessage(email, token));
+}
+
 function twoFactorChallenge(user) {
   return jwt.sign({ sub: user._id, purpose: "2fa", ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "10m" });
 }
@@ -111,7 +135,8 @@ async function completeTwoFactor(challenge, code, res, remember) {
   }
   const verifiedUser = await User.findOneAndUpdate(
     { _id: user._id, authVersion: user.authVersion || 0, twoFactorEnabled: true, twoFactorCodeHash: candidate, twoFactorCodeExpires: { $gt: new Date() } },
-    { $set: { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0, twoFactorCodeLastSent: null } },
+    // The code was emailed to this address, so entering it also proves the user owns the email.
+    { $set: { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0, twoFactorCodeLastSent: null, emailVerified: true } },
     { new: true }
   );
   if (!verifiedUser) throw new Error("Invalid or expired verification code.");
@@ -153,9 +178,12 @@ router.post("/signup", signupLimiter, async (req, res) => {
     // The breach check calls an outside service, so it runs only once the request could otherwise succeed.
     const breached = await checkNewPassword(password, { name, email: normalizedEmail }, { requestId: req.requestId });
     if (breached) return res.status(400).json({ error: breached.message });
-    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup() });
+    const verify = newEmailVerifyToken();
+    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup(), ...verify.fields });
     setAuthCookie(res, signAccessToken(user));
-    return res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
+    res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, emailVerified: false } });
+    // Sent after the response so a slow mail server never delays signup.
+    return sendVerificationEmail(req, user.email, verify.token);
   } catch (err) { logError(req, err); if (err.code === 11000) return res.status(409).json({ error: "An account with this email already exists." }); return res.status(500).json({ error: "Something went wrong. Please try again." }); }
 });
 
@@ -181,7 +209,7 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
         logEvent("google_signin_refused", { requestId: req.requestId, reason: existing.googleId ? "google_id_conflict" : "email_exists", userId: String(existing._id) });
         return res.redirect(process.env.CLIENT_ORIGIN + "/login?error=" + (existing.googleId ? "google_signin_failed" : "google_account_exists"));
       }
-      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
+      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", emailVerified: true, passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
     }
     // No email code here: Google has already verified the person, with its own 2-step verification.
     setAuthCookie(res, signAccessToken(user));
@@ -267,7 +295,7 @@ router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
       await user.save();
       return res.status(400).json({ error: user.twoFactorCodeHash ? "Invalid verification code." : "Too many incorrect attempts. The verification code has been cancelled." });
     }
-    user.twoFactorEnabled = true; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+    user.twoFactorEnabled = true; user.emailVerified = true; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
     await user.save();
     return res.json({ twoFactorEnabled: true });
   } catch (err) { return res.status(400).json({ error: err.message || "Unable to enable two-factor authentication." }); }
@@ -317,7 +345,7 @@ router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await User.findOneAndUpdate(
     { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },
-    { $set: { passwordHash, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [] }, $inc: { authVersion: 1 } }
+    { $set: { passwordHash, emailVerified: true, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [] }, $inc: { authVersion: 1 } }
   );
   if (!user) return res.status(400).json(invalidLink);
   return res.json({ message: "Password updated. You can now log in." });
@@ -338,9 +366,12 @@ router.post("/logout", asyncRoute(async (req, res) => {
 }));
 
 router.get("/me", requireAuth, asyncRoute(async (req, res) => {
-  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted");
+  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted emailVerified");
   if (!user) return res.status(404).json({ error: "User not found." });
-  return res.json({ user });
+  // Google accounts created before verification existed are still verified: Google checked the email.
+  const view = user.toObject();
+  view.emailVerified = user.emailVerified === true || user.authProvider === "google";
+  return res.json({ user: view });
 }));
 
 // Called by the browser's inactivity timer: confirms the user is signed in, renews the
@@ -353,6 +384,40 @@ router.get("/session", requireAuth, (req, res) => {
 router.post("/onboarding/complete", requireAuth, asyncRoute(async (req, res) => {
   await User.findByIdAndUpdate(req.userId, { onboardingCompleted: true });
   return res.json({ onboardingCompleted: true });
+}));
+
+// Opened from the emailed link. No sign-in needed: the user may open the link on another device.
+// The lookup and the update happen in one atomic step, so a token can only be used once.
+router.post("/verify-email", verifyLimiter, asyncRoute(async (req, res) => {
+  const { token } = req.body || {};
+  const invalid = { error: "This verification link is invalid or has expired. Sign in and request a new one." };
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return res.status(400).json(invalid);
+  const user = await User.findOneAndUpdate(
+    { emailVerifyTokenHash: hash(token), emailVerifyExpires: { $gt: new Date() } },
+    { $set: { emailVerified: true, emailVerifyTokenHash: null, emailVerifyExpires: null, emailVerifyLastSent: null } },
+    { new: true }
+  );
+  if (!user) return res.status(400).json(invalid);
+  logEvent("email_verified", { requestId: req.requestId, userId: String(user._id) });
+  return res.json({ emailVerified: true, message: "Your email is verified." });
+}));
+
+// Sends a fresh link to the signed-in user's own address (never to an address from the request body).
+router.post("/verify-email/resend", verifyLimiter, requireAuth, asyncRoute(async (req, res) => {
+  const user = await User.findById(req.userId);
+  if (!user) return res.status(401).json({ error: "Not authenticated." });
+  if (user.emailVerified || user.authProvider === "google") return res.status(400).json({ error: "Your email is already verified." });
+  const now = Date.now();
+  if (user.emailVerifyLastSent && now - user.emailVerifyLastSent.getTime() < VERIFY_RESEND_MS) {
+    const retryAfter = Math.ceil((VERIFY_RESEND_MS - (now - user.emailVerifyLastSent.getTime())) / 1000);
+    return res.status(429).json({ error: "Please wait before requesting another verification email.", retryAfter });
+  }
+  let transport;
+  try { transport = mailer(); } catch (err) { logError(req, err); return res.status(503).json({ error: "Verification email is temporarily unavailable. Please try again later." }); }
+  const verify = newEmailVerifyToken();
+  await User.updateOne({ _id: user._id }, { $set: verify.fields });
+  sendInBackground(req, transport, verificationMessage(user.email, verify.token));
+  return res.json({ message: "A new verification link was sent to " + user.email + "." });
 }));
 
 module.exports = router;

@@ -39,6 +39,8 @@ async function post(route, body) {
   const response = await fetch(base + route, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN }, body: JSON.stringify(body) });
   return { status: response.status, body: await response.json(), cookies: response.headers.getSetCookie() };
 }
+// Signup also emails a verification link (story #2), so these tests count only the 2FA code emails.
+const codeEmails = () => sent.filter(message => message.subject === "Your Nabad verification code");
 // Signs up, then signs in again with the password. Returns the saved user and the second sign-in.
 async function signUpThenLogIn(email) {
   const signup = await post("/auth/signup", { name: "New", email, password });
@@ -52,7 +54,7 @@ test("unset: new accounts start without 2FA and sign in with just the password",
   assert.equal(saved.twoFactorEnabled, false);
   assert.equal(login.status, 200);
   assert.equal(login.body.twoFactorRequired, undefined);
-  assert.equal(sent.length, 0);
+  assert.equal(codeEmails().length, 0);
 });
 
 test("OFF: new accounts start without 2FA and sign in with just the password", async () => {
@@ -61,7 +63,7 @@ test("OFF: new accounts start without 2FA and sign in with just the password", a
   assert.equal(saved.twoFactorEnabled, false);
   assert.equal(login.status, 200);
   assert.equal(login.body.twoFactorRequired, undefined);
-  assert.equal(sent.length, 0);
+  assert.equal(codeEmails().length, 0);
 });
 
 test("ON: new accounts start with 2FA and the next sign-in asks for an email code", async () => {
@@ -70,8 +72,8 @@ test("ON: new accounts start with 2FA and the next sign-in asks for an email cod
   assert.equal(saved.twoFactorEnabled, true);
   assert.equal(login.body.twoFactorRequired, true);
   assert.equal(login.cookies.length, 0);
-  assert.equal(sent.length, 1);
-  assert.equal(sent[0].to, "on@example.test");
+  assert.equal(codeEmails().length, 1);
+  assert.equal(codeEmails()[0].to, "on@example.test");
 });
 
 test("ON does not change accounts that already exist", async () => {

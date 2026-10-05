@@ -11,6 +11,23 @@ Run these checks in staging before each release. Record build/commit, browser an
 5. Submit five incorrect passwords for a test account. Confirm temporary lockout, then verify a correct password cannot bypass it until the lock expires.
 6. Confirm the auth cookie is HttpOnly, Secure in production, SameSite=Lax, and expires as configured. Confirm unauthenticated requests to protected API routes are rejected.
 
+## Email verification
+
+1. Sign up with a new address. Confirm a "Verify your Nabad email" message arrives in the staging mailbox with a link to `/verify-email?token=...` and that the dashboard shows the "Please verify your email" banner.
+2. Open the link (also try it on a different browser or device where you are not signed in). Confirm "Your email is verified" appears, and that the dashboard banner is gone after reloading.
+3. Open the same link again. Confirm it is rejected as invalid or expired and nothing changes.
+4. On a new unverified account, select Resend verification email twice within a minute. Confirm the second attempt asks you to wait, and that after a minute a new email arrives. Confirm the older link no longer works and the newest one does.
+5. Edit one character of a link's token, and remove the token from the address. Confirm both show a plain error and the account stays unverified.
+6. Confirm a Google sign-in account never shows the banner, and that completing a password reset or entering an emailed 2FA code also clears it.
+
+## Emergency contact
+
+1. On Profile with no contact saved, add a name and a Lebanese phone number. Confirm it shows with Edit contact and Remove contact buttons and survives a page reload.
+2. Select Edit contact. Confirm the form is pre-filled. Change both fields, save, and confirm the new values show and survive a reload. Repeat, but select Cancel, and confirm nothing changed.
+3. While editing, enter an invalid phone ("abc") and an empty name. Confirm each shows a plain message, the typed values stay in the form, and the saved contact is unchanged after a reload.
+4. Select Remove contact, then Keep contact. Confirm the contact is still there. Select Remove contact, then Yes, remove. Confirm the add form returns empty and the contact is gone after a reload.
+5. Add a new contact after removing one. Confirm it saves normally.
+
 ## Password recovery
 
 1. Request a reset for a registered staging user. Confirm a reset email arrives with a one-hour link.
