@@ -138,4 +138,16 @@ describe("Dashboard Page", () => {
       screen.getByRole("link", { name: "My Profile" })
     ).toHaveAttribute("href", "/profile");
   });
+
+  test("shows a clear link for speaking symptoms", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo User");
+
+    expect(
+      screen.getByRole("link", { name: "Speak your symptoms" })
+    ).toHaveAttribute("href", "/symptoms");
+    expect(
+      screen.getByText("Tap here to describe how you feel by voice.")
+    ).toBeInTheDocument();
+  });
 });
