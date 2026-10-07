@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
 
@@ -7,6 +7,82 @@ export default function SymptomsPage() {
   const [symptoms, setSymptoms] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState("");
+  const recognitionRef = useRef(null);
+  const baseSymptomsRef = useRef("");
+  const dictatedTextRef = useRef("");
+
+  const SpeechRecognition =
+    typeof window !== "undefined" &&
+    (window.SpeechRecognition || window.webkitSpeechRecognition);
+  const speechRecognitionSupported = Boolean(SpeechRecognition);
+
+  useEffect(
+    () => () => {
+      recognitionRef.current?.abort();
+    },
+    []
+  );
+
+  function toggleSpeechInput() {
+    if (!SpeechRecognition) {
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    baseSymptomsRef.current = symptoms.trim();
+    dictatedTextRef.current = "";
+    setSpeechError("");
+
+    recognition.onresult = (event) => {
+      let interimText = "";
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const transcript = event.results[index][0].transcript;
+
+        if (event.results[index].isFinal) {
+          dictatedTextRef.current += `${transcript} `;
+        } else {
+          interimText += transcript;
+        }
+      }
+
+      const dictatedText = dictatedTextRef.current + interimText;
+      setSymptoms(
+        [baseSymptomsRef.current, dictatedText.trim()].filter(Boolean).join(" ")
+      );
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error !== "aborted") {
+        setSpeechError("Voice input was unavailable. You can type your symptoms instead.");
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (startError) {
+      console.error("Could not start voice input:", startError);
+      setSpeechError("Voice input could not be started. You can type your symptoms instead.");
+      setIsListening(false);
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -83,6 +159,31 @@ export default function SymptomsPage() {
               fontSize: "1rem",
             }}
           />
+
+          {speechRecognitionSupported && (
+            <button
+              type="button"
+              onClick={toggleSpeechInput}
+              aria-pressed={isListening}
+              style={{
+                marginTop: "0.75rem",
+                padding: "0.65rem 1rem",
+                cursor: "pointer",
+              }}
+            >
+              {isListening ? "Stop listening" : "Speak symptoms"}
+            </button>
+          )}
+
+          <p
+            role="status"
+            aria-live="polite"
+            style={{ marginTop: "0.5rem" }}
+          >
+            {isListening
+              ? "Listening. Describe your symptoms, then stop listening when you are finished."
+              : speechError}
+          </p>
         </div>
 
         <button

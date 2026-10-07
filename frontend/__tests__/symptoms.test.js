@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import SymptomsPage from "../pages/symptoms";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
@@ -15,6 +16,8 @@ jest.mock("../lib/symptomApi", () => ({
 describe("Symptoms Page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    delete window.SpeechRecognition;
+    delete window.webkitSpeechRecognition;
   });
 
   test("shows a message when no active profile is selected", () => {
@@ -135,5 +138,68 @@ describe("Symptoms Page", () => {
     expect(
       await screen.findByText("Symptoms recorded for Maya Hamdan.")
     ).toBeInTheDocument();
+  });
+
+  test("adds spoken symptoms to the symptom box", async () => {
+    const user = userEvent.setup();
+    let recognition;
+
+    window.SpeechRecognition = jest.fn(() => {
+      recognition = {
+        start: jest.fn(),
+        stop: jest.fn(),
+        abort: jest.fn(),
+      };
+      return recognition;
+    });
+
+    useActiveProfile.mockReturnValue({
+      activeProfile: {
+        id: "profile-1",
+        fullName: "Maya Hamdan",
+      },
+    });
+
+    render(<SymptomsPage />);
+
+    await user.click(screen.getByRole("button", { name: "Speak symptoms" }));
+
+    expect(recognition.start).toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Stop listening" })
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      recognition.onresult({
+        resultIndex: 0,
+        results: [
+          {
+            isFinal: true,
+            0: { transcript: "fever and headache" },
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Symptoms")).toHaveValue(
+        "fever and headache"
+      );
+    });
+  });
+
+  test("hides voice input when speech recognition is unsupported", () => {
+    useActiveProfile.mockReturnValue({
+      activeProfile: {
+        id: "profile-1",
+        fullName: "Maya Hamdan",
+      },
+    });
+
+    render(<SymptomsPage />);
+
+    expect(
+      screen.queryByRole("button", { name: "Speak symptoms" })
+    ).not.toBeInTheDocument();
   });
 });
