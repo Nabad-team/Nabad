@@ -2,15 +2,15 @@
 
 ## Deployment
 
-The frontend is live at **https://nabad-psi.vercel.app** (Vercel project `nabad`, team `nabad3`).
+The frontend is live at **https://nabad-psi.vercel.app** (Vercel project `nabad`).
 
-To redeploy to production, run this from the `frontend/` folder:
+To redeploy to production, run this from the repository root:
 
 ```bash
 npx vercel --prod
 ```
 
-(On Windows PowerShell, use `npx.cmd vercel --prod` if `npx` is blocked.) The first time on a new machine, run `npx vercel login`, then `npx vercel link --project nabad` to connect the folder to the project. You need to be a member of the `nabad3` Vercel team.
+(On Windows PowerShell, use `npx.cmd vercel --prod` if `npx` is blocked.) The first time on a new machine, run `npx vercel login`, then `npx vercel link --project nabad` to connect the repository to the project. The Vercel project root is configured as `frontend/`.
 
 The browser only talks to the frontend: `frontend/next.config.js` forwards every `/api/*` request to the backend, so the login cookie stays on the frontend site. Set `BACKEND_URL` in the Vercel project (Settings → Environment Variables) to the backend origin without `/api`, e.g. `https://nabad-backend-nhv5.onrender.com`, then redeploy; the rewrite is fixed at build time. Locally it defaults to `http://localhost:5000`.
 
