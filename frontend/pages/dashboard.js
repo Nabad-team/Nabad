@@ -15,6 +15,26 @@ const buttonStyle = {
   fontWeight: "bold",
 };
 
+function MicrophoneIcon() {
+  return (
+    <svg
+      width="42"
+      height="42"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="9" y="2" width="6" height="12" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" />
+    </svg>
+  );
+}
+
 export default function DashboardPage() {
   // The active profile (you or a dependent) is loaded by ActiveProfileProvider in _app.js.
   const { activeProfile, error, loading } = useActiveProfile();
@@ -29,6 +49,30 @@ export default function DashboardPage() {
       {activeProfile && <h1>Welcome, {activeProfile.fullName}</h1>}
       {error && <p style={{ color: "crimson" }}>{error}</p>}
       {loading && <p>Loading...</p>}
+      <a
+        href="/symptoms"
+        aria-label="Speak your symptoms"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          margin: "24px 0",
+          padding: 20,
+          borderRadius: 12,
+          background: "#f0fdfa",
+          border: `2px solid ${TEAL}`,
+          color: TEAL,
+          textDecoration: "none",
+        }}
+      >
+        <MicrophoneIcon />
+        <span>
+          <strong style={{ display: "block", fontSize: 20 }}>
+            Speak your symptoms
+          </strong>
+          <span>Tap here to describe how you feel by voice.</span>
+        </span>
+      </a>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <a href="/profile" style={buttonStyle}>My Profile</a>
         <a href="/security" style={buttonStyle}>Security</a>
