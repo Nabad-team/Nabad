@@ -4,7 +4,7 @@ import { act } from "react";
 import SymptomsPage from "../pages/symptoms";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
-import { classifyUrgency } from "../lib/triageApi";
+import { classifyUrgency, refineUrgency } from "../lib/triageApi";
 
 jest.mock("../context/ActiveProfileContext", () => ({
   useActiveProfile: jest.fn(),
@@ -17,6 +17,7 @@ jest.mock("../lib/symptomApi", () => ({
 // SCRUM-128: the page now asks the backend for an urgency level after saving.
 jest.mock("../lib/triageApi", () => ({
   classifyUrgency: jest.fn(),
+  refineUrgency: jest.fn(),
 }));
 
 const EMERGENCY_RESULT = {
@@ -34,6 +35,40 @@ const SOON_RESULT = {
   timeframe: "Within 24 to 48 hours",
   action: "Book an appointment with a doctor in the next day or two.",
   reasons: ["A fever should be checked by a doctor if it lasts or gets worse."],
+  disclaimer: "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.",
+};
+
+// SCRUM-126: a first result that comes back with follow-up questions.
+const SOON_WITH_QUESTIONS = {
+  ...SOON_RESULT,
+  followUpQuestions: [
+    {
+      id: "fever-temperature",
+      text: "What is the highest temperature you measured?",
+      options: [
+        { value: "under-38", label: "Below 38°C" },
+        { value: "39.5-plus", label: "39.5°C or higher" },
+      ],
+    },
+    {
+      id: "severity",
+      text: "How bad are the symptoms right now?",
+      options: [
+        { value: "mild", label: "Mild: I can do my normal activities" },
+        { value: "severe", label: "Severe: I can hardly function" },
+      ],
+    },
+  ],
+};
+
+const URGENT_REFINED = {
+  level: "urgent",
+  label: "Urgent",
+  timeframe: "Within a few hours (today)",
+  action: "Get seen today at an emergency department or urgent care clinic. Call 140 if it gets worse.",
+  confidence: "refined",
+  reasons: ["A temperature of 39.5°C or higher should be checked today."],
+  followUpQuestions: [],
   disclaimer: "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.",
 };
 
@@ -300,5 +335,77 @@ describe("Symptoms Page", () => {
 
     expect(await screen.findByText("Could not save symptoms.")).toBeInTheDocument();
     expect(classifyUrgency).not.toHaveBeenCalled();
+  });
+
+  // ---- SCRUM-126: follow-up questions ----
+
+  test("shows follow-up questions and marks the first result as provisional", async () => {
+    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+
+    await submitSymptoms("Fever since yesterday");
+
+    expect(
+      await screen.findByRole("heading", { name: "Urgency so far: See a doctor soon" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "What is the highest temperature you measured?" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "How bad are the symptoms right now?" })).toBeInTheDocument();
+    // Nothing answered yet, so there is nothing to send.
+    expect(screen.getByRole("button", { name: "Update my urgency" })).toBeDisabled();
+  });
+
+  test("sends the answers with the saved description and shows the updated result", async () => {
+    const user = userEvent.setup();
+    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+    refineUrgency.mockResolvedValue(URGENT_REFINED);
+
+    await submitSymptoms("Fever since yesterday");
+    await user.click(await screen.findByLabelText("39.5°C or higher"));
+    await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+
+    expect(refineUrgency).toHaveBeenCalledWith("Fever since yesterday", {
+      "fever-temperature": "39.5-plus",
+    });
+    expect(await screen.findByRole("heading", { name: "Urgency: Urgent" })).toBeInTheDocument();
+    expect(screen.getByText("Updated using your answers.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
+  });
+
+  test("skipping the questions keeps the first result as the final one", async () => {
+    const user = userEvent.setup();
+    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+
+    await submitSymptoms("Fever since yesterday");
+    await user.click(await screen.findByRole("button", { name: "Skip questions" }));
+
+    expect(screen.getByRole("heading", { name: "Urgency: See a doctor soon" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
+    expect(refineUrgency).not.toHaveBeenCalled();
+  });
+
+  test("an emergency shows no questions, only the call-140 advice", async () => {
+    classifyUrgency.mockResolvedValue({ ...EMERGENCY_RESULT, followUpQuestions: [] });
+
+    await submitSymptoms("Chest pain");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Urgency: Emergency");
+    expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
+  });
+
+  test("if updating fails, the first result and the questions stay so the user can retry", async () => {
+    const user = userEvent.setup();
+    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+    refineUrgency.mockRejectedValue(new Error("Request failed."));
+
+    await submitSymptoms("Fever since yesterday");
+    await user.click(await screen.findByLabelText("Severe: I can hardly function"));
+    await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+
+    expect(
+      await screen.findByText("We could not update the urgency with your answers. The result above still applies.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Urgency so far: See a doctor soon" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Update my urgency" })).toBeEnabled();
   });
 });
