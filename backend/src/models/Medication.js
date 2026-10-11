@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-// One medication on someone's list (stories #44, #46, #47).
-// owner is the account that manages it. profileId is whose medication it is: for now always the owner's own
-// profile (the user id), later also one of their linked profiles (#48), with no change to this schema.
+// One medication on someone's list (stories #44, #46, #47, #48).
+// owner is the account that manages it. profileId is whose medication it is: the owner's own profile
+// (stored as the user id) or one of the owner's linked profiles (a LinkedProfile id).
 const FORMS = ["tablet", "syrup", "injection", "inhaler", "drops", "other"];
 const STATUSES = ["active", "discontinued"];
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import Dialog from "../components/Dialog";
 import { MedicineBox } from "../components/illustrations";
@@ -106,7 +106,7 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
 }
 
 export default function MedicationsPage() {
-  const { activeProfile } = useActiveProfile();
+  const { activeProfile, error: profilesError } = useActiveProfile();
   const [medications, setMedications] = useState(null);
   const [loadError, setLoadError] = useState("");
   // null, "add", or the id of the medication being edited. Only one form is open at a time.
@@ -116,33 +116,52 @@ export default function MedicationsPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
+  // Whose list this is: the profile chosen in the header ("self" or a dependent's id).
+  const profileId = activeProfile?.id;
+  const forSelf = !activeProfile || activeProfile.isSelf;
+  const name = activeProfile?.fullName;
+  // The profile the latest load was for, so a slow answer for a previous profile is never shown.
+  const profileRef = useRef(profileId);
+  profileRef.current = profileId;
+
   async function load() {
+    const requested = profileRef.current;
     setLoadError("");
     try {
-      setMedications(await getMedications());
+      const list = await getMedications(requested);
+      if (profileRef.current === requested) setMedications(list);
     } catch {
-      setLoadError("We couldn't load your medications. Please check your connection and try again.");
+      if (profileRef.current === requested) {
+        setLoadError(`We couldn't load ${forSelf ? "your" : name + "'s"} medications. Please check your connection and try again.`);
+      }
     }
   }
-  useEffect(() => { load(); }, []);
+  // Loads again whenever the header switches profile, starting from a clean page.
+  useEffect(() => {
+    if (!profileId) return;
+    setMedications(null); setEditing(null); setToDelete(null); setNotice(""); setError("");
+    load();
+  }, [profileId]);
 
   function open(target) {
     setNotice(""); setError(""); setEditing(target);
   }
 
+  const listName = forSelf ? "your list" : `${name}'s list`;
+
   async function handleAdd(fields) {
-    await addMedication(fields);
+    await addMedication(profileId, fields);
     setEditing(null);
-    setNotice(`${fields.name} was added to your list.`);
+    setNotice(`${fields.name} was added to ${listName}.`);
     await load();
   }
 
   async function handleEdit(id, fields) {
     try {
-      await updateMedication(id, fields);
+      await updateMedication(profileId, id, fields);
     } catch (err) {
       // Deleted somewhere else (another tab): close the form and refresh the list.
-      if (err.status === 404) { setEditing(null); setError("That medication is no longer on your list."); await load(); return; }
+      if (err.status === 404) { setEditing(null); setError(`That medication is no longer on ${listName}.`); await load(); return; }
       throw err;
     }
     setEditing(null);
@@ -154,7 +173,7 @@ export default function MedicationsPage() {
     const status = medication.status === "active" ? "discontinued" : "active";
     setBusyId(medication.id); setNotice(""); setError("");
     try {
-      await setMedicationStatus(medication.id, status);
+      await setMedicationStatus(profileId, medication.id, status);
       setNotice(status === "active" ? `${medication.name} is marked as active again.` : `${medication.name} is marked as discontinued.`);
       await load();
     } catch (err) {
@@ -168,7 +187,7 @@ export default function MedicationsPage() {
     const medication = toDelete;
     setBusyId(medication.id); setNotice(""); setError("");
     try {
-      await deleteMedication(medication.id);
+      await deleteMedication(profileId, medication.id);
       setNotice(`${medication.name} was deleted.`);
       if (editing === medication.id) setEditing(null);
       await load();
@@ -182,14 +201,14 @@ export default function MedicationsPage() {
 
   return (
     <PageLayout title="Medications" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle lead="Keep a list of the medicines you take, so it's ready when you see a doctor.">My medications</PageTitle>
-
-      {activeProfile && !activeProfile.isSelf && (
-        <Alert tone="info" as="p">
-          This list is for your own medications. Lists for the people you look after are coming soon.
-        </Alert>
+      {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
+      {forSelf ? (
+        <PageTitle lead="Keep a list of the medicines you take, so it's ready when you see a doctor.">My medications</PageTitle>
+      ) : (
+        <PageTitle lead={`Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`}>Medications for {name}</PageTitle>
       )}
 
+      {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
 
@@ -200,7 +219,7 @@ export default function MedicationsPage() {
         </div>
       )}
 
-      {!loadError && medications === null && <HeartbeatLoader label="Loading your medications..." />}
+      {!loadError && !profilesError && medications === null && <HeartbeatLoader label="Loading medications..." />}
 
       {medications !== null && (
         <>
@@ -214,12 +233,12 @@ export default function MedicationsPage() {
 
           {medications.length === 0 && editing !== "add" && (
             <EmptyState illustration={<MedicineBox size="5rem" />} title="No medications yet.">
-              Add the ones you take so they're ready for your doctor.
+              {forSelf ? "Add the ones you take so they're ready for your doctor." : `Add the ones ${name} takes so they're ready for their doctor.`}
             </EmptyState>
           )}
 
           {medications.length > 0 && (
-            <ul className="medication-list" aria-label="Your medications">
+            <ul className="medication-list" aria-label={forSelf ? "Your medications" : `Medications for ${name}`}>
               {medications.map((medication) => (
                 <li key={medication.id} className="medication">
                   {editing === medication.id ? (

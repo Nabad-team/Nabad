@@ -105,10 +105,13 @@ router.post("/linked", asyncRoute(async (req, res) => {
   return res.status(201).json({ profile: linkedView(profile) });
 }));
 
+// Removes a dependent and their medications. The medications go first (only once we know the profile is
+// the user's own): if removing the profile then fails, it still exists and can be removed again.
 router.delete("/linked/:id", asyncRoute(async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Profile not found." });
-  const result = await LinkedProfile.deleteOne({ _id: req.params.id, owner: req.userId });
-  if (result.deletedCount === 0) return res.status(404).json({ error: "Profile not found." });
+  const profile = await findOwnedProfile(req);
+  if (!profile) return res.status(404).json({ error: "Profile not found." });
+  await Medication.deleteMany({ owner: req.userId, profileId: profile._id });
+  await LinkedProfile.deleteOne({ _id: profile._id, owner: req.userId });
   return res.status(204).end();
 }));
 
@@ -148,7 +151,7 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   } else if (typeof password !== "string" || Buffer.byteLength(password) > 72 || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(400).json({ error: "Password is incorrect." });
   }
-  // Medications and linked profiles first: if deleting the user then fails, the account still exists and can be deleted again.
+  // Medications (the user's own and every dependent's: all are owned by the account) and linked profiles first: if deleting the user then fails, the account still exists and can be deleted again.
   await Medication.deleteMany({ owner: user._id });
   await LinkedProfile.deleteMany({ owner: user._id });
   // The emergency contact and trusted devices are stored inside the user document, so they are deleted with it.
