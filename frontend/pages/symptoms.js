@@ -28,6 +28,7 @@ export default function SymptomsPage() {
   const recognitionRef = useRef(null);
   const baseSymptomsRef = useRef("");
   const dictatedTextRef = useRef("");
+  const voiceRequestHandledRef = useRef(false);
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
@@ -99,6 +100,14 @@ export default function SymptomsPage() {
       setIsListening(false);
     }
   }
+
+  // Opened from the dashboard's "Speak" button (/symptoms?voice=1): start listening straight away,
+  // once the profile is known. The ref makes sure this happens only once per visit.
+  useEffect(() => {
+    if (!activeProfile || voiceRequestHandledRef.current) return;
+    voiceRequestHandledRef.current = true;
+    if (new URLSearchParams(window.location.search).get("voice") === "1") toggleSpeechInput();
+  }, [activeProfile]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -172,7 +181,7 @@ export default function SymptomsPage() {
   if (!activeProfile) {
     return (
       <PageLayout>
-        <PageTitle>Symptom Entry</PageTitle>
+        <PageTitle>Symptom entry</PageTitle>
         <EmptyState illustration={<PersonWithPhone size="5rem" />} title="No active profile selected." />
       </PageLayout>
     );
@@ -180,7 +189,7 @@ export default function SymptomsPage() {
 
   return (
     <PageLayout>
-      <PageTitle>Enter Symptoms</PageTitle>
+      <PageTitle>Enter symptoms</PageTitle>
 
       <p>
         You are entering symptoms for:
@@ -195,7 +204,7 @@ export default function SymptomsPage() {
             label="Symptoms"
             value={symptoms}
             onChange={(event) => setSymptoms(event.target.value)}
-            placeholder={`Enter symptoms for ${activeProfile.fullName}`}
+            placeholder="For example: headache since yesterday and a mild fever."
             rows="6"
           />
 
@@ -215,7 +224,7 @@ export default function SymptomsPage() {
         </div>
 
         <div className="form-actions">
-          <Button type="submit">Submit Symptoms</Button>
+          <Button type="submit">Submit symptoms</Button>
         </div>
       </form>
 

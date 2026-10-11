@@ -146,7 +146,7 @@ Note: `ProfileHeader` needs the `ActiveProfileProvider` from `_app.js`. If your 
 <Button>Save</Button>                                   // primary: the main action. Usually one per screen.
 <Button variant="secondary">Cancel</Button>             // everything else: Cancel, Back, Edit, Skip
 <Button variant="danger">Delete my account</Button>     // only for deleting data
-<Button href="/profile" variant="secondary">My Profile</Button>   // a link that looks like a button
+<Button href="/profile" variant="secondary">My profile</Button>   // a link that looks like a button
 <Button size="small">Sign out</Button>                  // smaller text, still 44px tall
 <Button block type="submit">Log in</Button>             // full width (single-column forms)
 ```
@@ -239,7 +239,7 @@ For a list or area with nothing in it yet: a small drawing, one sentence, and th
 | `.button-row` | Buttons side by side, wrapping on phones |
 | `.details` + `.details__label` | Label above value (profile details) |
 | `.plain-list` | Rows separated by thin lines (linked profiles) |
-| `.action-link` | One big "main thing to do" link per page (dashboard) |
+| `.check-in` | The one light-teal panel for the main thing to do on a page (dashboard) |
 | `.visually-hidden` | Text for screen readers only |
 
 ---
@@ -253,7 +253,7 @@ Four original line drawings in one style: a single teal outline, round line ends
 | `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing (symptom check), onboarding step 1, symptoms page with no profile |
 | `MedicineBox` | A first-aid box with a cross | Landing (emergency hospital) |
 | `SmallHouse` | A small house with a door, window and plant | Landing (hospitals and clinics), onboarding step 3 |
-| `CaregiverHands` | Two open hands holding a heart | Landing (family care), onboarding step 2, "No linked profiles yet" |
+| `CaregiverHands` | Two open hands holding a heart | Landing hero (large, `strokeWidth={0.9}`) and family care, onboarding step 2, "No linked profiles yet" |
 
 ```jsx
 import { MedicineBox } from "../components/illustrations";

@@ -1,20 +1,19 @@
 import { useState } from "react";
 
-// Dark shades that all keep white text above WCAG AA (4.5:1); checked in __tests__/Avatar.test.js.
+// Teal and terracotta shades from the Nabad palette (never red: red means an emergency or an error).
+// All keep white text above WCAG AA (4.5:1); checked in __tests__/Avatar.test.js.
 export const AVATAR_COLORS = [
-  "#0f766e", // teal
-  "#1d4ed8", // blue
-  "#7e22ce", // purple
-  "#b91c1c", // red
-  "#c2410c", // orange
-  "#15803d", // green
-  "#be185d", // pink
-  "#4338ca", // indigo
-  "#334155", // slate
-  "#a16207", // amber
+  "#0f766e", // logo teal
+  "#115e59", // deep teal
+  "#134e4a", // darkest teal
+  "#2c6e63", // green teal
+  "#9c4a2f", // terracotta
+  "#8a4529", // deep terracotta
+  "#7a3a24", // darkest terracotta
+  "#6f4a3a", // clay brown
 ];
-// Used when there is no name, behind the person icon.
-const NO_NAME_COLOR = "#4b5563";
+// Used when there is no name, behind the person icon (warm gray).
+const NO_NAME_COLOR = "#5c554d";
 
 // "Sami Haddad" -> "SH", "Sami" -> "S", "  " -> "". Array.from keeps non-Latin letters whole.
 export function initialsFor(name) {

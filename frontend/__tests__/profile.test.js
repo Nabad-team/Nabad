@@ -1,4 +1,4 @@
-// Automated tests for the Nabad "My Profile" page.
+// Automated tests for the Nabad "My profile" page.
 // These tests run automatically on every pull request.
 
 import { render, screen, within } from "@testing-library/react";

@@ -1,18 +1,20 @@
 // Small line drawings in one style: a single teal outline, round ends, no fills or gradients.
 // The lines bend a little on purpose so they feel drawn by hand. Use them on the landing page
 // and in empty states, at about 4 to 7rem. They are decorative (hidden from screen readers)
-// unless you pass a title.
+// unless you pass a title. When drawn larger than about 8rem, pass a thinner strokeWidth (e.g. 0.9 at 20rem)
+// so the line stays as fine as it looks at the usual size.
 
-function Drawing({ size = "6rem", title, children }) {
+// viewBox can crop the 120x120 canvas to the drawing itself (useful at large sizes, see the landing hero).
+function Drawing({ size = "6rem", strokeWidth = 2.5, viewBox = "0 0 120 120", title, children }) {
   return (
     <svg
       className="illustration"
       width={size}
       height={size}
-      viewBox="0 0 120 120"
+      viewBox={viewBox}
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.5"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       role={title ? "img" : undefined}

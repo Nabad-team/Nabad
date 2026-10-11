@@ -565,22 +565,27 @@ select.input {
 
 /* ---------- Signed-in header: profile switcher and picture ---------- */
 
+/* The profile switcher sits beside the account links on wide screens. On phones it gets its own
+   full-width row under the logo, so long names show in full. */
+.profile-switcher {
+  margin-left: auto;
+}
+
 .profile-select {
   width: auto;
   max-width: 100%;
   font-size: var(--text-sm);
 }
 
-/* On phones the account nav takes its own row under the logo, and the switcher shrinks to fit. */
 @media (max-width: 40rem) {
-  .site-nav:has(.profile-select) {
-    width: 100%;
-    flex-wrap: nowrap;
+  .profile-switcher {
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
   }
 
   .profile-select {
-    flex: 1 1 auto;
-    min-width: 0;
+    width: 100%;
   }
 }
 
@@ -728,9 +733,17 @@ select.input {
 
 /* ---------- Landing page ---------- */
 
+/* Text on the left, a large line drawing on the right. On phones the drawing sits below the text. */
 .hero {
-  max-width: var(--width-prose);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: var(--space-6);
   padding-block: var(--space-6) var(--space-4);
+}
+
+.hero__text {
+  max-width: var(--width-prose);
 }
 
 .hero h1 {
@@ -740,6 +753,28 @@ select.input {
 
 .hero .lead {
   margin: var(--space-5) 0 var(--space-6);
+}
+
+.hero__art {
+  width: 100%;
+  max-width: 13rem;
+}
+
+.hero__art .illustration {
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 52rem) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    gap: var(--space-8);
+  }
+
+  .hero__art {
+    max-width: 20rem;
+    justify-self: end;
+  }
 }
 
 .feature-list {
@@ -809,33 +844,25 @@ select.input {
 
 /* ---------- Dashboard and onboarding ---------- */
 
-/* A large link for the main thing to do on a page. One per page at most. */
-.action-link {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
+/* The one main thing to do on the dashboard: a light teal panel with its actions. */
+.check-in {
   padding: var(--space-5);
   background: var(--color-primary-soft);
-  border: 0.125rem solid var(--color-primary);
+  border: 0.0625rem solid var(--color-primary-line);
   border-radius: var(--radius-lg);
-  color: var(--color-primary-strong);
-  text-decoration: none;
 }
 
-.action-link:hover {
-  background: var(--color-primary-soft-hover);
-  color: var(--color-primary-strong);
-  text-decoration: none;
+.check-in h2 {
+  margin-bottom: var(--space-2);
 }
 
-.action-link svg {
-  flex-shrink: 0;
-  color: var(--color-primary);
+.check-in p {
+  max-width: var(--width-prose);
+  margin-bottom: var(--space-5);
 }
 
-.action-link__title {
-  display: block;
-  font-size: var(--text-lg);
+.check-in .button {
+  min-width: 7.5rem;
 }
 
 .banner {

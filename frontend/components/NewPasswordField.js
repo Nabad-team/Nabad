@@ -21,7 +21,8 @@ export default function NewPasswordField({ id = "password", label = "Password", 
       <ul id={`${id}-checklist`} aria-label="Password requirements" className="checklist">
         {passwordChecklist(value, context).map((item) => (
           <li key={item.id} data-met={item.met} className={!value ? "" : item.met ? "checklist__item--met" : "checklist__item--unmet"}>
-            <span aria-hidden="true" className="checklist__mark">{value && item.met ? "✓" : "✗"}</span>
+            {/* A neutral dot until the user starts typing, then a check or a cross. */}
+            <span aria-hidden="true" className="checklist__mark">{!value ? "•" : item.met ? "✓" : "✗"}</span>
             <span className="visually-hidden">{value && item.met ? "Done: " : "Not yet: "}</span>
             {item.label}
           </li>

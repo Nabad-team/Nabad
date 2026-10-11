@@ -21,10 +21,7 @@ export default function Logo({ size = "2.25rem" }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-        <span style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Nabad</span>
-        <span lang="ar" dir="rtl" style={{ fontSize: "0.8125rem", marginTop: "0.125rem" }}>نبض</span>
-      </span>
+      <span style={{ fontSize: "1.5rem", fontWeight: "bold", lineHeight: 1 }}>Nabad</span>
     </a>
   );
 }

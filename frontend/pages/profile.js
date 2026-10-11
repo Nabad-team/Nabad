@@ -12,7 +12,7 @@ import {
   RELATIONSHIPS,
   MAX_LINKED_PROFILES,
 } from "../lib/profileApi";
-import { todayString, calculateAge } from "../lib/dates";
+import { todayString, calculateAge, formatDate } from "../lib/dates";
 import { signOut } from "../lib/session";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -244,7 +244,7 @@ export default function ProfilePage() {
           You're managing {activeProfile.fullName}'s care. Account settings below belong to you.
         </p>
       )}
-      <PageTitle>My Profile</PageTitle>
+      <PageTitle>My profile</PageTitle>
 
       {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
       {!profile && !loadError && <HeartbeatLoader />}
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                 <p><span className="details__label">Full name</span>{profile.fullName}</p>
                 <p><span className="details__label">Email</span>{profile.email}</p>
                 <p><span className="details__label">Phone</span>{profile.phone || "Not set"}</p>
-                <p><span className="details__label">Date of birth</span>{profile.dateOfBirth || "Not set"}</p>
+                <p><span className="details__label">Date of birth</span>{profile.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not set"}</p>
               </div>
               <Button variant="secondary" onClick={startEditing}>Edit</Button>
             </>
@@ -418,7 +418,7 @@ export default function ProfilePage() {
           </p>
           {removeError && <Alert tone="danger" as="p" role="alert">{removeError}</Alert>}
           <div className="button-row dialog__actions">
-            <Button variant="danger" onClick={handleRemove}>Remove</Button>
+            <Button onClick={handleRemove}>Remove</Button>
             <Button variant="secondary" onClick={() => setProfileToRemove(null)}>Cancel</Button>
           </div>
         </Dialog>

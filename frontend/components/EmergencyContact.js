@@ -3,7 +3,6 @@ import { getEmergencyContact, addEmergencyContact, updateEmergencyContact, remov
 import Dialog from "./Dialog";
 import Alert from "./ui/Alert";
 import Button from "./ui/Button";
-import Card from "./ui/Card";
 import Input from "./ui/Input";
 import { HeartbeatLoader } from "./ui/Heartbeat";
 
@@ -90,13 +89,13 @@ export default function EmergencyContact() {
       </div>
       <div className="button-row">
         <Button variant="secondary" onClick={startEdit}>Edit contact</Button>
-        <Button variant="danger" onClick={() => { setNotice(""); setError(""); setConfirmingRemove(true); }}>Remove contact</Button>
+        <Button variant="secondary" onClick={() => { setNotice(""); setError(""); setConfirmingRemove(true); }}>Remove contact</Button>
       </div>
     </div>
   );
 
   return (
-    <Card aria-labelledby="emergency-heading" className="section">
+    <section aria-labelledby="emergency-heading" className="section">
       <h2 id="emergency-heading">Emergency contact</h2>
       <p className="text-muted">The person we show during an emergency alert. This contact belongs to your account.</p>
       {body}
@@ -106,11 +105,11 @@ export default function EmergencyContact() {
         <Dialog title="Remove emergency contact?">
           <p>{contact?.name} will no longer be shown during emergency alerts. You can add a new contact at any time.</p>
           <div className="button-row">
-            <Button variant="danger" onClick={remove} disabled={saving}>{saving ? "Removing..." : "Yes, remove"}</Button>
+            <Button onClick={remove} disabled={saving}>{saving ? "Removing..." : "Yes, remove"}</Button>
             <Button variant="secondary" onClick={() => setConfirmingRemove(false)} disabled={saving}>Keep contact</Button>
           </div>
         </Dialog>
       )}
-    </Card>
+    </section>
   );
 }

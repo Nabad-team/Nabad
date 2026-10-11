@@ -52,13 +52,19 @@ export default function HomePage() {
       )}
 
       <section className="hero">
-        <h1>Know where to go when it matters.</h1>
-        <HeartbeatDivider />
-        <p className="lead">
-          Tell us how you feel. We'll help you understand how urgent it is and find a hospital that can
-          treat you.
-        </p>
-        <Button href="/signup">Get started</Button>
+        <div className="hero__text">
+          <h1>Know where to go when it matters.</h1>
+          <HeartbeatDivider />
+          <p className="lead">
+            Tell us how you feel. We'll help you understand how urgent it is and find a hospital that can
+            treat you.
+          </p>
+          <Button href="/signup">Get started</Button>
+        </div>
+        <div className="hero__art">
+          {/* Cropped to the hands and heart, so no empty band shows above or below them. */}
+          <CaregiverHands size="100%" strokeWidth={0.9} viewBox="4 32 112 66" />
+        </div>
       </section>
 
       <section className="section" aria-labelledby="features-heading">

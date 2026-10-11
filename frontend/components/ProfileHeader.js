@@ -16,7 +16,8 @@ const TEAL = "#0f766e";
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
-export default function ProfileHeader() {
+// showPicture: false hides the picture controls (the dashboard keeps them on the profile page only).
+export default function ProfileHeader({ showPicture = true }) {
   const { selfProfile, linkedProfiles, activeProfile, switchProfile, refreshProfiles } =
     useActiveProfile();
 
@@ -109,8 +110,10 @@ export default function ProfileHeader() {
         <div className="container site-header__inner">
           <Logo />
 
-          <nav aria-label="Account" className="site-nav">
-            {selfProfile && activeProfile && (
+          {/* A direct child of the header row, so on phones it can move to its own full-width row
+              below the logo and the names show in full (see .profile-switcher in components.css). */}
+          {selfProfile && activeProfile && (
+            <div className="profile-switcher">
               <select
                 aria-label="Active profile"
                 className="input profile-select"
@@ -127,8 +130,10 @@ export default function ProfileHeader() {
                   </option>
                 ))}
               </select>
-            )}
+            </div>
+          )}
 
+          <nav aria-label="Account" className="site-nav">
             {signedIn && (
               <a href="/security" className="site-nav__link">
                 Security
@@ -145,36 +150,38 @@ export default function ProfileHeader() {
         </div>
       </header>
 
-      {activeProfile && (
+      {activeProfile && (showPicture || !activeProfile.isSelf) && (
         <div className="container profile-strip">
-          <div className="profile-strip__picture">
-            <Avatar name={activeProfile.fullName} src={displayedPicture} size={72} borderColor={TEAL} />
+          {showPicture && (
+            <div className="profile-strip__picture">
+              <Avatar name={activeProfile.fullName} src={displayedPicture} size={72} borderColor={TEAL} />
 
-            <div>
-              <input
-                ref={fileInputRef}
-                data-testid="profile-picture-input"
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={handlePictureChange}
-                style={{ display: "none" }}
-              />
+              <div>
+                <input
+                  ref={fileInputRef}
+                  data-testid="profile-picture-input"
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handlePictureChange}
+                  style={{ display: "none" }}
+                />
 
-              <div className="button-row">
-                <Button variant="secondary" size="small" onClick={() => fileInputRef.current?.click()}>
-                  {hasPicture ? "Change picture" : "Upload picture"}
-                </Button>
-
-                {hasPicture && (
-                  <Button variant="secondary" size="small" onClick={handleRemovePicture}>
-                    Remove picture
+                <div className="button-row">
+                  <Button variant="secondary" size="small" onClick={() => fileInputRef.current?.click()}>
+                    {hasPicture ? "Change picture" : "Upload picture"}
                   </Button>
-                )}
-              </div>
 
-              {error && <p className="field__error profile-strip__error">{error}</p>}
+                  {hasPicture && (
+                    <Button variant="secondary" size="small" onClick={handleRemovePicture}>
+                      Remove picture
+                    </Button>
+                  )}
+                </div>
+
+                {error && <p className="field__error profile-strip__error">{error}</p>}
+              </div>
             </div>
-          </div>
+          )}
 
           {!activeProfile.isSelf && (
             <Alert tone="info" as="p" role="status" className="acting-as">

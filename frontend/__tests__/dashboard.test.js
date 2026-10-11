@@ -39,7 +39,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     expect(
-      await screen.findByText("Welcome, Demo User")
+      await screen.findByText("Welcome, Demo")
     ).toBeInTheDocument();
   });
 
@@ -50,24 +50,38 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     expect(
-      await screen.findByText("Welcome, Layla Haddad")
+      await screen.findByText("Welcome, Layla")
     ).toBeInTheDocument();
   });
 
-  test("links to the security settings from the page and the account menu", async () => {
+  test("greets the user by first name only", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo User");
+
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Welcome, Demo");
+    expect(screen.queryByText(/Welcome, Demo User/)).not.toBeInTheDocument();
+  });
+
+  test("links to the security settings once, from the account menu", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo");
 
     const links = screen.getAllByRole("link", { name: "Security" });
-    expect(links).toHaveLength(2);
-    for (const link of links) expect(link).toHaveAttribute("href", "/security");
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute("href", "/security");
+  });
+
+  test("keeps the picture controls on the profile page, not the dashboard", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo");
+
+    expect(screen.queryByRole("button", { name: "Upload picture" })).not.toBeInTheDocument();
   });
 
   test("loading ends once the profile is shown", async () => {
     renderDashboard();
     expect(screen.getByText("Loading...")).toBeInTheDocument();
 
-    await screen.findByText("Welcome, Demo User");
+    await screen.findByText("Welcome, Demo");
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
   });
 
@@ -76,7 +90,7 @@ describe("Dashboard Page", () => {
 
     renderDashboard();
 
-    expect(await screen.findByText("Welcome, Rami Khoury")).toBeInTheDocument();
+    expect(await screen.findByText("Welcome, Rami")).toBeInTheDocument();
     expect(screen.queryByText(/Demo User/)).not.toBeInTheDocument();
   });
 
@@ -130,24 +144,26 @@ describe("Dashboard Page", () => {
     expect(screen.queryByText(/You're managing/)).not.toBeInTheDocument();
   });
 
-  test("My Profile link points to /profile", async () => {
+  test("My profile link points to /profile", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo User");
+    await screen.findByText("Welcome, Demo");
 
     expect(
-      screen.getByRole("link", { name: "My Profile" })
+      screen.getByRole("link", { name: "My profile" })
     ).toHaveAttribute("href", "/profile");
   });
 
-  test("shows a clear link for speaking symptoms", async () => {
+  test("offers to check how you're feeling by typing or by speaking", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo User");
+    await screen.findByText("Welcome, Demo");
 
+    expect(screen.getByRole("heading", { name: "Check how you're feeling" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Type your symptoms" })
+    ).toHaveAttribute("href", "/symptoms");
+    // Speak opens the symptoms page already listening.
     expect(
       screen.getByRole("link", { name: "Speak your symptoms" })
-    ).toHaveAttribute("href", "/symptoms");
-    expect(
-      screen.getByText("Tap here to describe how you feel by voice.")
-    ).toBeInTheDocument();
+    ).toHaveAttribute("href", "/symptoms?voice=1");
   });
 });
