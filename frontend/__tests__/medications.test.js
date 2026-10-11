@@ -13,27 +13,28 @@ jest.mock("../components/SessionTimeout", () => ({
 }));
 
 // A small in-memory stand-in for the backend, sorted like the real list: active first, newest first.
+// Like the backend, every call names the profile, and a medication is only found through its own profile.
 let mockMedications = [];
 let mockNextId = 1;
-const sorted = () => [...mockMedications].sort((a, b) => (a.status === b.status ? b.order - a.order : a.status === "active" ? -1 : 1));
+const sorted = (profileId) => mockMedications
+  .filter((m) => m.profileId === profileId)
+  .sort((a, b) => (a.status === b.status ? b.order - a.order : a.status === "active" ? -1 : 1));
+function mockFind(profileId, id) {
+  const medication = mockMedications.find((m) => m.id === id && m.profileId === profileId);
+  if (!medication) throw Object.assign(new Error("Medication not found."), { status: 404 });
+  return medication;
+}
 const mockApi = {
-  getMedications: jest.fn(async () => sorted().map(({ order, ...m }) => m)),
-  addMedication: jest.fn(async (fields) => {
-    const medication = { id: String(mockNextId), order: mockNextId++, status: "active", ...fields };
+  getMedications: jest.fn(async (profileId) => sorted(profileId).map(({ order, ...m }) => m)),
+  addMedication: jest.fn(async (profileId, fields) => {
+    const medication = { id: String(mockNextId), order: mockNextId++, profileId, status: "active", ...fields };
     mockMedications.push(medication);
     return medication;
   }),
-  updateMedication: jest.fn(async (id, fields) => {
-    const medication = mockMedications.find((m) => m.id === id);
-    Object.assign(medication, fields);
-    return medication;
-  }),
-  setMedicationStatus: jest.fn(async (id, status) => {
-    const medication = mockMedications.find((m) => m.id === id);
-    medication.status = status;
-    return medication;
-  }),
-  deleteMedication: jest.fn(async (id) => {
+  updateMedication: jest.fn(async (profileId, id, fields) => Object.assign(mockFind(profileId, id), fields)),
+  setMedicationStatus: jest.fn(async (profileId, id, status) => Object.assign(mockFind(profileId, id), { status })),
+  deleteMedication: jest.fn(async (profileId, id) => {
+    mockFind(profileId, id);
     mockMedications = mockMedications.filter((m) => m.id !== id);
   }),
 };
@@ -48,7 +49,7 @@ jest.mock("../lib/medicationApi", () => ({
 
 function seed(fields) {
   mockMedications.push({
-    id: String(mockNextId), order: mockNextId++, name: "Paracetamol", dose: "500", unit: "mg", form: "tablet",
+    id: String(mockNextId), order: mockNextId++, profileId: "self", name: "Paracetamol", dose: "500", unit: "mg", form: "tablet",
     frequency: "twice a day", startDate: "2026-09-01", endDate: "", status: "active", notes: "", ...fields,
   });
 }
@@ -116,7 +117,7 @@ describe("Medications page", () => {
     await user.click(within(form).getByRole("button", { name: "Save medication" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Amoxicillin was added to your list.");
-    expect(mockApi.addMedication).toHaveBeenCalledWith({
+    expect(mockApi.addMedication).toHaveBeenCalledWith("self", {
       name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", startDate: "2026-10-01", endDate: "", notes: "",
     });
     expect(within(await item("Amoxicillin")).getByText("250 mg syrup · three times a day")).toBeInTheDocument();
@@ -165,7 +166,7 @@ describe("Medications page", () => {
     await user.click(within(form).getByRole("button", { name: "Save changes" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Your changes to Paracetamol were saved.");
-    expect(mockApi.updateMedication).toHaveBeenCalledWith("1", expect.objectContaining({ name: "Paracetamol", dose: "1000" }));
+    expect(mockApi.updateMedication).toHaveBeenCalledWith("self", "1", expect.objectContaining({ name: "Paracetamol", dose: "1000" }));
     expect(within(await item("Paracetamol")).getByText("1000 mg tablet · twice a day")).toBeInTheDocument();
   });
 
@@ -187,12 +188,12 @@ describe("Medications page", () => {
 
     await user.click(await screen.findByRole("button", { name: "Mark as discontinued: Paracetamol" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Paracetamol is marked as discontinued.");
-    expect(mockApi.setMedicationStatus).toHaveBeenCalledWith("1", "discontinued");
+    expect(mockApi.setMedicationStatus).toHaveBeenCalledWith("self", "1", "discontinued");
     expect(within(await item("Paracetamol")).getByText("Discontinued")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Mark as active again: Paracetamol" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Paracetamol is marked as active again.");
-    expect(mockApi.setMedicationStatus).toHaveBeenLastCalledWith("1", "active");
+    expect(mockApi.setMedicationStatus).toHaveBeenLastCalledWith("self", "1", "active");
     await waitFor(async () => expect(within(await item("Paracetamol")).getByText("Active")).toBeInTheDocument());
   });
 
@@ -221,7 +222,7 @@ describe("Medications page", () => {
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Yes, delete" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Paracetamol was deleted.");
-    expect(mockApi.deleteMedication).toHaveBeenCalledWith("1");
+    expect(mockApi.deleteMedication).toHaveBeenCalledWith("self", "1");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
   });
@@ -243,5 +244,100 @@ describe("Medications page", () => {
 
   test("is only shown to signed-in users", () => {
     expect(MedicationsPage.requireSignIn).toBe(true);
+  });
+});
+
+describe("Medications for a family member", () => {
+  let childId;
+  beforeEach(async () => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockMedications = [];
+    mockNextId = 1;
+    jest.clearAllMocks();
+    childId = (await fakeProfileApi.addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" })).id;
+    seed({ name: "My own pill" });
+    seed({ name: "Sami syrup", form: "syrup", dose: "5", unit: "ml", profileId: childId });
+  });
+  const actAsChild = () => localStorage.setItem("nabad-active-profile-id", childId);
+  const childList = () => screen.findByRole("list", { name: "Medications for Sami Haddad" });
+  const childItem = async (name) => within(await childList()).getByRole("heading", { name }).closest("li");
+
+  test("shows the family member's list with their name, and the Acting as banner", async () => {
+    actAsChild();
+    renderPage();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Medications for Sami Haddad" })).toBeInTheDocument();
+    expect(screen.getByText("Acting as: Sami Haddad (child)")).toBeInTheDocument();
+    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument();
+    const names = within(await childList()).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(names).toEqual(["Sami syrup"]);
+    expect(mockApi.getMedications).toHaveBeenCalledWith(childId);
+  });
+
+  test("a caregiver adds, edits, changes and deletes a family member's medication", async () => {
+    const user = userEvent.setup();
+    actAsChild();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.type(screen.getByLabelText("Medication name"), "Ventolin");
+    await user.click(screen.getByRole("button", { name: "Save medication" }));
+    expect(await screen.findByText("Ventolin was added to Sami Haddad's list.")).toBeInTheDocument();
+    expect(mockApi.addMedication).toHaveBeenCalledWith(childId, expect.objectContaining({ name: "Ventolin" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit Sami syrup" }));
+    await user.clear(screen.getByLabelText("Dose"));
+    await user.type(screen.getByLabelText("Dose"), "10");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(await screen.findByText("Your changes to Sami syrup were saved.")).toBeInTheDocument();
+    expect(within(await childItem("Sami syrup")).getByText("10 ml syrup · twice a day")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Mark as discontinued: Sami syrup" }));
+    expect(await screen.findByText("Sami syrup is marked as discontinued.")).toBeInTheDocument();
+    expect(mockApi.setMedicationStatus).toHaveBeenCalledWith(childId, "2", "discontinued");
+
+    await user.click(screen.getByRole("button", { name: "Delete Sami syrup" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Yes, delete" }));
+    expect(await screen.findByText("Sami syrup was deleted.")).toBeInTheDocument();
+    expect(mockApi.deleteMedication).toHaveBeenCalledWith(childId, "2");
+
+    // The caregiver's own list was never touched.
+    expect(mockMedications.filter((m) => m.profileId === "self").map((m) => m.name)).toEqual(["My own pill"]);
+  });
+
+  test("switching profiles in the header shows the right list", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();
+    expect(within(await list()).getByRole("heading", { name: "My own pill" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), childId);
+    expect(await screen.findByRole("heading", { level: 1, name: "Medications for Sami Haddad" })).toBeInTheDocument();
+    const childNames = within(await childList()).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(childNames).toEqual(["Sami syrup"]);
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), "self");
+    expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();
+    const ownNames = within(await list()).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(ownNames).toEqual(["My own pill"]);
+  });
+
+  test("shows the family member's empty state in their name", async () => {
+    mockMedications = mockMedications.filter((m) => m.profileId !== childId);
+    actAsChild();
+    renderPage();
+    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
+    expect(screen.getByText("Add the ones Sami Haddad takes so they're ready for their doctor.")).toBeInTheDocument();
+  });
+
+  test("after a family member is removed, the page goes back to the caregiver's own list", async () => {
+    actAsChild();
+    await fakeProfileApi.removeLinkedProfile(childId);
+    renderPage();
+    expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();
+    expect(within(await list()).getByRole("heading", { name: "My own pill" })).toBeInTheDocument();
+    expect(mockApi.getMedications).not.toHaveBeenCalledWith(childId);
   });
 });

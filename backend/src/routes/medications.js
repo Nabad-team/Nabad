@@ -2,24 +2,43 @@ const express = require("express");
 const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const Medication = require("../models/Medication");
+const LinkedProfile = require("../models/LinkedProfile");
 const { FORMS, STATUSES, LIMITS } = Medication;
 const { requireAuth } = require("../middleware/authMiddleware");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
-// The signed-in user's medications. Every query filters by owner = req.userId, and a medication that
-// belongs to someone else answers 404 exactly like one that doesn't exist, so ids can't be probed.
+// Medications of the signed-in user and of the people they look after (their linked profiles).
+// Every route takes ?profileId=: "self" (the default) or the id of one of the user's linked profiles.
+// Every query filters by owner = req.userId and that profile, and anything that isn't theirs
+// (another user's medication or dependent) answers 404 exactly like something that doesn't exist, so ids can't be probed.
 // Health data: medication names, doses and notes are never logged (the logger only writes allowlisted fields).
 const router = express.Router();
 router.use(requireAuth);
 
-const MAX_MEDICATIONS = 200;
+const MAX_MEDICATIONS = 200; // per profile
 // Keyed by account (requireAuth runs first). Generous for real use, stops scripted floods.
 const writeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, keyGenerator: (req) => req.userId, message: { error: "Too many changes in a short time. Please wait a few minutes and try again." } });
 const NOT_FOUND = { error: "Medication not found." };
+const PROFILE_NOT_FOUND = { error: "Profile not found." };
 
 const dateString = (date) => (date ? date.toISOString().slice(0, 10) : "");
-// The account owner's own profile. Linked profiles (#48) will pass their own id here.
-const selfProfileId = (req) => new mongoose.Types.ObjectId(req.userId);
+// Whose medications this request is about: the user's own profile (stored as the user id) or one of
+// their linked profiles. Sets req.profileId, or answers 404 for anything else.
+async function resolveProfile(req, res, next) {
+  try {
+    const requested = req.query.profileId;
+    if (requested === undefined || requested === "self") {
+      req.profileId = new mongoose.Types.ObjectId(req.userId);
+      return next();
+    }
+    if (typeof requested !== "string" || !mongoose.isValidObjectId(requested)) return res.status(404).json(PROFILE_NOT_FOUND);
+    const profile = await LinkedProfile.exists({ _id: requested, owner: req.userId });
+    if (!profile) return res.status(404).json(PROFILE_NOT_FOUND);
+    req.profileId = profile._id;
+    return next();
+  } catch (error) { return next(error); }
+}
+router.use(resolveProfile);
 const view = (medication) => ({
   id: String(medication._id),
   profileId: String(medication.profileId) === String(medication.owner) ? "self" : String(medication.profileId),
@@ -75,21 +94,21 @@ function readMedication(body) {
 }
 
 // Matches the medication only if it belongs to the signed-in user. null for an id that can't exist (answered as 404).
-const ownedFilter = (req) => (mongoose.isValidObjectId(req.params.id) ? { _id: req.params.id, owner: req.userId } : null);
+const ownedFilter = (req) => (mongoose.isValidObjectId(req.params.id) ? { _id: req.params.id, owner: req.userId, profileId: req.profileId } : null);
 
 // Active first, then discontinued; newest first within each.
 router.get("/", asyncRoute(async (req, res) => {
-  const medications = await Medication.find({ owner: req.userId, profileId: selfProfileId(req) }).sort({ status: 1, createdAt: -1, _id: -1 });
+  const medications = await Medication.find({ owner: req.userId, profileId: req.profileId }).sort({ status: 1, createdAt: -1, _id: -1 });
   return res.json({ medications: medications.map(view) });
 }));
 
 router.post("/", writeLimiter, asyncRoute(async (req, res) => {
   const { medication, error } = readMedication(req.body);
   if (error) return res.status(400).json({ error });
-  if (await Medication.countDocuments({ owner: req.userId }) >= MAX_MEDICATIONS) {
+  if (await Medication.countDocuments({ owner: req.userId, profileId: req.profileId }) >= MAX_MEDICATIONS) {
     return res.status(400).json({ error: `You can keep up to ${MAX_MEDICATIONS} medications. Delete the ones you no longer need first.` });
   }
-  const created = await Medication.create({ ...medication, owner: req.userId, profileId: selfProfileId(req) });
+  const created = await Medication.create({ ...medication, owner: req.userId, profileId: req.profileId });
   return res.status(201).json({ medication: view(created) });
 }));
 
