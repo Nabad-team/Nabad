@@ -39,7 +39,7 @@ describe("Email verification banner", () => {
   test("is shown to unverified users and resends the link", async () => {
     getMe.mockResolvedValue({ user: { email: "rana@example.test", emailVerified: false } });
     resendVerificationEmail.mockResolvedValue({ message: "A new verification link was sent to rana@example.test." });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<EmailVerificationBanner />);
     expect(await screen.findByText(/Please verify your email/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Resend verification email" }));
@@ -50,7 +50,7 @@ describe("Email verification banner", () => {
   test("explains the one-minute wait when resend is rate-limited", async () => {
     getMe.mockResolvedValue({ user: { email: "rana@example.test", emailVerified: false } });
     resendVerificationEmail.mockRejectedValue(Object.assign(new Error("Please wait"), { status: 429 }));
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<EmailVerificationBanner />);
     await user.click(await screen.findByRole("button", { name: "Resend verification email" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("wait a minute");

@@ -10,6 +10,10 @@ import {
   getMyProfile,
 } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 // The profile API is replaced by an in-memory fake of the backend.
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
@@ -80,7 +84,7 @@ describe("Profile switcher", () => {
   test(
     "switching to a dependent shows the Acting as banner, switching back hides it",
     async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       renderHeader();
 
@@ -109,7 +113,7 @@ describe("Profile switcher", () => {
   );
 
   test("the chosen profile survives a reload", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     const { unmount } = renderHeader();
 
@@ -182,7 +186,7 @@ describe("Profile picture upload", () => {
   });
 
   test("accepts a valid JPG image and saves it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     renderHeader();
 
@@ -221,7 +225,7 @@ describe("Profile picture upload", () => {
   });
 
   test("accepts a valid PNG image and saves it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     renderHeader();
 
@@ -293,7 +297,7 @@ describe("Profile picture upload", () => {
   });
 
   test("rejects an image larger than 1 MB", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     renderHeader();
 
@@ -327,7 +331,7 @@ describe("Profile picture upload", () => {
   });
 
   test("removes a saved profile picture", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     renderHeader();
 
@@ -379,7 +383,7 @@ describe("Profile picture after switching profiles", () => {
 
   test("the saved picture is still shown after switching away and back", async () => {
     const child = await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("button", { name: "Upload picture" });
 
@@ -418,7 +422,7 @@ describe("Default avatar", () => {
 
   test("shows initials for you and for a linked profile, without external images", async () => {
     await addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2015-03-10", relationship: "child" });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { container } = renderHeader();
 
     const own = await screen.findByRole("img", { name: "Profile picture of Demo User" });

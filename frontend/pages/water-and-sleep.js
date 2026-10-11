@@ -116,24 +116,50 @@ function WaterToday({ water, who, onAdd, onRemove, onSetTarget, onClearTarget, b
   );
 }
 
-// This morning's sleep: the saved entry with Edit / Remove, or a short form.
+// This morning's sleep: the saved entry with Edit / Remove, or the form (when nothing is logged, or editing).
 function SleepToday({ sleep, who, onSave, onDelete, busy }) {
-  const [editing, setEditing] = useState(!sleep);
-  const [hours, setHours] = useState("");
-  const [quality, setQuality] = useState("");
-  const [note, setNote] = useState("");
+  const [editing, setEditing] = useState(false);
+  const showForm = !sleep || editing;
+
+  async function save(entry) {
+    await onSave(entry);
+    setEditing(false);
+  }
+
+  return (
+    <section className="section tracker" aria-labelledby="sleep-heading">
+      <h2 id="sleep-heading">Last night's sleep</h2>
+      {showForm ? (
+        // A fresh form for each case (key), so it starts from the saved entry when editing and empty
+        // otherwise, and never shows values left over from before (for example after Remove).
+        <SleepForm
+          key={sleep && editing ? "edit" : "new"}
+          initial={sleep && editing ? sleep : null}
+          who={who} busy={busy} onSave={save}
+          onCancel={sleep ? () => setEditing(false) : null}
+        />
+      ) : (
+        <>
+          <p className="tracker__count"><strong>{hoursText(sleep.hours)}</strong> · {sleptText(sleep.quality)}</p>
+          {sleep.note && <p><span className="text-muted">Note:</span> {sleep.note}</p>}
+          <div className="button-row">
+            <Button variant="secondary" size="small" onClick={() => setEditing(true)}>Edit</Button>
+            <Button variant="secondary" size="small" onClick={onDelete} disabled={busy}>Remove</Button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+// Hours slept, how well, and an optional note. initial: the saved entry when editing, otherwise null.
+function SleepForm({ initial, who, busy, onSave, onCancel }) {
+  const [hours, setHours] = useState(initial ? String(initial.hours) : "");
+  const [quality, setQuality] = useState(initial ? String(initial.quality) : "");
+  const [note, setNote] = useState(initial?.note || "");
   const [problems, setProblems] = useState({});
   const [error, setError] = useState("");
 
-  // Removed (or not logged yet): show an empty form.
-  useEffect(() => {
-    if (!sleep) { setEditing(true); setHours(""); setQuality(""); setNote(""); }
-  }, [sleep]);
-
-  function startEdit() {
-    setHours(String(sleep.hours)); setQuality(String(sleep.quality)); setNote(sleep.note || "");
-    setProblems({}); setError(""); setEditing(true);
-  }
   async function submit(e) {
     e.preventDefault();
     const value = Number(hours);
@@ -147,51 +173,36 @@ function SleepToday({ sleep, who, onSave, onDelete, busy }) {
     if (found.quality) { document.getElementById("sleep-quality-1")?.focus(); return; }
     try {
       await onSave({ hours: value, quality: Number(quality), note: note.trim() });
-      setEditing(false);
     } catch (err) {
       setError(err.message);
     }
   }
 
   return (
-    <section className="section tracker" aria-labelledby="sleep-heading">
-      <h2 id="sleep-heading">Last night's sleep</h2>
-      {sleep && !editing ? (
-        <>
-          <p className="tracker__count"><strong>{hoursText(sleep.hours)}</strong> · {sleptText(sleep.quality)}</p>
-          {sleep.note && <p><span className="text-muted">Note:</span> {sleep.note}</p>}
-          <div className="button-row">
-            <Button variant="secondary" size="small" onClick={startEdit}>Edit</Button>
-            <Button variant="secondary" size="small" onClick={onDelete} disabled={busy}>Remove</Button>
-          </div>
-        </>
-      ) : (
-        <form onSubmit={submit} noValidate className="form">
-          <Input
-            id="sleep-hours" label="Hours slept" hint="For example 7 or 7.5"
-            type="number" inputMode="decimal" min="0" max="24" step="0.5"
-            value={hours} onChange={(e) => setHours(e.target.value)} error={problems.hours}
-          />
-          <fieldset className="choice-group" aria-describedby={problems.quality ? "sleep-quality-error" : undefined}>
-            <legend>How well did {who ? who : "you"} sleep?</legend>
-            {QUALITY_WORDS.map((word, i) => (
-              <label key={word} className="check">
-                <input type="radio" id={`sleep-quality-${i + 1}`} name="sleep-quality" value={String(i + 1)}
-                  checked={quality === String(i + 1)} onChange={(e) => setQuality(e.target.value)} />
-                {word}
-              </label>
-            ))}
-            {problems.quality && <p id="sleep-quality-error" className="field__error">{problems.quality}</p>}
-          </fieldset>
-          <Input as="textarea" id="sleep-note" label="Note (optional)" rows="2" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} />
-          {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-          <div className="form-actions">
-            <Button type="submit" disabled={busy}>Save sleep</Button>
-            {sleep && <Button variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>}
-          </div>
-        </form>
-      )}
-    </section>
+    <form onSubmit={submit} noValidate className="form">
+      <Input
+        id="sleep-hours" label="Hours slept" hint="For example 7 or 7.5"
+        type="number" inputMode="decimal" min="0" max="24" step="0.5"
+        value={hours} onChange={(e) => setHours(e.target.value)} error={problems.hours}
+      />
+      <fieldset className="choice-group" aria-describedby={problems.quality ? "sleep-quality-error" : undefined}>
+        <legend>How well did {who ? who : "you"} sleep?</legend>
+        {QUALITY_WORDS.map((word, i) => (
+          <label key={word} className="check">
+            <input type="radio" id={`sleep-quality-${i + 1}`} name="sleep-quality" value={String(i + 1)}
+              checked={quality === String(i + 1)} onChange={(e) => setQuality(e.target.value)} />
+            {word}
+          </label>
+        ))}
+        {problems.quality && <p id="sleep-quality-error" className="field__error">{problems.quality}</p>}
+      </fieldset>
+      <Input as="textarea" id="sleep-note" label="Note (optional)" rows="2" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} />
+      {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+      <div className="form-actions">
+        <Button type="submit" disabled={busy}>Save sleep</Button>
+        {onCancel && <Button variant="secondary" onClick={onCancel}>Cancel</Button>}
+      </div>
+    </form>
   );
 }
 

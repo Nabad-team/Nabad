@@ -5,6 +5,10 @@ import userEvent from "@testing-library/user-event";
 import AppHeader from "../components/AppHeader";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 let mockSignedIn = true;
@@ -55,7 +59,7 @@ describe("Header navigation", () => {
   });
 
   test("on an account page, the account button and the link inside the menu show it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader("/security");
     await screen.findByRole("option", { name: "Demo User (you)" });
     expect(accountButton()).toHaveClass("account-menu__button--current");
@@ -84,7 +88,7 @@ describe("Account menu", () => {
   });
 
   test("opens with the user's initials button, and moves focus into the menu", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
 
@@ -104,7 +108,7 @@ describe("Account menu", () => {
   });
 
   test("Sign out is in the menu", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     await user.click(accountButton());
@@ -113,7 +117,7 @@ describe("Account menu", () => {
   });
 
   test("Escape closes it and puts focus back on the button", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     await user.click(accountButton());
@@ -124,7 +128,7 @@ describe("Account menu", () => {
   });
 
   test("works from the keyboard: Enter opens, Tab moves through, tabbing out closes", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     accountButton().focus();
@@ -140,7 +144,7 @@ describe("Account menu", () => {
   });
 
   test("Space toggles it, and clicking the button again closes it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     accountButton().focus();
@@ -151,7 +155,7 @@ describe("Account menu", () => {
   });
 
   test("clicking outside closes it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     await user.click(accountButton());
@@ -169,7 +173,7 @@ describe("Phone menu", () => {
   });
 
   test("opens a panel with the main links, the profile switcher, the account links and Sign out", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader("/water-and-sleep");
     await screen.findByRole("option", { name: "Demo User (you)" });
     expect(menuButton()).toHaveAttribute("aria-expanded", "false");
@@ -190,7 +194,7 @@ describe("Phone menu", () => {
   });
 
   test("Escape closes it and puts focus back on Menu", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     await user.click(menuButton());
@@ -201,7 +205,7 @@ describe("Phone menu", () => {
   });
 
   test("switches the active profile from inside the panel", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const child = await fakeProfileApi.addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
@@ -213,7 +217,7 @@ describe("Phone menu", () => {
   });
 
   test("Sign out from the panel", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     await user.click(menuButton());

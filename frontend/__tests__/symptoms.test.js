@@ -5,6 +5,10 @@ import SymptomsPage from "../pages/symptoms";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
 import { classifyUrgency, refineUrgency } from "../lib/triageApi";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 jest.mock("../context/ActiveProfileContext", () => ({
   useActiveProfile: jest.fn(),
@@ -109,7 +113,7 @@ describe("Symptoms Page", () => {
   });
 
   test("does not submit when symptoms are empty", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     useActiveProfile.mockReturnValue({
       activeProfile: {
@@ -132,7 +136,7 @@ describe("Symptoms Page", () => {
   });
 
   test("saves symptoms for the selected linked profile", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     useActiveProfile.mockReturnValue({
       activeProfile: {
@@ -168,7 +172,7 @@ describe("Symptoms Page", () => {
   });
 
   test("shows confirmation after symptoms are saved", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     useActiveProfile.mockReturnValue({
       activeProfile: {
@@ -198,7 +202,7 @@ describe("Symptoms Page", () => {
   });
 
   test("adds spoken symptoms to the symptom box", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     let recognition;
 
     window.SpeechRecognition = jest.fn(() => {
@@ -278,7 +282,7 @@ describe("Symptoms Page", () => {
   // ---- SCRUM-128: urgency classification ----
 
   async function submitSymptoms(text) {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useActiveProfile.mockReturnValue({
       activeProfile: { id: "profile-1", fullName: "Maya Hamdan" },
     });
@@ -333,7 +337,7 @@ describe("Symptoms Page", () => {
   });
 
   test("does not classify when saving the symptoms fails", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useActiveProfile.mockReturnValue({
       activeProfile: { id: "profile-1", fullName: "Maya Hamdan" },
     });
@@ -369,7 +373,7 @@ describe("Symptoms Page", () => {
   });
 
   test("sends the answers with the saved description and shows the updated result", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
     refineUrgency.mockResolvedValue(URGENT_REFINED);
 
@@ -386,7 +390,7 @@ describe("Symptoms Page", () => {
   });
 
   test("skipping the questions keeps the first result as the final one", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
 
     await submitSymptoms("Fever since yesterday");
@@ -407,7 +411,7 @@ describe("Symptoms Page", () => {
   });
 
   test("if updating fails, the first result and the questions stay so the user can retry", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
     refineUrgency.mockRejectedValue(new Error("Request failed."));
 

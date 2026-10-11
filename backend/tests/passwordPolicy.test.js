@@ -114,20 +114,39 @@ test("checkNewPassword skips the network for passwords that already fail a rule,
   assert.equal(called, 0);
 });
 
+// A fetch that never answers on its own: it only ends when the request's signal aborts, like a server that hangs.
+const hangingFetch = (url, { signal }) => new Promise((resolve, reject) => {
+  if (signal.aborted) return reject(signal.reason);
+  signal.addEventListener("abort", () => reject(signal.reason));
+});
+// Replaces AbortSignal.timeout with one that fires on the next turn of the event loop instead of after
+// real seconds, and records the time limit the code asked for. Tests stay instant and can't be slowed by load.
+function instantTimeouts(t) {
+  const requested = [];
+  t.mock.method(AbortSignal, "timeout", (ms) => {
+    requested.push(ms);
+    const controller = new AbortController();
+    setImmediate(() => controller.abort(new DOMException("The operation timed out.", "TimeoutError")));
+    return controller.signal;
+  });
+  return requested;
+}
+
 test("if Have I Been Pwned is down or slow the password is allowed and only the failure type is logged", async (t) => {
   const password = "a perfectly ordinary sentence", digest = sha1(password);
   const failures = [
     ["server error", async () => rangeResponse("", 503), /"errorCode":"HTTP_503"/],
     ["network error", async () => { throw new TypeError("fetch failed", { cause: Object.assign(new Error("getaddrinfo"), { code: "ENOTFOUND" }) }); }, /"errorCode":"ENOTFOUND"/],
-    ["timeout", (url, { signal }) => new Promise((resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason))), /"errorType":"TimeoutError"/],
+    ["timeout", hangingFetch, /"errorType":"TimeoutError"/],
   ];
   for (const [label, fetchImpl, expected] of failures) {
-    await t.test(label, async () => {
+    await t.test(label, async (st) => {
       let result;
-      const started = Date.now();
+      // A hanging server still ends the check (the result below could not arrive otherwise).
+      const requested = instantTimeouts(st);
       const output = await captureStdout(async () => { result = await checkNewPassword(password, person, { breachCheck: true, fetchImpl, requestId: "req-1" }); });
       assert.equal(result, null);
-      assert.ok(Date.now() - started < 4000);
+      assert.deepEqual(requested, [2000]);
       assert.match(output, /"event":"breach_check_failed"/);
       assert.match(output, /"requestId":"req-1"/);
       assert.match(output, expected);
@@ -136,11 +155,11 @@ test("if Have I Been Pwned is down or slow the password is allowed and only the 
   }
 });
 
-test("breach check uses a 2-second timeout", async () => {
-  const started = Date.now();
-  await assert.rejects(isBreachedPassword("a perfectly ordinary sentence", { fetchImpl: (url, { signal }) => new Promise((resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason))) }), { name: "TimeoutError" });
-  const elapsed = Date.now() - started;
-  assert.ok(elapsed >= 1900 && elapsed < 3500, `took ${elapsed}ms`);
+test("breach check uses a 2-second timeout", async (t) => {
+  // The limit the code asks for is checked directly, instead of timing a real 2-second wait.
+  const requested = instantTimeouts(t);
+  await assert.rejects(isBreachedPassword("a perfectly ordinary sentence", { fetchImpl: hangingFetch }), { name: "TimeoutError" });
+  assert.deepEqual(requested, [2000]);
 });
 
 test("breach check is on by default, off in tests, and PWNED_PASSWORDS_CHECK overrides both", () => {

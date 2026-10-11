@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { findPasswordProblem, getPasswordStrength, passwordChecklist, PASSWORD_HELP, PASSWORD_MESSAGES } from "../lib/passwordPolicy";
 import { LONG_COMMON_PASSWORDS } from "../lib/commonPasswords";
+import { HEAVY_COMPUTE_TIMEOUT } from "../test-utils/timeouts";
 
 const backend = require("../../backend/src/passwordPolicy");
 const { longCommonPasswords } = require("../scripts/generate-common-passwords");
@@ -41,7 +42,7 @@ test("browser and server agree on every common password, in its listed form and 
     }
   }
   expect(mismatches).toEqual([]);
-});
+}, HEAVY_COMPUTE_TIMEOUT); // compares every entry of the common password list
 
 test("messages are the server's, word for word", () => {
   const { breached, ...serverMessages } = backend.PASSWORD_MESSAGES;

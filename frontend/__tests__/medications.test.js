@@ -4,6 +4,10 @@ import userEvent from "@testing-library/user-event";
 import MedicationsPage from "../pages/medications";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../components/SessionTimeout", () => ({
@@ -101,7 +105,7 @@ describe("Medications page", () => {
   });
 
   test("adds a medication", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Add medication" }));
 
@@ -125,7 +129,7 @@ describe("Medications page", () => {
   });
 
   test("explains what's wrong instead of saving an invalid medication", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Add medication" }));
     const form = screen.getByRole("form", { name: "Add a medication" });
@@ -144,7 +148,7 @@ describe("Medications page", () => {
   });
 
   test("shows the server's message when saving fails", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     mockApi.addMedication.mockRejectedValueOnce(new Error("Too many changes in a short time. Please wait a few minutes and try again."));
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Add medication" }));
@@ -154,7 +158,7 @@ describe("Medications page", () => {
   });
 
   test("edits a medication", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     seed({ name: "Paracetamol" });
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Edit Paracetamol" }));
@@ -171,7 +175,7 @@ describe("Medications page", () => {
   });
 
   test("cancelling an edit keeps the medication as it was", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     seed({ name: "Paracetamol" });
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Edit Paracetamol" }));
@@ -182,7 +186,7 @@ describe("Medications page", () => {
   });
 
   test("marks a medication as discontinued and active again", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     seed({ name: "Paracetamol" });
     renderPage();
 
@@ -198,7 +202,7 @@ describe("Medications page", () => {
   });
 
   test("asks for confirmation before deleting, and keeping it changes nothing", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     seed({ name: "Paracetamol" });
     renderPage();
 
@@ -214,7 +218,7 @@ describe("Medications page", () => {
   });
 
   test("deletes a medication after confirmation and shows the empty state", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     seed({ name: "Paracetamol" });
     renderPage();
 
@@ -228,7 +232,7 @@ describe("Medications page", () => {
   });
 
   test("offers to try again when the list can't be loaded", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     mockApi.getMedications.mockRejectedValueOnce(new Error("Network down"));
     renderPage();
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load your medications.");
@@ -276,7 +280,7 @@ describe("Medications for a family member", () => {
   });
 
   test("a caregiver adds, edits, changes and deletes a family member's medication", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     actAsChild();
     renderPage();
 
@@ -307,7 +311,7 @@ describe("Medications for a family member", () => {
   });
 
   test("switching profiles in the header shows the right list", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderPage();
 
     expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();

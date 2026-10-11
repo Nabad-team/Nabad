@@ -112,7 +112,10 @@ test("stops at 30 glasses a day with a clear message", async () => {
   assert.equal((await today(cookie)).body.water.glasses, 30);
 });
 
-test("water can only be logged for today (allowing for time zones)", async () => {
+test("water can only be logged for today (allowing for time zones)", async (t) => {
+  // The server (in this process) and the test read the same frozen clock: at noon UTC, so a run that
+  // crosses midnight can't turn "yesterday" into "two days ago" between computing a date and sending it.
+  t.mock.timers.enable({ apis: ["Date"], now: Date.parse(`${day()}T12:00:00Z`) });
   const cookie = token(await user());
   assert.equal((await addGlass(cookie, undefined, day(1))).status, 200, "already tomorrow in some time zones");
   assert.equal((await addGlass(cookie, undefined, day(-1))).status, 200, "still yesterday in some time zones");
@@ -290,8 +293,9 @@ test("never writes glasses, hours, quality or notes to the logs", async () => {
   } finally { process.stdout.write = original; }
   const logs = written.join("");
   assert.match(logs, /http_request/);
-  // Bare whole numbers can't be checked (a request duration may happen to match), so look for the fields themselves.
-  for (const value of ["Privatesleepnote", "13.5", "\"glasses\"", "\"hours\"", "\"quality\"", "\"target\"", "waterTarget"]) {
+  // Numbers can't be checked: any number may turn up by chance in a timestamp ("10:13:13.512Z"), a duration
+  // or a request id. So look for the note and for the field names, which only appear if the data is logged.
+  for (const value of ["Privatesleepnote", "\"glasses\"", "\"hours\"", "\"quality\"", "\"target\"", "waterTarget"]) {
     assert.ok(!logs.includes(value), `log contains ${value}`);
   }
 });
