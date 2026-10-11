@@ -73,6 +73,7 @@ export default function DashboardPage() {
         <h2 id="account-heading">Your account</h2>
         <div className="button-row">
           <Button variant="secondary" href="/triage">Safety check</Button>
+          <Button variant="secondary" href="/medications">Medications</Button>
           <Button variant="secondary" href="/profile">My profile</Button>
         </div>
       </section>

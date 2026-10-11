@@ -435,6 +435,7 @@ export default function ProfilePage() {
             <li>Your profile</li>
             <li>All linked profiles</li>
             <li>Your emergency contacts</li>
+            <li>Your medications</li>
           </ul>
           <form onSubmit={handleDeleteAccount} noValidate className="form">
             {/* Google-only accounts have no password, so they type their email instead. */}

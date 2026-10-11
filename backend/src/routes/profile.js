@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const User = require("../models/User");
 const LinkedProfile = require("../models/LinkedProfile");
+const Medication = require("../models/Medication");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { normalizePhone, validPhone } = require("../models/contactSchema");
 const { cookieOptions, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
@@ -147,7 +148,8 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   } else if (typeof password !== "string" || Buffer.byteLength(password) > 72 || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(400).json({ error: "Password is incorrect." });
   }
-  // Linked profiles first: if deleting the user then fails, the account still exists and can be deleted again.
+  // Medications and linked profiles first: if deleting the user then fails, the account still exists and can be deleted again.
+  await Medication.deleteMany({ owner: user._id });
   await LinkedProfile.deleteMany({ owner: user._id });
   // The emergency contact and trusted devices are stored inside the user document, so they are deleted with it.
   await User.deleteOne({ _id: user._id });

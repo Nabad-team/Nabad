@@ -941,3 +941,69 @@ select.input {
   vertical-align: middle;
   white-space: nowrap;
 }
+
+.badge--neutral {
+  border-color: var(--color-border);
+  background: var(--color-sunken);
+  color: var(--color-text-muted);
+}
+
+/* ---------- Medications ---------- */
+
+/* Two short fields side by side (dose and unit, start and end date); stacked on narrow phones. */
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-5) var(--space-4);
+}
+
+.medications-actions {
+  margin-bottom: var(--space-5);
+}
+
+.medication-form {
+  margin-bottom: var(--space-6);
+}
+
+.medication-form > h3 {
+  margin: 0;
+}
+
+.medication-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 0.0625rem solid var(--color-border);
+}
+
+.medication {
+  margin: 0;
+  padding-block: var(--space-5);
+  border-bottom: 0.0625rem solid var(--color-border);
+}
+
+.medication > p {
+  margin: 0 0 var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.medication > .button-row {
+  margin-top: var(--space-4);
+}
+
+.medication__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.medication__heading h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.medication__heading .badge {
+  margin-left: 0;
+}
