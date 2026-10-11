@@ -8,3 +8,15 @@ export const classifyUrgency = (symptoms) =>
 // SCRUM-126: final result after the follow-up answers ({ questionId: optionValue }).
 export const refineUrgency = (symptoms, answers) =>
   request("/triage/refine", { method: "POST", body: JSON.stringify({ symptoms, answers }) });
+
+export const assessSymptoms = (symptoms, location) =>
+  request("/triage/assess", {
+    method: "POST",
+    body: JSON.stringify({ symptoms, location }),
+  });
+
+export const getEmergencyRoute = (location) =>
+  request("/triage/emergency-route", {
+    method: "POST",
+    body: JSON.stringify({ location }),
+  });

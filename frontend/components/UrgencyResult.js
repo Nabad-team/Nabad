@@ -1,4 +1,5 @@
 import Button from "./ui/Button";
+import ReadAloudButton from "./ReadAloudButton";
 
 // SCRUM-128: shows the urgency classification returned by POST /api/triage/classify.
 // Answers the two questions in the story: "do I need care?" (label + action)
@@ -11,6 +12,13 @@ export default function UrgencyResult({ result, preliminary = false }) {
   if (!result) return null;
   const level = LEVELS.includes(result.level) ? result.level : "routine";
   const isEmergency = result.level === "emergency";
+  const spokenResult = [
+    `${preliminary ? "Urgency so far" : "Urgency"}: ${result.label}.`,
+    `How soon: ${result.timeframe}.`,
+    `What to do: ${result.action}.`,
+    result.reasons?.length ? `Why: ${result.reasons.join(". ")}.` : "",
+    result.disclaimer,
+  ].filter(Boolean).join(" ");
 
   return (
     <section
@@ -29,6 +37,9 @@ export default function UrgencyResult({ result, preliminary = false }) {
       </p>
       <p>
         <strong>What to do:</strong> {result.action}
+      </p>
+      <p>
+        <ReadAloudButton text={spokenResult} />
       </p>
 
       {isEmergency && (
