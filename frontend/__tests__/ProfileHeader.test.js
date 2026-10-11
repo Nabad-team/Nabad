@@ -165,13 +165,6 @@ describe("Profile switcher", () => {
    PROFILE PICTURE TESTS
    ========================================================= */
 
-describe("Account menu", () => {
-  test("has a Security link while signed in", async () => {
-    renderHeader();
-    expect(await screen.findByRole("link", { name: "Security" })).toHaveAttribute("href", "/security");
-  });
-});
-
 describe("Profile picture upload", () => {
   beforeEach(() => {
     localStorage.clear();

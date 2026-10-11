@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { beginTwoFactorSetup, enableTwoFactor, disableTwoFactor, getMe } from "../lib/api";
+import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
@@ -38,7 +39,7 @@ export default function SecurityPage() {
   }
 
   return (
-    <PageLayout title="Account security">
+    <PageLayout title="Account security" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Account security</PageTitle>
       {error && <Alert tone="danger" as="p" role="alert" className="auth-message">{error}</Alert>}
       {authProvider === "google" && (

@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import Logo from "./Logo";
+import AppHeader from "./AppHeader";
 import Avatar from "./Avatar";
 import Button from "./ui/Button";
 import Alert from "./ui/Alert";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { signOut } from "../lib/session";
-import { useSignedIn } from "./SessionTimeout";
 import {
   updateProfilePicture,
   removeProfilePicture,
@@ -16,12 +14,11 @@ const TEAL = "#0f766e";
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
+// The header of signed-in pages: the bar with navigation and menus (components/AppHeader.js), then the
+// active profile's picture controls and, when acting for a family member, the "Acting as" banner.
 // showPicture: false hides the picture controls (the dashboard keeps them on the profile page only).
 export default function ProfileHeader({ showPicture = true }) {
-  const { selfProfile, linkedProfiles, activeProfile, switchProfile, refreshProfiles } =
-    useActiveProfile();
-
-  const signedIn = useSignedIn();
+  const { activeProfile, refreshProfiles } = useActiveProfile() || {};
   const fileInputRef = useRef(null);
 
   const [previewUrl, setPreviewUrl] = useState("");
@@ -106,61 +103,7 @@ export default function ProfileHeader({ showPicture = true }) {
 
   return (
     <>
-      <header className="site-header">
-        <div className="container site-header__inner">
-          <Logo />
-
-          {/* A direct child of the header row, so on phones it can move to its own full-width row
-              below the logo and the names show in full (see .profile-switcher in components.css). */}
-          {selfProfile && activeProfile && (
-            <div className="profile-switcher">
-              <select
-                aria-label="Active profile"
-                className="input profile-select"
-                value={activeProfile.id}
-                onChange={(e) => switchProfile(e.target.value)}
-              >
-                <option value={selfProfile.id}>
-                  {selfProfile.fullName} (you)
-                </option>
-
-                {linkedProfiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.fullName} ({profile.relationship})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <nav aria-label="Account" className="site-nav">
-            {signedIn && (
-              <a href="/medications" className="site-nav__link">
-                Medications
-              </a>
-            )}
-
-            {signedIn && (
-              <a href="/water-and-sleep" className="site-nav__link">
-                Water and sleep
-              </a>
-            )}
-
-            {signedIn && (
-              <a href="/security" className="site-nav__link">
-                Security
-              </a>
-            )}
-
-            {/* Signs out in every open tab (see lib/session.js). Only shown while signed in. */}
-            {signedIn && (
-              <Button variant="secondary" size="small" onClick={() => signOut()}>
-                Sign out
-              </Button>
-            )}
-          </nav>
-        </div>
-      </header>
+      <AppHeader />
 
       {activeProfile && (showPicture || !activeProfile.isSelf) && (
         <div className="container profile-strip">

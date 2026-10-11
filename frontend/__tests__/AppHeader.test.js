@@ -1,0 +1,223 @@
+// Automated tests for the signed-in header: main navigation, the account menu, the phone menu,
+// keyboard behavior and the current-page highlight.
+import { render, screen, within, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import AppHeader from "../components/AppHeader";
+import { ActiveProfileProvider } from "../context/ActiveProfileContext";
+import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+
+jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+let mockSignedIn = true;
+jest.mock("../components/SessionTimeout", () => ({
+  ...jest.requireActual("../components/SessionTimeout"),
+  useSessionStatus: () => (mockSignedIn ? "signedIn" : "signedOut"),
+  useSignedIn: () => mockSignedIn,
+}));
+const mockSignOut = jest.fn();
+jest.mock("../lib/session", () => ({ signOut: (...args) => mockSignOut(...args) }));
+
+function renderHeader(path = "/dashboard") {
+  window.history.pushState({}, "", path);
+  return render(
+    <ActiveProfileProvider>
+      <AppHeader />
+      <p><a href="/elsewhere">A link on the page</a></p>
+    </ActiveProfileProvider>
+  );
+}
+const accountButton = () => screen.getByRole("button", { name: "Account menu" });
+const menuButton = () => screen.getByRole("button", { name: "Menu" });
+
+describe("Header navigation", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockSignedIn = true;
+    jest.clearAllMocks();
+  });
+
+  test("shows the main links in order, in one Main navigation", async () => {
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    expect(within(nav).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Dashboard", "/dashboard"], ["Medications", "/medications"], ["Water and sleep", "/water-and-sleep"],
+    ]);
+  });
+
+  test("marks the current page with aria-current, and only that link", async () => {
+    renderHeader("/medications");
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    expect(within(nav).getByRole("link", { name: "Medications" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
+    expect(within(nav).getByRole("link", { name: "Water and sleep" })).not.toHaveAttribute("aria-current");
+  });
+
+  test("on an account page, the account button and the link inside the menu show it", async () => {
+    const user = userEvent.setup();
+    renderHeader("/security");
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    expect(accountButton()).toHaveClass("account-menu__button--current");
+    expect(within(screen.getByRole("navigation", { name: "Main" })).queryByRole("link", { current: "page" })).not.toBeInTheDocument();
+    await user.click(accountButton());
+    expect(screen.getByRole("link", { name: "Security" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "My profile" })).not.toHaveAttribute("aria-current");
+  });
+
+  test("shows nothing but the logo while signed out", () => {
+    mockSignedIn = false;
+    renderHeader();
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Menu" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/");
+  });
+});
+
+describe("Account menu", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockSignedIn = true;
+    jest.clearAllMocks();
+  });
+
+  test("opens with the user's initials button, and moves focus into the menu", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+
+    expect(accountButton()).toHaveAttribute("aria-expanded", "false");
+    expect(accountButton()).toHaveTextContent("DU");
+    expect(screen.queryByRole("link", { name: "My profile" })).not.toBeInTheDocument();
+
+    await user.click(accountButton());
+    expect(accountButton()).toHaveAttribute("aria-expanded", "true");
+    const panel = document.getElementById(accountButton().getAttribute("aria-controls"));
+    expect(panel).toBeInTheDocument();
+    expect(within(panel).getByText("Demo User")).toBeInTheDocument();
+    expect(within(panel).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["My profile", "/profile"], ["Security", "/security"],
+    ]);
+    expect(within(panel).getByRole("link", { name: "My profile" })).toHaveFocus();
+  });
+
+  test("Sign out is in the menu", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    await user.click(accountButton());
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  test("Escape closes it and puts focus back on the button", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    await user.click(accountButton());
+    await user.keyboard("{Escape}");
+    expect(accountButton()).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "My profile" })).not.toBeInTheDocument();
+    expect(accountButton()).toHaveFocus();
+  });
+
+  test("works from the keyboard: Enter opens, Tab moves through, tabbing out closes", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    accountButton().focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("link", { name: "My profile" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Security" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Sign out" })).toHaveFocus();
+    await user.tab();
+    expect(accountButton()).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+  });
+
+  test("Space toggles it, and clicking the button again closes it", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    accountButton().focus();
+    await user.keyboard(" ");
+    expect(accountButton()).toHaveAttribute("aria-expanded", "true");
+    await user.click(accountButton());
+    expect(accountButton()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("clicking outside closes it", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    await user.click(accountButton());
+    fireEvent.mouseDown(document.body);
+    expect(accountButton()).toHaveAttribute("aria-expanded", "false");
+  });
+});
+
+describe("Phone menu", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockSignedIn = true;
+    jest.clearAllMocks();
+  });
+
+  test("opens a panel with the main links, the profile switcher, the account links and Sign out", async () => {
+    const user = userEvent.setup();
+    renderHeader("/water-and-sleep");
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(menuButton());
+    expect(menuButton()).toHaveAttribute("aria-expanded", "true");
+    const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
+    const [main, account] = within(panel).getAllByRole("navigation");
+    expect(main).toHaveAccessibleName("Main");
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "Medications", "Water and sleep"]);
+    expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
+    expect(account).toHaveAccessibleName("Account");
+    expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual(["My profile", "Security"]);
+    expect(within(panel).getByLabelText("Acting for")).toHaveValue("self");
+    expect(within(panel).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    // Focus moves to the first link.
+    expect(within(main).getByRole("link", { name: "Dashboard" })).toHaveFocus();
+  });
+
+  test("Escape closes it and puts focus back on Menu", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    await user.click(menuButton());
+    await user.keyboard("{Escape}");
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+    expect(document.getElementById("mobile-menu")).not.toBeInTheDocument();
+    expect(menuButton()).toHaveFocus();
+  });
+
+  test("switches the active profile from inside the panel", async () => {
+    const user = userEvent.setup();
+    const child = await fakeProfileApi.addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    await user.click(menuButton());
+    await user.selectOptions(screen.getByLabelText("Acting for"), child.id);
+    expect(screen.getByLabelText("Acting for")).toHaveValue(child.id);
+    expect(screen.getByLabelText("Active profile")).toHaveValue(child.id);
+    expect(localStorage.getItem("nabad-active-profile-id")).toBe(child.id);
+  });
+
+  test("Sign out from the panel", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    await user.click(menuButton());
+    await user.click(within(document.getElementById("mobile-menu")).getByRole("button", { name: "Sign out" }));
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+});

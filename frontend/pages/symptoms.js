@@ -4,6 +4,7 @@ import { addSymptomRecord } from "../lib/symptomApi";
 import { classifyUrgency, refineUrgency } from "../lib/triageApi";
 import UrgencyResult from "../components/UrgencyResult";
 import FollowUpQuestions from "../components/FollowUpQuestions";
+import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
@@ -180,7 +181,7 @@ export default function SymptomsPage() {
 
   if (!activeProfile) {
     return (
-      <PageLayout title="Enter symptoms">
+      <PageLayout title="Enter symptoms" header={<ProfileHeader showPicture={false} />}>
         <PageTitle>Symptom entry</PageTitle>
         <EmptyState illustration={<PersonWithPhone size="5rem" />} title="No active profile selected." />
       </PageLayout>
@@ -188,7 +189,7 @@ export default function SymptomsPage() {
   }
 
   return (
-    <PageLayout title="Enter symptoms">
+    <PageLayout title="Enter symptoms" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Enter symptoms</PageTitle>
 
       <p>
