@@ -210,7 +210,7 @@ describe("Water and sleep page", () => {
   test("has the page title and a header link, and is only for signed-in users", async () => {
     renderPage();
     await screen.findByRole("heading", { level: 1 });
-    expect(within(screen.getByRole("navigation", { name: "Account" })).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
     expect(WaterAndSleepPage.requireSignIn).toBe(true);
   });
 });

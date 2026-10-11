@@ -1,7 +1,7 @@
 // Automated tests for the Nabad dashboard page.
 // These tests run automatically on every pull request.
 
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, act, within, fireEvent } from "@testing-library/react";
 import DashboardPage from "../pages/dashboard";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileApi";
@@ -69,7 +69,9 @@ describe("Dashboard Page", () => {
   test("links to the security settings once, from the account menu", async () => {
     renderDashboard();
     await screen.findByText("Welcome, Demo");
+    expect(screen.queryByRole("link", { name: "Security" })).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     const links = screen.getAllByRole("link", { name: "Security" });
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute("href", "/security");

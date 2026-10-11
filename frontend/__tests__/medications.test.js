@@ -239,7 +239,7 @@ describe("Medications page", () => {
   test("has the page title and a Medications link in the header", async () => {
     renderPage();
     expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();
-    expect(within(screen.getByRole("navigation", { name: "Account" })).getByRole("link", { name: "Medications" })).toHaveAttribute("href", "/medications");
+    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Medications" })).toHaveAttribute("href", "/medications");
   });
 
   test("is only shown to signed-in users", () => {

@@ -164,6 +164,7 @@ describe("SessionTimeout", () => {
     );
     await wait(0);
 
+    fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
@@ -177,6 +178,7 @@ describe("SessionTimeout", () => {
     );
     await wait(0);
 
+    fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     await wait(0);
     expect(replace).toHaveBeenCalledWith("/login");
@@ -210,6 +212,7 @@ describe("SessionTimeout", () => {
     await wait(0);
 
     expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Demo User (you)" })).not.toBeInTheDocument();
     expect(fakeProfileApi.profileLoads).toBe(0);
   });
@@ -220,7 +223,7 @@ describe("SessionTimeout", () => {
     await wait(0);
 
     expect(await screen.findByRole("option", { name: "Demo User (you)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Account menu" })).toBeInTheDocument();
 
     await wait(30 * MINUTE);
 

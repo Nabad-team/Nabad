@@ -140,7 +140,31 @@ Don't render your own `<main>`; `PageLayout` does (with `id="main"` for the skip
 
 Give every page a `title`: `<PageLayout title="My profile">` shows "My profile · Nabad" in the browser tab. Only the landing page leaves it out (it gets "Nabad: know where to go when it matters").
 
-Note: `ProfileHeader` needs the `ActiveProfileProvider` from `_app.js`. If your page's tests render it without the provider, use the plain `<PageLayout>` header.
+`ProfileHeader` reads the active profile from the `ActiveProfileProvider` in `_app.js`. Without the provider (in some tests) it still renders, just without the profile switcher.
+
+### Signed-in header
+
+Every signed-in page uses `<ProfileHeader />`. It draws the header bar (`components/AppHeader.js`), then the picture controls (unless `showPicture={false}`) and, when acting for a family member, the "Acting as" banner.
+
+```
+Desktop   [Nabad]  Dashboard  Medications  Water and sleep              [Profile ▾] [(RH)▾]
+                                                                                      My profile
+                                                                                      Security
+                                                                                      Sign out
+Phone     [Nabad]                                                                     [Menu]
+          ┌ Dashboard · Medications · Water and sleep · Acting for [▾] · My profile · Security · Sign out ┐
+```
+
+- **Main links** (`MAIN_LINKS` in `AppHeader.js`) sit in one row next to the logo. Add a new top-level page there and it shows up in both the desktop row and the phone menu.
+- **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
+- **Phones (under 40rem / 640px):** the logo and a **Menu** button. The menu is a full-width panel under the bar, in the page flow (not an overlay), with every link, the profile switcher ("Acting for") and Sign out.
+- **From 40rem to 60rem** the main links move to their own row under the logo, so nothing gets squeezed.
+- **Current page:** its link gets `aria-current="page"`, shown as light teal with a teal underline (never color alone). On My profile or Security, the account button gets a teal ring.
+- **Keyboard:** both menus are disclosure buttons (`aria-expanded`, `aria-controls`):
+  - Opening a menu moves focus to its first item.
+  - Tab moves through the items. Tabbing out, clicking outside, or pressing Escape closes the menu.
+  - Escape also puts focus back on the button.
+  - Use links for pages and a button for actions (Sign out). Don't turn these into ARIA `menu`s, which expect arrow-key navigation.
 
 ### Button
 
