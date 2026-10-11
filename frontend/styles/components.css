@@ -497,6 +497,11 @@ select.input {
   color: var(--color-primary);
 }
 
+/* A second line color inside a drawing (the small heart in TwoHearts). */
+.illustration__strong {
+  stroke: var(--color-primary-strong);
+}
+
 /* ---------- Dialog ---------- */
 
 .dialog-overlay {

@@ -1,4 +1,4 @@
-// Small line drawings in one style: a single teal outline, round ends, no fills or gradients.
+// Small line drawings in one style: teal outlines (sometimes a second, darker teal), round ends, no fills or gradients.
 // The lines bend a little on purpose so they feel drawn by hand. Use them on the landing page
 // and in empty states, at about 4 to 7rem. They are decorative (hidden from screen readers)
 // unless you pass a title. When drawn larger than about 8rem, pass a thinner strokeWidth (e.g. 0.9 at 20rem)
@@ -27,18 +27,16 @@ function Drawing({ size = "6rem", strokeWidth = 2.5, viewBox = "0 0 120 120", ti
   );
 }
 
-// Two open hands holding a small heart: caring for someone else.
-// Each hand is one closed outline (thumb, fingers, palm, soft rounded wrist); the right hand mirrors the left,
-// and the fingertips just touch in the middle without overlapping.
-export function CaregiverHands(props) {
+// Two hearts: a large heart, and a half-size heart tucked against its lower right side, in front of it.
+// Care shared between people (the caregiver spots). The large heart's line ends with a round end a little
+// before it meets the small heart, so nothing crosses. The small heart uses the darker teal.
+export function TwoHearts(props) {
   return (
     <Drawing {...props}>
-      {/* heart */}
-      <path d="M60 61.2C51.4 55.4 45.6 49.6 46 43.6C46.4 38.4 52.8 36.4 57 40.4C58.4 41.8 59.4 43 60 44.2C60.6 43 61.6 41.8 63 40.4C67.2 36.4 73.6 38.4 74 43.6C74.4 49.6 68.6 55.4 60 61.2Z" />
-      {/* left hand */}
-      <path d="M16.4 75.6C22.4 75.2 28 73.8 32.2 71.4C35.4 69.4 37.8 65.6 40.2 63.2C42.4 61 45.8 61.8 45.2 65C44.8 67.2 43.4 69.4 43.8 71C44.2 72.6 46.6 73.4 50.2 73.6C52 73.7 53.6 73.8 55 73.9C58.4 74.2 59.6 77 58 79.1C55 82.9 47.6 86 39.8 88.2C31.8 90.4 24 91.2 16.8 91.4C13.6 91.4 11.8 87.8 11.8 83.6C11.8 79.4 13.2 75.8 16.4 75.6Z" />
-      {/* right hand */}
-      <path d="M103.6 75.6C97.6 75.2 92 73.8 87.8 71.4C84.6 69.4 82.2 65.6 79.8 63.2C77.6 61 74.2 61.8 74.8 65C75.2 67.2 76.6 69.4 76.2 71C75.8 72.6 73.4 73.4 69.8 73.6C68 73.7 66.4 73.8 65 73.9C61.6 74.2 60.4 77 62 79.1C65 82.9 72.4 86 80.2 88.2C88.2 90.4 96 91.2 103.2 91.4C106.4 91.4 108.2 87.8 108.2 83.6C108.2 79.4 106.8 75.8 103.6 75.6Z" />
+      {/* large heart, open where the small heart sits in front of it */}
+      <path d="M66.3 72.7C62.1 76.1 57.4 79.3 52.2 82.6C32.7 70.4 18.9 57.5 19.5 42C20 30.9 33.9 25 44 33.6C47.2 36.4 50.1 39.8 52.2 43C54.3 39.8 57.2 36.4 60.5 33.6C70.5 25 84.4 30.9 84.9 42C85.1 48.2 83 54.1 79.2 59.6" />
+      {/* small heart, in front */}
+      <path className="illustration__strong" d="M86.6 90C76.9 83.9 69.9 77.5 70.3 69.7C70.5 64.2 77.4 61.2 82.5 65.5C84.1 66.9 85.5 68.6 86.6 70.2C87.7 68.6 89.1 66.9 90.7 65.5C95.8 61.2 102.7 64.2 102.9 69.7C103.3 77.5 96.3 83.9 86.6 90Z" />
     </Drawing>
   );
 }

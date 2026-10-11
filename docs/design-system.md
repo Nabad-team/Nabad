@@ -246,14 +246,14 @@ For a list or area with nothing in it yet: a small drawing, one sentence, and th
 
 ## Illustrations
 
-Four original line drawings in one style: a single teal outline, round line ends, no fills or gradients, slightly uneven lines so they feel hand-drawn. They are decorative (hidden from screen readers) unless you pass a `title`.
+Four original line drawings in one style: teal outlines, round line ends, no fills or gradients, slightly uneven lines so they feel hand-drawn. `TwoHearts` adds a second line color with the class `illustration__strong` (the darker heading teal). They are decorative (hidden from screen readers) unless you pass a `title`.
 
 | Component | Shows | Used on |
 | --- | --- | --- |
-| `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing (symptom check), onboarding step 1, symptoms page with no profile |
+| `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing hero (large: `size="100%" strokeWidth={0.7} viewBox="14 17 88 92"`), landing (symptom check), onboarding step 1, symptoms page with no profile |
 | `MedicineBox` | A first-aid box with a cross | Landing (emergency hospital) |
 | `SmallHouse` | A small house with a door, window and plant | Landing (hospitals and clinics), onboarding step 3 |
-| `CaregiverHands` | Two open hands holding a heart | Landing hero (large, `strokeWidth={0.9}`) and family care, onboarding step 2, "No linked profiles yet" |
+| `TwoHearts` | A large heart with a half-size heart tucked in front of its lower right side (the small one in the darker teal) | Caregiver spots: landing (family care), onboarding step 2, "No linked profiles yet" |
 
 ```jsx
 import { MedicineBox } from "../components/illustrations";
@@ -261,7 +261,9 @@ import { MedicineBox } from "../components/illustrations";
 <MedicineBox size="5rem" title="A first-aid box" /> // meaningful image (rare)
 ```
 
-Keep them small (4 to 7rem) and friendly. Use them on the landing page, in onboarding and in empty states, not as decoration on every page. To add a new one, follow the same rules: 120x120 viewBox, `stroke="currentColor"`, stroke width 2.5, round caps and joins, no fills.
+Keep them small (4 to 7rem) and friendly. Use them on the landing page, in onboarding and in empty states, not as decoration on every page. Drawn larger (like the landing hero), pass a thinner `strokeWidth` so the line looks as fine as at the small sizes, and a `viewBox` that crops to the drawing.
+
+To add a new one, follow the same rules: 120x120 viewBox, `stroke="currentColor"`, stroke width 2.5, round caps and joins, no fills. Where one line passes behind another, end it with its round cap a little before the crossing rather than crossing or cutting it.
 
 ---
 

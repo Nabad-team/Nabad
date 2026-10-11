@@ -22,7 +22,7 @@ import Card from "../components/ui/Card";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
-import { CaregiverHands } from "../components/illustrations";
+import { TwoHearts } from "../components/illustrations";
 
 // Checks the form and returns an object of error messages, e.g. { phone: "..." }.
 // An empty object means everything is valid.
@@ -325,8 +325,8 @@ export default function ProfilePage() {
         {dependentMessage && <Alert tone="success" as="p" role="status" className="profile-message">{dependentMessage}</Alert>}
 
         {linkedProfiles.length === 0 && (
-          <EmptyState illustration={<CaregiverHands size="5rem" />} title="No linked profiles yet.">
-            Add a child or parent you look after. You can then switch to their profile from the menu at the top.
+          <EmptyState illustration={<TwoHearts size="5rem" />} title="No linked profiles yet.">
+            Add someone you look after. You can then switch to their profile from the menu at the top.
           </EmptyState>
         )}
         {linkedProfiles.length > 0 && (

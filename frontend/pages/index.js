@@ -3,7 +3,7 @@ import PageLayout, { SiteHeader } from "../components/ui/PageLayout";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatDivider } from "../components/ui/Heartbeat";
-import { CaregiverHands, MedicineBox, PersonWithPhone, SmallHouse } from "../components/illustrations";
+import { MedicineBox, PersonWithPhone, SmallHouse, TwoHearts } from "../components/illustrations";
 
 const features = [
   {
@@ -22,9 +22,9 @@ const features = [
     text: "Search by specialty, location and availability.",
   },
   {
-    Illustration: CaregiverHands,
+    Illustration: TwoHearts,
     title: "Care for your family",
-    text: "Look after your children or parents from your own account.",
+    text: "Look after the people you care for from your own account.",
   },
 ];
 
@@ -62,8 +62,8 @@ export default function HomePage() {
           <Button href="/signup">Get started</Button>
         </div>
         <div className="hero__art">
-          {/* Cropped to the hands and heart, so no empty band shows above or below them. */}
-          <CaregiverHands size="100%" strokeWidth={0.9} viewBox="4 32 112 66" />
+          {/* Cropped to the drawing; a thinner line keeps it as fine as the small drawings at this size. */}
+          <PersonWithPhone size="100%" strokeWidth={0.7} viewBox="14 17 88 92" />
         </div>
       </section>
 
