@@ -2,9 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const Medication = require("../models/Medication");
-const LinkedProfile = require("../models/LinkedProfile");
 const { FORMS, STATUSES, LIMITS } = Medication;
 const { requireAuth } = require("../middleware/authMiddleware");
+const { resolveProfile, profileView } = require("../middleware/profileAccess");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 // Medications of the signed-in user and of the people they look after (their linked profiles).
@@ -19,29 +19,12 @@ const MAX_MEDICATIONS = 200; // per profile
 // Keyed by account (requireAuth runs first). Generous for real use, stops scripted floods.
 const writeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, keyGenerator: (req) => req.userId, message: { error: "Too many changes in a short time. Please wait a few minutes and try again." } });
 const NOT_FOUND = { error: "Medication not found." };
-const PROFILE_NOT_FOUND = { error: "Profile not found." };
 
 const dateString = (date) => (date ? date.toISOString().slice(0, 10) : "");
-// Whose medications this request is about: the user's own profile (stored as the user id) or one of
-// their linked profiles. Sets req.profileId, or answers 404 for anything else.
-async function resolveProfile(req, res, next) {
-  try {
-    const requested = req.query.profileId;
-    if (requested === undefined || requested === "self") {
-      req.profileId = new mongoose.Types.ObjectId(req.userId);
-      return next();
-    }
-    if (typeof requested !== "string" || !mongoose.isValidObjectId(requested)) return res.status(404).json(PROFILE_NOT_FOUND);
-    const profile = await LinkedProfile.exists({ _id: requested, owner: req.userId });
-    if (!profile) return res.status(404).json(PROFILE_NOT_FOUND);
-    req.profileId = profile._id;
-    return next();
-  } catch (error) { return next(error); }
-}
 router.use(resolveProfile);
 const view = (medication) => ({
   id: String(medication._id),
-  profileId: String(medication.profileId) === String(medication.owner) ? "self" : String(medication.profileId),
+  profileId: profileView(medication),
   name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form, frequency: medication.frequency,
   startDate: dateString(medication.startDate), endDate: dateString(medication.endDate),
   status: medication.status, notes: medication.notes,

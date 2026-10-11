@@ -1,14 +1,18 @@
 // Automated tests for the Nabad dashboard page.
 // These tests run automatically on every pull request.
 
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
 import DashboardPage from "../pages/dashboard";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+import * as fakeWellbeing from "../test-utils/fakeWellbeingApi";
+import { todayString } from "../lib/dates";
 
 // The profile API is replaced by an in-memory fake of the backend.
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+// The Water and sleep card reads today from an in-memory fake too.
+jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
 
 // The sign-in state the profile provider sees; tests can change it.
 let mockStatus = "signedIn";
@@ -32,6 +36,7 @@ describe("Dashboard Page", () => {
   beforeEach(() => {
     localStorage.clear();
     fakeProfileApi.resetFakeProfiles();
+    fakeWellbeing.resetFakeWellbeing();
     mockStatus = "signedIn";
   });
 
@@ -165,5 +170,26 @@ describe("Dashboard Page", () => {
     expect(
       screen.getByRole("link", { name: "Speak your symptoms" })
     ).toHaveAttribute("href", "/symptoms?voice=1");
+  });
+
+  test("shows today's water and last night's sleep on the Water and sleep card", async () => {
+    fakeWellbeing.seedWater("self", todayString(), 3);
+    fakeWellbeing.seedSleep("self", todayString(), 7.5, 4);
+    renderDashboard();
+
+    const card = await screen.findByRole("region", { name: "Water and sleep" });
+    expect(await within(card).findByText("3 glasses today")).toBeInTheDocument();
+    expect(within(card).getByText("7.5 hours, slept well")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Open water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
+  });
+
+  test("the Water and sleep card shows the goal only when set, and says when sleep isn't logged", async () => {
+    fakeWellbeing.seedWater("self", todayString(), 2);
+    fakeWellbeing.seedTarget("self", 6);
+    renderDashboard();
+
+    const card = await screen.findByRole("region", { name: "Water and sleep" });
+    expect(await within(card).findByText("2 of 6 glasses")).toBeInTheDocument();
+    expect(within(card).getByText("Not logged yet")).toBeInTheDocument();
   });
 });

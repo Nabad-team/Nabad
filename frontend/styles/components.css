@@ -1007,3 +1007,204 @@ select.input {
 .medication__heading .badge {
   margin-left: 0;
 }
+
+/* ---------- Water and sleep ---------- */
+
+.tracker__count {
+  margin: var(--space-3) 0 var(--space-4);
+  font-size: var(--text-lg);
+}
+
+.tracker__target {
+  margin-top: var(--space-5);
+}
+
+.tracker__target > p {
+  margin: 0 0 var(--space-2);
+}
+
+/* Today's glasses: big enough to tap (3.5rem), wrapping onto more rows on phones. */
+.glasses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.glasses__slot,
+.glasses__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.glasses__add {
+  padding: 0;
+  background: var(--color-surface);
+  border: 0.0625rem dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.glasses__add:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.glasses__add:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.glasses__add:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.glass {
+  width: 2rem;
+  height: 2.5rem;
+}
+
+.glass__outline {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.glass__water {
+  fill: var(--color-primary);
+  opacity: 0.85;
+}
+
+/* Weekly charts: one series each, thin columns rounded at the top, a hairline baseline. */
+.week-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.week-chart {
+  margin: 0;
+}
+
+.week-chart__title {
+  margin: 0 0 var(--space-1);
+}
+
+.week-chart__summary {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.week-chart__max {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.week-chart__area {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+  height: 8rem;
+  border-top: 0.0625rem solid var(--color-border);
+  border-bottom: 0.0625rem solid var(--color-border-strong);
+}
+
+.week-chart__column {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.week-chart__column:hover {
+  background: var(--color-sunken);
+}
+
+.week-chart__bar {
+  width: 100%;
+  max-width: 1.5rem;
+  min-height: 0.125rem;
+  background: var(--color-primary);
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+/* A logged 0 still shows: a short flat mark on the baseline, unlike a day with nothing logged. */
+.week-chart__bar--zero {
+  height: 0.125rem !important;
+  border-radius: 0;
+  background: var(--color-text-muted);
+}
+
+.week-chart__reference {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 0.0625rem solid var(--color-accent);
+  pointer-events: none;
+}
+
+.week-chart__reference span {
+  position: absolute;
+  right: 0;
+  bottom: 0.125rem;
+  padding: 0 var(--space-1);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.week-chart__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+  margin-top: var(--space-1);
+}
+
+.week-chart__day {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.week-chart__day--today {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.week-chart__table {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* Stays a list item so the open/closed triangle shows; the padding keeps it a 44px tap target. */
+.week-chart__table summary {
+  padding-block: var(--space-3);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.week-chart__table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.week-chart__table th,
+.week-chart__table td {
+  padding: var(--space-1) 0;
+  border-bottom: 0.0625rem solid var(--color-border);
+  text-align: left;
+  font-weight: var(--weight-regular);
+}
+
+.week-chart__table thead th {
+  color: var(--color-text-muted);
+}
