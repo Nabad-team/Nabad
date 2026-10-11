@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
-import { classifyUrgency } from "../lib/triageApi";
+import { classifyUrgency, refineUrgency } from "../lib/triageApi";
 import UrgencyResult from "../components/UrgencyResult";
+import FollowUpQuestions from "../components/FollowUpQuestions";
 
 export default function SymptomsPage() {
   const { activeProfile } = useActiveProfile();
@@ -10,6 +11,11 @@ export default function SymptomsPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [urgency, setUrgency] = useState(null); // SCRUM-128: result of the urgency classification
+  // SCRUM-126: the box is cleared after saving, so the description is kept for /refine.
+  const [lastDescription, setLastDescription] = useState("");
+  const [followUps, setFollowUps] = useState([]);
+  const [refining, setRefining] = useState(false);
+  const [assessmentCount, setAssessmentCount] = useState(0); // new form (no old answers) per assessment
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState("");
   const recognitionRef = useRef(null);
@@ -93,6 +99,7 @@ export default function SymptomsPage() {
     setMessage("");
     setError("");
     setUrgency(null);
+    setFollowUps([]);
 
     if (!activeProfile) {
       setError("No active profile selected.");
@@ -125,12 +132,33 @@ export default function SymptomsPage() {
     // Saving and classifying are separate on purpose: if classification fails, the symptoms
     // are still saved, and the user is told what to do instead of seeing nothing.
     try {
-      setUrgency(await classifyUrgency(description));
+      const result = await classifyUrgency(description);
+      setUrgency(result);
+      // SCRUM-126: emergencies come back with no questions, so nothing delays the call-140 advice.
+      setFollowUps(result.followUpQuestions || []);
+      setLastDescription(description);
+      setAssessmentCount((count) => count + 1);
     } catch (err) {
       console.error(err);
       setError(
         "Your symptoms were saved, but we could not check how urgent they are right now. If you feel very unwell, call 140."
       );
+    }
+  }
+
+  // SCRUM-126: send the answers; the backend re-classifies the description and applies them.
+  async function handleFollowUpSubmit(answers) {
+    setError("");
+    setRefining(true);
+    try {
+      setUrgency(await refineUrgency(lastDescription, answers));
+      setFollowUps([]);
+    } catch (err) {
+      console.error(err);
+      // The first result stays on screen and the questions stay open so the user can retry.
+      setError("We could not update the urgency with your answers. The result above still applies.");
+    } finally {
+      setRefining(false);
     }
   }
 
@@ -227,7 +255,16 @@ export default function SymptomsPage() {
         </p>
       )}
 
-      <UrgencyResult result={urgency} />
+      <UrgencyResult result={urgency} preliminary={followUps.length > 0} />
+
+      <FollowUpQuestions
+        // A new key per assessment resets any half-filled answers from an earlier submission.
+        key={assessmentCount}
+        questions={followUps}
+        onSubmit={handleFollowUpSubmit}
+        onSkip={() => setFollowUps([])}
+        busy={refining}
+      />
 
       {error && (
         <p

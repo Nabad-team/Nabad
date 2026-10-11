@@ -8,7 +8,8 @@ const STYLES = {
   routine: { border: "#0f766e", background: "#f0fdfa", color: "#134e4a" },
 };
 
-export default function UrgencyResult({ result }) {
+// SCRUM-126: "preliminary" = follow-up questions are still open, so the level may still change.
+export default function UrgencyResult({ result, preliminary = false }) {
   if (!result) return null;
   const style = STYLES[result.level] || STYLES.routine;
   const isEmergency = result.level === "emergency";
@@ -28,8 +29,10 @@ export default function UrgencyResult({ result }) {
       }}
     >
       <h2 id="urgency-heading" style={{ marginTop: 0 }}>
-        Urgency: {result.label}
+        {preliminary ? "Urgency so far" : "Urgency"}: {result.label}
       </h2>
+      {preliminary && <p>Answer the questions below to make this more accurate.</p>}
+      {!preliminary && result.confidence === "refined" && <p>Updated using your answers.</p>}
       <p>
         <strong>How soon:</strong> {result.timeframe}
       </p>
