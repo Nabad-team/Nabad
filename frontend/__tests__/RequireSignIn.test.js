@@ -26,6 +26,7 @@ jest.mock("next/router", () => ({
 jest.mock("../lib/api", () => ({
   getSession: (...args) => getSession(...args),
   logout: (...args) => logout(...args),
+  googleLoginUrl: () => "/api/auth/google",
 }));
 
 const SESSION = { idleTimeoutMs: 30 * 60 * 1000, warningBeforeMs: 2 * 60 * 1000, absoluteExpiresAt: Date.now() + 12 * 60 * 60 * 1000 };

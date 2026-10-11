@@ -72,7 +72,7 @@ export default function LoginPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title="Log in">
       <PageTitle lead={challenge ? null : "Welcome back."}>Log in to Nabad</PageTitle>
       {signedOutMessage && <Alert tone="info" as="p" role="status" className="auth-message">{signedOutMessage}</Alert>}
       {challenge ? (
@@ -107,6 +107,7 @@ export default function LoginPage() {
             <Button variant="secondary" href={googleLoginUrl()} block>Continue with Google</Button>
           </div>
           <p><a href="/forgot-password">Forgot password?</a></p>
+          <p>Don't have an account? <a href="/signup">Sign up</a></p>
         </div>
       )}
     </PageLayout>

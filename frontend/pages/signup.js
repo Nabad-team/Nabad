@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/router";
-import { signup } from "../lib/api";
+import { signup, googleLoginUrl } from "../lib/api";
 import { findPasswordProblem } from "../lib/passwordPolicy";
 import NewPasswordField from "../components/NewPasswordField";
 import PageLayout from "../components/ui/PageLayout";
@@ -41,19 +41,26 @@ export default function SignupPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title="Sign up">
       <PageTitle lead="It takes about a minute. You can add family members later.">Create your Nabad account</PageTitle>
-      <form onSubmit={handleSubmit} className="form">
-        <Input id="name" label="Name" autoComplete="name" value={form.name} onChange={update("name")} required />
-        <Input id="email" label="Email" type="email" autoComplete="email" value={form.email} onChange={update("email")} required />
+      <div className="stack">
+        <form onSubmit={handleSubmit} className="form">
+          <Input id="name" label="Name" autoComplete="name" value={form.name} onChange={update("name")} required />
+          <Input id="email" label="Email" type="email" autoComplete="email" value={form.email} onChange={update("email")} required />
 
-        <NewPasswordField value={form.password} onChange={(password) => setForm({ ...form, password })} context={{ name: form.name, email: form.email }} inputRef={passwordRef} />
+          <NewPasswordField value={form.password} onChange={(password) => setForm({ ...form, password })} context={{ name: form.name, email: form.email }} inputRef={passwordRef} />
 
-        {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-        <Button type="submit" disabled={loading} block>
-          {loading ? "Creating account..." : "Sign up"}
-        </Button>
-      </form>
+          {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+          <Button type="submit" disabled={loading} block>
+            {loading ? "Creating account..." : "Sign up"}
+          </Button>
+        </form>
+        <p className="divider-text">or</p>
+        <div className="form">
+          <Button variant="secondary" href={googleLoginUrl()} block>Continue with Google</Button>
+        </div>
+        <p>Already have an account? <a href="/login">Log in</a></p>
+      </div>
     </PageLayout>
   );
 }

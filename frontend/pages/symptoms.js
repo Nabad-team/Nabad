@@ -180,7 +180,7 @@ export default function SymptomsPage() {
 
   if (!activeProfile) {
     return (
-      <PageLayout>
+      <PageLayout title="Enter symptoms">
         <PageTitle>Symptom entry</PageTitle>
         <EmptyState illustration={<PersonWithPhone size="5rem" />} title="No active profile selected." />
       </PageLayout>
@@ -188,7 +188,7 @@ export default function SymptomsPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title="Enter symptoms">
       <PageTitle>Enter symptoms</PageTitle>
 
       <p>

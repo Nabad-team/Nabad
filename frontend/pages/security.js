@@ -38,7 +38,7 @@ export default function SecurityPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title="Account security">
       <PageTitle>Account security</PageTitle>
       {error && <Alert tone="danger" as="p" role="alert" className="auth-message">{error}</Alert>}
       {authProvider === "google" && (

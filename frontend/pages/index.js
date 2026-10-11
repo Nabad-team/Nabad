@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import PageLayout, { SiteHeader } from "../components/ui/PageLayout";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import Badge from "../components/ui/Badge";
 import { HeartbeatDivider } from "../components/ui/Heartbeat";
 import { MedicineBox, PersonWithPhone, SmallHouse, TwoHearts } from "../components/illustrations";
 
@@ -15,11 +16,13 @@ const features = [
     Illustration: MedicineBox,
     title: "The right hospital in an emergency",
     text: "We point you to a nearby hospital that is equipped for your condition, not just the closest one.",
+    comingSoon: true,
   },
   {
     Illustration: SmallHouse,
     title: "Find hospitals and clinics",
     text: "Search by specialty, location and availability.",
+    comingSoon: true,
   },
   {
     Illustration: TwoHearts,
@@ -70,11 +73,14 @@ export default function HomePage() {
       <section className="section" aria-labelledby="features-heading">
         <h2 id="features-heading">How Nabad helps</h2>
         <ul className="feature-list">
-          {features.map(({ Illustration, title, text }) => (
+          {features.map(({ Illustration, title, text, comingSoon }) => (
             <li key={title}>
               <Illustration size="4.5rem" />
               <div>
-                <h3>{title}</h3>
+                <h3>
+                  {title}
+                  {comingSoon && <> <Badge>Coming soon</Badge></>}
+                </h3>
                 <p>{text}</p>
               </div>
             </li>

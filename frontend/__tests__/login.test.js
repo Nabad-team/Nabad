@@ -39,6 +39,12 @@ describe("Login Page", () => {
     expect(screen.getByText("Forgot password?")).toBeInTheDocument();
   });
 
+  test("links to the sign up page for new users", () => {
+    render(<LoginPage />);
+    expect(screen.getByText(/Don't have an account\?/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", "/signup");
+  });
+
   test("shows Continue with Google", () => {
     render(<LoginPage />);
     const link = screen.getByRole("link", { name: "Continue with Google" });

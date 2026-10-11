@@ -23,7 +23,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title="Getting started">
       <div aria-live="polite" className="onboarding">
         <Illustration size="7rem" />
         <p className="eyebrow">Getting started · {step + 1} of {steps.length}</p>
