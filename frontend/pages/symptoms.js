@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
+import { classifyUrgency } from "../lib/triageApi";
+import UrgencyResult from "../components/UrgencyResult";
 
 export default function SymptomsPage() {
   const { activeProfile } = useActiveProfile();
   const [symptoms, setSymptoms] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [urgency, setUrgency] = useState(null); // SCRUM-128: result of the urgency classification
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState("");
   const recognitionRef = useRef(null);
@@ -89,6 +92,7 @@ export default function SymptomsPage() {
 
     setMessage("");
     setError("");
+    setUrgency(null);
 
     if (!activeProfile) {
       setError("No active profile selected.");
@@ -100,11 +104,13 @@ export default function SymptomsPage() {
       return;
     }
 
+    const description = symptoms.trim();
+
     try {
       await addSymptomRecord(
         activeProfile.id,
         activeProfile.fullName,
-        symptoms.trim()
+        description
       );
 
       setMessage(`Symptoms recorded for ${activeProfile.fullName}.`);
@@ -112,6 +118,19 @@ export default function SymptomsPage() {
     } catch (err) {
       console.error(err);
       setError("Could not save symptoms.");
+      return;
+    }
+
+    // SCRUM-128: after saving, ask the backend how urgent this is and how soon to get care.
+    // Saving and classifying are separate on purpose: if classification fails, the symptoms
+    // are still saved, and the user is told what to do instead of seeing nothing.
+    try {
+      setUrgency(await classifyUrgency(description));
+    } catch (err) {
+      console.error(err);
+      setError(
+        "Your symptoms were saved, but we could not check how urgent they are right now. If you feel very unwell, call 140."
+      );
     }
   }
 
@@ -207,6 +226,8 @@ export default function SymptomsPage() {
           {message}
         </p>
       )}
+
+      <UrgencyResult result={urgency} />
 
       {error && (
         <p
