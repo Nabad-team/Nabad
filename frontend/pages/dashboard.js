@@ -1,25 +1,17 @@
-import Head from "next/head";
 import ProfileHeader from "../components/ProfileHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
+import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-
-const TEAL = "#0f766e";
-
-const buttonStyle = {
-  display: "inline-block",
-  padding: "10px 20px",
-  borderRadius: 8,
-  background: TEAL,
-  color: "white",
-  textDecoration: "none",
-  fontWeight: "bold",
-};
 
 function MicrophoneIcon() {
   return (
     <svg
-      width="42"
-      height="42"
+      width="2.5rem"
+      height="2.5rem"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -40,44 +32,26 @@ export default function DashboardPage() {
   const { activeProfile, error, loading } = useActiveProfile();
 
   return (
-    <main style={{ maxWidth: 700, margin: "0 auto", padding: "20px 16px", fontFamily: "sans-serif", color: "#1f2937" }}>
-      <Head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-      </Head>
-      <ProfileHeader />
+    <PageLayout header={<ProfileHeader />}>
       <EmailVerificationBanner />
-      {activeProfile && <h1>Welcome, {activeProfile.fullName}</h1>}
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      {loading && <p>Loading...</p>}
-      <a
-        href="/symptoms"
-        aria-label="Speak your symptoms"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          margin: "24px 0",
-          padding: 20,
-          borderRadius: 12,
-          background: "#f0fdfa",
-          border: `2px solid ${TEAL}`,
-          color: TEAL,
-          textDecoration: "none",
-        }}
-      >
+      {activeProfile && <PageTitle lead="How are you feeling today?">Welcome, {activeProfile.fullName}</PageTitle>}
+      {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+      {loading && <HeartbeatLoader />}
+      <a href="/symptoms" aria-label="Speak your symptoms" className="action-link">
         <MicrophoneIcon />
         <span>
-          <strong style={{ display: "block", fontSize: 20 }}>
-            Speak your symptoms
-          </strong>
+          <strong className="action-link__title">Speak your symptoms</strong>
           <span>Tap here to describe how you feel by voice.</span>
         </span>
       </a>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <a href="/profile" style={buttonStyle}>My Profile</a>
-        <a href="/security" style={buttonStyle}>Security</a>
-      </div>
-    </main>
+      <section className="section" aria-labelledby="account-heading">
+        <h2 id="account-heading">Your account</h2>
+        <div className="button-row">
+          <Button variant="secondary" href="/profile">My Profile</Button>
+          <Button variant="secondary" href="/security">Security</Button>
+        </div>
+      </section>
+    </PageLayout>
   );
 }
 

@@ -1,17 +1,15 @@
+import Button from "./ui/Button";
+
 // SCRUM-128: shows the urgency classification returned by POST /api/triage/classify.
 // Answers the two questions in the story: "do I need care?" (label + action)
 // and "how soon?" (timeframe). Colour is never the only signal: the label is always written out.
-const STYLES = {
-  emergency: { border: "#b91c1c", background: "#fef2f2", color: "#7f1d1d" },
-  urgent: { border: "#c2410c", background: "#fff7ed", color: "#7c2d12" },
-  soon: { border: "#a16207", background: "#fefce8", color: "#713f12" },
-  routine: { border: "#0f766e", background: "#f0fdfa", color: "#134e4a" },
-};
+// Colors per level: .urgency--<level> in styles/components.css (red is kept for emergencies).
+const LEVELS = ["emergency", "urgent", "soon", "routine"];
 
 // SCRUM-126: "preliminary" = follow-up questions are still open, so the level may still change.
 export default function UrgencyResult({ result, preliminary = false }) {
   if (!result) return null;
-  const style = STYLES[result.level] || STYLES.routine;
+  const level = LEVELS.includes(result.level) ? result.level : "routine";
   const isEmergency = result.level === "emergency";
 
   return (
@@ -19,16 +17,9 @@ export default function UrgencyResult({ result, preliminary = false }) {
       aria-labelledby="urgency-heading"
       // An emergency is announced immediately by screen readers; the others politely.
       role={isEmergency ? "alert" : "status"}
-      style={{
-        marginTop: "1.5rem",
-        padding: "1rem 1.25rem",
-        border: `2px solid ${style.border}`,
-        borderRadius: "10px",
-        background: style.background,
-        color: style.color,
-      }}
+      className={`urgency urgency--${level}`}
     >
-      <h2 id="urgency-heading" style={{ marginTop: 0 }}>
+      <h2 id="urgency-heading">
         {preliminary ? "Urgency so far" : "Urgency"}: {result.label}
       </h2>
       {preliminary && <p>Answer the questions below to make this more accurate.</p>}
@@ -41,28 +32,17 @@ export default function UrgencyResult({ result, preliminary = false }) {
       </p>
 
       {isEmergency && (
-        <a
-          href="tel:140"
-          style={{
-            display: "inline-block",
-            padding: "0.75rem 1.25rem",
-            background: style.border,
-            color: "white",
-            borderRadius: "8px",
-            fontWeight: "bold",
-            textDecoration: "none",
-          }}
-        >
-          Call 140 now
-        </a>
+        <p>
+          <Button variant="danger" href="tel:140">Call 140 now</Button>
+        </p>
       )}
 
       {result.reasons?.length > 0 && (
         <>
-          <p style={{ marginBottom: "0.25rem" }}>
+          <p className="urgency__why">
             <strong>Why:</strong>
           </p>
-          <ul style={{ marginTop: 0 }}>
+          <ul>
             {result.reasons.map((reason) => (
               <li key={reason}>{reason}</li>
             ))}
@@ -70,7 +50,7 @@ export default function UrgencyResult({ result, preliminary = false }) {
         </>
       )}
 
-      <p style={{ fontSize: "0.9rem", marginBottom: 0 }}>{result.disclaimer}</p>
+      <p className="text-sm">{result.disclaimer}</p>
     </section>
   );
 }

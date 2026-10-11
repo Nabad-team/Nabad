@@ -3,6 +3,10 @@ import { useRouter } from "next/router";
 import { resetPassword } from "../lib/api";
 import { findPasswordProblem } from "../lib/passwordPolicy";
 import NewPasswordField from "../components/NewPasswordField";
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
 
 export default function ResetPasswordPage() {
   const router = useRouter(); const [password, setPassword] = useState(""); const [message, setMessage] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
@@ -15,5 +19,15 @@ export default function ResetPasswordPage() {
     setError(""); setLoading(true);
     try { const result = await resetPassword(router.query.token, password); setMessage(result.message); } catch (err) { setError(err.message); } finally { setLoading(false); }
   }
-  return <main style={{ maxWidth: 400, margin: "80px auto", fontFamily: "sans-serif" }}><h1>Choose a new password</h1><form onSubmit={submit}><NewPasswordField label="New password" value={password} onChange={setPassword} inputRef={passwordRef} />{error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}{message && <p role="status">{message} <a href="/login">Log in</a></p>}<button disabled={loading || !router.isReady}>{loading ? "Updating..." : "Update password"}</button></form></main>;
+  return (
+    <PageLayout>
+      <PageTitle>Choose a new password</PageTitle>
+      <form onSubmit={submit} className="form">
+        <NewPasswordField label="New password" value={password} onChange={setPassword} inputRef={passwordRef} />
+        {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+        {message && <Alert tone="success" as="p" role="status">{message} <a href="/login">Log in</a></Alert>}
+        <Button type="submit" disabled={loading || !router.isReady} block>{loading ? "Updating..." : "Update password"}</Button>
+      </form>
+    </PageLayout>
+  );
 }

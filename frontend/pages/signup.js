@@ -3,6 +3,11 @@ import { useRouter } from "next/router";
 import { signup } from "../lib/api";
 import { findPasswordProblem } from "../lib/passwordPolicy";
 import NewPasswordField from "../components/NewPasswordField";
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -36,23 +41,19 @@ export default function SignupPage() {
   }
 
   return (
-    <main style={{ maxWidth: 380, margin: "80px auto", fontFamily: "sans-serif" }}>
-      <h1>Create your Nabad account</h1>
-      <form onSubmit={handleSubmit}>
-        <label>Name</label>
-        <input value={form.name} onChange={update("name")} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-
-        <label>Email</label>
-        <input type="email" value={form.email} onChange={update("email")} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
+    <PageLayout>
+      <PageTitle lead="It takes about a minute. You can add family members later.">Create your Nabad account</PageTitle>
+      <form onSubmit={handleSubmit} className="form">
+        <Input id="name" label="Name" autoComplete="name" value={form.name} onChange={update("name")} required />
+        <Input id="email" label="Email" type="email" autoComplete="email" value={form.email} onChange={update("email")} required />
 
         <NewPasswordField value={form.password} onChange={(password) => setForm({ ...form, password })} context={{ name: form.name, email: form.email }} inputRef={passwordRef} />
 
-        {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: "100%", padding: 10 }}>
+        {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+        <Button type="submit" disabled={loading} block>
           {loading ? "Creating account..." : "Sign up"}
-        </button>
+        </Button>
       </form>
-    </main>
+    </PageLayout>
   );
 }
-

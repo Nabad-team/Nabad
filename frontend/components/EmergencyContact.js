@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { getEmergencyContact, addEmergencyContact, updateEmergencyContact, removeEmergencyContact } from "../lib/api";
 import Dialog from "./Dialog";
+import Alert from "./ui/Alert";
+import Button from "./ui/Button";
+import Card from "./ui/Card";
+import Input from "./ui/Input";
+import { HeartbeatLoader } from "./ui/Heartbeat";
 
 // The account's emergency contact. Three views:
 //   - no contact yet  -> the add form
@@ -59,51 +64,53 @@ export default function EmergencyContact() {
     finally { setSaving(false); setConfirmingRemove(false); }
   }
 
-  const inputStyle = { display: "block", width: "100%", padding: 8, margin: "6px 0 16px", boxSizing: "border-box" };
-  const primary = { padding: "10px 20px", borderRadius: 8, background: "#0f766e", color: "white", border: 0 };
-  const secondary = { padding: "10px 20px", borderRadius: 8, background: "white", color: "#0f766e", border: "1px solid #0f766e", marginLeft: 8 };
-  const danger = { padding: "10px 20px", borderRadius: 8, background: "white", color: "#b91c1c", border: "1px solid #b91c1c", marginLeft: 8 };
-
   const form = (
-    <form onSubmit={save}>
-      <label htmlFor="emergency-name">Contact name</label>
-      <input id="emergency-name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={100} style={inputStyle} />
-      <label htmlFor="emergency-phone">Contact phone</label>
-      <input id="emergency-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required maxLength={40} placeholder="+961 71 123 456" aria-describedby="emergency-phone-help" style={inputStyle} />
-      <p id="emergency-phone-help">Use a Lebanese number or include the international country code.</p>
-      <button disabled={saving} type="submit" style={primary}>
-        {saving ? "Saving..." : editing ? "Save changes" : "Save emergency contact"}
-      </button>
-      {editing && <button type="button" onClick={cancelEdit} disabled={saving} style={secondary}>Cancel</button>}
+    <form onSubmit={save} className="form">
+      <Input id="emergency-name" label="Contact name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={100} />
+      <Input id="emergency-phone" label="Contact phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required maxLength={40} placeholder="+961 71 123 456" hint="Use a Lebanese number or include the international country code." />
+      <div className="form-actions">
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : editing ? "Save changes" : "Save emergency contact"}
+        </Button>
+        {editing && <Button variant="secondary" onClick={cancelEdit} disabled={saving}>Cancel</Button>}
+      </div>
     </form>
   );
 
   let body;
-  if (loading) body = <p role="status">Loading emergency contact...</p>;
-  else if (loadFailed) body = <button type="button" onClick={load}>Retry loading contact</button>;
+  if (loading) body = <HeartbeatLoader label="Loading emergency contact..." />;
+  else if (loadFailed) body = <Button variant="secondary" onClick={load}>Retry loading contact</Button>;
   else if (!contact || editing) body = form;
   else body = (
     <div>
-      <div role="status"><p><strong>{contact.name}</strong></p><p>{contact.phone}</p><p>Your emergency contact is saved.</p></div>
-      <button type="button" onClick={startEdit} style={{ ...primary }}>Edit contact</button>
-      <button type="button" onClick={() => { setNotice(""); setError(""); setConfirmingRemove(true); }} style={danger}>Remove contact</button>
+      <div role="status" className="details">
+        <p><span className="details__label">Name</span><strong>{contact.name}</strong></p>
+        <p><span className="details__label">Phone</span>{contact.phone}</p>
+        <p className="text-muted">Your emergency contact is saved.</p>
+      </div>
+      <div className="button-row">
+        <Button variant="secondary" onClick={startEdit}>Edit contact</Button>
+        <Button variant="danger" onClick={() => { setNotice(""); setError(""); setConfirmingRemove(true); }}>Remove contact</Button>
+      </div>
     </div>
   );
 
   return (
-    <section aria-labelledby="emergency-heading" style={{ border: "2px solid #0f766e", borderRadius: 12, padding: 20, marginTop: 40 }}>
-      <h2 id="emergency-heading" style={{ marginTop: 0, color: "#0f766e" }}>Emergency contact</h2>
-      <p>This contact belongs to your account.</p>
+    <Card aria-labelledby="emergency-heading" className="section">
+      <h2 id="emergency-heading">Emergency contact</h2>
+      <p className="text-muted">The person we show during an emergency alert. This contact belongs to your account.</p>
       {body}
-      {notice && <p role="status" style={{ color: "#0f766e" }}>{notice}</p>}
-      {error && <p role="alert" style={{ color: "#b91c1c" }}>{error}</p>}
+      {notice && <Alert tone="success" as="p" role="status" className="card__message">{notice}</Alert>}
+      {error && <Alert tone="danger" as="p" role="alert" className="card__message">{error}</Alert>}
       {confirmingRemove && (
         <Dialog title="Remove emergency contact?">
           <p>{contact?.name} will no longer be shown during emergency alerts. You can add a new contact at any time.</p>
-          <button type="button" onClick={remove} disabled={saving} style={{ ...danger, marginLeft: 0 }}>{saving ? "Removing..." : "Yes, remove"}</button>
-          <button type="button" onClick={() => setConfirmingRemove(false)} disabled={saving} style={secondary}>Keep contact</button>
+          <div className="button-row">
+            <Button variant="danger" onClick={remove} disabled={saving}>{saving ? "Removing..." : "Yes, remove"}</Button>
+            <Button variant="secondary" onClick={() => setConfirmingRemove(false)} disabled={saving}>Keep contact</Button>
+          </div>
         </Dialog>
       )}
-    </section>
+    </Card>
   );
 }

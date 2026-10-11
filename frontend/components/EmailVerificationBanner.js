@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMe, resendVerificationEmail } from "../lib/api";
+import Alert from "./ui/Alert";
+import Button from "./ui/Button";
 
 // Reminds a signed-in user whose email is not verified yet, with a button to resend the link.
 // Shows nothing while loading, when the email is verified, or if the check fails,
@@ -27,15 +29,15 @@ export default function EmailVerificationBanner() {
   }
 
   return (
-    <section aria-label="Email verification" style={{ border: "1px solid #d97706", background: "#fffbeb", borderRadius: 8, padding: 16, margin: "16px 0" }}>
-      <p style={{ marginTop: 0 }}>
+    <Alert tone="warning" as="section" aria-label="Email verification" className="banner">
+      <p>
         <strong>Please verify your email.</strong> We sent a link to {user.email}. Verifying it keeps your account secure and makes sure password reset emails reach you.
       </p>
-      <button type="button" onClick={resend} disabled={sending} style={{ padding: "8px 16px", borderRadius: 8, background: "#0f766e", color: "white", border: 0 }}>
+      <Button variant="secondary" size="small" onClick={resend} disabled={sending}>
         {sending ? "Sending..." : "Resend verification email"}
-      </button>
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert" style={{ color: "#b91c1c" }}>{error}</p>}
-    </section>
+      </Button>
+      {message && <p role="status" className="banner__message">{message}</p>}
+      {error && <p role="alert" className="banner__message field__error">{error}</p>}
+    </Alert>
   );
 }

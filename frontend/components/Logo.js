@@ -1,12 +1,12 @@
 const TEAL = "#0f766e";
 
 // The Nabad logo: a pulse icon followed by the name.
-// The icon is drawn on a 32x32 grid (the viewBox), then scaled to `size` pixels.
-export default function Logo({ size = 36 }) {
+// The icon is drawn on a 32x32 grid (the viewBox), then scaled to `size` (2.25rem = 36px by default).
+export default function Logo({ size = "2.25rem" }) {
   return (
     <a
       href="/"
-      style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: TEAL }}
+      style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: TEAL }}
     >
       <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
         {/* Rounded square background: light teal fill, teal border */}
@@ -22,8 +22,8 @@ export default function Logo({ size = 36 }) {
         />
       </svg>
       <span style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-        <span style={{ fontSize: 24, fontWeight: "bold" }}>Nabad</span>
-        <span lang="ar" dir="rtl" style={{ fontSize: 13, marginTop: 2 }}>نبض</span>
+        <span style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Nabad</span>
+        <span lang="ar" dir="rtl" style={{ fontSize: "0.8125rem", marginTop: "0.125rem" }}>نبض</span>
       </span>
     </a>
   );

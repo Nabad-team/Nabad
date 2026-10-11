@@ -63,8 +63,6 @@ describe("SessionTimeout", () => {
     await wait(1000);
     expect(screen.getByRole("dialog")).toHaveTextContent(WARNING_TEXT);
     expect(screen.getByRole("button", { name: "Stay signed in" })).toBeInTheDocument();
-    // Same font as the pages (they set it on <main>, which the dialog is outside of).
-    expect(screen.getByRole("dialog").closest('[style*="font-family"]')).toHaveStyle({ fontFamily: "sans-serif" });
   });
 
   test("signs out after 30 minutes of inactivity and tells the other tabs", async () => {

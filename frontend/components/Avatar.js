@@ -33,9 +33,12 @@ export function avatarColor(name) {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
+// Sizes are given in pixels at the default text size and drawn in rem, so they grow with the text-size setting.
+const rem = (px) => `${px / 16}rem`;
+
 function PersonIcon({ size }) {
   return (
-    <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="white" aria-hidden="true" focusable="false">
+    <svg width={rem(size * 0.6)} height={rem(size * 0.6)} viewBox="0 0 24 24" fill="white" aria-hidden="true" focusable="false">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6z" />
     </svg>
@@ -49,12 +52,12 @@ export default function Avatar({ name, src, size = 100, borderColor }) {
   const [failedSrc, setFailedSrc] = useState(null);
   const label = name && name.trim() ? `Profile picture of ${name.trim()}` : "Profile picture";
   const circle = {
-    width: size,
-    height: size,
+    width: rem(size),
+    height: rem(size),
     borderRadius: "50%",
     flexShrink: 0,
     boxSizing: "border-box",
-    ...(borderColor ? { border: `3px solid ${borderColor}` } : {}),
+    ...(borderColor ? { border: `0.1875rem solid ${borderColor}` } : {}),
   };
 
   if (src && src !== failedSrc) {
@@ -73,8 +76,8 @@ export default function Avatar({ name, src, size = 100, borderColor }) {
         justifyContent: "center",
         background: initials ? avatarColor(name) : NO_NAME_COLOR,
         color: "white",
-        fontWeight: "bold",
-        fontSize: size * 0.4,
+        fontWeight: 600,
+        fontSize: rem(size * 0.4),
         userSelect: "none",
       }}
     >

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Dialog from "./Dialog";
+import Button from "./ui/Button";
 import { getSession } from "../lib/api";
 import {
   recordActivity,
@@ -12,8 +13,6 @@ import {
   SESSION_ENDED_LOGIN_URL,
   minutesText,
 } from "../lib/session";
-
-const TEAL = "#0f766e";
 
 // Things that count as "the user is still here".
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
@@ -156,19 +155,10 @@ export default function SessionTimeout({ children }) {
     <SessionStatusContext.Provider value={status}>
       {children}
       {settings && showWarning && (
-        // The pages set their font on <main>; this dialog is outside it, so it sets the same font itself.
-        <div style={{ fontFamily: "sans-serif" }}>
-          <Dialog title="Are you still there?">
-            <p>You'll be signed out in {minutesText(Math.round(settings.warningBeforeMs / 60000))} for your privacy.</p>
-            <button
-              type="button"
-              onClick={() => staySignedInRef.current()}
-              style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: TEAL, color: "white", fontWeight: "bold", cursor: "pointer" }}
-            >
-              Stay signed in
-            </button>
-          </Dialog>
-        </div>
+        <Dialog title="Are you still there?">
+          <p>You'll be signed out in {minutesText(Math.round(settings.warningBeforeMs / 60000))} for your privacy.</p>
+          <Button onClick={() => staySignedInRef.current()}>Stay signed in</Button>
+        </Dialog>
       )}
     </SessionStatusContext.Provider>
   );
