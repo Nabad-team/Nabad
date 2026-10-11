@@ -63,7 +63,7 @@ export default function HomePage() {
         </div>
         <div className="hero__art">
           {/* Cropped to the drawing; a thinner line keeps it as fine as the small drawings at this size. */}
-          <PersonWithPhone size="100%" strokeWidth={0.7} viewBox="14 17 88 92" />
+          <PersonWithPhone size="100%" strokeWidth={0.7} viewBox="14 28.4 88 80.6" />
         </div>
       </section>
 

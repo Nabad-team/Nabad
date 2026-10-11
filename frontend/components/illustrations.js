@@ -83,8 +83,8 @@ export function SmallHouse(props) {
 export function PersonWithPhone(props) {
   return (
     <Drawing {...props}>
-      {/* head */}
-      <path d="M43.6 21.4c7.2-.4 12.8 5 13 12 .2 7.2-5.2 12.8-12.4 12.8-7.2 0-12.6-5.4-12.6-12.4 0-6.8 5-12 12-12.4z" />
+      {/* head, a short neck's gap above the shoulders */}
+      <path d="M43.6 32.8c7.2-.4 12.8 5 13 12 .2 7.2-5.2 12.8-12.4 12.8-7.2 0-12.6-5.4-12.6-12.4 0-6.8 5-12 12-12.4z" />
       {/* shoulders, then the upper arm down to the elbow */}
       <path d="M18.4 105.6c-.4-13.6 1.6-24.4 7-32.2 4.4-6.4 11-9.6 18.6-9.6 6.4 0 11.6 2.2 15.6 6.4C62.6 74 65 82 66 90" />
       {/* side of the body up to the elbow, then the forearm up to the phone's bottom edge */}

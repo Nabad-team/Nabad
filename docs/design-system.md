@@ -250,7 +250,7 @@ Four original line drawings in one style: teal outlines, round line ends, no fil
 
 | Component | Shows | Used on |
 | --- | --- | --- |
-| `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing hero (large: `size="100%" strokeWidth={0.7} viewBox="14 17 88 92"`), landing (symptom check), onboarding step 1, symptoms page with no profile |
+| `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing hero (large: `size="100%" strokeWidth={0.7} viewBox="14 28.4 88 80.6"`), landing (symptom check), onboarding step 1, symptoms page with no profile |
 | `MedicineBox` | A first-aid box with a cross | Landing (emergency hospital) |
 | `SmallHouse` | A small house with a door, window and plant | Landing (hospitals and clinics), onboarding step 3 |
 | `TwoHearts` | A large heart with a half-size heart tucked in front of its lower right side (the small one in the darker teal) | Caregiver spots: landing (family care), onboarding step 2, "No linked profiles yet" |
