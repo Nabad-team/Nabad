@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { login, verifyTwoFactor, resendTwoFactor, googleLoginUrl } from "../lib/api";
+import { minutesText, safeNextPath } from "../lib/session";
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,11 +17,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [challenge, setChallenge] = useState("");
   const [code, setCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
   const [resendBusy, setResendBusy] = useState(false);
+  // Why the user was sent here by the session timer (see components/SessionTimeout.js).
+  const minutes = Number(query.minutes);
+  const signedOutMessage =
+    query.reason === "inactivity" && Number.isInteger(minutes) && minutes > 0
+      ? "You were signed out after " + minutesText(minutes) + " of inactivity."
+      : query.reason === "expired"
+        ? "Your session has ended. Please sign in again."
+        : "";
 
   useEffect(() => {
     if (typeof query.challenge === "string") setChallenge(query.challenge);
     if (query.error === "google_signin_failed") setError("Google sign-in could not be completed. Please try again.");
+    if (query.error === "google_account_exists") setError("An account with this email already exists. Sign in with your password.");
   }, [query.challenge, query.error]);
 
   async function handleSubmit(e) {
@@ -24,7 +40,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (challenge) {
-        await verifyTwoFactor(challenge, code);
+        await verifyTwoFactor(challenge, code, rememberDevice);
       } else {
         const result = await login(email, password);
         if (result.twoFactorRequired) {
@@ -33,7 +49,8 @@ export default function LoginPage() {
           return;
         }
       }
-      router.push("/dashboard");
+      // Back to the page that asked for sign-in (only pages on our own site), otherwise the dashboard.
+      router.push(safeNextPath(query.next));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,35 +72,43 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 380, margin: "80px auto", fontFamily: "sans-serif" }}>
-      <h1>Log in to Nabad</h1>
+    <PageLayout>
+      <PageTitle lead={challenge ? null : "Welcome back."}>Log in to Nabad</PageTitle>
+      {signedOutMessage && <Alert tone="info" as="p" role="status" className="auth-message">{signedOutMessage}</Alert>}
       {challenge ? (
-        <>
-          <p>We sent a 6-digit verification code to your email. It expires in 10 minutes, works only once, and is cancelled after 5 incorrect tries.</p>
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="twoFactorCode">Verification code</label>
-            <input id="twoFactorCode" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-            {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
-            <button type="submit" disabled={loading}>{loading ? "Verifying..." : "Verify code"}</button>
+        <div className="stack">
+          <p className="prose">We sent a 6-digit verification code to your email. It expires in 10 minutes, works only once, and is cancelled after 5 incorrect tries.</p>
+          <form onSubmit={handleSubmit} className="form">
+            <Input id="twoFactorCode" label="Verification code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required />
+            <label className="check">
+              <input type="checkbox" checked={rememberDevice} onChange={(e) => setRememberDevice(e.target.checked)} />
+              Remember this device for 30 days
+            </label>
+            {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+            <Button type="submit" disabled={loading} block>{loading ? "Verifying..." : "Verify code"}</Button>
           </form>
-          <button type="button" onClick={handleResend} disabled={resendBusy} style={{ marginTop: 12 }}>{resendBusy ? "Sending..." : "Send a new code"}</button>
+          <div className="form">
+            <Button variant="secondary" onClick={handleResend} disabled={resendBusy} block>{resendBusy ? "Sending..." : "Send a new code"}</Button>
+          </div>
           <p><a href="/login">Use another sign-in method</a></p>
-        </>
+        </div>
       ) : (
-        <>
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="email">Email</label>
-            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-            <label htmlFor="password">Password</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: "100%", padding: 8, margin: "6px 0 16px" }} />
-            {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
-            <button type="submit" disabled={loading} style={{ width: "100%", padding: 10 }}>{loading ? "Please wait..." : "Log in"}</button>
+        <div className="stack">
+          <form onSubmit={handleSubmit} className="form">
+            <Input id="email" label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="password" label="Password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+            <Button type="submit" disabled={loading} block>
+              {loading ? "Please wait..." : "Log in"}
+            </Button>
           </form>
-          <div style={{ textAlign: "center", margin: "20px 0" }}>or</div>
-          <a href={googleLoginUrl()} style={{ display: "block", textAlign: "center", padding: 10, border: "1px solid #ccc", borderRadius: 6, textDecoration: "none" }}>Continue with Google</a>
-          <p style={{ marginTop: 12 }}><a href="/forgot-password">Forgot password?</a></p>
-        </>
+          <p className="divider-text">or</p>
+          <div className="form">
+            <Button variant="secondary" href={googleLoginUrl()} block>Continue with Google</Button>
+          </div>
+          <p><a href="/forgot-password">Forgot password?</a></p>
+        </div>
       )}
-    </main>
+    </PageLayout>
   );
 }

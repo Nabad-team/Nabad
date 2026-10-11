@@ -1,7 +1,7 @@
 // Automated tests for switching profiles and profile picture upload.
 // These tests run automatically on every pull request.
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProfileHeader from "../components/ProfileHeader";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
@@ -9,6 +9,17 @@ import {
   addLinkedProfile,
   getMyProfile,
 } from "../lib/profileApi";
+import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+
+// The profile API is replaced by an in-memory fake of the backend.
+jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+
+// The profile provider loads profiles only while signed in; here the user is signed in.
+jest.mock("../components/SessionTimeout", () => ({
+  ...jest.requireActual("../components/SessionTimeout"),
+  useSessionStatus: () => "signedIn",
+  useSignedIn: () => true,
+}));
 
 // Renders the header inside the provider, like every page gets from _app.js.
 // Returns unmount so a test can "reload the page" by rendering again.
@@ -29,6 +40,7 @@ describe("Profile switcher", () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
 
     child = await addLinkedProfile({
       fullName: "Sami",
@@ -153,9 +165,17 @@ describe("Profile switcher", () => {
    PROFILE PICTURE TESTS
    ========================================================= */
 
+describe("Account menu", () => {
+  test("has a Security link while signed in", async () => {
+    renderHeader();
+    expect(await screen.findByRole("link", { name: "Security" })).toHaveAttribute("href", "/security");
+  });
+});
+
 describe("Profile picture upload", () => {
   beforeEach(() => {
     localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
   });
 
   test("shows the upload picture button", async () => {
@@ -356,5 +376,80 @@ describe("Profile picture upload", () => {
         name: "Upload picture",
       })
     ).toBeInTheDocument();
+  });
+});
+describe("Profile picture after switching profiles", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+  });
+
+  test("the saved picture is still shown after switching away and back", async () => {
+    const child = await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
+    const user = userEvent.setup();
+    renderHeader();
+    await screen.findByRole("button", { name: "Upload picture" });
+
+    await user.upload(
+      screen.getByTestId("profile-picture-input"),
+      new File(["fake image content"], "profile.png", { type: "image/png" })
+    );
+    await screen.findByRole("button", { name: "Change picture" });
+    // The picture was saved through the profile API.
+    await waitFor(async () => expect((await getMyProfile()).profilePicture).not.toBe(""));
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), child.id);
+    expect(await screen.findByRole("button", { name: "Upload picture" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), "self");
+    expect(await screen.findByRole("button", { name: "Change picture" })).toBeInTheDocument();
+  });
+});
+
+/* =========================================================
+   DEFAULT AVATAR TESTS
+   ========================================================= */
+
+describe("Default avatar", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+  });
+
+  // No image may come from another site (via.placeholder.com used to, and it went offline).
+  function externalUrls(container) {
+    return [...container.querySelectorAll("[src],[href]")]
+      .map((el) => el.getAttribute("src") || el.getAttribute("href"))
+      .filter((url) => /^(https?:)?\/\//i.test(url));
+  }
+
+  test("shows initials for you and for a linked profile, without external images", async () => {
+    await addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2015-03-10", relationship: "child" });
+    const user = userEvent.setup();
+    const { container } = renderHeader();
+
+    const own = await screen.findByRole("img", { name: "Profile picture of Demo User" });
+    expect(own).toHaveTextContent("DU");
+    expect(container.querySelector("img")).toBeNull();
+    expect(externalUrls(container)).toEqual([]);
+
+    await user.selectOptions(screen.getByLabelText("Active profile"), screen.getByRole("option", { name: "Sami Haddad (child)" }));
+    expect(await screen.findByRole("img", { name: "Profile picture of Sami Haddad" })).toHaveTextContent("SH");
+    expect(externalUrls(container)).toEqual([]);
+  });
+
+  test("falls back to initials when the saved picture cannot be loaded", async () => {
+    fakeProfileApi.resetFakeProfiles({ profilePicture: "data:image/png;base64,broken" });
+    const { container } = renderHeader();
+
+    await waitFor(() => expect(container.querySelector("img")).not.toBeNull());
+    const picture = screen.getByRole("img", { name: "Profile picture of Demo User" });
+    expect(picture).toHaveAttribute("src", "data:image/png;base64,broken");
+    fireEvent.error(picture);
+
+    expect(screen.getByRole("img", { name: "Profile picture of Demo User" })).toHaveTextContent("DU");
+    expect(container.querySelector("img")).toBeNull();
+    // The picture is still saved, so it can still be changed or removed.
+    expect(screen.getByRole("button", { name: "Remove picture" })).toBeInTheDocument();
   });
 });

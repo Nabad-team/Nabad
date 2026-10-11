@@ -6,7 +6,13 @@ const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+const { checkNewPassword, findPasswordProblem } = require("../passwordPolicy");
 const { requireAuth } = require("../middleware/authMiddleware");
+const { signAccessToken, setAuthCookie } = require("../session");
+const { sessionConfig } = require("../sessionConfig");
+const { cookieOptions, twoFactorOnSignup, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
+const { logEvent, logError } = require("../logger");
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 const router = express.Router();
 const MAX_FAILED_ATTEMPTS = 5;
@@ -14,35 +20,41 @@ const LOCK_TIME_MS = 15 * 60 * 1000;
 const TWO_FACTOR_CODE_TTL_MS = 10 * 60 * 1000;
 const TWO_FACTOR_RESEND_MS = 60 * 1000;
 const TWO_FACTOR_MAX_ATTEMPTS = 5;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const VERIFY_RESEND_MS = 60 * 1000;
+const GOOGLE_2FA_MESSAGE = "Google accounts are protected by Google sign-in and do not use email codes.";
+const SMTP_TIMEOUT_MS = 10 * 1000;
+const TRUSTED_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_TRUSTED_DEVICES = 10;
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many login attempts. Try again later." } });
 const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
 const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many reset attempts. Try again later." } });
 const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
+const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
 const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
-function durationToMs(value, fallback = 15 * 60 * 1000) {
-  const match = String(value || "").trim().match(/^(\d+)\s*(s|m|h|d)$/i);
-  if (!match) return fallback;
-  const amount = Number(match[1]);
-  const multiplier = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 }[match[2].toLowerCase()];
-  return amount * multiplier;
-}
-function signAccessToken(user) {
-  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error("JWT_SECRET must be set to a random value of at least 32 characters.");
-  return jwt.sign({ sub: user._id, ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "15m" });
-}
-function setAuthCookie(res, token) {
-  res.cookie("accessToken", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: durationToMs(process.env.JWT_EXPIRES_IN) });
-}
 function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
 function mailer() {
   const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new Error("Email delivery is not configured.");
-  return nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", requireTLS: cookieOptions().secure,
+    connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+}
+// Email is never awaited by a request: a slow or blocked SMTP server must not hold the response.
+// Only the error name and code are logged; SMTP error messages can echo server responses.
+function logEmailFailure(req, error) {
+  logEvent("email_failed", { requestId: req?.requestId, errorType: error?.name || "Error", errorCode: error?.code });
+}
+function sendInBackground(req, transport, message) {
+  transport.sendMail(message).catch((error) => logEmailFailure(req, error));
 }
 function generateTwoFactorCode() { return crypto.randomInt(0, 1000000).toString().padStart(6, "0"); }
-async function issueTwoFactorCode(user) {
+async function issueTwoFactorCode(req, user) {
   const now = Date.now();
   if (user.twoFactorCodeLastSent && now - user.twoFactorCodeLastSent.getTime() < TWO_FACTOR_RESEND_MS) {
     const error = new Error("Please wait before requesting another verification code.");
@@ -50,27 +62,62 @@ async function issueTwoFactorCode(user) {
     error.retryAfter = Math.ceil((TWO_FACTOR_RESEND_MS - (now - user.twoFactorCodeLastSent.getTime())) / 1000);
     throw error;
   }
+  const transport = mailer();
   const code = generateTwoFactorCode();
   user.twoFactorCodeHash = hash(code);
   user.twoFactorCodeExpires = new Date(now + TWO_FACTOR_CODE_TTL_MS);
   user.twoFactorCodeAttempts = 0;
   user.twoFactorCodeLastSent = new Date(now);
   await user.save();
-  await mailer().sendMail({
+  sendInBackground(req, transport, {
     from: process.env.MAIL_FROM || process.env.EMAIL_FROM,
     to: user.email,
     subject: "Your Nabad verification code",
     text: "Your Nabad verification code is " + code + ". It expires in 10 minutes and can be used only once."
   });
 }
-function twoFactorChallenge(user) {
-  return jwt.sign({ sub: user._id, purpose: "2fa" }, process.env.JWT_SECRET, { expiresIn: "10m" });
+// ---- Email verification (story #2) ----
+// A random 32-byte token goes in the emailed link; the database keeps only its hash and an expiry.
+// Creating a new token overwrites the old hash, so only the most recent link works.
+function newEmailVerifyToken() {
+  const token = crypto.randomBytes(32).toString("hex");
+  return { token, fields: { emailVerifyTokenHash: hash(token), emailVerifyExpires: new Date(Date.now() + VERIFY_TOKEN_TTL_MS), emailVerifyLastSent: new Date() } };
 }
-async function completeTwoFactor(challenge, code, res) {
+function verificationMessage(email, token) {
+  const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  return {
+    from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: email, subject: "Verify your Nabad email",
+    text: "Welcome to Nabad. Confirm that this is your email address by opening this link within 24 hours: " + origin + "/verify-email?token=" + token + "\n\nIf you did not create a Nabad account, you can ignore this email.",
+  };
+}
+// Never blocks or fails the request: if email is not configured the user can resend later.
+function sendVerificationEmail(req, email, token) {
+  let transport;
+  try { transport = mailer(); } catch (err) { logEvent("verification_email_not_sent", { requestId: req.requestId, reason: "email_not_configured" }); return; }
+  sendInBackground(req, transport, verificationMessage(email, token));
+}
+
+function twoFactorChallenge(user) {
+  return jwt.sign({ sub: user._id, purpose: "2fa", ver: user.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "10m" });
+}
+// True when the request carries a remembered-device token for this user that has not expired.
+function isTrustedDevice(user, token) {
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return false;
+  const candidate = Buffer.from(hash(token));
+  return (user.trustedDevices || []).some((device) => device.expiresAt > new Date() && crypto.timingSafeEqual(Buffer.from(device.tokenHash), candidate));
+}
+// Stores a hash of a new random token (keeping the newest MAX_TRUSTED_DEVICES) and gives the browser the token.
+async function rememberDevice(user, res) {
+  const token = crypto.randomBytes(32).toString("hex");
+  await User.updateOne({ _id: user._id }, { $pull: { trustedDevices: { expiresAt: { $lte: new Date() } } } });
+  await User.updateOne({ _id: user._id }, { $push: { trustedDevices: { $each: [{ tokenHash: hash(token), expiresAt: new Date(Date.now() + TRUSTED_DEVICE_TTL_MS) }], $sort: { expiresAt: 1 }, $slice: -MAX_TRUSTED_DEVICES } } });
+  res.cookie(TRUSTED_DEVICE_COOKIE, token, { ...trustedDeviceCookieOptions(), maxAge: TRUSTED_DEVICE_TTL_MS });
+}
+async function completeTwoFactor(challenge, code, res, remember) {
   const payload = jwt.verify(challenge, process.env.JWT_SECRET);
   if (payload.purpose !== "2fa") throw new Error("Invalid verification challenge.");
   const user = await User.findById(payload.sub);
-  if (!user || !user.twoFactorEnabled || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new Error("Invalid or expired verification code.");
+  if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new Error("Invalid or expired verification code.");
   if (user.twoFactorCodeExpires.getTime() <= Date.now()) {
     user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; await user.save();
     throw new Error("This verification code has expired. Request a new code.");
@@ -86,10 +133,16 @@ async function completeTwoFactor(challenge, code, res) {
     await user.save();
     throw new Error("Invalid verification code.");
   }
-  user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
-  await user.save();
-  setAuthCookie(res, signAccessToken(user));
-  return { id: user._id, name: user.name, email: user.email };
+  const verifiedUser = await User.findOneAndUpdate(
+    { _id: user._id, authVersion: user.authVersion || 0, twoFactorEnabled: true, twoFactorCodeHash: candidate, twoFactorCodeExpires: { $gt: new Date() } },
+    // The code was emailed to this address, so entering it also proves the user owns the email.
+    { $set: { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0, twoFactorCodeLastSent: null, emailVerified: true } },
+    { new: true }
+  );
+  if (!verifiedUser) throw new Error("Invalid or expired verification code.");
+  if (remember === true) await rememberDevice(verifiedUser, res);
+  setAuthCookie(res, signAccessToken(verifiedUser));
+  return { id: verifiedUser._id, name: verifiedUser.name, email: verifiedUser.email };
 }
 
 async function exchangeGoogleCode(code) {
@@ -116,21 +169,28 @@ async function exchangeGoogleCode(code) {
 router.post("/signup", signupLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: "Name, email, and password are required." });
+    if (typeof name !== "string" || !name.trim() || name.trim().length > 100 || typeof email !== "string" || typeof password !== "string") return res.status(400).json({ error: "Name, email, and password are required." });
     if (!validator.isEmail(email)) return res.status(400).json({ error: "Please provide a valid email." });
-    if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters." });
     const normalizedEmail = String(email).trim().toLowerCase();
+    const weakPassword = findPasswordProblem(password, { name, email: normalizedEmail });
+    if (weakPassword) return res.status(400).json({ error: weakPassword.message });
     if (await User.findOne({ email: normalizedEmail })) return res.status(409).json({ error: "An account with this email already exists." });
-    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12) });
+    // The breach check calls an outside service, so it runs only once the request could otherwise succeed.
+    const breached = await checkNewPassword(password, { name, email: normalizedEmail }, { requestId: req.requestId });
+    if (breached) return res.status(400).json({ error: breached.message });
+    const verify = newEmailVerifyToken();
+    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup(), ...verify.fields });
     setAuthCookie(res, signAccessToken(user));
-    return res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
-  } catch (err) { console.error("Signup error:", err); return res.status(500).json({ error: "Something went wrong. Please try again." }); }
+    res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, emailVerified: false } });
+    // Sent after the response so a slow mail server never delays signup.
+    return sendVerificationEmail(req, user.email, verify.token);
+  } catch (err) { logError(req, err); if (err.code === 11000) return res.status(409).json({ error: "An account with this email already exists." }); return res.status(500).json({ error: "Something went wrong. Please try again." }); }
 });
 
 router.get("/google", googleLimiter, (req, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_REDIRECT_URI) return res.status(503).json({ error: "Google sign-in is not configured." });
   const state = crypto.randomBytes(24).toString("hex");
-  res.cookie("googleOAuthState", state, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 10 * 60 * 1000 });
+  res.cookie("googleOAuthState", state, { ...cookieOptions(), maxAge: 10 * 60 * 1000 });
   const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID, redirect_uri: process.env.GOOGLE_REDIRECT_URI, response_type: "code", scope: "openid email profile", state, access_type: "online", prompt: "select_account" });
   return res.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + params.toString());
 });
@@ -139,23 +199,23 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
   try {
     const { code, state } = req.query;
     if (!code || !state || state !== req.cookies?.googleOAuthState) return res.status(400).send("Google sign-in could not be verified.");
-    res.clearCookie("googleOAuthState", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
+    res.clearCookie("googleOAuthState", cookieOptions());
     const profile = await exchangeGoogleCode(code);
-    let user = await User.findOne({ $or: [{ googleId: profile.googleId }, { email: profile.email }] });
+    let user = await User.findOne({ googleId: profile.googleId });
     if (!user) {
-      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
-    } else {
-      user.googleId = profile.googleId;
-      await user.save();
+      // Never link by email: signup does not prove email ownership, so a matching account may not belong to this Google user.
+      const existing = await User.findOne({ email: profile.email }).select("googleId");
+      if (existing) {
+        logEvent("google_signin_refused", { requestId: req.requestId, reason: existing.googleId ? "google_id_conflict" : "email_exists", userId: String(existing._id) });
+        return res.redirect(process.env.CLIENT_ORIGIN + "/login?error=" + (existing.googleId ? "google_signin_failed" : "google_account_exists"));
+      }
+      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", emailVerified: true, passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
     }
-    if (user.twoFactorEnabled) {
-      await issueTwoFactorCode(user);
-      return res.redirect(process.env.CLIENT_ORIGIN + "/login?challenge=" + encodeURIComponent(twoFactorChallenge(user)));
-    }
+    // No email code here: Google has already verified the person, with its own 2-step verification.
     setAuthCookie(res, signAccessToken(user));
     return res.redirect(process.env.CLIENT_ORIGIN + "/dashboard");
   } catch (err) {
-    console.error("Google sign-in error:", err);
+    logError(req, err);
     return res.redirect((process.env.CLIENT_ORIGIN || "http://localhost:3000") + "/login?error=google_signin_failed");
   }
 });
@@ -163,7 +223,7 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
 router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and password are required." });
+    if (typeof email !== "string" || !email || typeof password !== "string" || !password || Buffer.byteLength(password) > 72) return res.status(400).json({ error: "Email and password are required." });
     const user = await User.findOne({ email: String(email).trim().toLowerCase() });
     const genericError = { error: "Invalid email or password." };
     if (!user) return res.status(401).json(genericError);
@@ -175,14 +235,14 @@ router.post("/login", loginLimiter, async (req, res) => {
       return res.status(401).json(genericError);
     }
     user.failedLoginAttempts = 0; user.lockUntil = null; await user.save();
-    if (user.twoFactorEnabled) {
-      await issueTwoFactorCode(user);
+    if (user.twoFactorEnabled && !isTrustedDevice(user, req.cookies?.[TRUSTED_DEVICE_COOKIE])) {
+      await issueTwoFactorCode(req, user);
       return res.json({ twoFactorRequired: true, challenge: twoFactorChallenge(user), codeDelivery: "email", expiresInSeconds: 600 });
     }
     setAuthCookie(res, signAccessToken(user));
     return res.json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
-    console.error("Login error:", err);
+    logError(req, err);
     if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
     if (err.message === "Email delivery is not configured.") return res.status(503).json({ error: "Two-factor email delivery is not configured." });
     return res.status(500).json({ error: "Something went wrong. Please try again." });
@@ -190,7 +250,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 });
 
 router.post("/2fa/verify", codeLimiter, async (req, res) => {
-  try { return res.json({ user: await completeTwoFactor(req.body.challenge, req.body.code, res) }); }
+  try { return res.json({ user: await completeTwoFactor(req.body.challenge, req.body.code, res, req.body.rememberDevice) }); }
   catch (err) { return res.status(401).json({ error: err.message || "Invalid or expired verification code." }); }
 });
 
@@ -199,8 +259,8 @@ router.post("/2fa/resend", codeLimiter, async (req, res) => {
     const payload = jwt.verify(req.body.challenge, process.env.JWT_SECRET);
     if (payload.purpose !== "2fa") return res.status(401).json({ error: "Invalid verification challenge." });
     const user = await User.findById(payload.sub);
-    if (!user || !user.twoFactorEnabled) return res.status(401).json({ error: "Invalid verification challenge." });
-    await issueTwoFactorCode(user);
+    if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) return res.status(401).json({ error: "Invalid verification challenge." });
+    await issueTwoFactorCode(req, user);
     return res.json({ message: "A new verification code was sent.", expiresInSeconds: 600 });
   } catch (err) {
     if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
@@ -212,7 +272,8 @@ router.post("/2fa/setup", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: "User not found." });
-    await issueTwoFactorCode(user);
+    if (user.authProvider === "google") return res.status(400).json({ error: GOOGLE_2FA_MESSAGE });
+    await issueTwoFactorCode(req, user);
     return res.json({ message: "A verification code was sent to your email.", expiresInSeconds: 600 });
   } catch (err) {
     if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
@@ -223,6 +284,7 @@ router.post("/2fa/setup", requireAuth, async (req, res) => {
 router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
+    if (user?.authProvider === "google") return res.status(400).json({ error: GOOGLE_2FA_MESSAGE });
     if (!user || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) return res.status(400).json({ error: "Start two-factor setup first." });
     if (user.twoFactorCodeExpires.getTime() <= Date.now()) return res.status(400).json({ error: "The verification code has expired. Start setup again." });
     const candidate = hash(req.body.code);
@@ -233,63 +295,129 @@ router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
       await user.save();
       return res.status(400).json({ error: user.twoFactorCodeHash ? "Invalid verification code." : "Too many incorrect attempts. The verification code has been cancelled." });
     }
-    user.twoFactorEnabled = true; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+    user.twoFactorEnabled = true; user.emailVerified = true; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
     await user.save();
     return res.json({ twoFactorEnabled: true });
   } catch (err) { return res.status(400).json({ error: err.message || "Unable to enable two-factor authentication." }); }
 });
 
-router.post("/2fa/disable", codeLimiter, requireAuth, async (req, res) => {
+router.post("/2fa/disable", codeLimiter, requireAuth, asyncRoute(async (req, res) => {
   const user = await User.findById(req.userId);
   if (!user || !user.twoFactorEnabled) return res.status(400).json({ error: "Two-factor authentication is not enabled." });
   if (!(await bcrypt.compare(req.body.password || "", user.passwordHash))) return res.status(400).json({ error: "Password is incorrect." });
   user.twoFactorEnabled = false; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
+  user.trustedDevices = [];
   await user.save();
+  res.clearCookie(TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions());
   return res.json({ twoFactorEnabled: false });
-});
+}));
 
-router.post("/forgot-password", resetLimiter, async (req, res) => {
+// A new token overwrites the previous hash, so only the latest link works.
+async function sendPasswordReset(email, transport) {
+  const user = await User.findOne({ email });
+  if (!user) return;
+  const token = crypto.randomBytes(32).toString("hex");
+  user.resetPasswordTokenHash = hash(token); user.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS); await user.save();
+  const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: "Use this link within one hour to reset your password: " + origin + "/reset-password?token=" + token });
+}
+
+router.post("/forgot-password", resetLimiter, (req, res) => {
   const generic = { message: "If an account matches that email, reset instructions will be sent." };
-  try {
-    const email = String(req.body.email || "").trim().toLowerCase();
-    if (!validator.isEmail(email)) return res.json(generic);
-    const transport = mailer();
-    const user = await User.findOne({ email });
-    if (user) {
-      const token = crypto.randomBytes(32).toString("hex");
-      user.resetPasswordTokenHash = hash(token); user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); await user.save();
-      const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-      await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: "Use this link within one hour to reset your password: " + origin + "/reset-password?token=" + token });
-    }
-    return res.json(generic);
-  } catch (err) { console.error("Password reset request error:", err.message); return res.status(503).json({ error: "Password reset email is temporarily unavailable. Please try again later." }); }
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!validator.isEmail(email)) return res.json(generic);
+  let transport;
+  try { transport = mailer(); } catch (err) { logError(req, err); return res.status(503).json({ error: "Password reset email is temporarily unavailable. Please try again later." }); }
+  // Respond before the account lookup so the reply and its timing are the same whether or not the email exists.
+  res.json(generic);
+  sendPasswordReset(email, transport).catch((error) => logEmailFailure(req, error));
 });
 
-router.post("/reset-password", resetLimiter, async (req, res) => {
+router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   const { token, password } = req.body;
-  if (!token || !password || password.length < 8) return res.status(400).json({ error: "A reset link and a password of at least 8 characters are required." });
-  const user = await User.findOne({ resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } });
-  if (!user) return res.status(400).json({ error: "This reset link is invalid or expired. Request a new one." });
-  user.passwordHash = await bcrypt.hash(password, 12); user.authVersion = (user.authVersion || 0) + 1; user.resetPasswordTokenHash = null; user.resetPasswordExpires = null; user.failedLoginAttempts = 0; user.lockUntil = null; await user.save();
+  if (typeof token !== "string" || !token) return res.status(400).json({ error: "A reset link is required." });
+  const invalidLink = { error: "This reset link is invalid or expired. Request a new one." };
+  // Looked up first so the password can be checked against the account's own name and email.
+  const owner = await User.findOne({ resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } }).select("name email");
+  if (!owner) return res.status(400).json(invalidLink);
+  const weakPassword = await checkNewPassword(password, { name: owner.name, email: owner.email }, { requestId: req.requestId });
+  if (weakPassword) return res.status(400).json({ error: weakPassword.message });
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await User.findOneAndUpdate(
+    { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },
+    { $set: { passwordHash, emailVerified: true, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [] }, $inc: { authVersion: 1 } }
+  );
+  if (!user) return res.status(400).json(invalidLink);
   return res.json({ message: "Password updated. You can now log in." });
-});
+}));
 
-router.post("/logout", async (req, res) => {
+router.post("/logout", asyncRoute(async (req, res) => {
   const token = req.cookies?.accessToken;
-  if (token) { try { const payload = jwt.verify(token, process.env.JWT_SECRET); if (payload.sub) await User.findByIdAndUpdate(payload.sub, { $inc: { authVersion: 1 } }); } catch {} }
-  res.clearCookie("accessToken", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
+  if (token) {
+    let payload;
+    try { payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] }); } catch {}
+    if (payload && !payload.purpose && typeof payload.sub === "string" && /^[a-f0-9]{24}$/i.test(payload.sub)) {
+      // A stale cookie must not repeatedly revoke newer sessions. Preserve the team's all-device logout.
+      await User.updateOne({ _id: payload.sub, $or: [{ authVersion: payload.ver || 0 }, ...((payload.ver || 0) === 0 ? [{ authVersion: { $exists: false } }] : [])] }, { $inc: { authVersion: 1 } });
+    }
+  }
+  res.clearCookie("accessToken", cookieOptions());
   return res.json({ message: "Logged out." });
-});
+}));
 
-router.get("/me", requireAuth, async (req, res) => {
-  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted");
+router.get("/me", requireAuth, asyncRoute(async (req, res) => {
+  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted emailVerified");
   if (!user) return res.status(404).json({ error: "User not found." });
-  return res.json({ user });
+  // Google accounts created before verification existed are still verified: Google checked the email.
+  const view = user.toObject();
+  view.emailVerified = user.emailVerified === true || user.authProvider === "google";
+  return res.json({ user: view });
+}));
+
+// Called by the browser's inactivity timer: confirms the user is signed in, renews the
+// session (requireAuth re-issues the cookie) and tells the browser the timeout settings.
+router.get("/session", requireAuth, (req, res) => {
+  const { idleTimeoutMs, warningBeforeMs, absoluteTimeoutMs } = sessionConfig();
+  return res.json({ idleTimeoutMs, warningBeforeMs, absoluteExpiresAt: req.sessionStart + absoluteTimeoutMs });
 });
 
-router.post("/onboarding/complete", requireAuth, async (req, res) => {
+router.post("/onboarding/complete", requireAuth, asyncRoute(async (req, res) => {
   await User.findByIdAndUpdate(req.userId, { onboardingCompleted: true });
   return res.json({ onboardingCompleted: true });
-});
+}));
+
+// Opened from the emailed link. No sign-in needed: the user may open the link on another device.
+// The lookup and the update happen in one atomic step, so a token can only be used once.
+router.post("/verify-email", verifyLimiter, asyncRoute(async (req, res) => {
+  const { token } = req.body || {};
+  const invalid = { error: "This verification link is invalid or has expired. Sign in and request a new one." };
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return res.status(400).json(invalid);
+  const user = await User.findOneAndUpdate(
+    { emailVerifyTokenHash: hash(token), emailVerifyExpires: { $gt: new Date() } },
+    { $set: { emailVerified: true, emailVerifyTokenHash: null, emailVerifyExpires: null, emailVerifyLastSent: null } },
+    { new: true }
+  );
+  if (!user) return res.status(400).json(invalid);
+  logEvent("email_verified", { requestId: req.requestId, userId: String(user._id) });
+  return res.json({ emailVerified: true, message: "Your email is verified." });
+}));
+
+// Sends a fresh link to the signed-in user's own address (never to an address from the request body).
+router.post("/verify-email/resend", verifyLimiter, requireAuth, asyncRoute(async (req, res) => {
+  const user = await User.findById(req.userId);
+  if (!user) return res.status(401).json({ error: "Not authenticated." });
+  if (user.emailVerified || user.authProvider === "google") return res.status(400).json({ error: "Your email is already verified." });
+  const now = Date.now();
+  if (user.emailVerifyLastSent && now - user.emailVerifyLastSent.getTime() < VERIFY_RESEND_MS) {
+    const retryAfter = Math.ceil((VERIFY_RESEND_MS - (now - user.emailVerifyLastSent.getTime())) / 1000);
+    return res.status(429).json({ error: "Please wait before requesting another verification email.", retryAfter });
+  }
+  let transport;
+  try { transport = mailer(); } catch (err) { logError(req, err); return res.status(503).json({ error: "Verification email is temporarily unavailable. Please try again later." }); }
+  const verify = newEmailVerifyToken();
+  await User.updateOne({ _id: user._id }, { $set: verify.fields });
+  sendInBackground(req, transport, verificationMessage(user.email, verify.token));
+  return res.json({ message: "A new verification link was sent to " + user.email + "." });
+}));
 
 module.exports = router;
