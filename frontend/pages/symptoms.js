@@ -4,6 +4,13 @@ import { addSymptomRecord } from "../lib/symptomApi";
 import { classifyUrgency, refineUrgency } from "../lib/triageApi";
 import UrgencyResult from "../components/UrgencyResult";
 import FollowUpQuestions from "../components/FollowUpQuestions";
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
+import EmptyState from "../components/ui/EmptyState";
+import { PersonWithPhone } from "../components/illustrations";
 
 export default function SymptomsPage() {
   const { activeProfile } = useActiveProfile();
@@ -21,6 +28,7 @@ export default function SymptomsPage() {
   const recognitionRef = useRef(null);
   const baseSymptomsRef = useRef("");
   const dictatedTextRef = useRef("");
+  const voiceRequestHandledRef = useRef(false);
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
@@ -93,6 +101,14 @@ export default function SymptomsPage() {
     }
   }
 
+  // Opened from the dashboard's "Speak" button (/symptoms?voice=1): start listening straight away,
+  // once the profile is known. The ref makes sure this happens only once per visit.
+  useEffect(() => {
+    if (!activeProfile || voiceRequestHandledRef.current) return;
+    voiceRequestHandledRef.current = true;
+    if (new URLSearchParams(window.location.search).get("voice") === "1") toggleSpeechInput();
+  }, [activeProfile]);
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -164,96 +180,55 @@ export default function SymptomsPage() {
 
   if (!activeProfile) {
     return (
-      <main style={{ padding: "2rem" }}>
-        <h1>Symptom Entry</h1>
-        <p>No active profile selected.</p>
-      </main>
+      <PageLayout>
+        <PageTitle>Symptom entry</PageTitle>
+        <EmptyState illustration={<PersonWithPhone size="5rem" />} title="No active profile selected." />
+      </PageLayout>
     );
   }
 
   return (
-    <main
-      style={{
-        maxWidth: "700px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <h1>Enter Symptoms</h1>
+    <PageLayout>
+      <PageTitle>Enter symptoms</PageTitle>
 
       <p>
         You are entering symptoms for:
         <strong> {activeProfile.fullName}</strong>
       </p>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginTop: "1.5rem" }}>
-          <label htmlFor="symptoms">
-            <strong>Symptoms</strong>
-          </label>
-
-          <textarea
+      <form onSubmit={handleSubmit} className="form symptoms-form">
+        <div className="field">
+          <Input
+            as="textarea"
             id="symptoms"
+            label="Symptoms"
             value={symptoms}
             onChange={(event) => setSymptoms(event.target.value)}
-            placeholder={`Enter symptoms for ${activeProfile.fullName}`}
+            placeholder="For example: headache since yesterday and a mild fever."
             rows="6"
-            style={{
-              display: "block",
-              width: "100%",
-              marginTop: "0.5rem",
-              padding: "0.75rem",
-              fontSize: "1rem",
-            }}
           />
 
           {speechRecognitionSupported && (
-            <button
-              type="button"
-              onClick={toggleSpeechInput}
-              aria-pressed={isListening}
-              style={{
-                marginTop: "0.75rem",
-                padding: "0.65rem 1rem",
-                cursor: "pointer",
-              }}
-            >
-              {isListening ? "Stop listening" : "Speak symptoms"}
-            </button>
+            <div>
+              <Button variant="secondary" onClick={toggleSpeechInput} aria-pressed={isListening}>
+                {isListening ? "Stop listening" : "Speak symptoms"}
+              </Button>
+            </div>
           )}
 
-          <p
-            role="status"
-            aria-live="polite"
-            style={{ marginTop: "0.5rem" }}
-          >
+          <p role="status" aria-live="polite" className="field__hint">
             {isListening
               ? "Listening. Describe your symptoms, then stop listening when you are finished."
               : speechError}
           </p>
         </div>
 
-        <button
-          type="submit"
-          style={{
-            marginTop: "1rem",
-            padding: "0.75rem 1.5rem",
-            cursor: "pointer",
-          }}
-        >
-          Submit Symptoms
-        </button>
+        <div className="form-actions">
+          <Button type="submit">Submit symptoms</Button>
+        </div>
       </form>
 
-      {message && (
-        <p
-          style={{
-            marginTop: "1rem",
-          }}
-        >
-          {message}
-        </p>
-      )}
+      {message && <Alert tone="success" as="p" className="symptoms-message">{message}</Alert>}
 
       <UrgencyResult result={urgency} preliminary={followUps.length > 0} />
 
@@ -266,15 +241,7 @@ export default function SymptomsPage() {
         busy={refining}
       />
 
-      {error && (
-        <p
-          style={{
-            marginTop: "1rem",
-          }}
-        >
-          {error}
-        </p>
-      )}
-    </main>
+      {error && <Alert tone="danger" as="p" className="symptoms-message">{error}</Alert>}
+    </PageLayout>
   );
 }

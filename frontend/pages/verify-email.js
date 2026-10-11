@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { verifyEmail } from "../lib/api";
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Alert from "../components/ui/Alert";
+import { HeartbeatLoader } from "../components/ui/Heartbeat";
 
 // Opened from the link in the verification email: /verify-email?token=...
 // Public page (no sign-in needed), because people often open the email on a different device.
@@ -23,18 +27,18 @@ export default function VerifyEmailPage() {
   }, [router.isReady, router.query.token]);
 
   return (
-    <main style={{ maxWidth: 400, margin: "80px auto", padding: "0 16px", fontFamily: "sans-serif" }}>
-      <h1>Verify your email</h1>
-      {state === "checking" && <p role="status">Checking your link...</p>}
+    <PageLayout>
+      <PageTitle>Verify your email</PageTitle>
+      {state === "checking" && <HeartbeatLoader label="Checking your link..." />}
       {state === "verified" && (
-        <p role="status">Your email is verified. Thank you! <a href="/dashboard">Go to your dashboard</a></p>
+        <Alert tone="success" as="p" role="status" className="prose">Your email is verified. Thank you! <a href="/dashboard">Go to your dashboard</a></Alert>
       )}
       {state === "failed" && (
-        <>
-          <p role="alert" style={{ color: "crimson" }}>{error}</p>
+        <div className="stack prose">
+          <Alert tone="danger" as="p" role="alert">{error}</Alert>
           <p>You can request a new link from your <a href="/dashboard">dashboard</a> after signing in.</p>
-        </>
+        </div>
       )}
-    </main>
+    </PageLayout>
   );
 }

@@ -1,0 +1,105 @@
+/*
+  Nabad design tokens. "Warm clinic": calm, warm, human.
+  Every color, size and space in the app comes from here, so a change in one place changes the whole app.
+  Sizes are in rem: changing the root font size (the text-size setting) scales everything together.
+  Contrast ratios are against --color-bg unless noted; all text pairs meet WCAG AA (4.5:1).
+  See docs/design-system.md for when to use each token.
+*/
+:root {
+  /* Font. --font-plex is set by next/font in pages/_app.js. */
+  --font-sans: var(--font-plex), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Backgrounds: warm paper, never pure white. */
+  --color-bg: #faf6ef; /* page background */
+  --color-surface: #fffdf9; /* cards, inputs, dialogs: slightly lighter than the page */
+  --color-sunken: #f3ede3; /* quiet areas: footers, code samples */
+
+  /* Text: warm neutral grays (brown-leaning, not blue). */
+  --color-text: #2a2622; /* 13.9:1 */
+  --color-text-muted: #5c554d; /* 6.8:1, secondary text and hints */
+  --color-placeholder: #6f675e; /* 5.5:1 on surface */
+
+  /* Lines. */
+  --color-border: #e6ded2; /* dividers and card edges (decorative) */
+  --color-border-strong: #8b8176; /* input and button outlines: 3.8:1 on surface, meets 3:1 for controls */
+
+  /* Primary: the logo teal. */
+  --color-primary: #0f766e; /* buttons, links, icons: 5.1:1, white text on it 5.5:1 */
+  --color-primary-hover: #115e59;
+  --color-primary-strong: #134e4a; /* headings and teal text: 8.8:1 */
+  --color-primary-soft: #f0fdfa; /* light teal panels */
+  --color-primary-line: #99d5cd; /* thin teal lines on soft backgrounds (decorative) */
+
+  /* Accent: muted terracotta. Use sparingly, for one highlight per screen at most. */
+  --color-accent: #9c4a2f; /* 5.7:1 */
+  --color-accent-strong: #7a3a24;
+  --color-accent-soft: #f6e6dc;
+
+  /* Status. Red means an emergency or an error, nothing else. */
+  --color-danger: #b42318; /* 6.1:1, white text on it 6.6:1 */
+  --color-danger-strong: #8a1c13;
+  --color-danger-soft: #fdf0ee;
+  --color-success: #146c43;
+  --color-success-strong: #0e5233;
+  --color-success-soft: #eaf5ee;
+  --color-warning: #c98a1b; /* borders only (decorative); text uses warning-strong */
+  --color-warning-strong: #7a4a08;
+  --color-warning-soft: #fdf4e1;
+
+  /* Urgency levels (symptom check). Emergency uses the danger colors. */
+  --color-urgent: #c2410c;
+  --color-urgent-strong: #7c2d12;
+  --color-urgent-soft: #fff4ea;
+
+  /* Keyboard focus ring: always visible, always the same. */
+  --focus-ring: 0 0 0 0.1875rem var(--color-bg), 0 0 0 0.375rem var(--color-primary);
+
+  /* Type scale. Generous line heights for easy reading. */
+  --text-xs: 0.8125rem; /* 13px: tiny labels only */
+  --text-sm: 0.9375rem; /* 15px: hints, footnotes */
+  --text-base: 1.0625rem; /* 17px: body */
+  --text-lg: 1.25rem; /* 20px: lead paragraphs, h3 */
+  --text-xl: 1.5rem; /* 24px: h2 */
+  --text-2xl: 2rem; /* 32px: h1 */
+  --text-3xl: clamp(2.25rem, 1.6rem + 2.6vw, 3rem); /* landing headline */
+  --leading-tight: 1.25;
+  --leading-normal: 1.65;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Spacing scale. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* Layout. */
+  --page-gutter: 1rem; /* side margin on phones; grows on wider screens */
+  --width-content: 46rem; /* signed-in pages and forms */
+  --width-wide: 68rem; /* landing page */
+  --width-form: 28rem; /* a single column of inputs */
+  --width-prose: 38rem; /* comfortable line length for paragraphs */
+
+  /* Shape. Modest corners, very light shadows used rarely. */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 999rem;
+  --shadow-sm: 0 0.0625rem 0.125rem rgba(42, 38, 34, 0.06);
+  --shadow-overlay: 0 0.75rem 2rem rgba(42, 38, 34, 0.16); /* dialogs only */
+
+  /* Controls. 2.75rem = 44px: the minimum tap target. */
+  --tap-target: 2.75rem;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --page-gutter: 2rem;
+  }
+}

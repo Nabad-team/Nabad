@@ -1,20 +1,19 @@
 import { useState } from "react";
 
-// Dark shades that all keep white text above WCAG AA (4.5:1); checked in __tests__/Avatar.test.js.
+// Teal and terracotta shades from the Nabad palette (never red: red means an emergency or an error).
+// All keep white text above WCAG AA (4.5:1); checked in __tests__/Avatar.test.js.
 export const AVATAR_COLORS = [
-  "#0f766e", // teal
-  "#1d4ed8", // blue
-  "#7e22ce", // purple
-  "#b91c1c", // red
-  "#c2410c", // orange
-  "#15803d", // green
-  "#be185d", // pink
-  "#4338ca", // indigo
-  "#334155", // slate
-  "#a16207", // amber
+  "#0f766e", // logo teal
+  "#115e59", // deep teal
+  "#134e4a", // darkest teal
+  "#2c6e63", // green teal
+  "#9c4a2f", // terracotta
+  "#8a4529", // deep terracotta
+  "#7a3a24", // darkest terracotta
+  "#6f4a3a", // clay brown
 ];
-// Used when there is no name, behind the person icon.
-const NO_NAME_COLOR = "#4b5563";
+// Used when there is no name, behind the person icon (warm gray).
+const NO_NAME_COLOR = "#5c554d";
 
 // "Sami Haddad" -> "SH", "Sami" -> "S", "  " -> "". Array.from keeps non-Latin letters whole.
 export function initialsFor(name) {
@@ -33,9 +32,12 @@ export function avatarColor(name) {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
+// Sizes are given in pixels at the default text size and drawn in rem, so they grow with the text-size setting.
+const rem = (px) => `${px / 16}rem`;
+
 function PersonIcon({ size }) {
   return (
-    <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="white" aria-hidden="true" focusable="false">
+    <svg width={rem(size * 0.6)} height={rem(size * 0.6)} viewBox="0 0 24 24" fill="white" aria-hidden="true" focusable="false">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6z" />
     </svg>
@@ -49,12 +51,12 @@ export default function Avatar({ name, src, size = 100, borderColor }) {
   const [failedSrc, setFailedSrc] = useState(null);
   const label = name && name.trim() ? `Profile picture of ${name.trim()}` : "Profile picture";
   const circle = {
-    width: size,
-    height: size,
+    width: rem(size),
+    height: rem(size),
     borderRadius: "50%",
     flexShrink: 0,
     boxSizing: "border-box",
-    ...(borderColor ? { border: `3px solid ${borderColor}` } : {}),
+    ...(borderColor ? { border: `0.1875rem solid ${borderColor}` } : {}),
   };
 
   if (src && src !== failedSrc) {
@@ -73,8 +75,8 @@ export default function Avatar({ name, src, size = 100, borderColor }) {
         justifyContent: "center",
         background: initials ? avatarColor(name) : NO_NAME_COLOR,
         color: "white",
-        fontWeight: "bold",
-        fontSize: size * 0.4,
+        fontWeight: 600,
+        fontSize: rem(size * 0.4),
         userSelect: "none",
       }}
     >

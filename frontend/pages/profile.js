@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Head from "next/head";
 import ProfileHeader from "../components/ProfileHeader";
 import Dialog from "../components/Dialog";
 import EmergencyContact from "../components/EmergencyContact";
@@ -13,30 +12,17 @@ import {
   RELATIONSHIPS,
   MAX_LINKED_PROFILES,
 } from "../lib/profileApi";
-import { todayString, calculateAge } from "../lib/dates";
+import { todayString, calculateAge, formatDate } from "../lib/dates";
 import { signOut } from "../lib/session";
-
-const TEAL = "#0f766e";
-const RED = "#b91c1c";
-
-const buttonStyle = {
-  padding: "10px 20px",
-  borderRadius: 8,
-  border: `2px solid ${TEAL}`,
-  background: TEAL,
-  color: "white",
-  fontWeight: "bold",
-  cursor: "pointer",
-};
-
-const outlineButtonStyle = { ...buttonStyle, background: "white", color: TEAL };
-
-// Red buttons are used only for actions that delete data.
-const dangerButtonStyle = { ...buttonStyle, background: RED, border: `2px solid ${RED}` };
-
-const smallOutlineButtonStyle = { ...outlineButtonStyle, padding: "2px 10px", marginLeft: 8, fontSize: 14 };
-
-const inputStyle = { width: "100%", padding: 8, margin: "6px 0 4px", boxSizing: "border-box" };
+import PageLayout from "../components/ui/PageLayout";
+import PageTitle from "../components/ui/PageTitle";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import Alert from "../components/ui/Alert";
+import EmptyState from "../components/ui/EmptyState";
+import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { TwoHearts } from "../components/illustrations";
 
 // Checks the form and returns an object of error messages, e.g. { phone: "..." }.
 // An empty object means everything is valid.
@@ -250,163 +236,168 @@ export default function ProfilePage() {
   }
 
   return (
-    <main style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px", fontFamily: "sans-serif", color: "#1f2937" }}>
-      <Head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-      </Head>
-      <ProfileHeader />
+    <PageLayout header={<ProfileHeader />}>
       {/* The details on this page are always the account owner's, so explain that
           while acting as a dependent (the banner above names who is active). */}
       {activeProfile && !activeProfile.isSelf && (
-        <p style={{ color: "#6b7280", marginTop: -20 }}>
+        <p className="text-muted">
           You're managing {activeProfile.fullName}'s care. Account settings below belong to you.
         </p>
       )}
-      <h1>My Profile</h1>
+      <PageTitle>My profile</PageTitle>
 
-      {loadError && <p style={{ color: "crimson" }}>{loadError}</p>}
-      {!profile && !loadError && <p>Loading...</p>}
+      {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
+      {!profile && !loadError && <HeartbeatLoader />}
 
-      {message && <p style={{ color: TEAL, fontWeight: "bold" }}>{message}</p>}
+      {message && <Alert tone="success" as="p" role="status" className="profile-message">{message}</Alert>}
 
-      {profile && <h2 style={{ color: TEAL }}>Account owner</h2>}
+      {profile && (
+        <section aria-labelledby="owner-heading">
+          <h2 id="owner-heading">Account owner</h2>
 
-      {profile && !isEditing && (
-        <div>
-          <p><strong>Full name:</strong> {profile.fullName}</p>
-          <p><strong>Email:</strong> {profile.email}</p>
-          <p><strong>Phone:</strong> {profile.phone || "Not set"}</p>
-          <p><strong>Date of birth:</strong> {profile.dateOfBirth || "Not set"}</p>
-          <button type="button" onClick={startEditing} style={buttonStyle}>Edit</button>
-        </div>
+          {!isEditing && (
+            <>
+              <div className="details">
+                <p><span className="details__label">Full name</span>{profile.fullName}</p>
+                <p><span className="details__label">Email</span>{profile.email}</p>
+                <p><span className="details__label">Phone</span>{profile.phone || "Not set"}</p>
+                <p><span className="details__label">Date of birth</span>{profile.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not set"}</p>
+              </div>
+              <Button variant="secondary" onClick={startEditing}>Edit</Button>
+            </>
+          )}
+
+          {isEditing && (
+            // noValidate turns off the browser's own checks so our validate() messages are shown.
+            <form onSubmit={handleSave} noValidate className="form">
+              <Input
+                id="fullName"
+                label="Full name"
+                autoComplete="name"
+                value={form.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+                error={errors.fullName}
+              />
+
+              <p><span className="details__label">Email (cannot be changed)</span>{profile.email}</p>
+
+              <Input
+                id="phone"
+                label="Phone"
+                type="tel"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+                placeholder="e.g. 71 123 456 or +961 71 123 456"
+                error={errors.phone}
+              />
+
+              <Input
+                id="dateOfBirth"
+                label="Date of birth"
+                type="date"
+                max={todayString()}
+                value={form.dateOfBirth}
+                onChange={(e) => updateField("dateOfBirth", e.target.value)}
+                error={errors.dateOfBirth}
+              />
+
+              {saveError && <Alert tone="danger" as="p" role="alert">{saveError}</Alert>}
+              <div className="form-actions">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+                <Button variant="secondary" onClick={cancelEditing}>Cancel</Button>
+              </div>
+            </form>
+          )}
+        </section>
       )}
 
-      {profile && isEditing && (
-        // noValidate turns off the browser's own checks so our validate() messages are shown.
-        <form onSubmit={handleSave} noValidate>
-          <label htmlFor="fullName">Full name</label>
-          <input
-            id="fullName"
-            value={form.fullName}
-            onChange={(e) => updateField("fullName", e.target.value)}
-            style={inputStyle}
-          />
-          {errors.fullName && <p style={{ color: "crimson", marginTop: 0 }}>{errors.fullName}</p>}
-
-          <p><strong>Email:</strong> {profile.email} (cannot be changed)</p>
-
-          <label htmlFor="phone">Phone</label>
-          <input
-            id="phone"
-            type="tel"
-            value={form.phone}
-            onChange={(e) => updateField("phone", e.target.value)}
-            placeholder="e.g. 71 123 456 or +961 71 123 456"
-            style={inputStyle}
-          />
-          {errors.phone && <p style={{ color: "crimson", marginTop: 0 }}>{errors.phone}</p>}
-
-          <label htmlFor="dateOfBirth">Date of birth</label>
-          <input
-            id="dateOfBirth"
-            type="date"
-            max={todayString()}
-            value={form.dateOfBirth}
-            onChange={(e) => updateField("dateOfBirth", e.target.value)}
-            style={inputStyle}
-          />
-          {errors.dateOfBirth && <p style={{ color: "crimson", marginTop: 0 }}>{errors.dateOfBirth}</p>}
-
-          {saveError && <p style={{ color: "crimson" }}>{saveError}</p>}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-            <button type="submit" disabled={saving} style={buttonStyle}>
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button type="button" onClick={cancelEditing} style={outlineButtonStyle}>Cancel</button>
-          </div>
-        </form>
-      )}
-
-      <section style={{ marginTop: 40 }}>
-        <h2 style={{ color: TEAL }}>Account security</h2>
+      <section className="section" aria-labelledby="security-heading">
+        <h2 id="security-heading">Account security</h2>
         <p>Manage your sign-in verification settings.</p>
-        <a href="/security" style={{ color: TEAL }}>Open security settings</a>
+        <a href="/security">Open security settings</a>
       </section>
 
-      <section style={{ marginTop: 40 }}>
-        <h2 style={{ color: TEAL }}>Linked profiles</h2>
-        {dependentMessage && <p style={{ color: TEAL, fontWeight: "bold" }}>{dependentMessage}</p>}
+      <section className="section" aria-labelledby="linked-heading">
+        <h2 id="linked-heading">Linked profiles</h2>
+        {dependentMessage && <Alert tone="success" as="p" role="status" className="profile-message">{dependentMessage}</Alert>}
 
-        {linkedProfiles.length === 0 && <p style={{ color: "#6b7280" }}>No linked profiles yet.</p>}
+        {linkedProfiles.length === 0 && (
+          <EmptyState illustration={<TwoHearts size="5rem" />} title="No linked profiles yet.">
+            Add someone you look after. You can then switch to their profile from the menu at the top.
+          </EmptyState>
+        )}
         {linkedProfiles.length > 0 && (
-          <ul style={{ paddingLeft: 20 }}>
+          <ul className="plain-list">
             {linkedProfiles.map((dependent) => (
-              <li key={dependent.id} style={{ marginBottom: 6 }}>
-                <strong>{dependent.fullName}</strong>, {dependent.relationship}, age {calculateAge(dependent.dateOfBirth)}
+              <li key={dependent.id}>
+                <span>
+                  <strong>{dependent.fullName}</strong>, {dependent.relationship}, age {calculateAge(dependent.dateOfBirth)}
+                </span>
                 {/* The self profile is never in this list, so it can never be removed here. */}
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="small"
                   onClick={() => askToRemove(dependent)}
                   aria-label={`Remove ${dependent.fullName}`}
-                  style={smallOutlineButtonStyle}
                 >
                   Remove
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
         )}
 
         {reachedLimit && (
-          <p style={{ color: "#6b7280" }}>You can link up to {MAX_LINKED_PROFILES} dependents.</p>
+          <p className="text-muted">You can link up to {MAX_LINKED_PROFILES} dependents.</p>
         )}
 
         {!isAddingDependent && (
-          <button type="button" onClick={startAddingDependent} disabled={reachedLimit} style={buttonStyle}>
+          <Button variant="secondary" onClick={startAddingDependent} disabled={reachedLimit}>
             Add dependent
-          </button>
+          </Button>
         )}
 
         {isAddingDependent && (
-          <form onSubmit={handleAddDependent} noValidate>
-            <label htmlFor="dependentName">Full name</label>
-            <input
+          <form onSubmit={handleAddDependent} noValidate className="form">
+            <Input
               id="dependentName"
+              label="Full name"
               value={dependentForm.fullName}
               onChange={(e) => updateDependentField("fullName", e.target.value)}
-              style={inputStyle}
+              error={dependentErrors.fullName}
             />
-            {dependentErrors.fullName && <p style={{ color: "crimson", marginTop: 0 }}>{dependentErrors.fullName}</p>}
 
-            <label htmlFor="dependentDateOfBirth">Date of birth</label>
-            <input
+            <Input
               id="dependentDateOfBirth"
+              label="Date of birth"
               type="date"
               max={todayString()}
               value={dependentForm.dateOfBirth}
               onChange={(e) => updateDependentField("dateOfBirth", e.target.value)}
-              style={inputStyle}
+              error={dependentErrors.dateOfBirth}
             />
-            {dependentErrors.dateOfBirth && <p style={{ color: "crimson", marginTop: 0 }}>{dependentErrors.dateOfBirth}</p>}
 
-            <label htmlFor="dependentRelationship">Relationship</label>
-            <select
+            <Input
+              as="select"
               id="dependentRelationship"
+              label="Relationship"
               value={dependentForm.relationship}
               onChange={(e) => updateDependentField("relationship", e.target.value)}
-              style={inputStyle}
+              error={dependentErrors.relationship}
             >
               <option value="">Choose...</option>
               {RELATIONSHIPS.map((relationship) => (
                 <option key={relationship} value={relationship}>{relationship}</option>
               ))}
-            </select>
-            {dependentErrors.relationship && <p style={{ color: "crimson", marginTop: 0 }}>{dependentErrors.relationship}</p>}
+            </Input>
 
-            {dependentError && <p style={{ color: "crimson" }}>{dependentError}</p>}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-              <button type="submit" style={buttonStyle}>Save dependent</button>
-              <button type="button" onClick={() => setIsAddingDependent(false)} style={outlineButtonStyle}>Cancel</button>
+            {dependentError && <Alert tone="danger" as="p" role="alert">{dependentError}</Alert>}
+            <div className="form-actions">
+              <Button type="submit">Save dependent</Button>
+              <Button variant="secondary" onClick={() => setIsAddingDependent(false)}>Cancel</Button>
             </div>
           </form>
         )}
@@ -414,77 +405,71 @@ export default function ProfilePage() {
 
       <EmergencyContact />
 
-      <section style={{ border: `2px solid ${RED}`, borderRadius: 12, padding: 20, marginTop: 40 }}>
-        <h2 style={{ marginTop: 0, color: RED }}>Danger zone</h2>
-        <p style={{ color: "#6b7280" }}>Deleting your account is permanent and cannot be undone.</p>
-        <button type="button" onClick={openDeleteAccount} style={dangerButtonStyle}>Delete my account</button>
-      </section>
+      <Card tone="danger" aria-labelledby="danger-heading" className="section">
+        <h2 id="danger-heading">Danger zone</h2>
+        <p className="text-muted">Deleting your account is permanent and cannot be undone.</p>
+        <Button variant="danger" onClick={openDeleteAccount}>Delete my account</Button>
+      </Card>
 
       {profileToRemove && (
         <Dialog title="Remove linked profile">
           <p>
             Remove {profileToRemove.fullName}'s profile? This deletes all of their data and cannot be undone.
           </p>
-          {removeError && <p style={{ color: "crimson" }}>{removeError}</p>}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-            <button type="button" onClick={handleRemove} style={dangerButtonStyle}>Remove</button>
-            <button type="button" onClick={() => setProfileToRemove(null)} style={outlineButtonStyle}>Cancel</button>
+          {removeError && <Alert tone="danger" as="p" role="alert">{removeError}</Alert>}
+          <div className="button-row dialog__actions">
+            <Button onClick={handleRemove}>Remove</Button>
+            <Button variant="secondary" onClick={() => setProfileToRemove(null)}>Cancel</Button>
           </div>
         </Dialog>
       )}
 
       {isDeletingAccount && (
         <Dialog title="Delete your account?">
-          <p style={{ marginBottom: 4 }}>This permanently deletes:</p>
-          <ul style={{ marginTop: 0 }}>
+          <p className="dialog__list-intro">This permanently deletes:</p>
+          <ul>
             <li>Your account</li>
             <li>Your profile</li>
             <li>All linked profiles</li>
             <li>Your emergency contacts</li>
           </ul>
-          <form onSubmit={handleDeleteAccount} noValidate>
+          <form onSubmit={handleDeleteAccount} noValidate className="form">
             {/* Google-only accounts have no password, so they type their email instead. */}
-            <label htmlFor="deleteCredential">{isGoogleAccount ? "Email" : "Password"}</label>
-            <input
+            <Input
               id="deleteCredential"
+              label={isGoogleAccount ? "Email" : "Password"}
               type={isGoogleAccount ? "email" : "password"}
               autoComplete={isGoogleAccount ? "off" : "current-password"}
               value={deleteCredential}
               onChange={(e) => setDeleteCredential(e.target.value)}
-              style={inputStyle}
             />
 
-            <label htmlFor="deleteConfirmText">Type DELETE to confirm</label>
-            <input
+            <Input
               id="deleteConfirmText"
+              label="Type DELETE to confirm"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               autoComplete="off"
-              style={inputStyle}
             />
 
-            {deleteError && <p style={{ color: "crimson" }}>{deleteError}</p>}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
+            {deleteError && <Alert tone="danger" as="p" role="alert">{deleteError}</Alert>}
+            <div className="form-actions">
               {/* Stays disabled until exactly "DELETE" (capital letters) is typed. */}
-              <button
-                type="submit"
-                disabled={deleteConfirmText !== "DELETE"}
-                style={{ ...dangerButtonStyle, opacity: deleteConfirmText === "DELETE" ? 1 : 0.5 }}
-              >
+              <Button type="submit" variant="danger" disabled={deleteConfirmText !== "DELETE"}>
                 Delete my account
-              </button>
-              <button type="button" onClick={() => setIsDeletingAccount(false)} style={outlineButtonStyle}>
+              </Button>
+              <Button variant="secondary" onClick={() => setIsDeletingAccount(false)}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
         </Dialog>
       )}
 
-      <p style={{ marginTop: 24 }}>
-        <a href="/dashboard" style={{ color: TEAL }}>Back to dashboard</a>
+      <p className="section">
+        <a href="/dashboard">Back to dashboard</a>
       </p>
-    </main>
+    </PageLayout>
   );
 }
 

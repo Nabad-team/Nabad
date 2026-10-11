@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import Avatar from "./Avatar";
+import Button from "./ui/Button";
+import Alert from "./ui/Alert";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { signOut } from "../lib/session";
 import { useSignedIn } from "./SessionTimeout";
@@ -9,11 +11,13 @@ import {
   removeProfilePicture,
 } from "../lib/profileApi";
 
+// The avatar ring uses the logo teal (the same value as --color-primary).
 const TEAL = "#0f766e";
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
-export default function ProfileHeader() {
+// showPicture: false hides the picture controls (the dashboard keeps them on the profile page only).
+export default function ProfileHeader({ showPicture = true }) {
   const { selfProfile, linkedProfiles, activeProfile, switchProfile, refreshProfiles } =
     useActiveProfile();
 
@@ -101,154 +105,91 @@ export default function ProfileHeader() {
     Boolean(previewUrl) || Boolean(savedPicture);
 
   return (
-    <header style={{ marginBottom: 32 }}>
-      <nav
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <Logo />
+    <>
+      <header className="site-header">
+        <div className="container site-header__inner">
+          <Logo />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {/* A direct child of the header row, so on phones it can move to its own full-width row
+              below the logo and the names show in full (see .profile-switcher in components.css). */}
           {selfProfile && activeProfile && (
-            <select
-              aria-label="Active profile"
-              value={activeProfile.id}
-              onChange={(e) => switchProfile(e.target.value)}
-              style={{
-                padding: 8,
-                borderRadius: 8,
-                border: `2px solid ${TEAL}`,
-                color: TEAL,
-                maxWidth: "100%",
-              }}
-            >
-              <option value={selfProfile.id}>
-                {selfProfile.fullName} (you)
-              </option>
-
-              {linkedProfiles.map((profile) => (
-                <option key={profile.id} value={profile.id}>
-                  {profile.fullName} ({profile.relationship})
+            <div className="profile-switcher">
+              <select
+                aria-label="Active profile"
+                className="input profile-select"
+                value={activeProfile.id}
+                onChange={(e) => switchProfile(e.target.value)}
+              >
+                <option value={selfProfile.id}>
+                  {selfProfile.fullName} (you)
                 </option>
-              ))}
-            </select>
+
+                {linkedProfiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.fullName} ({profile.relationship})
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
-          {signedIn && (
-            <a href="/security" style={{ padding: 8, color: TEAL, fontWeight: "bold" }}>
-              Security
-            </a>
-          )}
-
-          {/* Signs out in every open tab (see lib/session.js). Only shown while signed in. */}
-          {signedIn && (
-            <button
-              type="button"
-              onClick={() => signOut()}
-              style={{
-                padding: 8,
-                borderRadius: 8,
-                border: `1px solid ${TEAL}`,
-                background: "white",
-                color: TEAL,
-                cursor: "pointer",
-              }}
-            >
-              Sign out
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {activeProfile && (
-        <div
-          style={{
-            marginTop: 20,
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <Avatar name={activeProfile.fullName} src={displayedPicture} size={100} borderColor={TEAL} />
-
-          <div>
-            <input
-              ref={fileInputRef}
-              data-testid="profile-picture-input"
-              type="file"
-              accept="image/jpeg,image/png"
-              onChange={handlePictureChange}
-              style={{ display: "none" }}
-            />
-
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 8,
-                border: "none",
-                background: TEAL,
-                color: "white",
-                cursor: "pointer",
-                marginRight: 8,
-              }}
-            >
-              {hasPicture ? "Change picture" : "Upload picture"}
-            </button>
-
-            {hasPicture && (
-              <button
-                type="button"
-                onClick={handleRemovePicture}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 8,
-                  border: `1px solid ${TEAL}`,
-                  background: "white",
-                  color: TEAL,
-                  cursor: "pointer",
-                }}
-              >
-                Remove picture
-              </button>
+          <nav aria-label="Account" className="site-nav">
+            {signedIn && (
+              <a href="/security" className="site-nav__link">
+                Security
+              </a>
             )}
 
-            {error && (
-              <p
-                style={{
-                  color: "crimson",
-                  marginTop: 8,
-                }}
-              >
-                {error}
-              </p>
+            {/* Signs out in every open tab (see lib/session.js). Only shown while signed in. */}
+            {signedIn && (
+              <Button variant="secondary" size="small" onClick={() => signOut()}>
+                Sign out
+              </Button>
             )}
-          </div>
+          </nav>
+        </div>
+      </header>
+
+      {activeProfile && (showPicture || !activeProfile.isSelf) && (
+        <div className="container profile-strip">
+          {showPicture && (
+            <div className="profile-strip__picture">
+              <Avatar name={activeProfile.fullName} src={displayedPicture} size={72} borderColor={TEAL} />
+
+              <div>
+                <input
+                  ref={fileInputRef}
+                  data-testid="profile-picture-input"
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handlePictureChange}
+                  style={{ display: "none" }}
+                />
+
+                <div className="button-row">
+                  <Button variant="secondary" size="small" onClick={() => fileInputRef.current?.click()}>
+                    {hasPicture ? "Change picture" : "Upload picture"}
+                  </Button>
+
+                  {hasPicture && (
+                    <Button variant="secondary" size="small" onClick={handleRemovePicture}>
+                      Remove picture
+                    </Button>
+                  )}
+                </div>
+
+                {error && <p className="field__error profile-strip__error">{error}</p>}
+              </div>
+            </div>
+          )}
+
+          {!activeProfile.isSelf && (
+            <Alert tone="info" as="p" role="status" className="acting-as">
+              Acting as: {activeProfile.fullName} ({activeProfile.relationship})
+            </Alert>
+          )}
         </div>
       )}
-
-      {activeProfile && !activeProfile.isSelf && (
-        <p
-          role="status"
-          style={{
-            background: TEAL,
-            color: "white",
-            fontWeight: "bold",
-            padding: "10px 16px",
-            borderRadius: 8,
-            marginBottom: 0,
-          }}
-        >
-          Acting as: {activeProfile.fullName} ({activeProfile.relationship})
-        </p>
-      )}
-    </header>
+    </>
   );
 }

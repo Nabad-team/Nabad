@@ -104,7 +104,7 @@ describe("Symptoms Page", () => {
     expect(screen.getByText("Maya Hamdan")).toBeInTheDocument();
 
     expect(
-      screen.getByPlaceholderText("Enter symptoms for Maya Hamdan")
+      screen.getByPlaceholderText("For example: headache since yesterday and a mild fever.")
     ).toBeInTheDocument();
   });
 
@@ -121,7 +121,7 @@ describe("Symptoms Page", () => {
     render(<SymptomsPage />);
 
     await user.click(
-      screen.getByRole("button", { name: "Submit Symptoms" })
+      screen.getByRole("button", { name: "Submit symptoms" })
     );
 
     expect(
@@ -150,14 +150,12 @@ describe("Symptoms Page", () => {
 
     render(<SymptomsPage />);
 
-    const symptomBox = screen.getByPlaceholderText(
-      "Enter symptoms for Maya Hamdan"
-    );
+    const symptomBox = screen.getByLabelText("Symptoms");
 
     await user.type(symptomBox, "Fever and headache");
 
     await user.click(
-      screen.getByRole("button", { name: "Submit Symptoms" })
+      screen.getByRole("button", { name: "Submit symptoms" })
     );
 
     await waitFor(() => {
@@ -186,12 +184,12 @@ describe("Symptoms Page", () => {
     render(<SymptomsPage />);
 
     await user.type(
-      screen.getByPlaceholderText("Enter symptoms for Maya Hamdan"),
+      screen.getByLabelText("Symptoms"),
       "Cough and fever"
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Submit Symptoms" })
+      screen.getByRole("button", { name: "Submit symptoms" })
     );
 
     expect(
@@ -247,6 +245,21 @@ describe("Symptoms Page", () => {
     });
   });
 
+  test("starts listening straight away when opened from the dashboard's Speak button", async () => {
+    const recognition = { start: jest.fn(), stop: jest.fn(), abort: jest.fn() };
+    window.SpeechRecognition = jest.fn(() => recognition);
+    useActiveProfile.mockReturnValue({ activeProfile: { id: "profile-1", fullName: "Maya Hamdan" } });
+    window.history.pushState({}, "", "/symptoms?voice=1");
+
+    try {
+      render(<SymptomsPage />);
+      expect(await screen.findByRole("button", { name: "Stop listening" })).toBeInTheDocument();
+      expect(recognition.start).toHaveBeenCalledTimes(1);
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
+  });
+
   test("hides voice input when speech recognition is unsupported", () => {
     useActiveProfile.mockReturnValue({
       activeProfile: {
@@ -272,10 +285,10 @@ describe("Symptoms Page", () => {
     addSymptomRecord.mockResolvedValue({ id: "symptom-1" });
     render(<SymptomsPage />);
     await user.type(
-      screen.getByPlaceholderText("Enter symptoms for Maya Hamdan"),
+      screen.getByLabelText("Symptoms"),
       text
     );
-    await user.click(screen.getByRole("button", { name: "Submit Symptoms" }));
+    await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
   }
 
   test("classifies the saved symptoms and shows how soon to get care", async () => {
@@ -328,10 +341,10 @@ describe("Symptoms Page", () => {
     render(<SymptomsPage />);
 
     await user.type(
-      screen.getByPlaceholderText("Enter symptoms for Maya Hamdan"),
+      screen.getByLabelText("Symptoms"),
       "Cough"
     );
-    await user.click(screen.getByRole("button", { name: "Submit Symptoms" }));
+    await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
 
     expect(await screen.findByText("Could not save symptoms.")).toBeInTheDocument();
     expect(classifyUrgency).not.toHaveBeenCalled();
