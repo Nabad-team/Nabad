@@ -7,6 +7,10 @@ import ProfilePage from "../pages/profile";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, addLinkedProfile, listLinkedProfiles } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 // The profile API is replaced by an in-memory fake of the backend.
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
@@ -39,7 +43,7 @@ function renderProfilePage() {
 
 // Renders the page, waits for the profile to load, and clicks "Edit".
 async function renderInEditMode() {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   renderProfilePage();
   await user.click(await screen.findByRole("button", { name: "Edit" }));
   return user;
@@ -174,7 +178,7 @@ describe("Profile Page", () => {
   describe("Linked profiles", () => {
     // Renders the page, waits for it to load, and opens the "Add dependent" form.
     async function openAddDependentForm() {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderProfilePage();
       await screen.findByText("Demo User", { selector: "p" });
       await user.click(screen.getByRole("button", { name: "Add dependent" }));
@@ -190,11 +194,9 @@ describe("Profile Page", () => {
     test("adding a dependent shows it in the list with relationship and age", async () => {
       const user = await openAddDependentForm();
 
-      // A date of birth exactly 7 years ago today, so the age is always 7.
-      const now = new Date();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const sevenYearsAgo = `${now.getFullYear() - 7}-${month}-${day}`;
+      // 1 January seven years ago: the age is 7 on every day of the year. ("Exactly 7 years ago today"
+      // would not exist on 29 February, and depends on the exact moment around midnight.)
+      const sevenYearsAgo = `${new Date().getFullYear() - 7}-01-01`;
 
       await user.type(screen.getByLabelText("Full name"), "Sami Haddad");
       await user.type(screen.getByLabelText("Date of birth"), sevenYearsAgo);
@@ -250,7 +252,7 @@ describe("Profile Page", () => {
     // Adds a dependent called Maya, renders the page, and waits for her to appear.
     async function renderWithMaya() {
       const maya = await addLinkedProfile({ fullName: "Maya", dateOfBirth: "2015-03-10", relationship: "child" });
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderProfilePage();
       await screen.findByText("Maya", { selector: "strong" });
       return { user, maya };
@@ -294,7 +296,7 @@ describe("Profile Page", () => {
     test("removing the active dependent switches back to your own profile", async () => {
       const maya = await addLinkedProfile({ fullName: "Maya", dateOfBirth: "2015-03-10", relationship: "child" });
       localStorage.setItem("nabad-active-profile-id", maya.id);
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderProfilePage();
       expect(await screen.findByText("Acting as: Maya (child)")).toBeInTheDocument();
 
@@ -310,7 +312,7 @@ describe("Profile Page", () => {
   describe("Deleting the account", () => {
     // Renders the page and opens the "Delete my account" dialog.
     async function openDeleteDialog() {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderProfilePage();
       await user.click(await screen.findByRole("button", { name: "Delete my account" }));
       const dialog = screen.getByRole("dialog");

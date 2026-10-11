@@ -186,7 +186,8 @@ test("one user can't see, edit, change or delete another user's medication: it l
 
 test("never writes medication names, doses or notes to the logs", async () => {
   const cookie = token(await user());
-  const secret = { name: "Secretmedicine", dose: "777", unit: "mcg", frequency: "Hiddenfrequency", notes: "Privatenote" };
+  // Letters outside 0-9 and a-f, so a value can't turn up by chance inside a timestamp, duration or request id.
+  const secret = { name: "Secretmedicine", dose: "Qzdose", unit: "Wxunit", frequency: "Hiddenfrequency", notes: "Privatenote" };
   const written = [];
   const original = process.stdout.write;
   process.stdout.write = function (chunk, ...rest) { written.push(String(chunk)); return original.call(this, chunk, ...rest); };

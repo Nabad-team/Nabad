@@ -26,13 +26,16 @@ before(async () => {
 after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.TRUST_PROXY; });
 beforeEach(async () => { await User.deleteMany({}); sent = []; });
 async function user(email = "elias@example.test") { return User.create({ name: "Elias", email, passwordHash: await bcrypt.hash(password, 4) }); }
+// The 20-second abort only turns a hang into a clear failure; a passing request takes milliseconds.
 async function request(path, body, ip) {
-  const started = performance.now();
-  const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": ip }, body: JSON.stringify(body) });
-  return { status: response.status, body: await response.json(), ms: performance.now() - started };
+  const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": ip }, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
+  return { status: response.status, body: await response.json() };
 }
-async function waitFor(check) {
-  for (let i = 0; i < 250; i++) { if (await check()) return; await new Promise(resolve => setTimeout(resolve, 20)); }
+// Polls until the email work that runs after the response is done. Returns as soon as the check passes;
+// the 20-second deadline is generous so a busy machine never fails a correct test.
+async function waitFor(check, deadlineMs = 20000) {
+  const deadline = Date.now() + deadlineMs;
+  while (Date.now() < deadline) { if (await check()) return; await new Promise(resolve => setTimeout(resolve, 20)); }
   throw new Error("Timed out waiting for background work.");
 }
 const neverResolves = () => new Promise(() => {});
@@ -40,12 +43,12 @@ const resetToken = message => message.text.match(/token=([a-f0-9]{64})/)[1];
 
 test("forgot-password answers immediately and identically whether or not the account exists", async (t) => {
   await user();
-  // SMTP that never answers, like the blocked port on Render.
+  // SMTP that never answers, like the blocked port on Render. The send never finishes, so a reply at all
+  // proves the route answers without waiting for the email (no stopwatch, so load can't fail it).
   t.mock.method(nodemailer, "createTransport", () => ({ sendMail: message => { sent.push(message); return neverResolves(); } }));
   const known = await request("/auth/forgot-password", { email: "elias@example.test" }, "10.0.0.1");
   const unknown = await request("/auth/forgot-password", { email: "nobody@example.test" }, "10.0.0.1");
   assert.equal(known.status, 200); assert.deepEqual(known.body, unknown.body);
-  assert.ok(known.ms < 3000 && unknown.ms < 3000, `responses took ${known.ms} and ${unknown.ms} ms`);
   await waitFor(() => sent.length === 1);
   assert.equal(sent[0].to, "elias@example.test");
 });
@@ -54,7 +57,8 @@ test("two-factor login does not wait for the email to be delivered", async (t) =
   const account = await user(); await User.updateOne({ _id: account._id }, { $set: { twoFactorEnabled: true } });
   t.mock.method(nodemailer, "createTransport", () => ({ sendMail: message => { sent.push(message); return neverResolves(); } }));
   const login = await request("/auth/login", { email: account.email, password }, "10.0.0.2");
-  assert.equal(login.body.twoFactorRequired, true); assert.ok(login.ms < 3000);
+  // As above: the code email never finishes sending, so getting this answer proves login didn't wait for it.
+  assert.equal(login.body.twoFactorRequired, true);
   assert.match(sent[0].text, /\b\d{6}\b/);
 });
 

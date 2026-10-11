@@ -6,9 +6,15 @@ import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fake from "../test-utils/fakeWellbeingApi";
 import { todayString } from "../lib/dates";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
+// A fixed "today", so a run that crosses midnight can't have the page and the test disagree on the date.
+jest.mock("../lib/dates", () => ({ ...jest.requireActual("../lib/dates"), todayString: () => "2026-10-12" }));
 jest.mock("../components/SessionTimeout", () => ({
   ...jest.requireActual("../components/SessionTimeout"),
   useSessionStatus: () => "signedIn",
@@ -49,7 +55,7 @@ describe("Water and sleep page", () => {
   });
 
   test("logs water with + glass, the glass icon, and − glass", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderPage();
     await user.click(await screen.findByRole("button", { name: "+ glass" }));
     expect(await count()).toHaveTextContent("1 glass today");
@@ -68,7 +74,7 @@ describe("Water and sleep page", () => {
   });
 
   test("sets, changes and clears a daily goal; gentle wording only while a goal is set", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     fake.seedWater("self", TODAY, 2);
     renderPage();
 
@@ -104,7 +110,7 @@ describe("Water and sleep page", () => {
   });
 
   test("logs, edits and removes last night's sleep", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderPage();
     const section = await sleepSection();
 
@@ -170,7 +176,7 @@ describe("Water and sleep page", () => {
   });
 
   test("follows the header profile switcher", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const child = await fakeProfileApi.addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
     fake.seedWater("self", TODAY, 5);
     fake.seedWater(child.id, TODAY, 2);
@@ -198,7 +204,7 @@ describe("Water and sleep page", () => {
   });
 
   test("uses the family member's name in the sleep question and goal hint", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const child = await fakeProfileApi.addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
     localStorage.setItem("nabad-active-profile-id", child.id);
     renderPage();

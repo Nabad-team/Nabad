@@ -2,10 +2,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import EmergencyContact from "../components/EmergencyContact";
 import { getEmergencyContact, addEmergencyContact, updateEmergencyContact, removeEmergencyContact } from "../lib/api";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 jest.mock("../lib/api",()=>({getEmergencyContact:jest.fn(),addEmergencyContact:jest.fn(),updateEmergencyContact:jest.fn(),removeEmergencyContact:jest.fn()}));
 beforeEach(()=>{jest.clearAllMocks();getEmergencyContact.mockResolvedValue({contact:null});});
 test("adds contact through the authenticated backend API",async()=>{
-  const user=userEvent.setup(); addEmergencyContact.mockResolvedValue({contact:{name:"Family",phone:"71123456"}});
+  const user=userEvent.setup({ delay: null }); addEmergencyContact.mockResolvedValue({contact:{name:"Family",phone:"71123456"}});
   render(<EmergencyContact/>);
   await user.type(await screen.findByLabelText("Contact name"),"Family");
   await user.type(screen.getByLabelText("Contact phone"),"71123456");
@@ -21,13 +25,13 @@ test("shows existing contact without offering to overwrite it",async()=>{
 });
 test("handles loading failure and allows retry",async()=>{
   getEmergencyContact.mockRejectedValueOnce(new Error("Unauthorized"));
-  const user=userEvent.setup(); render(<EmergencyContact/>);
+  const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Retry loading contact"}));
   expect(await screen.findByLabelText("Contact name")).toBeInTheDocument();
 });
 test("shows backend validation error and keeps input for correction",async()=>{
   addEmergencyContact.mockRejectedValue(new Error("Invalid phone"));
-  const user=userEvent.setup(); render(<EmergencyContact/>);
+  const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.type(await screen.findByLabelText("Contact name"),"Family");
   await user.type(screen.getByLabelText("Contact phone"),"bad");
   await user.click(screen.getByRole("button",{name:"Save emergency contact"}));
@@ -39,7 +43,7 @@ test("shows backend validation error and keeps input for correction",async()=>{
 const existing=()=>getEmergencyContact.mockResolvedValue({contact:{name:"Mom",phone:"71123456"}});
 test("edit opens the form filled with the saved contact and saves the change",async()=>{
   existing(); updateEmergencyContact.mockResolvedValue({contact:{name:"Dad",phone:"03123456"}});
-  const user=userEvent.setup(); render(<EmergencyContact/>);
+  const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Edit contact"}));
   expect(screen.getByLabelText("Contact name")).toHaveValue("Mom");
   expect(screen.getByLabelText("Contact phone")).toHaveValue("71123456");
@@ -53,7 +57,7 @@ test("edit opens the form filled with the saved contact and saves the change",as
   expect(screen.queryByLabelText("Contact name")).not.toBeInTheDocument();
 });
 test("cancel leaves the saved contact unchanged",async()=>{
-  existing(); const user=userEvent.setup(); render(<EmergencyContact/>);
+  existing(); const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Edit contact"}));
   await user.type(screen.getByLabelText("Contact name"),"zzz");
   await user.click(screen.getByRole("button",{name:"Cancel"}));
@@ -62,7 +66,7 @@ test("cancel leaves the saved contact unchanged",async()=>{
 });
 test("a rejected edit keeps the form open with the typed values",async()=>{
   existing(); updateEmergencyContact.mockRejectedValue(new Error("Invalid phone"));
-  const user=userEvent.setup(); render(<EmergencyContact/>);
+  const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Edit contact"}));
   await user.clear(screen.getByLabelText("Contact phone")); await user.type(screen.getByLabelText("Contact phone"),"bad");
   await user.click(screen.getByRole("button",{name:"Save changes"}));
@@ -71,7 +75,7 @@ test("a rejected edit keeps the form open with the typed values",async()=>{
 });
 test("remove asks for confirmation, then shows the add form again",async()=>{
   existing(); removeEmergencyContact.mockResolvedValue({});
-  const user=userEvent.setup(); render(<EmergencyContact/>);
+  const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Remove contact"}));
   expect(screen.getByRole("dialog")).toHaveTextContent("Mom");
   expect(removeEmergencyContact).not.toHaveBeenCalled();
@@ -82,7 +86,7 @@ test("remove asks for confirmation, then shows the add form again",async()=>{
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 test("keeping the contact in the confirmation does not remove it",async()=>{
-  existing(); const user=userEvent.setup(); render(<EmergencyContact/>);
+  existing(); const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Remove contact"}));
   await user.click(screen.getByRole("button",{name:"Keep contact"}));
   expect(removeEmergencyContact).not.toHaveBeenCalled();
@@ -90,7 +94,7 @@ test("keeping the contact in the confirmation does not remove it",async()=>{
 });
 test("a failed remove keeps the contact and shows the error",async()=>{
   existing(); removeEmergencyContact.mockRejectedValue(new Error("Network down"));
-  const user=userEvent.setup(); render(<EmergencyContact/>);
+  const user=userEvent.setup({ delay: null }); render(<EmergencyContact/>);
   await user.click(await screen.findByRole("button",{name:"Remove contact"}));
   await user.click(screen.getByRole("button",{name:"Yes, remove"}));
   expect(await screen.findByRole("alert")).toHaveTextContent("Network down");

@@ -40,8 +40,10 @@ async function call(path, { body, cookie, ip = `10.1.0.${++ipCounter}` } = {}) {
   });
   return { status: response.status, body: await response.json(), headers: response.headers };
 }
-async function waitFor(check) {
-  for (let i = 0; i < 250; i++) { if (await check()) return; await new Promise((resolve) => setTimeout(resolve, 20)); }
+// Returns as soon as the check passes; the 20-second deadline only matters on a very busy machine.
+async function waitFor(check, deadlineMs = 20000) {
+  const deadline = Date.now() + deadlineMs;
+  while (Date.now() < deadline) { if (await check()) return; await new Promise((resolve) => setTimeout(resolve, 20)); }
   throw new Error("Timed out waiting for background email.");
 }
 const tokenFrom = (message) => message.text.match(/verify-email\?token=([a-f0-9]{64})/)[1];

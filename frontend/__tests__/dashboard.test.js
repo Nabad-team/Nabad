@@ -8,11 +8,17 @@ import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileA
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fakeWellbeing from "../test-utils/fakeWellbeingApi";
 import { todayString } from "../lib/dates";
+import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+
+// Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
+jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 // The profile API is replaced by an in-memory fake of the backend.
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 // The Water and sleep card reads today from an in-memory fake too.
 jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
+// A fixed "today", so a run that crosses midnight can't have the card and the test disagree on the date.
+jest.mock("../lib/dates", () => ({ ...jest.requireActual("../lib/dates"), todayString: () => "2026-10-12" }));
 
 // The sign-in state the profile provider sees; tests can change it.
 let mockStatus = "signedIn";
