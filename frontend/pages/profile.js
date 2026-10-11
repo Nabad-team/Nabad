@@ -23,6 +23,7 @@ import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { TwoHearts } from "../components/illustrations";
+import AccessibilitySettings from "../components/AccessibilitySettings";
 
 // Checks the form and returns an object of error messages, e.g. { phone: "..." }.
 // An empty object means everything is valid.
@@ -319,6 +320,8 @@ export default function ProfilePage() {
         <p>Manage your sign-in verification settings.</p>
         <a href="/security">Open security settings</a>
       </section>
+
+      <AccessibilitySettings />
 
       <section className="section" aria-labelledby="linked-heading">
         <h2 id="linked-heading">Linked profiles</h2>

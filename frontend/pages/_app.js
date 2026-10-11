@@ -2,6 +2,7 @@ import { IBM_Plex_Sans } from "next/font/google";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import SessionTimeout from "../components/SessionTimeout";
 import RequireSignIn from "../components/RequireSignIn";
+import { AccessibilityProvider } from "../context/AccessibilityContext";
 import "../styles/tokens.css";
 import "../styles/base.css";
 import "../styles/components.css";
@@ -22,17 +23,19 @@ export default function MyApp({ Component, pageProps }) {
           --font-plex: ${plex.style.fontFamily};
         }
       `}</style>
-      <SessionTimeout>
-        <ActiveProfileProvider>
-          {Component.requireSignIn ? (
-            <RequireSignIn>
+      <AccessibilityProvider>
+        <SessionTimeout>
+          <ActiveProfileProvider>
+            {Component.requireSignIn ? (
+              <RequireSignIn>
+                <Component {...pageProps} />
+              </RequireSignIn>
+            ) : (
               <Component {...pageProps} />
-            </RequireSignIn>
-          ) : (
-            <Component {...pageProps} />
-          )}
-        </ActiveProfileProvider>
-      </SessionTimeout>
+            )}
+          </ActiveProfileProvider>
+        </SessionTimeout>
+      </AccessibilityProvider>
     </>
   );
 }

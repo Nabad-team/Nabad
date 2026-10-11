@@ -273,6 +273,21 @@
   gap: var(--space-3);
 }
 
+html[data-simplified-mode="true"] .button {
+  min-height: 3.5rem;
+  padding-inline: var(--space-6);
+  font-size: var(--text-lg);
+}
+
+html[data-simplified-mode="true"] .button svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+html[data-simplified-mode="true"] .check-in > p {
+  max-width: 30rem;
+}
+
 /* ---------- Forms ---------- */
 
 .form {

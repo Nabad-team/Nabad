@@ -71,7 +71,10 @@ export default function DashboardPage() {
       </section>
       <section className="section" aria-labelledby="account-heading">
         <h2 id="account-heading">Your account</h2>
-        <Button variant="secondary" href="/profile">My profile</Button>
+        <div className="button-row">
+          <Button variant="secondary" href="/triage">Safety check</Button>
+          <Button variant="secondary" href="/profile">My profile</Button>
+        </div>
       </section>
     </PageLayout>
   );

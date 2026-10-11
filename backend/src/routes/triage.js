@@ -9,9 +9,29 @@ const express = require("express");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { classifyUrgency } = require("../triage/urgency");
 const { getFollowUpQuestions, refineUrgency, AnswerError } = require("../triage/followUps");
+const { assessSymptoms, emergencyRoute } = require("../triage/policy");
 
 const router = express.Router();
 router.use(requireAuth);
+
+function assessmentSymptomsError(symptoms) {
+  if (typeof symptoms !== "string" || symptoms.trim().length < 3) {
+    return "Please describe your symptoms before starting an assessment.";
+  }
+  if (symptoms.length > 2000) return "Please keep the symptom description under 2000 characters.";
+  return null;
+}
+
+router.post("/assess", (req, res) => {
+  const symptoms = req.body?.symptoms;
+  const error = assessmentSymptomsError(symptoms);
+  if (error) return res.status(400).json({ error });
+  return res.json(assessSymptoms(symptoms.trim(), req.body?.location));
+});
+
+router.post("/emergency-route", (req, res) => {
+  return res.json(emergencyRoute(req.body?.location));
+});
 
 const DISCLAIMER = "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.";
 
