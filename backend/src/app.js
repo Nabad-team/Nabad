@@ -33,6 +33,7 @@ function createApp() {
   app.use("/api/profile/emergency-contact", require("./routes/emergencyContact"));
   app.use("/api/profile", require("./routes/profile"));
   app.use("/api/medications", require("./routes/medications"));
+  app.use("/api/wellbeing", require("./routes/wellbeing"));
   app.use("/api/triage", require("./routes/triage"));
   app.use((req, res) => res.status(404).json({ error: "Route not found." }));
   app.use(errorHandler);

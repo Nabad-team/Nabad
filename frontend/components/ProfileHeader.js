@@ -141,6 +141,12 @@ export default function ProfileHeader({ showPicture = true }) {
             )}
 
             {signedIn && (
+              <a href="/water-and-sleep" className="site-nav__link">
+                Water and sleep
+              </a>
+            )}
+
+            {signedIn && (
               <a href="/security" className="site-nav__link">
                 Security
               </a>

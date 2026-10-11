@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const User = require("../models/User");
 const LinkedProfile = require("../models/LinkedProfile");
-const Medication = require("../models/Medication");
+const { deleteProfileData } = require("../profileData");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { normalizePhone, validPhone } = require("../models/contactSchema");
 const { cookieOptions, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
@@ -105,12 +105,12 @@ router.post("/linked", asyncRoute(async (req, res) => {
   return res.status(201).json({ profile: linkedView(profile) });
 }));
 
-// Removes a dependent and their medications. The medications go first (only once we know the profile is
+// Removes a dependent and their health data (medications, water, sleep). The data goes first (only once we know the profile is
 // the user's own): if removing the profile then fails, it still exists and can be removed again.
 router.delete("/linked/:id", asyncRoute(async (req, res) => {
   const profile = await findOwnedProfile(req);
   if (!profile) return res.status(404).json({ error: "Profile not found." });
-  await Medication.deleteMany({ owner: req.userId, profileId: profile._id });
+  await deleteProfileData(req.userId, profile._id);
   await LinkedProfile.deleteOne({ _id: profile._id, owner: req.userId });
   return res.status(204).end();
 }));
@@ -151,8 +151,9 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   } else if (typeof password !== "string" || Buffer.byteLength(password) > 72 || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(400).json({ error: "Password is incorrect." });
   }
-  // Medications (the user's own and every dependent's: all are owned by the account) and linked profiles first: if deleting the user then fails, the account still exists and can be deleted again.
-  await Medication.deleteMany({ owner: user._id });
+  // Health data (the user's own and every dependent's: all of it is owned by the account) and linked profiles first:
+  // if deleting the user then fails, the account still exists and can be deleted again.
+  await deleteProfileData(user._id);
   await LinkedProfile.deleteMany({ owner: user._id });
   // The emergency contact and trusted devices are stored inside the user document, so they are deleted with it.
   await User.deleteOne({ _id: user._id });
