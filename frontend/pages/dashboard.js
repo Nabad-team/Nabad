@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   return (
     // The picture controls stay on the profile page; the dashboard keeps to what you came to do.
-    <PageLayout header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Dashboard" header={<ProfileHeader showPicture={false} />}>
       <EmailVerificationBanner />
       {activeProfile && <PageTitle>Welcome, {firstName(activeProfile.fullName)}</PageTitle>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}

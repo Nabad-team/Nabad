@@ -12,7 +12,7 @@ Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`
 | `frontend/styles/tokens.css` | Colors, font, type scale, spacing, radius, shadows (CSS variables) |
 | `frontend/styles/base.css` | Defaults for `body`, headings, links, form controls, focus ring |
 | `frontend/styles/components.css` | Classes used by the components below |
-| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `EmptyState`, `PageLayout`, `PageTitle`, `Heartbeat` |
+| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `Heartbeat` |
 | `frontend/components/illustrations.js` | The four line drawings |
 
 **Rule of thumb:** a new page should need no `style={{...}}` and no hex colors. If you need a color or a size, use a token (`var(--color-primary)`, `var(--space-4)`). If you need something new, add it to the system rather than to your page.
@@ -136,7 +136,9 @@ The frame of every page: header, then content in a centered column with proper s
 <PageLayout width="wide" header={<SiteHeader width="wide">links</SiteHeader>} footer={<p>...</p>}>  // landing
 ```
 
-Don't render your own `<main>`; `PageLayout` does (with `id="main"` for the skip link). It also adds the favicon.
+Don't render your own `<main>`; `PageLayout` does (with `id="main"` for the skip link). It also adds the favicon, the meta description and the link preview (Open Graph) tags.
+
+Give every page a `title`: `<PageLayout title="My profile">` shows "My profile · Nabad" in the browser tab. Only the landing page leaves it out (it gets "Nabad: know where to go when it matters").
 
 Note: `ProfileHeader` needs the `ActiveProfileProvider` from `_app.js`. If your page's tests render it without the provider, use the plain `<PageLayout>` header.
 
@@ -194,6 +196,14 @@ Show a form-level error with `<Alert tone="danger" as="p" role="alert">` just ab
 ```
 
 Use `role="alert"` for errors that need attention now and `role="status"` for calm confirmations. Leave `role` off for static text.
+
+### Badge
+
+A small calm label next to a heading. Teal, never red: it informs, it doesn't warn.
+
+```jsx
+<h3>Find hospitals and clinics <Badge>Coming soon</Badge></h3>
+```
 
 ### Card
 

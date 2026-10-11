@@ -31,7 +31,7 @@ export default function TriagePage() {
   }
 
   return (
-    <PageLayout header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Safety check" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Safety check</PageTitle>
       <p>
         Describe symptoms for {activeProfile?.fullName || "the active profile"}. This gives general

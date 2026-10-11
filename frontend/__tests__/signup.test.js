@@ -5,7 +5,7 @@ const push = jest.fn();
 const signup = jest.fn();
 
 jest.mock("next/router", () => ({ useRouter: () => ({ push }) }));
-jest.mock("../lib/api", () => ({ signup: (...args) => signup(...args) }));
+jest.mock("../lib/api", () => ({ signup: (...args) => signup(...args), googleLoginUrl: () => "/api/auth/google" }));
 
 const passwordInput = () => screen.getByLabelText("Password");
 const type = (password) => fireEvent.change(passwordInput(), { target: { value: password } });
@@ -116,5 +116,19 @@ describe("Signup password", () => {
     for (const event of ["paste", "copy", "cut"]) {
       expect(fireEvent[event](passwordInput(), { clipboardData: { getData: () => "pasted pass phrase" } })).toBe(true); // not prevented
     }
+  });
+});
+
+describe("Signup links", () => {
+  test("links to the login page for people who already have an account", () => {
+    render(<SignupPage />);
+    expect(screen.getByText(/Already have an account\?/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+  });
+
+  test("offers Continue with Google, like the login page", () => {
+    render(<SignupPage />);
+    expect(screen.getByText("or")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", "/api/auth/google");
   });
 });

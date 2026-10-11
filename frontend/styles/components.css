@@ -924,3 +924,20 @@ select.input {
 .symptoms-message {
   margin-top: var(--space-5);
 }
+
+/* ---------- Badge ---------- */
+/* A small calm label, e.g. "Coming soon" next to a heading. Teal on light teal (8.8:1), never red. */
+.badge {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0.125rem var(--space-2);
+  border: 0.0625rem solid var(--color-primary-line);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+  vertical-align: middle;
+  white-space: nowrap;
+}

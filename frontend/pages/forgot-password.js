@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState(""); const [message, setMessage] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
   async function submit(e) { e.preventDefault(); setError(""); setLoading(true); try { const result = await requestPasswordReset(email); setMessage(result.message); } catch (err) { setError(err.message); } finally { setLoading(false); } }
   return (
-    <PageLayout>
+    <PageLayout title="Reset your password">
       <PageTitle lead="Enter the email you signed up with. If it matches an account, we'll send you a link to choose a new password.">Reset your password</PageTitle>
       <form onSubmit={submit} className="form">
         <Input id="email" label="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />

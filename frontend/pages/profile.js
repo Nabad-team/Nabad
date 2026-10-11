@@ -237,7 +237,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <PageLayout header={<ProfileHeader />}>
+    <PageLayout title="My profile" header={<ProfileHeader />}>
       {/* The details on this page are always the account owner's, so explain that
           while acting as a dependent (the banner above names who is active). */}
       {activeProfile && !activeProfile.isSelf && (
