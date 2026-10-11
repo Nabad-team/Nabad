@@ -203,6 +203,7 @@ A small calm label next to a heading. Teal, never red: it informs, it doesn't wa
 
 ```jsx
 <h3>Find hospitals and clinics <Badge>Coming soon</Badge></h3>
+<Badge tone="neutral">Discontinued</Badge>   // gray, for things no longer current
 ```
 
 ### Card

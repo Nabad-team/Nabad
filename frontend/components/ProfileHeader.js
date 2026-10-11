@@ -135,6 +135,12 @@ export default function ProfileHeader({ showPicture = true }) {
 
           <nav aria-label="Account" className="site-nav">
             {signedIn && (
+              <a href="/medications" className="site-nav__link">
+                Medications
+              </a>
+            )}
+
+            {signedIn && (
               <a href="/security" className="site-nav__link">
                 Security
               </a>
