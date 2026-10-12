@@ -84,7 +84,7 @@ test("ON does not change accounts that already exist", async () => {
 });
 
 test("the setting is on only for exactly \"true\"; a missing value never blocks startup", () => {
-  const production = { APP_ENV: "production", MONGO_URI: "mongodb://localhost:27017", JWT_SECRET: "x".repeat(32), MONGO_DB_NAME: "nabad_production", CLIENT_ORIGIN: "https://nabad.example.test", SMTP_HOST: "h", SMTP_PORT: "2525", SMTP_USER: "u", SMTP_PASS: "p", EMAIL_FROM: "f", GOOGLE_REDIRECT_URI: "https://nabad.example.test/cb" };
+  const production = { APP_ENV: "production", MONGO_URI: "mongodb://localhost:27017", JWT_SECRET: "x".repeat(32), MONGO_DB_NAME: "nabad_production", CLIENT_ORIGIN: "https://nabad.example.test", SMTP_HOST: "h", SMTP_PORT: "2525", SMTP_USER: "u", SMTP_PASS: "p", EMAIL_FROM: "f", GOOGLE_REDIRECT_URI: "https://nabad.example.test/cb", TWO_FACTOR_CODE_SECRET: "k".repeat(32) };
   for (const value of [undefined, "", "false"]) {
     const env = value === undefined ? { ...production } : { ...production, TWO_FACTOR_ON_SIGNUP: value };
     assert.doesNotThrow(() => loadConfig(env), String(value));

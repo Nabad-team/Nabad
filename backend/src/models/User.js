@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema(
     twoFactorCodeExpires: { type: Date, default: null },
     twoFactorCodeAttempts: { type: Number, default: 0 },
     twoFactorCodeLastSent: { type: Date, default: null },
+    // Brute-force protection (twoFactorProtection.js), per account across every code:
+    // when each wrong sign-in code in the last hour was entered, when the 2FA step is locked until,
+    // and when each code in the last hour was sent.
+    twoFactorFailedAttempts: { type: [Date], default: [] },
+    twoFactorLockedUntil: { type: Date, default: null },
+    twoFactorCodeSends: { type: [Date], default: [] },
     // Browsers that passed 2FA with "remember this device". Only a hash of each random token is stored.
     trustedDevices: { type: [{ _id: false, tokenHash: { type: String, required: true }, expiresAt: { type: Date, required: true } }], default: [] },
   },
