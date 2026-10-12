@@ -12,9 +12,12 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { PersonWithPhone } from "../components/illustrations";
+import { useAccessibility } from "../context/AccessibilityContext";
 
 export default function SymptomsPage() {
   const { activeProfile } = useActiveProfile();
+  const { preferences } = useAccessibility();
+  const simplified = preferences.simplifiedMode;
   const [symptoms, setSymptoms] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -190,10 +193,10 @@ export default function SymptomsPage() {
 
   return (
     <PageLayout title="Enter symptoms" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>Enter symptoms</PageTitle>
+      <PageTitle>{simplified ? "Tell us how you feel" : "Enter symptoms"}</PageTitle>
 
       <p>
-        You are entering symptoms for:
+        {simplified ? "For: " : "You are entering symptoms for:"}
         <strong> {activeProfile.fullName}</strong>
       </p>
 
@@ -219,13 +222,15 @@ export default function SymptomsPage() {
 
           <p role="status" aria-live="polite" className="field__hint">
             {isListening
-              ? "Listening. Describe your symptoms, then stop listening when you are finished."
+              ? simplified
+                ? "Listening. Tap stop when finished."
+                : "Listening. Describe your symptoms, then stop listening when you are finished."
               : speechError}
           </p>
         </div>
 
         <div className="form-actions">
-          <Button type="submit">Submit symptoms</Button>
+          <Button type="submit">{simplified ? "Check" : "Submit symptoms"}</Button>
         </div>
       </form>
 

@@ -11,6 +11,7 @@ import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
+import { useAccessibility } from "../context/AccessibilityContext";
 import {
   MEDICATION_FORMS,
   getMedications,
@@ -107,6 +108,8 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
 
 export default function MedicationsPage() {
   const { activeProfile, error: profilesError } = useActiveProfile();
+  const { preferences } = useAccessibility();
+  const simplified = preferences.simplifiedMode;
   const [medications, setMedications] = useState(null);
   const [loadError, setLoadError] = useState("");
   // null, "add", or the id of the medication being edited. Only one form is open at a time.
@@ -203,9 +206,13 @@ export default function MedicationsPage() {
     <PageLayout title="Medications" header={<ProfileHeader showPicture={false} />}>
       {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
       {forSelf ? (
-        <PageTitle lead="Keep a list of the medicines you take, so it's ready when you see a doctor.">My medications</PageTitle>
+        <PageTitle lead={simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor."}>
+          {simplified ? "Medicines" : "My medications"}
+        </PageTitle>
       ) : (
-        <PageTitle lead={`Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`}>Medications for {name}</PageTitle>
+        <PageTitle lead={simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`}>
+          {simplified ? `Medicines for ${name}` : `Medications for ${name}`}
+        </PageTitle>
       )}
 
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
@@ -227,7 +234,7 @@ export default function MedicationsPage() {
             <MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} />
           ) : (
             <div className="medications-actions">
-              <Button onClick={() => open("add")}>Add medication</Button>
+              <Button onClick={() => open("add")}>{simplified ? "Add medicine" : "Add medication"}</Button>
             </div>
           )}
 

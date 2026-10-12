@@ -24,6 +24,7 @@ import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { TwoHearts } from "../components/illustrations";
 import AccessibilitySettings from "../components/AccessibilitySettings";
+import { useAccessibility } from "../context/AccessibilityContext";
 
 // Checks the form and returns an object of error messages, e.g. { phone: "..." }.
 // An empty object means everything is valid.
@@ -87,6 +88,8 @@ export default function ProfilePage() {
   // Linked profiles (dependents) come from the shared ActiveProfile context.
   const { selfProfile, activeProfile, linkedProfiles, switchProfile, refreshProfiles, resetActiveProfile } =
     useActiveProfile();
+  const { preferences } = useAccessibility();
+  const simplified = preferences.simplifiedMode;
   const [isAddingDependent, setIsAddingDependent] = useState(false);
   const [dependentForm, setDependentForm] = useState(EMPTY_DEPENDENT);
   const [dependentErrors, setDependentErrors] = useState({});
@@ -245,7 +248,7 @@ export default function ProfilePage() {
           You're managing {activeProfile.fullName}'s care. Account settings below belong to you.
         </p>
       )}
-      <PageTitle>My profile</PageTitle>
+      <PageTitle>{simplified ? "Profile" : "My profile"}</PageTitle>
 
       {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
       {!profile && !loadError && <HeartbeatLoader />}
@@ -254,7 +257,7 @@ export default function ProfilePage() {
 
       {profile && (
         <section aria-labelledby="owner-heading">
-          <h2 id="owner-heading">Account owner</h2>
+          <h2 id="owner-heading">{simplified ? "Your details" : "Account owner"}</h2>
 
           {!isEditing && (
             <>
@@ -264,7 +267,7 @@ export default function ProfilePage() {
                 <p><span className="details__label">Phone</span>{profile.phone || "Not set"}</p>
                 <p><span className="details__label">Date of birth</span>{profile.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not set"}</p>
               </div>
-              <Button variant="secondary" onClick={startEditing}>Edit</Button>
+              <Button variant="secondary" onClick={startEditing}>{simplified ? "Change" : "Edit"}</Button>
             </>
           )}
 
@@ -316,20 +319,22 @@ export default function ProfilePage() {
       )}
 
       <section className="section" aria-labelledby="security-heading">
-        <h2 id="security-heading">Account security</h2>
-        <p>Manage your sign-in verification settings.</p>
-        <a href="/security">Open security settings</a>
+        <h2 id="security-heading">{simplified ? "Sign-in safety" : "Account security"}</h2>
+        <p>{simplified ? "Keep your account safe." : "Manage your sign-in verification settings."}</p>
+        <a href="/security" aria-label={simplified ? "Open sign-in safety settings" : undefined}>
+          {simplified ? "Open safety settings" : "Open security settings"}
+        </a>
       </section>
 
       <AccessibilitySettings />
 
       <section className="section" aria-labelledby="linked-heading">
-        <h2 id="linked-heading">Linked profiles</h2>
+        <h2 id="linked-heading">{simplified ? "People you help" : "Linked profiles"}</h2>
         {dependentMessage && <Alert tone="success" as="p" role="status" className="profile-message">{dependentMessage}</Alert>}
 
         {linkedProfiles.length === 0 && (
           <EmptyState illustration={<TwoHearts size="5rem" />} title="No linked profiles yet.">
-            Add someone you look after. You can then switch to their profile from the menu at the top.
+            {simplified ? "Add a person you help." : "Add someone you look after. You can then switch to their profile from the menu at the top."}
           </EmptyState>
         )}
         {linkedProfiles.length > 0 && (
@@ -359,7 +364,7 @@ export default function ProfilePage() {
 
         {!isAddingDependent && (
           <Button variant="secondary" onClick={startAddingDependent} disabled={reachedLimit}>
-            Add dependent
+            {simplified ? "Add person" : "Add dependent"}
           </Button>
         )}
 
