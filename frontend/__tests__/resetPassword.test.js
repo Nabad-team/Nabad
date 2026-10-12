@@ -33,7 +33,7 @@ describe("Reset password", () => {
   test.each([
     ["short", "Your password needs at least 12 characters. A short sentence works great."],
     ["Password1234", "This password is too common and easy to guess. Please choose a different one."],
-    ["😀".repeat(19), "This password is too long. Please use a shorter one."],
+    ["😀".repeat(129), "Your password can be up to 128 characters. Please use a shorter one."],
   ])("explains %s on submit and does not send it", (password, message) => {
     render(<ResetPasswordPage />);
     type(password);

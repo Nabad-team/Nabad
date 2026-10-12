@@ -1,10 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const User = require("../models/User");
 const LinkedProfile = require("../models/LinkedProfile");
 const { deleteProfileData } = require("../profileData");
+const { checkUserPassword } = require("../passwordHashing");
+const { MAX_BYTES: MAX_PASSWORD_BYTES } = require("../passwordPolicy");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { normalizePhone, validPhone } = require("../models/contactSchema");
 const { cookieOptions, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
@@ -148,7 +149,7 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   if (!user) return;
   if (user.authProvider === "google") {
     if (typeof email !== "string" || email.trim().toLowerCase() !== user.email) return res.status(400).json({ error: "Email does not match." });
-  } else if (typeof password !== "string" || Buffer.byteLength(password) > 72 || !(await bcrypt.compare(password, user.passwordHash))) {
+  } else if (typeof password !== "string" || Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES || !(await checkUserPassword(user, password))) {
     return res.status(400).json({ error: "Password is incorrect." });
   }
   // Health data (the user's own and every dependent's: all of it is owned by the account) and linked profiles first:

@@ -5,6 +5,8 @@ const { logEvent } = require("./logger");
 const { missingGoogleCredentials } = require("./config");
 async function start() {
   const app = createApp();
+  // Made now rather than during the first sign-in (passwordHashing.js); a failure is retried on first use.
+  require("./passwordHashing").dummyHashes().catch(() => {});
   // createApp already rejected a half-configured pair, so here both are missing or neither is.
   const missingGoogle = missingGoogleCredentials();
   if (process.env.APP_ENV === "production" && missingGoogle.length) logEvent("google_signin_disabled", { missingVariables: missingGoogle });

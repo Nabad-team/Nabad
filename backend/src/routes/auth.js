@@ -1,13 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
-const { checkNewPassword, findPasswordProblem } = require("../passwordPolicy");
+const { checkNewPassword, findPasswordProblem, MAX_BYTES: MAX_PASSWORD_BYTES } = require("../passwordPolicy");
+const { hashPassword, checkUserPassword } = require("../passwordHashing");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
@@ -210,7 +210,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
     const breached = await checkNewPassword(password, { name, email: normalizedEmail }, { requestId: req.requestId });
     if (breached) return res.status(400).json({ error: breached.message });
     const verify = newEmailVerifyToken();
-    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await bcrypt.hash(password, 12), twoFactorEnabled: twoFactorOnSignup(), ...verify.fields });
+    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, passwordHash: await hashPassword(password), twoFactorEnabled: twoFactorOnSignup(), ...verify.fields });
     setAuthCookie(res, signAccessToken(user));
     res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, emailVerified: false } });
     // Sent after the response so a slow mail server never delays signup.
@@ -240,7 +240,7 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
         logEvent("google_signin_refused", { requestId: req.requestId, reason: existing.googleId ? "google_id_conflict" : "email_exists", userId: String(existing._id) });
         return res.redirect(process.env.CLIENT_ORIGIN + "/login?error=" + (existing.googleId ? "google_signin_failed" : "google_account_exists"));
       }
-      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", emailVerified: true, passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12) });
+      user = await User.create({ name: profile.name, email: profile.email, googleId: profile.googleId, authProvider: "google", emailVerified: true, passwordHash: await hashPassword(crypto.randomBytes(32).toString("hex")) });
     }
     // No email code here: Google has already verified the person, with its own 2-step verification.
     setAuthCookie(res, signAccessToken(user));
@@ -254,12 +254,19 @@ router.get("/google/callback", googleLimiter, async (req, res) => {
 router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (typeof email !== "string" || !email || typeof password !== "string" || !password || Buffer.byteLength(password) > 72) return res.status(400).json({ error: "Email and password are required." });
-    const user = await User.findOne({ email: String(email).trim().toLowerCase() });
+    if (typeof email !== "string" || !email || typeof password !== "string" || !password) return res.status(400).json({ error: "Email and password are required." });
     const genericError = { error: "Invalid email or password." };
-    if (!user) return res.status(401).json(genericError);
+    // Longer than any password can be: refused before any lookup or hashing, the same for every account.
+    if (Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES) return res.status(401).json(genericError);
+    const user = await User.findOne({ email: String(email).trim().toLowerCase() });
+    if (!user) {
+      // The same password work as for a real account (passwordHashing.js), so the time taken doesn't tell.
+      await checkUserPassword(null, password);
+      return res.status(401).json(genericError);
+    }
     if (user.isLocked()) return res.status(423).json({ error: "Account temporarily locked due to failed attempts. Try again later." });
-    if (!(await bcrypt.compare(password, user.passwordHash))) {
+    // An old bcrypt hash is replaced with Argon2id here, after a successful check. A failed one changes nothing.
+    if (!(await checkUserPassword(user, password))) {
       user.failedLoginAttempts += 1;
       if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) { user.lockUntil = new Date(Date.now() + LOCK_TIME_MS); user.failedLoginAttempts = 0; }
       await user.save();
@@ -322,7 +329,10 @@ router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
 router.post("/2fa/disable", codeLimiter, requireAuth, asyncRoute(async (req, res) => {
   const user = await User.findById(req.userId);
   if (!user || !user.twoFactorEnabled) return res.status(400).json({ error: "Two-factor authentication is not enabled." });
-  if (!(await bcrypt.compare(req.body.password || "", user.passwordHash))) return res.status(400).json({ error: "Password is incorrect." });
+  const password = req.body.password;
+  if (typeof password !== "string" || Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES || !(await checkUserPassword(user, password))) {
+    return res.status(400).json({ error: "Password is incorrect." });
+  }
   user.twoFactorEnabled = false; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
   user.trustedDevices = [];
   await user.save();
@@ -360,7 +370,7 @@ router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   if (!owner) return res.status(400).json(invalidLink);
   const weakPassword = await checkNewPassword(password, { name: owner.name, email: owner.email }, { requestId: req.requestId });
   if (weakPassword) return res.status(400).json({ error: weakPassword.message });
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await hashPassword(password);
   const user = await User.findOneAndUpdate(
     { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },
     { $set: { passwordHash, emailVerified: true, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [], twoFactorFailedAttempts: [], twoFactorLockedUntil: null }, $inc: { authVersion: 1 } }

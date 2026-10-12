@@ -8,6 +8,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../src/models/User");
 const { PASSWORD_MESSAGES } = require("../src/passwordPolicy");
+const { verifyPassword } = require("../src/passwordHashing");
 let mongod, server, base, ip = 0;
 const goodPassword = "my cat sleeps on the sofa";
 before(async () => {
@@ -37,8 +38,8 @@ async function resetLink({ name = "Sam Rivers", email = "sam.rivers@example.test
 const rejected = [
   ["too short", "short pass", "tooShort"],
   ["Leen's old 'strong' rule-follower that is too short", "Short1!Aa", "tooShort"],
-  ["too long for bcrypt", "a".repeat(73), "tooLong"],
-  ["too long in Arabic", "ب".repeat(37), "tooLong"],
+  ["longer than 128 characters", "a".repeat(129), "tooLong"],
+  ["longer than 128 characters in Arabic", "ب".repeat(129), "tooLong"],
   ["common", "password1234", "common"],
   ["common in a different case", "PassWord1234", "common"],
   ["contains the name", "sam likes long walks", "hasName"],
@@ -56,10 +57,10 @@ for (const [label, password, code] of rejected) {
 }
 
 test("signup accepts long passphrases with spaces, Arabic, and emoji, and no forced character mixes", async () => {
-  for (const [i, password] of [goodPassword, "قطتي تحب الشمس كثيرا", "🌙 quiet evening 🌟", "ALL CAPS NO DIGITS", "a".repeat(72)].entries()) {
+  for (const [i, password] of [goodPassword, "قطتي تحب الشمس كثيرا", "🌙 quiet evening 🌟", "ALL CAPS NO DIGITS", "a".repeat(128), "ب".repeat(128)].entries()) {
     const result = await signup(password, "Pat Kim", `pat${i}@example.test`);
     assert.equal(result.status, 201, password);
-    assert.equal(await bcrypt.compare(password, (await User.findOne({ email: `pat${i}@example.test` })).passwordHash), true);
+    assert.equal((await verifyPassword((await User.findOne({ email: `pat${i}@example.test` })).passwordHash, password)).ok, true);
   }
 });
 

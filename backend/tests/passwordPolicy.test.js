@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { checkNewPassword, findPasswordProblem, isBreachedPassword, breachCheckEnabled, PASSWORD_MESSAGES, COMMON_PASSWORDS } = require("../src/passwordPolicy");
+const { checkNewPassword, findPasswordProblem, isBreachedPassword, breachCheckEnabled, PASSWORD_MESSAGES, COMMON_PASSWORDS, MAX_BYTES } = require("../src/passwordPolicy");
 const { loadConfig } = require("../src/config");
 
 const code = (password, context) => findPasswordProblem(password, context)?.code ?? null;
@@ -43,13 +43,27 @@ test("rejects passwords shorter than 12 characters, and missing passwords", () =
   assert.equal(code("twelve chars"), null);
 });
 
-test("rejects passwords over bcrypt's 72-byte limit instead of cutting them short", () => {
-  assert.equal(code("a".repeat(72)), null);
-  assert.equal(code("a".repeat(73)), "tooLong");
-  assert.equal(code("ب".repeat(36)), null); // 2 bytes each
-  assert.equal(code("ب".repeat(37)), "tooLong");
-  assert.equal(code("😀".repeat(18)), null); // 4 bytes each
-  assert.equal(code("😀".repeat(19)), "tooLong");
+test("allows up to 128 characters in any script, counted after NFKC, and rejects longer", () => {
+  assert.equal(code("a".repeat(128)), null);
+  assert.equal(code("a".repeat(129)), "tooLong");
+  assert.equal(code("ب".repeat(128)), null); // 2 bytes each: well past bcrypt's old 72-byte limit
+  assert.equal(code("ب".repeat(129)), "tooLong");
+  assert.equal(code("😀".repeat(128)), null); // 4 bytes each, 512 bytes in all
+  assert.equal(code("😀".repeat(129)), "tooLong");
+  // "é" typed as e + combining accent is 2 code points, but 1 character after NFKC.
+  assert.equal(code("é".repeat(128)), null);
+  // One ligature that NFKC expands to 18 characters: 8 of them are 144 characters.
+  assert.equal(code("ﷺ".repeat(7)), null);
+  assert.equal(code("ﷺ".repeat(8)), "tooLong");
+});
+
+test("rejects a huge input by its size first, without normalizing it", () => {
+  assert.equal(MAX_BYTES, 1024);
+  assert.equal(code("a" + "́".repeat(600)), "tooLong"); // 1201 bytes
+  const huge = "x".repeat(5 * 1024 * 1024);
+  const started = performance.now();
+  assert.equal(code(huge), "tooLong");
+  assert.ok(performance.now() - started < 100, "a 5 MB input is refused at once");
 });
 
 test("bundles at least 10,000 common passwords and blocks them ignoring case", () => {
@@ -77,7 +91,7 @@ test("blocks the user's name, the name part of their email, and the word Nabad",
 test("gives a specific plain-language message for each problem", () => {
   const messages = Object.values(PASSWORD_MESSAGES);
   assert.equal(new Set(messages).size, messages.length);
-  assert.equal(PASSWORD_MESSAGES.tooLong, "This password is too long. Please use a shorter one.");
+  assert.equal(PASSWORD_MESSAGES.tooLong, "Your password can be up to 128 characters. Please use a shorter one.");
   for (const message of messages) assert.doesNotMatch(message, /byte|utf|bcrypt|hash|unicode|account/i);
   assert.deepEqual(findPasswordProblem("short"), { code: "tooShort", message: PASSWORD_MESSAGES.tooShort });
 });
