@@ -35,6 +35,9 @@ const PORT = process.env.LOADTEST_PORT || "5100";
     CLIENT_ORIGIN: "http://localhost:3000",
     SMTP_HOST: "", SMTP_USER: "", SMTP_PASS: "", MAIL_FROM: "", EMAIL_FROM: "",
     GOOGLE_CLIENT_ID: "", GOOGLE_CLIENT_SECRET: "", GOOGLE_REDIRECT_URI: "",
+    // No calls to Have I Been Pwned: a load test must not send thousands of requests to an outside service,
+    // and its network time would hide the server's own work.
+    PWNED_PASSWORDS_CHECK: "off",
   });
   const server = await require(path.join(backend, "src", "server.js")).start();
   console.error(`Load-test backend on http://localhost:${PORT} (database nabad_loadtest, rate limits relaxed)`);

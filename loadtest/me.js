@@ -13,7 +13,7 @@ export function setup() {
   const tokens = [];
   for (let i = 0; i < ACCOUNTS; i++) {
     const email = `lt-me-${i}-${Date.now()}@example.test`;
-    const res = http.post(`${API}/auth/signup`, JSON.stringify({ name: "Load Test", email, password: "Load test password 123!" }), { headers: JSON_HEADERS, tags: { name: "setup" } });
+    const res = http.post(`${API}/auth/signup`, JSON.stringify({ name: "Load Test", email, password: "quiet river morning 42" }), { headers: JSON_HEADERS, tags: { name: "setup" } });
     if (res.status !== 201) throw new Error(`setup signup failed: ${res.status}`);
     tokens.push(res.cookies.accessToken[0].value);
   }

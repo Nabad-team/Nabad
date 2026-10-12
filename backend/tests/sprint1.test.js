@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { verifyPassword } = require("../src/passwordHashing");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
@@ -51,7 +52,8 @@ test("existing signup supports multiple password-only users and rejects duplicat
   assert.equal((await request("/auth/signup",{body:{name:"Again",email:"ONE@example.test",password}})).status,409);
   const saved=await User.findOne({email:"one@example.test"});
   assert.equal(saved.googleId,undefined); assert.notEqual(saved.passwordHash,password);
-  assert.equal(await bcrypt.compare(password,saved.passwordHash),true);
+  assert.match(saved.passwordHash,/^\$argon2id\$v=19\$m=19456,t=2,p=1\$/);
+  assert.equal((await verifyPassword(saved.passwordHash,password)).ok,true);
 });
 test("login and me retain the existing frontend contract",async()=>{
   await user(); const login=await request("/auth/login",{body:{email:"elias@example.test",password}});
@@ -114,7 +116,7 @@ test("password reset consumes its token atomically and invalidates sessions and 
   const responses=await Promise.all([1,2].map(()=>request("/auth/reset-password",{body:{token:reset,password:"New password 123!"}})));
   assert.deepEqual(responses.map(x=>x.status).sort(),[200,400]);
   assert.equal((await request("/auth/me",{cookie})).status,401);
-  assert.equal(await bcrypt.compare("New password 123!",(await User.findById(account._id)).passwordHash),true);
+  assert.equal((await verifyPassword((await User.findById(account._id)).passwordHash,"New password 123!")).ok,true);
 });
 test("google sign-in answers 503 with a readable message when it is not configured",async()=>{
   delete process.env.GOOGLE_CLIENT_ID; delete process.env.GOOGLE_CLIENT_SECRET;

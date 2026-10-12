@@ -4,14 +4,16 @@
 import { LONG_COMMON_PASSWORDS } from "./commonPasswords";
 
 export const PASSWORD_MIN_LENGTH = 12;
-// bcrypt's limit. Deliberately not mentioned in the help text; only shown if someone reaches it.
-const PASSWORD_MAX_BYTES = 72;
+// Up to 128 characters (counted like the minimum), and a hard cap on the raw size, as in the backend.
+// Not mentioned in the help text; the message only shows if someone reaches it.
+export const PASSWORD_MAX_LENGTH = 128;
+const PASSWORD_MAX_BYTES = 1024;
 const MIN_PERSONAL_WORD = 3;
 export const PASSWORD_HELP = "Use at least 12 characters. A short sentence works great.";
 
 export const PASSWORD_MESSAGES = {
   tooShort: "Your password needs at least 12 characters. A short sentence works great.",
-  tooLong: "This password is too long. Please use a shorter one.",
+  tooLong: "Your password can be up to 128 characters. Please use a shorter one.",
   common: "This password is too common and easy to guess. Please choose a different one.",
   hasName: "Your password can't include your name. Please choose a different one.",
   hasEmail: "Your password can't include your email address. Please choose a different one.",
@@ -36,7 +38,7 @@ function personalWords(value) {
   return [whole, ...whole.split(/[^\p{L}\p{N}]+/u)].filter((word) => Array.from(word).length >= MIN_PERSONAL_WORD);
 }
 
-const isTooLong = (password) => utf8ByteLength(password) > PASSWORD_MAX_BYTES;
+const isTooLong = (password) => typeof password === "string" && (utf8ByteLength(password) > PASSWORD_MAX_BYTES || characterCount(password) > PASSWORD_MAX_LENGTH);
 const isCommon = (password) => COMMON_PASSWORDS.has(comparable(password));
 const hasName = (password, name) => personalWords(name).some((word) => comparable(password).includes(word));
 const hasEmail = (password, email) => personalWords(String(email || "").split("@")[0]).some((word) => comparable(password).includes(word));
@@ -45,8 +47,8 @@ const hasSiteName = (password) => comparable(password).includes("nabad");
 // null, or { code, message } for the first rule the password breaks. Same order as the backend.
 export function findPasswordProblem(password, { name, email } = {}) {
   const problem = (code) => ({ code, message: PASSWORD_MESSAGES[code] });
-  if (typeof password !== "string" || characterCount(password) < PASSWORD_MIN_LENGTH) return problem("tooShort");
   if (isTooLong(password)) return problem("tooLong");
+  if (typeof password !== "string" || characterCount(password) < PASSWORD_MIN_LENGTH) return problem("tooShort");
   if (isCommon(password)) return problem("common");
   if (hasName(password, name)) return problem("hasName");
   if (hasEmail(password, email)) return problem("hasEmail");
@@ -60,6 +62,8 @@ export function passwordChecklist(password, context) {
     { id: "length", label: "At least 12 characters", met: characterCount(password) >= PASSWORD_MIN_LENGTH },
     { id: "common", label: "Not a commonly used password", met: !isCommon(password) },
   ];
+  // Only once the password is over the limit, so the list never talks about a maximum before it matters.
+  if (isTooLong(password)) items.push({ id: "maxLength", label: `No more than ${PASSWORD_MAX_LENGTH} characters`, met: false });
   if (context) {
     items.push({ id: "personal", label: "Doesn't include your name, your email, or \"Nabad\"", met: !hasName(password, context.name) && !hasEmail(password, context.email) && !hasSiteName(password) });
   }

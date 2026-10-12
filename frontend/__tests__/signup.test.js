@@ -72,7 +72,7 @@ describe("Signup password", () => {
     ["password1234", "This password is too common and easy to guess. Please choose a different one."],
     ["sam goes hiking often", "Your password can't include your name. Please choose a different one."],
     ["my nabad heart app", "Your password can't include the word \"Nabad\". Please choose a different one."],
-    ["a".repeat(73), "This password is too long. Please use a shorter one."],
+    ["a".repeat(129), "Your password can be up to 128 characters. Please use a shorter one."],
   ])("explains %s in plain words on submit and does not send it", (password, message) => {
     render(<SignupPage />);
     fillIn({ password });
@@ -84,8 +84,10 @@ describe("Signup password", () => {
 
   test("shows only the short too-long message while typing, never bytes", () => {
     render(<SignupPage />);
-    type("ب".repeat(37));
-    expect(screen.getByRole("alert")).toHaveTextContent("This password is too long. Please use a shorter one.");
+    type("ب".repeat(72));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument(); // 144 bytes: fine now, no bcrypt limit
+    type("ب".repeat(129));
+    expect(screen.getByRole("alert")).toHaveTextContent("Your password can be up to 128 characters. Please use a shorter one.");
     expect(document.body).not.toHaveTextContent(/bytes|UTF-8/i);
   });
 

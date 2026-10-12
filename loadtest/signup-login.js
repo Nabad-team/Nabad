@@ -1,11 +1,12 @@
 // (2) New users signing up and then logging in, all at the same time.
-// Both steps hash or check the password with bcrypt (cost 12), the most CPU-heavy work in the backend.
+// Both steps hash or check the password (the most CPU-heavy work in the backend; see LOADTEST.md).
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { API, JSON_HEADERS, TIMEOUT, levelOptions, summaryTo } from "./lib.js";
 
 export const options = levelOptions(["signup", "login"]);
-const password = "Load test password 123!";
+// Must pass the password policy: not containing the name "Load Test" (or the request is refused in 3 ms).
+const password = "quiet river morning 42";
 
 export default function () {
   const email = `lt-${__VU}-${__ITER}-${Date.now()}@example.test`;
