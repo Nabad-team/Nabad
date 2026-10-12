@@ -1,5 +1,6 @@
 import Button from "./ui/Button";
 import ReadAloudButton from "./ReadAloudButton";
+import { useAccessibility } from "../context/AccessibilityContext";
 
 // SCRUM-128: shows the urgency classification returned by POST /api/triage/classify.
 // Answers the two questions in the story: "do I need care?" (label + action)
@@ -9,7 +10,9 @@ const LEVELS = ["emergency", "urgent", "soon", "routine"];
 
 // SCRUM-126: "preliminary" = follow-up questions are still open, so the level may still change.
 export default function UrgencyResult({ result, preliminary = false }) {
+  const { preferences } = useAccessibility();
   if (!result) return null;
+  const simplified = preferences.simplifiedMode;
   const level = LEVELS.includes(result.level) ? result.level : "routine";
   const isEmergency = result.level === "emergency";
   const spokenResult = [
@@ -19,6 +22,13 @@ export default function UrgencyResult({ result, preliminary = false }) {
     result.reasons?.length ? `Why: ${result.reasons.join(". ")}.` : "",
     result.disclaimer,
   ].filter(Boolean).join(" ");
+  const shortAction = isEmergency
+    ? "Call now"
+    : level === "urgent"
+      ? "Get help today"
+      : level === "soon"
+        ? "See a doctor soon"
+        : "You can monitor this";
 
   return (
     <section
@@ -30,6 +40,7 @@ export default function UrgencyResult({ result, preliminary = false }) {
       <h2 id="urgency-heading">
         {preliminary ? "Urgency so far" : "Urgency"}: {result.label}
       </h2>
+      {simplified && <p className="urgency__summary"><strong>{shortAction}</strong></p>}
       {preliminary && <p>Answer the questions below to make this more accurate.</p>}
       {!preliminary && result.confidence === "refined" && <p>Updated using your answers.</p>}
       <p>

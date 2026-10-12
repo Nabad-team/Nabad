@@ -288,6 +288,15 @@ html[data-simplified-mode="true"] .check-in > p {
   max-width: 30rem;
 }
 
+html[data-simplified-mode="true"] .simplified-only-text {
+  font-size: var(--text-lg);
+}
+
+html[data-simplified-mode="true"] .urgency__summary {
+  font-size: var(--text-xl);
+  margin-block: var(--space-4);
+}
+
 /* ---------- Forms ---------- */
 
 .form {

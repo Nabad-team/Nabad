@@ -5,18 +5,19 @@ import Button from "./ui/Button";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useSignedIn } from "./SessionTimeout";
 import { signOut } from "../lib/session";
+import { useAccessibility } from "../context/AccessibilityContext";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 export const MAIN_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/my-health", label: "My health" },
-  { href: "/medications", label: "Medications" },
-  { href: "/water-and-sleep", label: "Water and sleep" },
+  { href: "/dashboard", label: "Dashboard", shortLabel: "Home" },
+  { href: "/my-health", label: "My health", shortLabel: "Health" },
+  { href: "/medications", label: "Medications", shortLabel: "Medicines" },
+  { href: "/water-and-sleep", label: "Water and sleep", shortLabel: "Water & sleep" },
 ];
 // Pages about the account itself, in the account menu.
 export const ACCOUNT_LINKS = [
-  { href: "/profile", label: "My profile" },
-  { href: "/security", label: "Security" },
+  { href: "/profile", label: "My profile", shortLabel: "Profile" },
+  { href: "/security", label: "Security", shortLabel: "Security" },
 ];
 
 // A button that shows and hides a panel (the "disclosure" pattern, which suits navigation links better
@@ -65,12 +66,18 @@ function useCurrentPath() {
   return path;
 }
 
-function NavLinks({ links, path, className }) {
+function NavLinks({ links, path, className, simplified = false }) {
   return (
     <ul className={className}>
-      {links.map(({ href, label }) => (
+      {links.map(({ href, label, shortLabel }) => (
         <li key={href}>
-          <a href={href} aria-current={path === href ? "page" : undefined}>{label}</a>
+          <a
+            href={href}
+            aria-current={path === href ? "page" : undefined}
+            aria-label={simplified ? label : undefined}
+          >
+            {simplified ? shortLabel : label}
+          </a>
         </li>
       ))}
     </ul>
@@ -106,6 +113,7 @@ function ProfileSwitcher({ id, showLabel }) {
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
 export default function AppHeader() {
   const { selfProfile } = useActiveProfile() || {};
+  const { preferences } = useAccessibility();
   const signedIn = useSignedIn();
   const path = useCurrentPath();
   const account = useDisclosure();
@@ -119,7 +127,7 @@ export default function AppHeader() {
 
         {signedIn && (
           <nav aria-label="Main" className="app-nav app-header__desktop">
-            <NavLinks links={MAIN_LINKS} path={path} className="app-nav__list" />
+            <NavLinks links={MAIN_LINKS} path={path} className="app-nav__list" simplified={preferences.simplifiedMode} />
           </nav>
         )}
 
@@ -153,7 +161,7 @@ export default function AppHeader() {
                     </p>
                   )}
                   <nav aria-label="Account">
-                    <NavLinks links={ACCOUNT_LINKS} path={path} className="account-menu__list" />
+                    <NavLinks links={ACCOUNT_LINKS} path={path} className="account-menu__list" simplified={preferences.simplifiedMode} />
                   </nav>
                   <Button variant="secondary" size="small" block onClick={() => signOut()}>Sign out</Button>
                 </div>
@@ -181,11 +189,11 @@ export default function AppHeader() {
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
           <div className="container">
             <nav aria-label="Main">
-              <NavLinks links={MAIN_LINKS} path={path} className="mobile-menu__list" />
+              <NavLinks links={MAIN_LINKS} path={path} className="mobile-menu__list" simplified={preferences.simplifiedMode} />
             </nav>
             <ProfileSwitcher id="profile-switcher-mobile" showLabel />
             <nav aria-label="Account">
-              <NavLinks links={ACCOUNT_LINKS} path={path} className="mobile-menu__list" />
+              <NavLinks links={ACCOUNT_LINKS} path={path} className="mobile-menu__list" simplified={preferences.simplifiedMode} />
             </nav>
             <Button variant="secondary" block onClick={() => signOut()}>Sign out</Button>
           </div>

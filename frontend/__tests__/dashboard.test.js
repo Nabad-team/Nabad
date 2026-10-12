@@ -4,6 +4,7 @@
 import { render, screen, act, within, fireEvent } from "@testing-library/react";
 import DashboardPage from "../pages/dashboard";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
+import { AccessibilityProvider } from "../context/AccessibilityContext";
 import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fakeWellbeing from "../test-utils/fakeWellbeingApi";
@@ -34,9 +35,11 @@ jest.mock("../components/SessionTimeout", () => ({
 // The dashboard reads the active profile from the provider, just like in _app.js.
 function renderDashboard() {
   return render(
-    <ActiveProfileProvider>
-      <DashboardPage />
-    </ActiveProfileProvider>
+    <AccessibilityProvider>
+      <ActiveProfileProvider>
+        <DashboardPage />
+      </ActiveProfileProvider>
+    </AccessibilityProvider>
   );
 }
 
@@ -182,6 +185,20 @@ describe("Dashboard Page", () => {
     expect(
       screen.getByRole("link", { name: "Speak your symptoms" })
     ).toHaveAttribute("href", "/symptoms?voice=1");
+  });
+
+  test("uses short labels in simplified mode while keeping accessible names", async () => {
+    localStorage.setItem(
+      "nabad-accessibility-preferences",
+      JSON.stringify({ simplifiedMode: true })
+    );
+
+    renderDashboard();
+
+    expect(await screen.findByRole("heading", { name: "How do you feel?" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open safety check" })).toHaveTextContent("Safety");
+    expect(screen.getByRole("link", { name: "Open medications" })).toHaveTextContent("Medicines");
+    expect(screen.getByRole("link", { name: "Open my profile" })).toHaveTextContent("Profile");
   });
 
   test("shows today's water and last night's sleep on the Water and sleep card", async () => {

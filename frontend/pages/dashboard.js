@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
+import { useAccessibility } from "../context/AccessibilityContext";
 
 // "Rana Haddad" -> "Rana": a greeting uses the first name only.
 function firstName(fullName) {
@@ -48,6 +49,8 @@ function MicrophoneIcon() {
 export default function DashboardPage() {
   // The active profile (you or a dependent) is loaded by ActiveProfileProvider in _app.js.
   const { activeProfile, error, loading } = useActiveProfile();
+  const { preferences } = useAccessibility();
+  const simplified = preferences.simplifiedMode;
 
   return (
     // The picture controls stay on the profile page; the dashboard keeps to what you came to do.
@@ -57,8 +60,10 @@ export default function DashboardPage() {
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loading && <HeartbeatLoader />}
       <section className="check-in" aria-labelledby="check-in-heading">
-        <h2 id="check-in-heading">Check how you're feeling</h2>
-        <p>Describe your symptoms in your own words. Type them, or speak if that's easier.</p>
+        <h2 id="check-in-heading">{simplified ? "How do you feel?" : "Check how you're feeling"}</h2>
+        <p className={simplified ? "simplified-only-text" : ""}>
+          {simplified ? "Choose how to tell us." : "Describe your symptoms in your own words. Type them, or speak if that's easier."}
+        </p>
         <div className="button-row">
           <Button href="/symptoms" aria-label="Type your symptoms">
             <KeyboardIcon />
@@ -74,11 +79,17 @@ export default function DashboardPage() {
       {activeProfile && <HealthCard />}
       {activeProfile && <WellbeingCard />}
       <section className="section" aria-labelledby="account-heading">
-        <h2 id="account-heading">Your account</h2>
+        <h2 id="account-heading">{simplified ? "More" : "Your account"}</h2>
         <div className="button-row">
-          <Button variant="secondary" href="/triage">Safety check</Button>
-          <Button variant="secondary" href="/medications">Medications</Button>
-          <Button variant="secondary" href="/profile">My profile</Button>
+          <Button variant="secondary" href="/triage" aria-label={simplified ? "Open safety check" : undefined}>
+            {simplified ? "Safety" : "Safety check"}
+          </Button>
+          <Button variant="secondary" href="/medications" aria-label={simplified ? "Open medications" : undefined}>
+            {simplified ? "Medicines" : "Medications"}
+          </Button>
+          <Button variant="secondary" href="/profile" aria-label={simplified ? "Open my profile" : undefined}>
+            {simplified ? "Profile" : "My profile"}
+          </Button>
         </div>
       </section>
     </PageLayout>
