@@ -5,14 +5,35 @@ const redactCredentials = (text) => String(text).replace(/\/\/\S*@/g, "//***@");
 // errorMessage is for startup failures only and always has connection-string credentials redacted.
 function logEvent(event, fields = {}) {
   const entry = { time: new Date().toISOString(), event };
-  for (const key of ["requestId", "method", "route", "status", "durationMs", "errorType", "errorCode", "environment", "missingVariables", "reason", "userId", "origin"]) {
+  for (const key of ["requestId", "method", "route", "status", "durationMs", "errorType", "errorCode", "environment", "missingVariables", "reason", "userId", "origin", "errorFields"]) {
     if (fields[key] !== undefined) entry[key] = fields[key];
   }
   if (fields.errorMessage !== undefined) entry.errorMessage = redactCredentials(fields.errorMessage);
   process.stdout.write(JSON.stringify(entry) + "\n");
 }
+// What is safe to log about an error: never its message, which can echo the value that failed (health data in a
+// validation or cast error) or a server response. Only JWT's own fixed messages ("jwt malformed", "invalid
+// signature") are kept as the reason; for Mongoose errors, the field names and the kind of problem.
+const WORDS_ONLY = /^[a-z][a-z ]{0,60}$/i;
+const JWT_ERRORS = ["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"];
+function errorDetails(error) {
+  const details = { errorType: error?.name || "Error" };
+  if (error?.code !== undefined && /^[\w.-]{1,40}$/.test(String(error.code))) details.errorCode = error.code;
+  if (error?.name === "ValidationError" && error.errors) {
+    details.errorFields = Object.keys(error.errors).slice(0, 20).join(",");
+    details.reason = [...new Set(Object.values(error.errors).map((item) => item.kind || item.name))].join(",").slice(0, 100);
+  } else if (error?.name === "CastError") {
+    details.errorFields = String(error.path || "");
+    details.reason = `cast_to_${String(error.kind || "value").toLowerCase()}`.replace(/[^a-z_]/g, "");
+  } else if (error?.codeName && WORDS_ONLY.test(error.codeName)) {
+    details.reason = error.codeName;
+  } else if (JWT_ERRORS.includes(error?.name) && typeof error.message === "string" && WORDS_ONLY.test(error.message)) {
+    details.reason = error.message;
+  }
+  return details;
+}
 function logError(req, error) {
-  logEvent("request_error", { requestId: req?.requestId, errorType: error?.name || "Error" });
+  logEvent("request_error", { requestId: req?.requestId, ...errorDetails(error) });
 }
 function requestLogger(req, res, next) {
   req.requestId = crypto.randomUUID();
@@ -25,10 +46,16 @@ function requestLogger(req, res, next) {
   }));
   next();
 }
+const INVALID_DETAILS = "Some of the details aren't valid. Please check them and try again.";
 function errorHandler(error, req, res, next) {
   logError(req, error);
   if (res.headersSent) return next(error);
+  // A Mongoose validation or cast error that got this far comes from a value in the request: answer 400 in plain
+  // words, never with Mongoose's own message (it repeats the value).
+  if (error.name === "ValidationError" || error.name === "CastError") {
+    return res.status(400).json({ error: INVALID_DETAILS, requestId: req.requestId });
+  }
   const status = error.type === "entity.too.large" ? 413 : error.type === "entity.parse.failed" ? 400 : 500;
   res.status(status).json({ error: status === 500 ? "An internal error occurred." : "Invalid request body.", requestId: req.requestId });
 }
-module.exports = { logEvent, logError, requestLogger, errorHandler };
+module.exports = { logEvent, logError, errorDetails, requestLogger, errorHandler, INVALID_DETAILS };

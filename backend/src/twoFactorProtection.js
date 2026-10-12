@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const User = require("./models/User");
+const { UserError } = require("./userError");
 
 // Brute-force protection for the email sign-in code (2FA), per account and stored in the database, so it
 // holds across restarts, deploys, several server instances and any number of IP addresses:
@@ -34,7 +35,7 @@ function codeMatches(code, storedHash) {
 }
 
 const isLocked = (user, now = Date.now()) => Boolean(user.twoFactorLockedUntil && user.twoFactorLockedUntil.getTime() > now);
-const lockedError = () => Object.assign(new Error(LOCKED_MESSAGE), { status: 429, retryAfter: LOCK_MS / 1000 });
+const lockedError = () => new UserError(LOCKED_MESSAGE, 429, { retryAfter: LOCK_MS / 1000 });
 
 // Records one wrong code. Returns true only for the request that started a lockout (so the alert email is
 // sent once per lockout), false otherwise. The counter is emptied when the lock starts: after it ends, the
@@ -74,9 +75,9 @@ async function reserveCodeSend(userId) {
   const user = await User.findById(userId).select("twoFactorCodeSends");
   const oldest = Math.min(...(user?.twoFactorCodeSends || [now]).map((date) => date.getTime()));
   const waitMs = oldest + HOUR_MS - now.getTime();
-  throw Object.assign(
-    new Error(`For your security, we send at most ${MAX_SENDS_PER_HOUR} codes an hour. You can request a new code in ${minutesText(waitMs)}.`),
-    { status: 429, retryAfter: Math.max(1, Math.ceil(waitMs / 1000)) },
+  throw new UserError(
+    `For your security, we send at most ${MAX_SENDS_PER_HOUR} codes an hour. You can request a new code in ${minutesText(waitMs)}.`,
+    429, { retryAfter: Math.max(1, Math.ceil(waitMs / 1000)) },
   );
 }
 
