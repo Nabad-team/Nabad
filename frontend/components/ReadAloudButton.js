@@ -3,7 +3,10 @@ import Button from "./ui/Button";
 
 export default function ReadAloudButton({ text }) {
   const [speaking, setSpeaking] = useState(false);
-  const supported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const supported =
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    typeof window.SpeechSynthesisUtterance === "function";
 
   useEffect(() => () => {
     if (typeof window !== "undefined") window.speechSynthesis?.cancel();
@@ -18,7 +21,7 @@ export default function ReadAloudButton({ text }) {
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new window.SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);

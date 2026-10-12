@@ -7,6 +7,7 @@ import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import ReadAloudButton from "../components/ReadAloudButton";
 
 export default function TriagePage() {
   const { activeProfile } = useActiveProfile();
@@ -28,6 +29,21 @@ export default function TriagePage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function spokenResult(resultToRead) {
+    return [
+      `Safety check result: ${resultToRead.level}.`,
+      resultToRead.disclaimer,
+      resultToRead.guidance,
+      resultToRead.routing
+        ? `${resultToRead.routing.contactName}${
+            resultToRead.routing.contactNumber
+              ? `: ${resultToRead.routing.contactNumber}.`
+              : "."
+          } ${resultToRead.routing.instructions}`
+        : "",
+    ].filter(Boolean).join(" ");
   }
 
   return (
@@ -72,6 +88,9 @@ export default function TriagePage() {
               {result.routing.instructions}
             </p>
           )}
+          <p>
+            <ReadAloudButton text={spokenResult(result)} />
+          </p>
         </section>
       )}
     </PageLayout>

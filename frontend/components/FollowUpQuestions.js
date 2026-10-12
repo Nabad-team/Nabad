@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Button from "./ui/Button";
 import Card from "./ui/Card";
+import ReadAloudButton from "./ReadAloudButton";
 
 export default function FollowUpQuestions({ questions, onSubmit, onSkip, busy }) {
   const [answers, setAnswers] = useState({});
@@ -11,6 +12,12 @@ export default function FollowUpQuestions({ questions, onSubmit, onSkip, busy })
   if (!questions?.length) return null;
 
   const answeredCount = Object.keys(answers).length;
+  const spokenQuestions = questions
+    .map((question, index) => {
+      const options = question.options.map((option) => option.label).join(", ");
+      return `Question ${index + 1}: ${question.text}. Options: ${options}.`;
+    })
+    .join(" ");
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -21,6 +28,9 @@ export default function FollowUpQuestions({ questions, onSubmit, onSkip, busy })
     <Card as="form" onSubmit={handleSubmit} aria-labelledby="follow-up-heading" className="follow-up">
       <h2 id="follow-up-heading">A few quick questions</h2>
       <p className="text-muted">Your answers make the urgency level more accurate. Skip any you are not sure about.</p>
+      <p>
+        <ReadAloudButton text={spokenQuestions} />
+      </p>
 
       {questions.map((question) => (
         <fieldset key={question.id} className="choice-group">
