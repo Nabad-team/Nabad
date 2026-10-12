@@ -1402,3 +1402,114 @@ select.input {
 .week-chart__table thead th {
   color: var(--color-text-muted);
 }
+
+/* ---------- My health ---------- */
+
+/* Rows of health information: the label, the value, where it came from, and the actions. */
+.health-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  border-top: 0.0625rem solid var(--color-border);
+}
+
+.health-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding-block: var(--space-4);
+  border-bottom: 0.0625rem solid var(--color-border);
+}
+
+.health-item--editing {
+  display: block;
+}
+
+.health-item__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.health-item__label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.health-item__value {
+  font-weight: var(--weight-semibold);
+}
+
+.health-item__value.text-muted {
+  font-weight: var(--weight-regular);
+}
+
+.health-item__source {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.health-subheading {
+  margin-top: var(--space-6);
+}
+
+.health-checklist {
+  margin-bottom: 0;
+}
+
+/* The source line sits under the checkbox's label, lined up with its text. */
+.health-checklist__item .health-item__source {
+  display: block;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-2) calc(1.25rem + var(--space-3));
+}
+
+/* "Nabad knows you better": five calm teal dots, filled for each basic. Never red. */
+.knows-you {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 0.0625rem solid var(--color-primary-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.knows-you > p {
+  margin: 0;
+}
+
+.knows-you__dots {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.knows-you__dot {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 0.125rem solid var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.knows-you__dot--filled {
+  background: var(--color-primary);
+}
+
+/* The summary exactly as Nabad's guidance receives it: plain text, line by line. */
+.health-summary {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-sunken);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -34,6 +34,7 @@ function createApp() {
   app.use("/api/profile", require("./routes/profile"));
   app.use("/api/medications", require("./routes/medications"));
   app.use("/api/wellbeing", require("./routes/wellbeing"));
+  app.use("/api/health-profile", require("./routes/healthProfile"));
   app.use("/api/triage", require("./routes/triage"));
   app.use((req, res) => res.status(404).json({ error: "Route not found." }));
   app.use(errorHandler);

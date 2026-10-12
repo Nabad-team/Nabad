@@ -9,6 +9,7 @@ import { signOut } from "../lib/session";
 // The main sections, in the order they appear. A new top-level page goes here.
 export const MAIN_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/my-health", label: "My health" },
   { href: "/medications", label: "Medications" },
   { href: "/water-and-sleep", label: "Water and sleep" },
 ];

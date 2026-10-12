@@ -5,6 +5,7 @@ import DashboardPage from "../pages/dashboard";
 import ProfilePage from "../pages/profile";
 import SecurityPage from "../pages/security";
 import OnboardingPage from "../pages/onboarding";
+import MyHealthPage from "../pages/my-health";
 import HomePage from "../pages/index";
 import LoginPage from "../pages/login";
 import SignupPage from "../pages/signup";
@@ -121,6 +122,7 @@ describe("Pages that need sign-in", () => {
     ["/profile", ProfilePage],
     ["/security", SecurityPage],
     ["/onboarding", OnboardingPage],
+    ["/my-health", MyHealthPage],
   ])("the real %s page sends a signed-out visitor to log in without showing anything", async (path, Page) => {
     asPath = path;
     getSession.mockImplementation(signedOut);

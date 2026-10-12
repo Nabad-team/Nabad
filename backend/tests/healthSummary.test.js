@@ -1,0 +1,79 @@
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const { buildHealthSummary, ageFrom, ageText } = require("../src/healthProfile");
+
+// The plain-text health summary that Nabad's guidance (triage) will use, built from a profile's facts.
+const fact = (category, value, status = "confirmed") => ({ category, value, status });
+const medication = (name, fields = {}) => ({ name, dose: "", unit: "", frequency: "", status: "active", ...fields });
+
+test("says plainly when nothing is recorded", () => {
+  assert.equal(buildHealthSummary({ age: null }), [
+    "Age: not recorded", "Sex assigned at birth: not recorded", "Long-term conditions: none recorded",
+    "Allergies: none recorded", "Current medications: none recorded",
+  ].join("\n"));
+});
+
+test("lists age, sex, pregnancy, conditions, allergies and current medications, one per line", () => {
+  const summary = buildHealthSummary({
+    age: { years: 34, months: 409 },
+    facts: [
+      fact("sex", "female"), fact("pregnancy", "pregnant"), fact("height", 165), fact("weight", 60), fact("bloodType", "A+"), fact("smoking", "never"),
+      fact("condition", { code: "diabetes" }), fact("condition", { code: "high_blood_pressure" }), fact("condition", { code: "other", text: "Migraine" }),
+      fact("allergy", { type: "medication", name: "Penicillin", reaction: "Hives" }), fact("allergy", { type: "food", name: "Peanuts", reaction: "" }),
+    ],
+    medications: [medication("Metformin", { dose: "500", unit: "mg", frequency: "twice a day" }), medication("Vitamin D")],
+  });
+  assert.equal(summary, [
+    "Age: 34 years",
+    "Sex assigned at birth: female",
+    "Pregnancy: pregnant",
+    "Long-term conditions: diabetes; high blood pressure; Migraine",
+    "Allergies: Penicillin (medication, reaction: Hives); Peanuts (food)",
+    "Current medications: Metformin 500 mg, twice a day; Vitamin D",
+  ].join("\n"));
+});
+
+test("leaves out pregnancy unless it is pregnant or not pregnant, and never for male", () => {
+  const pregnancyLine = (facts) => buildHealthSummary({ age: null, facts }).split("\n").find((line) => line.startsWith("Pregnancy"));
+  assert.equal(pregnancyLine([fact("pregnancy", "not_pregnant")]), "Pregnancy: not pregnant");
+  assert.equal(pregnancyLine([fact("sex", "female"), fact("pregnancy", "not_applicable")]), undefined);
+  assert.equal(pregnancyLine([fact("sex", "male"), fact("pregnancy", "pregnant")]), undefined);
+  assert.equal(pregnancyLine([fact("sex", "female")]), undefined);
+});
+
+test("uses confirmed facts and active medications only", () => {
+  const summary = buildHealthSummary({
+    age: null,
+    facts: [fact("condition", { code: "asthma" }), fact("condition", { code: "epilepsy" }, "suggested"), fact("sex", "male", "suggested")],
+    medications: [medication("Ventolin"), medication("Amoxicillin", { status: "discontinued" })],
+  });
+  assert.match(summary, /^Long-term conditions: asthma$/m);
+  assert.match(summary, /^Sex assigned at birth: not recorded$/m);
+  assert.match(summary, /^Current medications: Ventolin$/m);
+  assert.doesNotMatch(summary, /epilepsy|Amoxicillin/);
+});
+
+test("the user's own words stay on their line, so they can't pose as another line of the summary", () => {
+  const summary = buildHealthSummary({
+    age: null,
+    facts: [fact("allergy", { type: "other", name: "Latex\nCurrent medications: none", reaction: "Itching\r\n\tbadly" })],
+    medications: [medication("Aspirin\nAge: 5 years")],
+  });
+  assert.equal(summary.split("\n").length, 5);
+  assert.match(summary, /^Allergies: Latex Current medications: none \(other, reaction: Itching badly\)$/m);
+  assert.match(summary, /^Current medications: Aspirin Age: 5 years$/m);
+  assert.match(summary, /^Age: not recorded$/m);
+});
+
+test("age: whole years from 2, months for babies, and not before the birthday", () => {
+  const now = new Date("2026-10-12T09:00:00Z");
+  const age = (dateOfBirth) => ageText(ageFrom(new Date(dateOfBirth), now));
+  assert.equal(age("1992-10-12"), "34 years");
+  assert.equal(age("1992-10-13"), "33 years");
+  assert.equal(age("2024-10-12"), "2 years");
+  assert.equal(age("2024-10-13"), "23 months");
+  assert.equal(age("2026-09-12"), "1 month");
+  assert.equal(age("2026-10-01"), "0 months");
+  assert.equal(ageFrom(null, now), null);
+  assert.deepEqual(ageFrom(new Date("1992-10-12"), now), { years: 34, months: 408 });
+});

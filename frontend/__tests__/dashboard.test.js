@@ -7,6 +7,7 @@ import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fakeWellbeing from "../test-utils/fakeWellbeingApi";
+import * as fakeHealth from "../test-utils/fakeHealthProfileApi";
 import { todayString } from "../lib/dates";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
 
@@ -17,6 +18,8 @@ jest.setTimeout(PAGE_FLOW_TIMEOUT);
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 // The Water and sleep card reads today from an in-memory fake too.
 jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
+// So does the My health card.
+jest.mock("../lib/healthProfileApi", () => require("../test-utils/fakeHealthProfileApi"));
 // A fixed "today", so a run that crosses midnight can't have the card and the test disagree on the date.
 jest.mock("../lib/dates", () => ({ ...jest.requireActual("../lib/dates"), todayString: () => "2026-10-12" }));
 
@@ -43,6 +46,7 @@ describe("Dashboard Page", () => {
     localStorage.clear();
     fakeProfileApi.resetFakeProfiles();
     fakeWellbeing.resetFakeWellbeing();
+    fakeHealth.resetFakeHealth();
     mockStatus = "signedIn";
   });
 
@@ -199,5 +203,26 @@ describe("Dashboard Page", () => {
     const card = await screen.findByRole("region", { name: "Water and sleep" });
     expect(await within(card).findByText("2 of 6 glasses")).toBeInTheDocument();
     expect(within(card).getByText("Not logged yet")).toBeInTheDocument();
+  });
+
+  test("the My health card counts the basics gently and links to My health", async () => {
+    fakeHealth.seedFact("self", "sex", "female");
+    fakeHealth.seedFact("self", "bloodType", "unknown");
+    renderDashboard();
+
+    const card = await screen.findByRole("region", { name: "My health" });
+    expect(await within(card).findByText("Nabad knows you better: 2 of 5 basics filled in.")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
+  });
+
+  test("the My health card follows the active profile", async () => {
+    const child = await addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
+    fakeHealth.seedAge(child.id, "2018-04-02", 8);
+    localStorage.setItem("nabad-active-profile-id", child.id);
+    renderDashboard();
+
+    const card = await screen.findByRole("region", { name: "My health" });
+    expect(await within(card).findByText("Nabad knows Sami Haddad better: 1 of 5 basics filled in.")).toBeInTheDocument();
+    expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 });

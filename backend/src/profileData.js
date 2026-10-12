@@ -1,9 +1,10 @@
 const Medication = require("./models/Medication");
+const HealthFact = require("./models/HealthFact");
 const { HydrationEntry, SleepEntry, WellbeingSettings } = require("./models/Wellbeing");
 
 // Every kind of health data stored per profile. A new per-profile model goes here, so removing a
 // dependent and deleting an account can never leave it behind.
-const PROFILE_MODELS = [Medication, HydrationEntry, SleepEntry, WellbeingSettings];
+const PROFILE_MODELS = [Medication, HydrationEntry, SleepEntry, WellbeingSettings, HealthFact];
 
 // Deletes the health data of one profile (pass profileId) or of the whole account (all profiles it owns).
 async function deleteProfileData(owner, profileId) {

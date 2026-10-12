@@ -1,6 +1,7 @@
 import ProfileHeader from "../components/ProfileHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCard from "../components/WellbeingCard";
+import HealthCard from "../components/HealthCard";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
@@ -70,6 +71,7 @@ export default function DashboardPage() {
           </Button>
         </div>
       </section>
+      {activeProfile && <HealthCard />}
       {activeProfile && <WellbeingCard />}
       <section className="section" aria-labelledby="account-heading">
         <h2 id="account-heading">Your account</h2>
