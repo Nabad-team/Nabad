@@ -102,28 +102,28 @@
   :root {
     --page-gutter: 2rem;
   }
+}
 
-  html[data-text-size="large"] {
-    font-size: 112.5%;
-  }
+html[data-text-size="large"] {
+  font-size: 112.5%;
+}
 
-  html[data-text-size="extra-large"] {
-    font-size: 125%;
-  }
+html[data-text-size="extra-large"] {
+  font-size: 125%;
+}
 
-  html[data-high-contrast="true"] {
-    --color-bg: #ffffff;
-    --color-surface: #ffffff;
-    --color-sunken: #eeeeee;
-    --color-text: #000000;
-    --color-text-muted: #252525;
-    --color-placeholder: #303030;
-    --color-border: #505050;
-    --color-border-strong: #000000;
-    --color-primary: #005a54;
-    --color-primary-hover: #003d39;
-    --color-primary-strong: #003b37;
-    --color-primary-soft: #e6fffc;
-    --color-primary-line: #006e67;
-  }
+html[data-high-contrast="true"] {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-sunken: #eeeeee;
+  --color-text: #000000;
+  --color-text-muted: #252525;
+  --color-placeholder: #303030;
+  --color-border: #505050;
+  --color-border-strong: #000000;
+  --color-primary: #005a54;
+  --color-primary-hover: #003d39;
+  --color-primary-strong: #003b37;
+  --color-primary-soft: #e6fffc;
+  --color-primary-line: #006e67;
 }
