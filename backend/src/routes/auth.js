@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
@@ -12,6 +13,7 @@ const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
 const { cookieOptions, twoFactorOnSignup, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
 const { logEvent, logError } = require("../logger");
+const { UserError, sendError } = require("../userError");
 const { hashCode, codeMatches, isLocked, lockedError, recordWrongCode, reserveCodeSend, lockoutAlert } = require("../twoFactorProtection");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
@@ -39,7 +41,7 @@ const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { 
 function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
 function mailer() {
   const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new Error("Email delivery is not configured.");
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new UserError("Sending email is temporarily unavailable. Please try again later.", 503);
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", requireTLS: cookieOptions().secure,
     connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS,
@@ -58,10 +60,8 @@ function generateTwoFactorCode() { return crypto.randomInt(0, 1000000).toString(
 async function issueTwoFactorCode(req, user) {
   const now = Date.now();
   if (user.twoFactorCodeLastSent && now - user.twoFactorCodeLastSent.getTime() < TWO_FACTOR_RESEND_MS) {
-    const error = new Error("Please wait before requesting another verification code.");
-    error.status = 429;
-    error.retryAfter = Math.ceil((TWO_FACTOR_RESEND_MS - (now - user.twoFactorCodeLastSent.getTime())) / 1000);
-    throw error;
+    const retryAfter = Math.ceil((TWO_FACTOR_RESEND_MS - (now - user.twoFactorCodeLastSent.getTime())) / 1000);
+    throw new UserError("Please wait before requesting another verification code.", 429, { retryAfter });
   }
   const transport = mailer();
   // At most 5 codes per account per hour, resends included (throws a 429 saying when the next is possible).
@@ -122,17 +122,32 @@ function alertLockout(req, user) {
   try { transport = mailer(); } catch (err) { logEvent("lockout_alert_not_sent", { requestId: req.requestId, reason: "email_not_configured" }); return; }
   sendInBackground(req, transport, lockoutAlert(user));
 }
-async function completeTwoFactor(req, challenge, code, res, remember) {
-  const payload = jwt.verify(challenge, process.env.JWT_SECRET);
-  if (payload.purpose !== "2fa") throw new Error("Invalid verification challenge.");
+const INVALID_CHALLENGE = "Invalid verification challenge.";
+// The account a 2FA challenge (from login) is for, or a UserError in plain words: never the JWT library's own
+// message ("jwt malformed", "jwt expired"), which is logged instead.
+async function readChallenge(req, challenge) {
+  if (typeof challenge !== "string" || !challenge) throw new UserError(INVALID_CHALLENGE, 401);
+  let payload;
+  try {
+    payload = jwt.verify(challenge, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+  } catch (error) {
+    logError(req, error);
+    if (error.name === "TokenExpiredError") throw new UserError("This sign-in has expired. Please sign in again.", 401);
+    throw new UserError(INVALID_CHALLENGE, 401);
+  }
+  if (payload.purpose !== "2fa" || typeof payload.sub !== "string" || !mongoose.isValidObjectId(payload.sub)) throw new UserError(INVALID_CHALLENGE, 401);
   const user = await User.findById(payload.sub);
-  if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) throw new Error("Invalid or expired verification code.");
+  if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) throw new UserError(INVALID_CHALLENGE, 401);
+  return user;
+}
+async function completeTwoFactor(req, challenge, code, res, remember) {
+  const user = await readChallenge(req, challenge);
   // While locked, no code is checked at all, not even a correct one.
   if (isLocked(user)) throw lockedError();
-  if (!user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new Error("Invalid or expired verification code.");
+  if (!user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new UserError("Invalid or expired verification code.", 401);
   if (user.twoFactorCodeExpires.getTime() <= Date.now()) {
     user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; await user.save();
-    throw new Error("This verification code has expired. Request a new code.");
+    throw new UserError("This verification code has expired. Request a new code.", 401);
   }
   if (!codeMatches(code, user.twoFactorCodeHash)) {
     // Each code is cancelled after 5 wrong tries; across all codes, 10 wrong in an hour lock the account's 2FA step.
@@ -143,8 +158,8 @@ async function completeTwoFactor(req, challenge, code, res, remember) {
       alertLockout(req, user);
       throw lockedError();
     }
-    if (cancelled) throw new Error("Too many incorrect attempts. This verification code has been cancelled. Request a new code.");
-    throw new Error("Invalid verification code.");
+    if (cancelled) throw new UserError("Too many incorrect attempts. This verification code has been cancelled. Request a new code.", 401);
+    throw new UserError("Invalid verification code.", 401);
   }
   const candidate = hashCode(code);
   const verifiedUser = await User.findOneAndUpdate(
@@ -155,7 +170,7 @@ async function completeTwoFactor(req, challenge, code, res, remember) {
     { $set: { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0, twoFactorCodeLastSent: null, emailVerified: true, twoFactorFailedAttempts: [] } },
     { new: true }
   );
-  if (!verifiedUser) throw new Error("Invalid or expired verification code.");
+  if (!verifiedUser) throw new UserError("Invalid or expired verification code.", 401);
   if (remember === true) await rememberDevice(verifiedUser, res);
   setAuthCookie(res, signAccessToken(verifiedUser));
   return { id: verifiedUser._id, name: verifiedUser.name, email: verifiedUser.email };
@@ -259,35 +274,21 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
     setAuthCookie(res, signAccessToken(user));
     return res.json({ user: { id: user._id, name: user.name, email: user.email } });
-  } catch (err) {
-    logError(req, err);
-    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
-    if (err.message === "Email delivery is not configured.") return res.status(503).json({ error: "Two-factor email delivery is not configured." });
-    return res.status(500).json({ error: "Something went wrong. Please try again." });
-  }
+  } catch (err) { return sendError(req, res, err); }
 });
 
 router.post("/2fa/verify", codeLimiter, async (req, res) => {
   try { return res.json({ user: await completeTwoFactor(req, req.body.challenge, req.body.code, res, req.body.rememberDevice) }); }
-  catch (err) {
-    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
-    return res.status(401).json({ error: err.message || "Invalid or expired verification code." });
-  }
+  catch (err) { return sendError(req, res, err); }
 });
 
 router.post("/2fa/resend", codeLimiter, async (req, res) => {
   try {
-    const payload = jwt.verify(req.body.challenge, process.env.JWT_SECRET);
-    if (payload.purpose !== "2fa") return res.status(401).json({ error: "Invalid verification challenge." });
-    const user = await User.findById(payload.sub);
-    if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) return res.status(401).json({ error: "Invalid verification challenge." });
+    const user = await readChallenge(req, req.body.challenge);
     if (isLocked(user)) throw lockedError();
     await issueTwoFactorCode(req, user);
     return res.json({ message: "A new verification code was sent.", expiresInSeconds: 600 });
-  } catch (err) {
-    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
-    return res.status(401).json({ error: err.message || "Unable to send a new verification code." });
-  }
+  } catch (err) { return sendError(req, res, err); }
 });
 
 router.post("/2fa/setup", requireAuth, async (req, res) => {
@@ -297,10 +298,7 @@ router.post("/2fa/setup", requireAuth, async (req, res) => {
     if (user.authProvider === "google") return res.status(400).json({ error: GOOGLE_2FA_MESSAGE });
     await issueTwoFactorCode(req, user);
     return res.json({ message: "A verification code was sent to your email.", expiresInSeconds: 600 });
-  } catch (err) {
-    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
-    return res.status(503).json({ error: "Unable to send the verification code." });
-  }
+  } catch (err) { return sendError(req, res, err); }
 });
 
 router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
@@ -318,7 +316,7 @@ router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
     user.twoFactorEnabled = true; user.emailVerified = true; user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; user.twoFactorCodeLastSent = null;
     await user.save();
     return res.json({ twoFactorEnabled: true });
-  } catch (err) { return res.status(400).json({ error: err.message || "Unable to enable two-factor authentication." }); }
+  } catch (err) { return sendError(req, res, err); }
 });
 
 router.post("/2fa/disable", codeLimiter, requireAuth, asyncRoute(async (req, res) => {
