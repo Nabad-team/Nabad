@@ -147,12 +147,12 @@ Give every page a `title`: `<PageLayout title="My profile">` shows "My profile �
 Every signed-in page uses `<ProfileHeader />`. It draws the header bar (`components/AppHeader.js`), then the picture controls (unless `showPicture={false}`) and, when acting for a family member, the "Acting as" banner.
 
 ```
-Desktop   [Nabad]  Dashboard  Medications  Water and sleep              [Profile ▾] [(RH)▾]
+Desktop   [Nabad]  Dashboard  My health  Medications  Water and sleep   [Profile ▾] [(RH)▾]
                                                                                       My profile
                                                                                       Security
                                                                                       Sign out
 Phone     [Nabad]                                                                     [Menu]
-          ┌ Dashboard · Medications · Water and sleep · Acting for [▾] · My profile · Security · Sign out ┐
+          ┌ Dashboard · My health · Medications · Water and sleep · Acting for [▾] · My profile · Security · Sign out ┐
 ```
 
 - **Main links** (`MAIN_LINKS` in `AppHeader.js`) sit in one row next to the logo. Add a new top-level page there and it shows up in both the desktop row and the phone menu.

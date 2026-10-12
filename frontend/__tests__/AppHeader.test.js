@@ -45,7 +45,7 @@ describe("Header navigation", () => {
     await screen.findByRole("option", { name: "Demo User (you)" });
     const nav = screen.getByRole("navigation", { name: "Main" });
     expect(within(nav).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
-      ["Dashboard", "/dashboard"], ["Medications", "/medications"], ["Water and sleep", "/water-and-sleep"],
+      ["Dashboard", "/dashboard"], ["My health", "/my-health"], ["Medications", "/medications"], ["Water and sleep", "/water-and-sleep"],
     ]);
   });
 
@@ -183,7 +183,7 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "Medications", "Water and sleep"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Medications", "Water and sleep"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual(["My profile", "Security"]);

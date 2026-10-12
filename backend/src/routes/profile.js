@@ -105,7 +105,7 @@ router.post("/linked", asyncRoute(async (req, res) => {
   return res.status(201).json({ profile: linkedView(profile) });
 }));
 
-// Removes a dependent and their health data (medications, water, sleep). The data goes first (only once we know the profile is
+// Removes a dependent and their health data (medications, water, sleep, "My health"). The data goes first (only once we know the profile is
 // the user's own): if removing the profile then fails, it still exists and can be removed again.
 router.delete("/linked/:id", asyncRoute(async (req, res) => {
   const profile = await findOwnedProfile(req);
