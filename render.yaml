@@ -43,6 +43,10 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      # Key for the HMAC of emailed sign-in codes: at least 32 random characters, different from JWT_SECRET.
+      # Required: the server refuses to start in production without it.
+      - key: TWO_FACTOR_CODE_SECRET
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_USER

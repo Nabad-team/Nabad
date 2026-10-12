@@ -128,7 +128,7 @@ test("expired access tokens are rejected",async()=>{
 });
 test("staging and production require distinct database names and secure cookies",()=>{
   const common={MONGO_URI:"mongodb://localhost:27017",JWT_SECRET:"x".repeat(32),CLIENT_ORIGIN:"https://app.example"};
-  const prodVars={SMTP_HOST:"smtp",SMTP_PORT:"2525",SMTP_USER:"u",SMTP_PASS:"p",EMAIL_FROM:"f",GOOGLE_REDIRECT_URI:"https://app.example/cb"};
+  const prodVars={SMTP_HOST:"smtp",SMTP_PORT:"2525",SMTP_USER:"u",SMTP_PASS:"p",EMAIL_FROM:"f",GOOGLE_REDIRECT_URI:"https://app.example/cb",TWO_FACTOR_CODE_SECRET:"k".repeat(32)};
   const stage=loadConfig({...common,APP_ENV:"staging",MONGO_DB_NAME:"nabad_staging"});
   const prod=loadConfig({...common,...prodVars,APP_ENV:"production",MONGO_DB_NAME:"nabad_production"});
   assert.notEqual(stage.databaseName,prod.databaseName);

@@ -1,5 +1,5 @@
 // Production must not boot half-configured (e.g. password reset email silently broken).
-const PRODUCTION_REQUIRED = ["MONGO_URI", "JWT_SECRET", "MONGO_DB_NAME", "CLIENT_ORIGIN", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM", "GOOGLE_REDIRECT_URI"];
+const PRODUCTION_REQUIRED = ["MONGO_URI", "JWT_SECRET", "MONGO_DB_NAME", "CLIENT_ORIGIN", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM", "GOOGLE_REDIRECT_URI", "TWO_FACTOR_CODE_SECRET"];
 // Google sign-in is optional, but only as a pair: one without the other is a misconfiguration.
 const GOOGLE_CREDENTIALS = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"];
 const present = (env, key) => typeof env[key] === "string" && env[key].trim() !== "";
@@ -23,6 +23,8 @@ function loadConfig(env = process.env) {
   }
   if (!env.JWT_SECRET || env.JWT_SECRET.length < 32) throw new Error("JWT_SECRET must contain at least 32 characters.");
   if (!env.MONGO_URI) throw new Error("MONGO_URI is required.");
+  // The key for the HMAC of emailed sign-in codes (twoFactorProtection.js). Required in production (above).
+  if (present(env, "TWO_FACTOR_CODE_SECRET") && env.TWO_FACTOR_CODE_SECRET.trim().length < 32) throw new Error("TWO_FACTOR_CODE_SECRET must contain at least 32 characters.");
   const clientOrigin = env.CLIENT_ORIGIN || "http://localhost:3000";
   const url = new URL(clientOrigin);
   if (!["http:", "https:"].includes(url.protocol) || url.origin !== clientOrigin) throw new Error("CLIENT_ORIGIN must be an exact HTTP(S) origin.");

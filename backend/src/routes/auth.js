@@ -12,6 +12,7 @@ const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
 const { cookieOptions, twoFactorOnSignup, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
 const { logEvent, logError } = require("../logger");
+const { hashCode, codeMatches, isLocked, lockedError, recordWrongCode, reserveCodeSend, lockoutAlert } = require("../twoFactorProtection");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 const router = express.Router();
@@ -63,12 +64,13 @@ async function issueTwoFactorCode(req, user) {
     throw error;
   }
   const transport = mailer();
+  // At most 5 codes per account per hour, resends included (throws a 429 saying when the next is possible).
+  await reserveCodeSend(user._id);
   const code = generateTwoFactorCode();
-  user.twoFactorCodeHash = hash(code);
-  user.twoFactorCodeExpires = new Date(now + TWO_FACTOR_CODE_TTL_MS);
-  user.twoFactorCodeAttempts = 0;
-  user.twoFactorCodeLastSent = new Date(now);
-  await user.save();
+  // A keyed hash (HMAC) of the code: never the code itself, and never logged.
+  const fields = { twoFactorCodeHash: hashCode(code), twoFactorCodeExpires: new Date(now + TWO_FACTOR_CODE_TTL_MS), twoFactorCodeAttempts: 0, twoFactorCodeLastSent: new Date(now) };
+  await User.updateOne({ _id: user._id }, { $set: fields });
+  Object.assign(user, fields);
   sendInBackground(req, transport, {
     from: process.env.MAIL_FROM || process.env.EMAIL_FROM,
     to: user.email,
@@ -113,30 +115,44 @@ async function rememberDevice(user, res) {
   await User.updateOne({ _id: user._id }, { $push: { trustedDevices: { $each: [{ tokenHash: hash(token), expiresAt: new Date(Date.now() + TRUSTED_DEVICE_TTL_MS) }], $sort: { expiresAt: 1 }, $slice: -MAX_TRUSTED_DEVICES } } });
   res.cookie(TRUSTED_DEVICE_COOKIE, token, { ...trustedDeviceCookieOptions(), maxAge: TRUSTED_DEVICE_TTL_MS });
 }
-async function completeTwoFactor(challenge, code, res, remember) {
+// Starts the security alert when a lockout begins (recordWrongCode returns true once per lockout).
+function alertLockout(req, user) {
+  logEvent("two_factor_locked", { requestId: req.requestId, userId: String(user._id) });
+  let transport;
+  try { transport = mailer(); } catch (err) { logEvent("lockout_alert_not_sent", { requestId: req.requestId, reason: "email_not_configured" }); return; }
+  sendInBackground(req, transport, lockoutAlert(user));
+}
+async function completeTwoFactor(req, challenge, code, res, remember) {
   const payload = jwt.verify(challenge, process.env.JWT_SECRET);
   if (payload.purpose !== "2fa") throw new Error("Invalid verification challenge.");
   const user = await User.findById(payload.sub);
-  if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new Error("Invalid or expired verification code.");
+  if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) throw new Error("Invalid or expired verification code.");
+  // While locked, no code is checked at all, not even a correct one.
+  if (isLocked(user)) throw lockedError();
+  if (!user.twoFactorCodeHash || !user.twoFactorCodeExpires) throw new Error("Invalid or expired verification code.");
   if (user.twoFactorCodeExpires.getTime() <= Date.now()) {
     user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; await user.save();
     throw new Error("This verification code has expired. Request a new code.");
   }
-  const candidate = hash(code);
-  const valid = /^\d{6}$/.test(String(code || "")) && crypto.timingSafeEqual(Buffer.from(user.twoFactorCodeHash), Buffer.from(candidate));
-  if (!valid) {
-    user.twoFactorCodeAttempts = (user.twoFactorCodeAttempts || 0) + 1;
-    if (user.twoFactorCodeAttempts >= TWO_FACTOR_MAX_ATTEMPTS) {
-      user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; await user.save();
-      throw new Error("Too many incorrect attempts. This verification code has been cancelled. Request a new code.");
+  if (!codeMatches(code, user.twoFactorCodeHash)) {
+    // Each code is cancelled after 5 wrong tries; across all codes, 10 wrong in an hour lock the account's 2FA step.
+    const attempts = (user.twoFactorCodeAttempts || 0) + 1;
+    const cancelled = attempts >= TWO_FACTOR_MAX_ATTEMPTS;
+    await User.updateOne({ _id: user._id }, { $set: cancelled ? { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0 } : { twoFactorCodeAttempts: attempts } });
+    if (await recordWrongCode(user._id)) {
+      alertLockout(req, user);
+      throw lockedError();
     }
-    await user.save();
+    if (cancelled) throw new Error("Too many incorrect attempts. This verification code has been cancelled. Request a new code.");
     throw new Error("Invalid verification code.");
   }
+  const candidate = hashCode(code);
   const verifiedUser = await User.findOneAndUpdate(
-    { _id: user._id, authVersion: user.authVersion || 0, twoFactorEnabled: true, twoFactorCodeHash: candidate, twoFactorCodeExpires: { $gt: new Date() } },
+    // Not locked in the meantime by another request (checked in the same atomic update).
+    { _id: user._id, authVersion: user.authVersion || 0, twoFactorEnabled: true, twoFactorCodeHash: candidate, twoFactorCodeExpires: { $gt: new Date() }, $or: [{ twoFactorLockedUntil: null }, { twoFactorLockedUntil: { $lte: new Date() } }] },
     // The code was emailed to this address, so entering it also proves the user owns the email.
-    { $set: { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0, twoFactorCodeLastSent: null, emailVerified: true } },
+    // Signing in successfully also starts the wrong-code count again.
+    { $set: { twoFactorCodeHash: null, twoFactorCodeExpires: null, twoFactorCodeAttempts: 0, twoFactorCodeLastSent: null, emailVerified: true, twoFactorFailedAttempts: [] } },
     { new: true }
   );
   if (!verifiedUser) throw new Error("Invalid or expired verification code.");
@@ -236,6 +252,8 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
     user.failedLoginAttempts = 0; user.lockUntil = null; await user.save();
     if (user.twoFactorEnabled && !isTrustedDevice(user, req.cookies?.[TRUSTED_DEVICE_COOKIE])) {
+      // Told only after the right password, like the code request itself, so it reveals nothing more.
+      if (isLocked(user)) throw lockedError();
       await issueTwoFactorCode(req, user);
       return res.json({ twoFactorRequired: true, challenge: twoFactorChallenge(user), codeDelivery: "email", expiresInSeconds: 600 });
     }
@@ -250,8 +268,11 @@ router.post("/login", loginLimiter, async (req, res) => {
 });
 
 router.post("/2fa/verify", codeLimiter, async (req, res) => {
-  try { return res.json({ user: await completeTwoFactor(req.body.challenge, req.body.code, res, req.body.rememberDevice) }); }
-  catch (err) { return res.status(401).json({ error: err.message || "Invalid or expired verification code." }); }
+  try { return res.json({ user: await completeTwoFactor(req, req.body.challenge, req.body.code, res, req.body.rememberDevice) }); }
+  catch (err) {
+    if (err.status === 429) return res.status(429).json({ error: err.message, retryAfter: err.retryAfter });
+    return res.status(401).json({ error: err.message || "Invalid or expired verification code." });
+  }
 });
 
 router.post("/2fa/resend", codeLimiter, async (req, res) => {
@@ -260,6 +281,7 @@ router.post("/2fa/resend", codeLimiter, async (req, res) => {
     if (payload.purpose !== "2fa") return res.status(401).json({ error: "Invalid verification challenge." });
     const user = await User.findById(payload.sub);
     if (!user || (payload.ver || 0) !== (user.authVersion || 0) || !user.twoFactorEnabled) return res.status(401).json({ error: "Invalid verification challenge." });
+    if (isLocked(user)) throw lockedError();
     await issueTwoFactorCode(req, user);
     return res.json({ message: "A new verification code was sent.", expiresInSeconds: 600 });
   } catch (err) {
@@ -287,9 +309,7 @@ router.post("/2fa/enable", codeLimiter, requireAuth, async (req, res) => {
     if (user?.authProvider === "google") return res.status(400).json({ error: GOOGLE_2FA_MESSAGE });
     if (!user || !user.twoFactorCodeHash || !user.twoFactorCodeExpires) return res.status(400).json({ error: "Start two-factor setup first." });
     if (user.twoFactorCodeExpires.getTime() <= Date.now()) return res.status(400).json({ error: "The verification code has expired. Start setup again." });
-    const candidate = hash(req.body.code);
-    const valid = /^\d{6}$/.test(String(req.body.code || "")) && crypto.timingSafeEqual(Buffer.from(user.twoFactorCodeHash), Buffer.from(candidate));
-    if (!valid) {
+    if (!codeMatches(req.body.code, user.twoFactorCodeHash)) {
       user.twoFactorCodeAttempts = (user.twoFactorCodeAttempts || 0) + 1;
       if (user.twoFactorCodeAttempts >= TWO_FACTOR_MAX_ATTEMPTS) { user.twoFactorCodeHash = null; user.twoFactorCodeExpires = null; user.twoFactorCodeAttempts = 0; }
       await user.save();
@@ -345,7 +365,7 @@ router.post("/reset-password", resetLimiter, asyncRoute(async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await User.findOneAndUpdate(
     { resetPasswordTokenHash: hash(token), resetPasswordExpires: { $gt: new Date() } },
-    { $set: { passwordHash, emailVerified: true, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [] }, $inc: { authVersion: 1 } }
+    { $set: { passwordHash, emailVerified: true, resetPasswordTokenHash: null, resetPasswordExpires: null, failedLoginAttempts: 0, lockUntil: null, twoFactorCodeHash: null, twoFactorCodeExpires: null, trustedDevices: [], twoFactorFailedAttempts: [], twoFactorLockedUntil: null }, $inc: { authVersion: 1 } }
   );
   if (!user) return res.status(400).json(invalidLink);
   return res.json({ message: "Password updated. You can now log in." });

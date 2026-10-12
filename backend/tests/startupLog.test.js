@@ -13,7 +13,7 @@ function runServer(env) {
 }
 function productionEnv() {
   const env={APP_ENV:"production",CLIENT_ORIGIN:"https://nabad.example.test",MONGO_DB_NAME:"nabad_production",SMTP_PORT:"2525",GOOGLE_REDIRECT_URI:"https://nabad.example.test/api/auth/google/callback"};
-  for(const key of ["MONGO_URI","JWT_SECRET","SMTP_HOST","SMTP_USER","SMTP_PASS","EMAIL_FROM","GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET"]) env[key]="value-of-"+key+"-"+crypto.randomBytes(20).toString("hex");
+  for(const key of ["MONGO_URI","JWT_SECRET","SMTP_HOST","SMTP_USER","SMTP_PASS","EMAIL_FROM","GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET","TWO_FACTOR_CODE_SECRET"]) env[key]="value-of-"+key+"-"+crypto.randomBytes(20).toString("hex");
   return env;
 }
 
@@ -74,4 +74,24 @@ test("production config accepts a complete environment and the legacy MAIL_FROM 
   delete env.MAIL_FROM;
   assert.throws(()=>loadConfig(env),/^Error: Missing required environment variables: EMAIL_FROM$/);
   assert.doesNotThrow(()=>loadConfig({...env,APP_ENV:"staging",MONGO_DB_NAME:"nabad_staging"}));
+});
+test("production refuses to start without TWO_FACTOR_CODE_SECRET, naming it but never a value",async()=>{
+  const env=productionEnv(); delete env.TWO_FACTOR_CODE_SECRET;
+  const stdout=await runServer({...env,PATH:process.env.PATH,SystemRoot:process.env.SystemRoot||""});
+  const entry=JSON.parse(stdout.trim().split("\n").pop());
+  assert.equal(entry.event,"startup_failed");
+  assert.equal(entry.errorMessage,"Missing required environment variables: TWO_FACTOR_CODE_SECRET");
+  assert.equal(stdout.includes("value-of-"),false);
+});
+test("TWO_FACTOR_CODE_SECRET must have at least 32 characters wherever it is set",async()=>{
+  const short="s".repeat(31);
+  const stdout=await runServer({...productionEnv(),TWO_FACTOR_CODE_SECRET:short,PATH:process.env.PATH,SystemRoot:process.env.SystemRoot||""});
+  const entry=JSON.parse(stdout.trim().split("\n").pop());
+  assert.equal(entry.event,"startup_failed");
+  assert.equal(entry.errorMessage,"TWO_FACTOR_CODE_SECRET must contain at least 32 characters.");
+  assert.equal(stdout.includes(short),false);
+  const base={MONGO_URI:"mongodb://localhost:27017",JWT_SECRET:"x".repeat(32)};
+  assert.throws(()=>loadConfig({...base,APP_ENV:"test",TWO_FACTOR_CODE_SECRET:"  "+short+"  "}),/at least 32 characters/);
+  assert.doesNotThrow(()=>loadConfig({...base,APP_ENV:"test",TWO_FACTOR_CODE_SECRET:"s".repeat(32)}));
+  assert.doesNotThrow(()=>loadConfig({...base,APP_ENV:"test"}),"optional outside production");
 });
