@@ -1,6 +1,7 @@
 import ProfileHeader from "../components/ProfileHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCard from "../components/WellbeingCard";
+import WellbeingCorner from "../components/WellbeingCorner";
 import HealthCard from "../components/HealthCard";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -117,6 +118,8 @@ export default function DashboardPage() {
       {activeProfile && <HealthCard />}
 
       {activeProfile && <WellbeingCard />}
+
+      <WellbeingCorner />
 
       <section
         className="section"
