@@ -70,6 +70,12 @@ export default function TriagePage() {
       resultToRead.disclaimer,
       resultToRead.guidance,
 
+      resultToRead.selfCareGuidance
+        ? `Self-care guidance: ${resultToRead.selfCareGuidance.join(
+            ". "
+          )}.`
+        : "",
+
       resultToRead.routing
         ? `${resultToRead.routing.contactName}${
             resultToRead.routing.contactNumber
@@ -250,6 +256,22 @@ export default function TriagePage() {
 
           {result.guidance && (
             <p>{result.guidance}</p>
+          )}
+
+          {result.selfCareGuidance && (
+            <div>
+              <h3>Self-care guidance</h3>
+
+              <ul>
+                {result.selfCareGuidance.map(
+                  (item, index) => (
+                    <li key={index}>
+                      {item}
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
           )}
 
           {result.routing && (
