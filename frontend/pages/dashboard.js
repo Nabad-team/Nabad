@@ -10,9 +10,12 @@ import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
 
-// "Rana Haddad" -> "Rana": a greeting uses the first name only.
+// "Rana Haddad" -> "Rana"
+// The greeting uses only the first name.
 function firstName(fullName) {
-  return String(fullName || "").trim().split(/\s+/)[0];
+  return String(fullName || "")
+    .trim()
+    .split(/\s+/)[0];
 }
 
 const iconProps = {
@@ -47,48 +50,137 @@ function MicrophoneIcon() {
 }
 
 export default function DashboardPage() {
-  // The active profile (you or a dependent) is loaded by ActiveProfileProvider in _app.js.
+  // The active profile can be the user or a linked dependent.
   const { activeProfile, error, loading } = useActiveProfile();
+
   const { preferences } = useAccessibility();
+
   const simplified = preferences.simplifiedMode;
 
   return (
-    // The picture controls stay on the profile page; the dashboard keeps to what you came to do.
-    <PageLayout title="Dashboard" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout
+      title="Dashboard"
+      header={<ProfileHeader showPicture={false} />}
+    >
       <EmailVerificationBanner />
-      {activeProfile && <PageTitle>Welcome, {firstName(activeProfile.fullName)}</PageTitle>}
-      {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+
+      {activeProfile && (
+        <PageTitle>
+          Welcome, {firstName(activeProfile.fullName)}
+        </PageTitle>
+      )}
+
+      {error && (
+        <Alert tone="danger" as="p" role="alert">
+          {error}
+        </Alert>
+      )}
+
       {loading && <HeartbeatLoader />}
-      <section className="check-in" aria-labelledby="check-in-heading">
-        <h2 id="check-in-heading">{simplified ? "How do you feel?" : "Check how you're feeling"}</h2>
+
+      <section
+        className="check-in"
+        aria-labelledby="check-in-heading"
+      >
+        <h2 id="check-in-heading">
+          {simplified
+            ? "How do you feel?"
+            : "Check how you're feeling"}
+        </h2>
+
         <p className={simplified ? "simplified-only-text" : ""}>
-          {simplified ? "Choose how to tell us." : "Describe your symptoms in your own words. Type them, or speak if that's easier."}
+          {simplified
+            ? "Choose how to tell us."
+            : "Describe your symptoms in your own words. Type them, or speak if that's easier."}
         </p>
+
         <div className="button-row">
-          <Button href="/symptoms" aria-label="Type your symptoms">
+          <Button
+            href="/symptoms"
+            aria-label="Type your symptoms"
+          >
             <KeyboardIcon />
             Type
           </Button>
-          {/* Opens the symptoms page already listening (see pages/symptoms.js). */}
-          <Button variant="secondary" href="/symptoms?voice=1" aria-label="Speak your symptoms">
+
+          <Button
+            variant="secondary"
+            href="/symptoms?voice=1"
+            aria-label="Speak your symptoms"
+          >
             <MicrophoneIcon />
             Speak
           </Button>
         </div>
       </section>
+
       {activeProfile && <HealthCard />}
+
       {activeProfile && <WellbeingCard />}
-      <section className="section" aria-labelledby="account-heading">
-        <h2 id="account-heading">{simplified ? "More" : "Your account"}</h2>
+
+      <section
+        className="section"
+        aria-labelledby="account-heading"
+      >
+        <h2 id="account-heading">
+          {simplified ? "More" : "Your account"}
+        </h2>
+
         <div className="button-row">
-          <Button variant="secondary" href="/triage" aria-label={simplified ? "Open safety check" : undefined}>
-            {simplified ? "Safety" : "Safety check"}
+          <Button
+            variant="secondary"
+            href="/triage"
+            aria-label={
+              simplified
+                ? "Open safety check"
+                : undefined
+            }
+          >
+            {simplified
+              ? "Safety"
+              : "Safety check"}
           </Button>
-          <Button variant="secondary" href="/medications" aria-label={simplified ? "Open medications" : undefined}>
-            {simplified ? "Medicines" : "Medications"}
+
+          <Button
+            variant="secondary"
+            href="/medications"
+            aria-label={
+              simplified
+                ? "Open medications"
+                : undefined
+            }
+          >
+            {simplified
+              ? "Medicines"
+              : "Medications"}
           </Button>
-          <Button variant="secondary" href="/profile" aria-label={simplified ? "Open my profile" : undefined}>
-            {simplified ? "Profile" : "My profile"}
+
+          <Button
+            variant="secondary"
+            href="/profile"
+            aria-label={
+              simplified
+                ? "Open my profile"
+                : undefined
+            }
+          >
+            {simplified
+              ? "Profile"
+              : "My profile"}
+          </Button>
+
+          <Button
+            variant="secondary"
+            href="/privacy"
+            aria-label={
+              simplified
+                ? "Open privacy policy"
+                : undefined
+            }
+          >
+            {simplified
+              ? "Privacy"
+              : "Privacy Policy"}
           </Button>
         </div>
       </section>
@@ -96,5 +188,5 @@ export default function DashboardPage() {
   );
 }
 
-// Health data: only for signed-in users (see components/RequireSignIn.js).
+// Only signed-in users can access the dashboard.
 DashboardPage.requireSignIn = true;
