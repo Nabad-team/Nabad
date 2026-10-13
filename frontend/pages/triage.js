@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { assessSymptoms } from "../lib/triageApi";
+import { getEmergencyContact } from "../lib/api";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -15,6 +16,7 @@ export default function TriagePage() {
   const [symptoms, setSymptoms] = useState("");
   const [country, setCountry] = useState("LB");
   const [result, setResult] = useState(null);
+  const [emergencyContact, setEmergencyContact] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -23,14 +25,35 @@ export default function TriagePage() {
 
     setError("");
     setResult(null);
+    setEmergencyContact(null);
     setBusy(true);
 
     try {
-      setResult(
-        await assessSymptoms(symptoms.trim(), {
-          country,
-        })
+      const assessment = await assessSymptoms(
+        symptoms.trim(),
+        { country }
       );
+
+      setResult(assessment);
+
+      // Only load the saved emergency contact when
+      // the safety check finds an emergency.
+      if (
+        assessment?.level?.toLowerCase() === "emergency"
+      ) {
+        try {
+          const contactResponse =
+            await getEmergencyContact();
+
+          setEmergencyContact(
+            contactResponse.contact || null
+          );
+        } catch {
+          // The emergency result should still be shown
+          // even if the saved contact cannot be loaded.
+          setEmergencyContact(null);
+        }
+      }
     } catch (failure) {
       setError(
         failure.message ||
@@ -54,6 +77,10 @@ export default function TriagePage() {
               : "."
           } ${resultToRead.routing.instructions}`
         : "",
+
+      emergencyContact
+        ? `Your emergency contact is ${emergencyContact.name}, phone number ${emergencyContact.phone}.`
+        : "",
     ]
       .filter(Boolean)
       .join(" ");
@@ -62,20 +89,35 @@ export default function TriagePage() {
   const isEmergency =
     result?.level?.toLowerCase() === "emergency";
 
+  const emergencyContactPhone =
+    emergencyContact?.phone
+      ? String(emergencyContact.phone).replace(
+          /[^\d+]/g,
+          ""
+        )
+      : "";
+
   return (
     <PageLayout
       title="Safety check"
-      header={<ProfileHeader showPicture={false} />}
+      header={
+        <ProfileHeader showPicture={false} />
+      }
     >
       <PageTitle>Safety check</PageTitle>
 
       <p>
         Describe symptoms for{" "}
-        {activeProfile?.fullName || "the active profile"}.
-        This gives general guidance, not a diagnosis.
+        {activeProfile?.fullName ||
+          "the active profile"}
+        . This gives general guidance, not a
+        diagnosis.
       </p>
 
-      <form onSubmit={handleSubmit} className="form">
+      <form
+        onSubmit={handleSubmit}
+        className="form"
+      >
         <Input
           as="textarea"
           id="triage-symptoms"
@@ -105,14 +147,20 @@ export default function TriagePage() {
               setCountry(event.target.value)
             }
           >
-            <option value="LB">Lebanon</option>
+            <option value="LB">
+              Lebanon
+            </option>
+
             <option value="OTHER">
               Other location
             </option>
           </select>
         </div>
 
-        <Button type="submit" disabled={busy}>
+        <Button
+          type="submit"
+          disabled={busy}
+        >
           {busy
             ? "Checking..."
             : "Check urgency"}
@@ -131,7 +179,10 @@ export default function TriagePage() {
 
       {isEmergency &&
         result?.routing?.contactNumber && (
-          <Alert tone="danger" role="alert">
+          <Alert
+            tone="danger"
+            role="alert"
+          >
             <h2>Emergency — call now</h2>
 
             <p>
@@ -155,6 +206,33 @@ export default function TriagePage() {
                 {result.routing.contactNumber}
               </a>
             </p>
+
+            {emergencyContact && (
+              <div>
+                <h3>
+                  Your emergency contact
+                </h3>
+
+                <p>
+                  <strong>
+                    {emergencyContact.name}
+                  </strong>
+                </p>
+
+                <p>
+                  {emergencyContact.phone}
+                </p>
+
+                <p>
+                  <a
+                    href={`tel:${emergencyContactPhone}`}
+                  >
+                    Call{" "}
+                    {emergencyContact.name}
+                  </a>
+                </p>
+              </div>
+            )}
           </Alert>
         )}
 
@@ -164,7 +242,8 @@ export default function TriagePage() {
           aria-labelledby="triage-result-heading"
         >
           <h2 id="triage-result-heading">
-            Safety check result: {result.level}
+            Safety check result:{" "}
+            {result.level}
           </h2>
 
           <p>{result.disclaimer}</p>
