@@ -94,7 +94,7 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. |
 | Water and sleep | `routes/wellbeing.js`, `models/Wellbeing.js` | Daily water glasses against a target, sleep hours and quality, and history. Days are the user's local calendar date. |
 | My health | `routes/healthProfile.js`, `healthProfile.js`, `models/HealthFact.js` | Health facts per profile (sex, height, weight, blood type, pregnancy, conditions, allergies, smoking), each with a source and a confirmed/suggested status, and the **AI health summary**. |
-| Triage | `routes/triage.js`, `triage/` | Symptom assessment, urgency classification with follow-up questions, red-flag detection and emergency routing. Rule-based today, built so the rules can be replaced by the AI triage service. |
+| Triage | `routes/triage.js`, `triage/` | Symptom assessment, urgency classification with follow-up questions, red-flag detection and emergency routing. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
 | Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
 
 ### The shared ownership check
@@ -104,6 +104,19 @@ All health data is stored per profile with two ids: `owner` (the account) and `p
 ### The AI health summary
 
 [healthProfile.js](../backend/src/healthProfile.js) `buildHealthSummary` turns a profile's age, confirmed health facts and active medications into a short plain-text summary. The user sees it on My health, and `getHealthSummary(owner, profileId)` is the entry point the AI triage will use for context. Only **confirmed** facts are included (suggested ones wait for the user), and free text is collapsed to one line so it can never pose as another line of the summary.
+
+### AI triage
+
+`POST /api/triage/ai-assess` (`triage/ai/`) adds a language model to triage, with the rules keeping the final say:
+
+| File | Role |
+| --- | --- |
+| `llmClient.js` | One client for any OpenAI-compatible provider, chosen by `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL`. HTTPS only (HTTP only for localhost), 15 s timeout. Unset means AI triage is off. |
+| `prompt.js` | The fixed instructions (levels, never diagnose, no medicines or doses, no phone numbers or links, never below the minimum level) and the user message with the user's text inside `<symptoms>` tags, treated as data. |
+| `guardrails.js` | Before the model: removes `<symptoms>` tags and control characters, and skips the model when the text tries to give it orders. After: the reply must be JSON with a known level and a reason; sentences with a dose, a phone number, a link, a certain diagnosis or false reassurance are dropped; the final level is the more serious of the rules and the model. |
+| `aiTriage.js` | Runs the rules first. An emergency answers at once without the model. If the model is off, slow, unreachable or its reply is rejected, the rules answer alone and `ai.reason` says why. |
+
+The model can raise the urgency but never lower it. Self-care steps are only shown for routine results. Only the outcome code and duration are logged, never the symptoms or the model's words. Each account can run 30 AI assessments per 15 minutes. The unit tests use a fake model, so they need no API key.
 
 ### The health-data deletion helper
 
@@ -139,4 +152,5 @@ flowchart LR
 - The browser never calls it directly: the API checks the session and the profile with `resolveProfile`, then sends only the symptoms and that profile's health summary.
 - The API keeps the final say on safety: red-flag rules and emergency routing still run on the API, and the API falls back to the rules if the service is slow or unavailable.
 - `triage/urgency.js` is a pure function behind the triage routes, so the routes and the UI don't change when the model replaces it.
+- The first step is in place: [AI triage](#ai-triage) runs inside the API today. Moving it into its own container means moving `llmClient.js` behind a service endpoint; the guardrails and the rules floor stay on the API.
 - Locally it becomes a fifth service in `docker-compose.yml`, reachable only on the Compose network.
