@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log*
+*.log
+# Secrets never go into an image: configuration comes from the environment at run time.
+.env
+.env.*
+config
+# Tests and their output aren't needed to run the API.
+tests
+coverage
+.nyc_output
+Dockerfile
+.dockerignore

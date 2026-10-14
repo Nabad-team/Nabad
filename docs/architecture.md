@@ -1,0 +1,142 @@
+# Nabad architecture
+
+Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express API** backed by **MongoDB**. The browser only ever talks to the web app's own site; the web app forwards every `/api/*` request to the API. That keeps the login cookie first-party (`SameSite=Lax`) even though the API runs on another domain.
+
+- Frontend: [frontend/](../frontend) (Next.js pages router, React)
+- Backend: [backend/](../backend) (Express, Mongoose)
+- Local development: [docker.md](./docker.md)
+
+## Production
+
+```mermaid
+flowchart LR
+    user(["User's browser"])
+
+    subgraph vercel["Vercel"]
+        next["Next.js web app<br/>pages + /api/* rewrite<br/>(BACKEND_URL, fixed at build)"]
+    end
+
+    subgraph render["Render"]
+        api["Node/Express API<br/>health check: /api/health/ready"]
+    end
+
+    subgraph atlas["MongoDB Atlas"]
+        db[("nabad_production")]
+    end
+
+    brevo["Brevo<br/>(SMTP relay, port 2525)"]
+    google["Google sign-in<br/>(OAuth 2.0 / OpenID Connect)"]
+    hibp["Have I Been Pwned<br/>(password range API)"]
+
+    subgraph github["GitHub"]
+        repo["Nabad repository<br/>(main branch)"]
+        ci["GitHub Actions<br/>tests, build, Docker images"]
+    end
+
+    user -- "HTTPS: pages and /api/*" --> next
+    next -- "HTTPS /api/* (rewrite)" --> api
+    api -- "TLS, least-privilege user" --> db
+    api -- "verification, reset and 2FA emails" --> brevo
+    brevo -. "email" .-> user
+    user -. "consent screen" .-> google
+    api -- "code exchange, ID token check" --> google
+    api -- "first 5 hash characters only" --> hibp
+
+    repo -- "pull request" --> ci
+    repo -- "auto-deploy on merge to main" --> next
+    repo -- "auto-deploy on merge to main<br/>(render.yaml Blueprint)" --> api
+```
+
+- **Vercel** builds and hosts the web app from `frontend/` (https://nabad-psi.vercel.app). [next.config.js](../frontend/next.config.js) rewrites `/api/*` to `BACKEND_URL`; a production build without it fails on purpose.
+- **Render** runs the API from [render.yaml](../render.yaml) (`npm ci`, `npm start`, Node 24) and only routes traffic to it once `/api/health/ready` answers, which requires a working database connection. Secrets are entered in the Render dashboard, never committed.
+- **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`.
+- **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
+- **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
+- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, and a build of both Docker images. Merging to `main` triggers the Vercel and Render deploys.
+
+## Local development (Docker Compose)
+
+```mermaid
+flowchart LR
+    dev(["Developer's browser"])
+
+    subgraph host["Your machine (ports bound to 127.0.0.1)"]
+        subgraph net["Compose network: nabad"]
+            frontend["frontend<br/>Next.js standalone server<br/>:3000"]
+            backend["backend<br/>Node/Express API, APP_ENV=development<br/>:5000"]
+            mongo[("mongo<br/>mongo:8.0<br/>nabad_development")]
+            mailpit["mailpit<br/>SMTP :1025, inbox :8025"]
+        end
+        vol[("volume: mongo-data")]
+    end
+
+    dev -- "localhost:3000" --> frontend
+    dev -- "localhost:8025 (inbox)" --> mailpit
+    dev -. "localhost:5000 (API, optional)" .-> backend
+    dev -. "localhost:27018 (Compass, optional)" .-> mongo
+    frontend -- "/api/* to http://backend:5000" --> backend
+    backend -- "mongodb://mongo:27017" --> mongo
+    backend -- "SMTP mailpit:1025" --> mailpit
+    mongo --- vol
+```
+
+`docker compose up` starts all four services. The backend waits for MongoDB to be healthy, and the frontend waits for the backend to be ready. Every email (verification, password reset, 2FA codes) lands in the Mailpit inbox instead of a real mailbox. Configuration comes from [.env.docker.example](../.env.docker.example) (local placeholders only) and [docker-compose.yml](../docker-compose.yml). See [docker.md](./docker.md).
+
+## Backend modules
+
+The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area under `/api`. Every route except sign-in, signup, email verification, password reset and the health checks requires a session (`requireAuth`).
+
+| Area | Code | What it does |
+| --- | --- | --- |
+| Health checks | `routes/health.js` | `/api/health` (alive) and `/api/health/ready` (database reachable), used by Render and the Docker health checks. |
+| Authentication | `routes/auth.js`, `session.js`, `sessionConfig.js`, `twoFactorProtection.js`, `passwordHashing.js`, `passwordPolicy.js` | Signup with email verification, sign-in, email 2FA with trusted devices, password reset, Google sign-in, sign-out. |
+| Profiles and linked profiles | `routes/profile.js`, `routes/emergencyContact.js`, `middleware/profileAccess.js` | The user's own profile (details, picture, emergency contact), up to 10 linked profiles for people they look after (child, parent, spouse...), and account deletion. |
+| Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. |
+| Water and sleep | `routes/wellbeing.js`, `models/Wellbeing.js` | Daily water glasses against a target, sleep hours and quality, and history. Days are the user's local calendar date. |
+| My health | `routes/healthProfile.js`, `healthProfile.js`, `models/HealthFact.js` | Health facts per profile (sex, height, weight, blood type, pregnancy, conditions, allergies, smoking), each with a source and a confirmed/suggested status, and the **AI health summary**. |
+| Triage | `routes/triage.js`, `triage/` | Symptom assessment, urgency classification with follow-up questions, red-flag detection and emergency routing. Rule-based today, built so the rules can be replaced by the AI triage service. |
+| Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
+
+### The shared ownership check
+
+All health data is stored per profile with two ids: `owner` (the account) and `profileId` (the owner's own profile, stored as the user id, or one of their linked profiles). [middleware/profileAccess.js](../backend/src/middleware/profileAccess.js) `resolveProfile` is the one place that decides whose data a request is about: it reads `?profileId=` (`self` by default), checks that a linked profile belongs to the signed-in user, and sets `req.profileId`. Medications, water and sleep, and My health all use it, and every query filters by both `owner` and `profileId`. Anything that isn't the user's (another user's dependent, a malformed id) answers **404, exactly like something that doesn't exist**, so ids can't be probed.
+
+### The AI health summary
+
+[healthProfile.js](../backend/src/healthProfile.js) `buildHealthSummary` turns a profile's age, confirmed health facts and active medications into a short plain-text summary. The user sees it on My health, and `getHealthSummary(owner, profileId)` is the entry point the AI triage will use for context. Only **confirmed** facts are included (suggested ones wait for the user), and free text is collapsed to one line so it can never pose as another line of the summary.
+
+### The health-data deletion helper
+
+[profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (medications, water, sleep, wellbeing settings, health facts). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind.
+
+## Security layers
+
+| Layer | How |
+| --- | --- |
+| Sessions | A signed JWT (HS256) in an `httpOnly`, `SameSite=Lax` cookie (`Secure` in staging and production). 30-minute idle timeout renewed on use, 12-hour absolute maximum, a warning before expiry. Each user has an `authVersion`: sign-out and password reset increment it, which ends every existing session. |
+| Two-factor authentication | A 6-digit code by email, valid 10 minutes, stored only as an HMAC keyed with `TWO_FACTOR_CODE_SECRET`. At most 5 codes per hour (one per minute); 10 wrong codes in an hour lock the 2FA step for 30 minutes and send an alert. "Remember this device" sets a 30-day trusted-device cookie (stored as a hash, at most 10 per account). |
+| Rate limits | Per IP on sign-in, signup, codes, reset, email verification and Google; per account on health-data writes and account deletion. `TRUST_PROXY` makes them see the visitor's real IP behind Vercel and Render. After 5 wrong passwords an account is locked for 15 minutes. |
+| Password policy | One shared check ([passwordPolicy.js](../backend/src/passwordPolicy.js), mirrored in the frontend) following NIST SP 800-63B: 12 to 128 characters, any characters, no forced mixes; blocks common passwords, the user's name or email, and breached passwords (Have I Been Pwned range search, k-anonymity). |
+| Password hashing | Argon2id with OWASP parameters (19 MiB, 2 iterations). Older bcrypt hashes are replaced at the next successful sign-in. Unknown emails take the same time as wrong passwords. |
+| Origin check | Every state-changing request (not GET/HEAD/OPTIONS) must carry an `Origin` equal to `CLIENT_ORIGIN`, otherwise 403. CORS allows only that origin. |
+| HTTP headers and errors | `nosniff`, `X-Frame-Options: DENY`, `no-referrer`, `no-store`. Users only ever see fixed, safe messages, never library or database errors. |
+| Logging | Allowlisted fields only: no passwords, codes, tokens, email addresses or health values; connection strings are redacted. |
+| Configuration | With `APP_ENV=production` the API refuses to start if any required secret is missing, a secret is too short, `CLIENT_ORIGIN` isn't HTTPS, or the database name doesn't match the environment. |
+| Database user | The API connects to Atlas with a dedicated, least-privilege user: read and write on its own environment's database only, no admin or cluster roles. Each environment has its own user and database. |
+
+## Planned: AI triage service
+
+Triage will move from today's rules to an AI model, run as a **separate service** (its own container) next to the API rather than inside it:
+
+```mermaid
+flowchart LR
+    next["Next.js web app"] -- "/api/triage/*" --> api["Node/Express API"]
+    api -- "symptoms + AI health summary<br/>(private network, service credential)" --> ai["AI triage service<br/>(future container)"]
+    ai -- "urgency level + follow-up questions" --> api
+    api --> db[("MongoDB")]
+```
+
+- The browser never calls it directly: the API checks the session and the profile with `resolveProfile`, then sends only the symptoms and that profile's health summary.
+- The API keeps the final say on safety: red-flag rules and emergency routing still run on the API, and the API falls back to the rules if the service is slow or unavailable.
+- `triage/urgency.js` is a pure function behind the triage routes, so the routes and the UI don't change when the model replaces it.
+- Locally it becomes a fifth service in `docker-compose.yml`, reachable only on the Compose network.

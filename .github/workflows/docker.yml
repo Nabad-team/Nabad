@@ -1,0 +1,24 @@
+name: Docker Images
+
+# Builds both images on every pull request so the Dockerfiles and docker-compose.yml never silently break.
+# Nothing is pushed: production still deploys from Render (render.yaml) and Vercel.
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check docker-compose.yml
+        run: docker compose config --quiet
+
+      - name: Build backend image
+        run: docker build --tag nabad-backend:ci backend
+
+      - name: Build frontend image
+        run: docker build --tag nabad-frontend:ci --build-arg BACKEND_URL=http://backend:5000 frontend

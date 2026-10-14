@@ -1,0 +1,92 @@
+# Nabad for local development: `docker compose up` (see docs/docker.md).
+# Production does not use this file: the API deploys to Render (render.yaml), the web app to Vercel.
+#
+#   App            http://localhost:3000
+#   API            http://localhost:5000/api/health/ready
+#   Mailpit inbox  http://localhost:8025   (every email the app sends lands here; nothing leaves your machine)
+#   MongoDB        mongodb://localhost:27018/nabad_development   (for Compass or mongosh; optional)
+#
+# Published ports are bound to 127.0.0.1 only, so nothing is reachable from other machines on your network.
+
+name: nabad
+
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks: [nabad]
+    # 27018 on the host, so it doesn't clash with a MongoDB you may already run on 27017.
+    ports:
+      - "127.0.0.1:27018:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    environment:
+      # Local only: accept the backend's placeholder SMTP login without TLS.
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    networks: [nabad]
+    # Only the web inbox is published; the backend reaches SMTP (1025) on the private network.
+    ports:
+      - "127.0.0.1:8025:8025"
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    # Safe local placeholders, then your own optional overrides (.env.docker is git-ignored).
+    env_file:
+      - path: .env.docker.example
+        required: true
+      - path: .env.docker
+        required: false
+    # How the services find each other. These win over the env files.
+    environment:
+      NODE_ENV: development
+      APP_ENV: development
+      PORT: "5000"
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB_NAME: nabad_development
+      CLIENT_ORIGIN: http://localhost:3000
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      # Browser -> Next.js /api rewrite (frontend container) -> API: one proxy hop.
+      TRUST_PROXY: "1"
+    networks: [nabad]
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # The /api rewrite runs inside the frontend container, so it uses the backend's service name.
+        BACKEND_URL: http://backend:5000
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [nabad]
+    ports:
+      - "127.0.0.1:3000:3000"
+
+networks:
+  nabad:
+
+volumes:
+  mongo-data:

@@ -1,0 +1,15 @@
+node_modules
+.next
+.swc
+.vercel
+npm-debug.log*
+*.log
+# Secrets never go into an image.
+.env
+.env.*
+# Tests and their output aren't needed to build or run the app.
+__tests__
+test-utils
+coverage
+Dockerfile
+.dockerignore

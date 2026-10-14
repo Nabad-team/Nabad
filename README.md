@@ -1,5 +1,13 @@
 # Nabad
 
+## Run it locally
+
+With Docker Desktop running, `docker compose up` from the repository root starts the whole app: http://localhost:3000, with every email (verification, reset, 2FA codes) in a local inbox at http://localhost:8025. See [docs/docker.md](./docs/docker.md).
+
+## Architecture
+
+[docs/architecture.md](./docs/architecture.md) describes production (Vercel, Render, MongoDB Atlas, Brevo, Google sign-in, GitHub Actions) and local development, with diagrams, the backend modules and the security layers.
+
 ## Deployment
 
 The frontend is live at **https://nabad-psi.vercel.app** (Vercel project `nabad`).
