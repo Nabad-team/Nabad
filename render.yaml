@@ -64,3 +64,10 @@ services:
       # Must also be listed as an authorized redirect URI on the Google OAuth client.
       - key: GOOGLE_REDIRECT_URI
         value: https://nabad-psi.vercel.app/api/auth/google/callback
+      # AI triage (optional): leave LLM_API_URL or LLM_MODEL empty and the safety rules answer alone.
+      - key: LLM_API_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false

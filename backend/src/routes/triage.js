@@ -3,16 +3,30 @@
 // POST /api/triage/classify  { symptoms }           -> first result + followUpQuestions
 // POST /api/triage/refine    { symptoms, answers }  -> final result after the answers
 //
-// Both require a signed-in user. The server is stateless: /refine classifies the symptoms
+// POST /api/triage/ai-assess { symptoms, answers?, location? } -> AI triage (SCRUM-180)
+//
+// All require a signed-in user. The server is stateless: /refine classifies the symptoms
 // again itself instead of trusting a level sent by the browser.
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const { requireAuth } = require("../middleware/authMiddleware");
+const { logEvent } = require("../logger");
 const { classifyUrgency } = require("../triage/urgency");
 const { getFollowUpQuestions, refineUrgency, AnswerError } = require("../triage/followUps");
 const { assessSymptoms, emergencyRoute } = require("../triage/policy");
+const { getLlmClient } = require("../triage/ai/llmClient");
+const { assessWithAi } = require("../triage/ai/aiTriage");
 
 const router = express.Router();
 router.use(requireAuth);
+
+// Per account: each AI assessment is a paid call to the model provider.
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => req.userId,
+  message: { error: "Too many symptom checks in a short time. Please wait a few minutes and try again. If this is an emergency, call 140 now." },
+});
 
 function assessmentSymptomsError(symptoms) {
   if (typeof symptoms !== "string" || symptoms.trim().length < 3) {
@@ -61,6 +75,30 @@ router.post("/refine", (req, res) => {
   } catch (err) {
     if (err instanceof AnswerError) return res.status(400).json({ error: err.message });
     throw err;
+  }
+});
+
+router.post("/ai-assess", aiLimiter, async (req, res, next) => {
+  const symptoms = req.body?.symptoms;
+  const error = symptomsError(symptoms);
+  if (error) return res.status(400).json({ error });
+  const started = performance.now();
+  try {
+    const result = await assessWithAi(symptoms, {
+      client: getLlmClient(),
+      answers: req.body?.answers,
+      location: req.body?.location,
+    });
+    // Only the outcome is logged, never the symptoms or the model's words (health data).
+    logEvent("triage_ai", {
+      requestId: req.requestId,
+      reason: result.ai.used ? `used:${result.ai.guardrails[0]}` : result.ai.reason,
+      durationMs: Math.round(performance.now() - started),
+    });
+    return res.json({ ...result, disclaimer: DISCLAIMER });
+  } catch (err) {
+    if (err instanceof AnswerError) return res.status(400).json({ error: err.message });
+    return next(err);
   }
 });
 
