@@ -24,6 +24,8 @@ const userSchema = new mongoose.Schema(
     profilePicture: { type: String, default: "" },
     authVersion: { type: Number, default: 0 },
     onboardingCompleted: { type: Boolean, default: false },
+    // Account-level directory bookmarks; atomic set operations prevent duplicate saves.
+    favoriteProviders: { type: [String], default: [] },
 
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
