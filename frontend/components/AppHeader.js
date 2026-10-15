@@ -6,6 +6,7 @@ import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useSignedIn } from "./SessionTimeout";
 import { signOut } from "../lib/session";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { providerText } from "../lib/providerText";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 export const MAIN_LINKS = [
@@ -13,6 +14,7 @@ export const MAIN_LINKS = [
   { href: "/my-health", label: "My health", shortLabel: "Health" },
   { href: "/medications", label: "Medications", shortLabel: "Medicines" },
   { href: "/water-and-sleep", label: "Water and sleep", shortLabel: "Water & sleep" },
+  { href: "/providers", label: providerText("title"), shortLabel: providerText("title") },
 ];
 // Pages about the account itself, in the account menu.
 export const ACCOUNT_LINKS = [
