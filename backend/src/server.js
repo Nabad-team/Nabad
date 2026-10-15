@@ -11,6 +11,10 @@ async function start() {
   const missingGoogle = missingGoogleCredentials();
   if (process.env.APP_ENV === "production" && missingGoogle.length) logEvent("google_signin_disabled", { missingVariables: missingGoogle });
   await connectDB();
+  // Directory failures must not take authentication and the rest of Nabad offline.
+  await require("./providers/seed").seedProviders().catch(error => {
+    logEvent("provider_seed_failed", { errorType: error.name });
+  });
   return app.listen(process.env.PORT || 5000, () => logEvent("server_started", {
     environment: process.env.APP_ENV || process.env.NODE_ENV || "development",
   }));
