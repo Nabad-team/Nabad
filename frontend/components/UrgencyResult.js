@@ -1,5 +1,6 @@
 import Button from "./ui/Button";
 import ReadAloudButton from "./ReadAloudButton";
+import UrgencyExplanation from "./UrgencyExplanation";
 import { useAccessibility } from "../context/AccessibilityContext";
 
 // SCRUM-128: shows the urgency classification returned by POST /api/triage/classify.
@@ -15,11 +16,16 @@ export default function UrgencyResult({ result, preliminary = false }) {
   const simplified = preferences.simplifiedMode;
   const level = LEVELS.includes(result.level) ? result.level : "routine";
   const isEmergency = result.level === "emergency";
+  // SCRUM-130: the plain-language explanation, when the API sends one (older responses only have reasons).
+  const explanation = result.explanation?.summary ? result.explanation : null;
+  const spokenWhy = explanation
+    ? [explanation.summary, ...(explanation.watchFor || [])].join(" ")
+    : result.reasons?.length ? `Why: ${result.reasons.join(". ")}.` : "";
   const spokenResult = [
     `${preliminary ? "Urgency so far" : "Urgency"}: ${result.label}.`,
     `How soon: ${result.timeframe}.`,
     `What to do: ${result.action}.`,
-    result.reasons?.length ? `Why: ${result.reasons.join(". ")}.` : "",
+    spokenWhy,
     result.disclaimer,
   ].filter(Boolean).join(" ");
   const shortAction = isEmergency
@@ -59,7 +65,20 @@ export default function UrgencyResult({ result, preliminary = false }) {
         </p>
       )}
 
-      {result.reasons?.length > 0 && (
+      {explanation ? (
+        <>
+          <UrgencyExplanation explanation={explanation} isEmergency={isEmergency} simplified={simplified} />
+          {/* With an AI check, its own explanation is not in the rule-based one above. */}
+          {!simplified && result.ai?.used && result.reasons?.length > 0 && (
+            <>
+              <p className="urgency__label"><strong>What the AI check noted:</strong></p>
+              <ul>
+                {result.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </>
+          )}
+        </>
+      ) : result.reasons?.length > 0 && (
         <>
           <p className="urgency__why">
             <strong>Why:</strong>

@@ -7,6 +7,7 @@
 //
 // All require a signed-in user. The server is stateless: /refine classifies the symptoms
 // again itself instead of trusting a level sent by the browser.
+// All three urgency results include "explanation": why this was recommended, in plain language (SCRUM-130).
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { requireAuth } = require("../middleware/authMiddleware");
@@ -16,6 +17,7 @@ const { getFollowUpQuestions, refineUrgency, AnswerError } = require("../triage/
 const { assessSymptoms, emergencyRoute } = require("../triage/policy");
 const { getLlmClient } = require("../triage/ai/llmClient");
 const { assessWithAi } = require("../triage/ai/aiTriage");
+const { explainUrgency } = require("../triage/explanation");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -63,7 +65,12 @@ router.post("/classify", (req, res) => {
   const error = symptomsError(symptoms);
   if (error) return res.status(400).json({ error });
   const result = classifyUrgency(symptoms);
-  return res.json({ ...result, followUpQuestions: getFollowUpQuestions(symptoms, result), disclaimer: DISCLAIMER });
+  return res.json({
+    ...result,
+    followUpQuestions: getFollowUpQuestions(symptoms, result),
+    explanation: explainUrgency({ symptoms, result }),
+    disclaimer: DISCLAIMER,
+  });
 });
 
 router.post("/refine", (req, res) => {
@@ -71,7 +78,9 @@ router.post("/refine", (req, res) => {
   const error = symptomsError(symptoms);
   if (error) return res.status(400).json({ error });
   try {
-    return res.json({ ...refineUrgency(symptoms, req.body?.answers), disclaimer: DISCLAIMER });
+    const answers = req.body?.answers;
+    const result = refineUrgency(symptoms, answers);
+    return res.json({ ...result, explanation: explainUrgency({ symptoms, result, answers }), disclaimer: DISCLAIMER });
   } catch (err) {
     if (err instanceof AnswerError) return res.status(400).json({ error: err.message });
     throw err;
@@ -95,7 +104,8 @@ router.post("/ai-assess", aiLimiter, async (req, res, next) => {
       reason: result.ai.used ? `used:${result.ai.guardrails[0]}` : result.ai.reason,
       durationMs: Math.round(performance.now() - started),
     });
-    return res.json({ ...result, disclaimer: DISCLAIMER });
+    const explanation = explainUrgency({ symptoms, result, answers: req.body?.answers });
+    return res.json({ ...result, explanation, disclaimer: DISCLAIMER });
   } catch (err) {
     if (err instanceof AnswerError) return res.status(400).json({ error: err.message });
     return next(err);
