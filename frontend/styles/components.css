@@ -919,6 +919,22 @@ select.input {
   margin-bottom: var(--space-1);
 }
 
+/* SCRUM-130: "Why we suggest this". A thin rule separates it from the action above. */
+.urgency__explanation {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 0.0625rem solid currentColor;
+}
+
+.urgency__explanation h3 {
+  color: inherit;
+  font-size: var(--text-lg);
+}
+
+.urgency__label {
+  margin-bottom: var(--space-1);
+}
+
 .urgency--emergency {
   background: var(--color-danger-soft);
   border-color: var(--color-danger);
