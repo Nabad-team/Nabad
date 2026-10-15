@@ -14,6 +14,8 @@
 // These rules use commonly published red-flag symptoms. They are guidance, not a
 // diagnosis, and must be reviewed by the team's clinical/product owner before release.
 
+const { EVERYDAY_WORDING } = require("./everydayWording");
+
 const LEVELS = {
   emergency: {
     rank: 0,
@@ -103,13 +105,32 @@ const NEGATION_WINDOW = 3; // how many words before the phrase we look for a neg
 // possible mistake here, so we only cancel a phrase when the negation clearly applies to it.
 const CLAUSE_BREAKS = ["but", "and", "or", "then", "now", "also", "however", "."];
 
+// SCRUM-125: contractions typed or dictated without an apostrophe ("cant", "dont", "im").
+// Voice transcripts often drop them, and the rules and negations are written with them.
+const CONTRACTIONS = /\b(can|won|don|doesn|didn|isn|aren|wasn|weren|couldn|wouldn|shouldn|haven|hasn)t\b/g;
+
 function normalise(text) {
   return String(text || "")
     .toLowerCase()
     .replace(/[’`]/g, "'")
+    // SCRUM-125: a comma, semicolon, colon or ?/! ends a clause, so a negation never carries
+    // past it: in "no cough, chest pain" the chest pain must count.
+    .replace(/[,;:!?]/g, " . ")
     .replace(/[^a-z0-9'.\s]/g, " ")
+    .replace(CONTRACTIONS, "$1't")
+    .replace(/\bim\b/g, "i'm")
+    .replace(/\bive\b/g, "i've")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// True if a negation applies to whatever starts at this position of the (normalised) text.
+function isNegatedAt(text, index) {
+  let words = text.slice(0, index).replace(/\./g, " . ").trim().split(/\s+/).slice(-NEGATION_WINDOW);
+  const lastBreak = words.map((word) => CLAUSE_BREAKS.includes(word)).lastIndexOf(true);
+  if (lastBreak !== -1) words = words.slice(lastBreak + 1);
+  const before = words.join(" ");
+  return NEGATIONS.some((word) => new RegExp(`(^|\\s)${word}(\\s|$)`).test(before));
 }
 
 // True if the phrase appears at least once in the text without a negation just before it.
@@ -124,24 +145,41 @@ function containsPositive(text, phrase) {
       from = index + 1;
       continue;
     }
-    let words = text.slice(0, index).replace(/\./g, " . ").trim().split(/\s+/).slice(-NEGATION_WINDOW);
-    const lastBreak = words.map((word) => CLAUSE_BREAKS.includes(word)).lastIndexOf(true);
-    if (lastBreak !== -1) words = words.slice(lastBreak + 1);
-    const before = words.join(" ");
-    const negated = NEGATIONS.some((word) => new RegExp(`(^|\\s)${word}(\\s|$)`).test(before));
-    if (!negated) return true;
+    if (!isNegatedAt(text, index)) return true;
     from = index + phrase.length;
   }
 }
 
-function ruleMatches(text, rule) {
-  if (rule.all) return rule.all.every((phrase) => containsPositive(text, phrase));
-  return rule.any.some((phrase) => containsPositive(text, phrase));
+// SCRUM-125: everyday wording the user used, and the rule phrase it means.
+// Returns [{ said: "my chest hurts" (the words as normalised), means: "chest pain" }], negated ones left out.
+function findEverydayWording(text) {
+  const found = [];
+  for (const { means, patterns } of EVERYDAY_WORDING) {
+    for (const pattern of patterns) {
+      const global = new RegExp(pattern.source, "g");
+      for (const match of text.matchAll(global)) {
+        if (isNegatedAt(text, match.index)) continue;
+        if (!found.some((item) => item.means === means && item.said === match[0])) found.push({ said: match[0], means });
+      }
+    }
+  }
+  return found;
+}
+
+// A rule phrase counts if the user wrote it, or wrote everyday wording that means it.
+function mentions(text, phrase, understood) {
+  return containsPositive(text, phrase) || understood.some((item) => item.means === phrase);
+}
+
+function ruleMatches(text, rule, understood = []) {
+  if (rule.all) return rule.all.every((phrase) => mentions(text, phrase, understood));
+  return rule.any.some((phrase) => mentions(text, phrase, understood));
 }
 
 function classifyUrgency(description) {
   const text = normalise(description);
-  const matched = RULES.filter((rule) => ruleMatches(text, rule));
+  const understood = findEverydayWording(text);
+  const matched = RULES.filter((rule) => ruleMatches(text, rule, understood));
 
   if (matched.length === 0) {
     return {
@@ -150,6 +188,7 @@ function classifyUrgency(description) {
       confidence: "low",
       reasons: ["Nothing in your description matched a known warning sign. If you feel unwell or unsure, contact a doctor."],
       matchedRuleIds: [],
+      understood,
     };
   }
 
@@ -167,6 +206,8 @@ function classifyUrgency(description) {
     confidence: "rule-match",
     reasons: [...new Set(winning.map((rule) => rule.reason))],
     matchedRuleIds: ordered.map((rule) => rule.id),
+    // SCRUM-125: everyday wording that was recognised, so the user can see how they were understood.
+    understood,
   };
 }
 
@@ -175,4 +216,4 @@ function publicLevel(level) {
   return { label, timeframe, action };
 }
 
-module.exports = { classifyUrgency, LEVELS, RULES, normalise, containsPositive };
+module.exports = { classifyUrgency, LEVELS, RULES, normalise, containsPositive, isNegatedAt, findEverydayWording, mentions };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
-import { classifyUrgency, refineUrgency } from "../lib/triageApi";
+import { assessUrgency, assessUrgencyWithAnswers } from "../lib/triageApi";
 import UrgencyResult from "../components/UrgencyResult";
 import FollowUpQuestions from "../components/FollowUpQuestions";
 import ProfileHeader from "../components/ProfileHeader";
@@ -13,6 +13,12 @@ import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { PersonWithPhone } from "../components/illustrations";
 import { useAccessibility } from "../context/AccessibilityContext";
+
+// SCRUM-125: the same limits as the API (3 to 2000 characters), checked here so the user gets a
+// clear message instead of a failed request. Voice input is capped at the limit too.
+const MIN_LENGTH = 3;
+const MAX_LENGTH = 2000;
+const SHOW_COUNT_FROM = 1500; // the character count appears only when it starts to matter
 
 export default function SymptomsPage() {
   const { activeProfile } = useActiveProfile();
@@ -80,7 +86,7 @@ export default function SymptomsPage() {
 
       const dictatedText = dictatedTextRef.current + interimText;
       setSymptoms(
-        [baseSymptomsRef.current, dictatedText.trim()].filter(Boolean).join(" ")
+        [baseSymptomsRef.current, dictatedText.trim()].filter(Boolean).join(" ").slice(0, MAX_LENGTH)
       );
     };
 
@@ -133,6 +139,11 @@ export default function SymptomsPage() {
 
     const description = symptoms.trim();
 
+    if (description.length < MIN_LENGTH) {
+      setError("Please describe your symptoms in a few words, for example \"headache since this morning\".");
+      return;
+    }
+
     try {
       await addSymptomRecord(
         activeProfile.id,
@@ -151,8 +162,9 @@ export default function SymptomsPage() {
     // SCRUM-128: after saving, ask the backend how urgent this is and how soon to get care.
     // Saving and classifying are separate on purpose: if classification fails, the symptoms
     // are still saved, and the user is told what to do instead of seeing nothing.
+    // SCRUM-125: the user's own words go to AI triage, with the safety rules as the floor.
     try {
-      const result = await classifyUrgency(description);
+      const result = await assessUrgency(description);
       setUrgency(result);
       // SCRUM-126: emergencies come back with no questions, so nothing delays the call-140 advice.
       setFollowUps(result.followUpQuestions || []);
@@ -161,7 +173,10 @@ export default function SymptomsPage() {
     } catch (err) {
       console.error(err);
       setError(
-        "Your symptoms were saved, but we could not check how urgent they are right now. If you feel very unwell, call 140."
+        // Too many checks in a short time: the server's message says when to retry and to call 140.
+        err.status === 429
+          ? err.message
+          : "Your symptoms were saved, but we could not check how urgent they are right now. If you feel very unwell, call 140."
       );
     }
   }
@@ -171,7 +186,7 @@ export default function SymptomsPage() {
     setError("");
     setRefining(true);
     try {
-      setUrgency(await refineUrgency(lastDescription, answers));
+      setUrgency(await assessUrgencyWithAnswers(lastDescription, answers));
       setFollowUps([]);
     } catch (err) {
       console.error(err);
@@ -206,11 +221,24 @@ export default function SymptomsPage() {
             as="textarea"
             id="symptoms"
             label="Symptoms"
+            // SCRUM-125: everyday words are fine; these are the details that make the result more accurate.
+            hint={
+              simplified
+                ? "Say it in your own words."
+                : "Use your own words, by typing or speaking. Say what you feel, where, since when, and how bad it is."
+            }
             value={symptoms}
             onChange={(event) => setSymptoms(event.target.value)}
             placeholder="For example: headache since yesterday and a mild fever."
             rows="6"
+            maxLength={MAX_LENGTH}
           />
+
+          {symptoms.length >= SHOW_COUNT_FROM && (
+            <p className="field__hint">
+              {symptoms.length} of {MAX_LENGTH} characters
+            </p>
+          )}
 
           {speechRecognitionSupported && (
             <div>

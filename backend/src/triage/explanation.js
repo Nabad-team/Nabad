@@ -12,7 +12,7 @@
 // It is a pure function (no database, no network). It works with the results of /classify,
 // /refine and /ai-assess, and only ever quotes the app's own phrase list back, never raw user text.
 
-const { classifyUrgency, LEVELS, RULES, normalise, containsPositive } = require("./urgency");
+const { classifyUrgency, LEVELS, RULES, normalise, containsPositive, mentions } = require("./urgency");
 const { refineUrgency, SPECIFIC, GENERAL } = require("./followUps");
 
 const RECOMMENDATION = {
@@ -53,12 +53,18 @@ function joinList(items) {
 
 // The words that made each rule match, for the rules at the rules' own winning level.
 // words: the matched phrases, minus any already inside a longer match ("cant breathe" in "i cant breathe").
-function findTriggers(text, level) {
+// SCRUM-125: a phrase recognised from everyday wording is quoted as the user said it ("my chest hurts").
+// Those words can only be ones the patterns in everydayWording.js allow, never free text.
+function findTriggers(text, level, understood) {
+  const userWords = (phrase) => (containsPositive(text, phrase)
+    ? [phrase]
+    : understood.filter((item) => item.means === phrase).map((item) => item.said));
   return RULES.filter((rule) => rule.level === level)
     .map((rule) => {
-      const matched = rule.all
-        ? (rule.all.every((p) => containsPositive(text, p)) ? rule.all : [])
-        : rule.any.filter((p) => containsPositive(text, p));
+      const phrases = rule.all
+        ? (rule.all.every((p) => mentions(text, p, understood)) ? rule.all : [])
+        : rule.any.filter((p) => mentions(text, p, understood));
+      const matched = [...new Set(phrases.flatMap(userWords))];
       const words = matched.filter((p) => !matched.some((other) => other !== p && other.includes(p))).slice(0, MAX_WORDS_PER_TRIGGER);
       return words.length ? { words, meaning: rule.reason } : null;
     })
@@ -67,10 +73,11 @@ function findTriggers(text, level) {
 }
 
 // Warning signs mentioned only in the negative ("no chest pain", "without fever").
-function findNotCounted(text) {
+// A phrase that was counted through everyday wording ("no chest pain earlier, but now my chest hurts") is never listed.
+function findNotCounted(text, understood) {
   const found = [];
   for (const rule of RULES.filter((r) => WARNING_LEVELS.includes(r.level))) {
-    const phrase = (rule.all || rule.any).find((p) => appears(text, p) && !containsPositive(text, p));
+    const phrase = (rule.all || rule.any).find((p) => appears(text, p) && !mentions(text, p, understood));
     if (phrase && !found.includes(phrase)) found.push(phrase);
   }
   // "no high fever" also contains "fever": list only the longer phrase.
@@ -112,7 +119,7 @@ function explainUrgency({ symptoms, result, answers }) {
   const level = Object.hasOwn(LEVELS, result?.level) ? result.level : "routine";
   const text = normalise(symptoms);
   const initial = classifyUrgency(symptoms);
-  const triggers = initial.matchedRuleIds.length ? findTriggers(text, initial.level) : [];
+  const triggers = initial.matchedRuleIds.length ? findTriggers(text, initial.level, initial.understood) : [];
   const changedBy = findChangedBy(symptoms, answers, initial);
   const ai = result?.ai;
   const aiRaised = ai?.used && ai.guardrails?.[0] === "model_raised";
@@ -134,7 +141,7 @@ function explainUrgency({ symptoms, result, answers }) {
     summary: `We suggest ${RECOMMENDATION[level]} because ${because}.`,
     triggers,
     changedBy,
-    notCounted: findNotCounted(text),
+    notCounted: findNotCounted(text, initial.understood),
     watchFor: WATCH_FOR[level],
     basedOn: describeBasis({ ai, hasAnswers: Boolean(answers && Object.keys(answers).length) }),
   };
