@@ -5,6 +5,7 @@ import RequireSignIn from "../components/RequireSignIn";
 import { AccessibilityProvider } from "../context/AccessibilityContext";
 import "../styles/tokens.css";
 import "../styles/base.css";
+import "leaflet/dist/leaflet.css";
 import "../styles/components.css";
 
 // IBM Plex Sans, served from our own site by next/font (no request goes to Google from the browser).
