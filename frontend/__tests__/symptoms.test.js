@@ -4,7 +4,7 @@ import { act } from "react";
 import SymptomsPage from "../pages/symptoms";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
-import { classifyUrgency, refineUrgency } from "../lib/triageApi";
+import { assessUrgency, assessUrgencyWithAnswers } from "../lib/triageApi";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
 
 // Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
@@ -18,10 +18,10 @@ jest.mock("../lib/symptomApi", () => ({
   addSymptomRecord: jest.fn(),
 }));
 
-// SCRUM-128: the page now asks the backend for an urgency level after saving.
+// SCRUM-128: the page asks the backend for an urgency level after saving (SCRUM-125: through AI triage).
 jest.mock("../lib/triageApi", () => ({
-  classifyUrgency: jest.fn(),
-  refineUrgency: jest.fn(),
+  assessUrgency: jest.fn(),
+  assessUrgencyWithAnswers: jest.fn(),
 }));
 
 const EMERGENCY_RESULT = {
@@ -296,11 +296,11 @@ describe("Symptoms Page", () => {
   }
 
   test("classifies the saved symptoms and shows how soon to get care", async () => {
-    classifyUrgency.mockResolvedValue(SOON_RESULT);
+    assessUrgency.mockResolvedValue(SOON_RESULT);
 
     await submitSymptoms("Fever and headache");
 
-    expect(classifyUrgency).toHaveBeenCalledWith("Fever and headache");
+    expect(assessUrgency).toHaveBeenCalledWith("Fever and headache");
     expect(
       await screen.findByRole("heading", { name: "Urgency: See a doctor soon" })
     ).toBeInTheDocument();
@@ -312,7 +312,7 @@ describe("Symptoms Page", () => {
   });
 
   test("an emergency result is announced as an alert with a call button", async () => {
-    classifyUrgency.mockResolvedValue(EMERGENCY_RESULT);
+    assessUrgency.mockResolvedValue(EMERGENCY_RESULT);
 
     await submitSymptoms("Chest pain");
 
@@ -325,7 +325,7 @@ describe("Symptoms Page", () => {
   });
 
   test("if classification fails, symptoms stay saved and the user is told what to do", async () => {
-    classifyUrgency.mockRejectedValue(new Error("Request failed."));
+    assessUrgency.mockRejectedValue(new Error("Request failed."));
 
     await submitSymptoms("Cough");
 
@@ -351,13 +351,13 @@ describe("Symptoms Page", () => {
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
 
     expect(await screen.findByText("Could not save symptoms.")).toBeInTheDocument();
-    expect(classifyUrgency).not.toHaveBeenCalled();
+    expect(assessUrgency).not.toHaveBeenCalled();
   });
 
   // ---- SCRUM-126: follow-up questions ----
 
   test("shows follow-up questions and marks the first result as provisional", async () => {
-    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+    assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
 
     await submitSymptoms("Fever since yesterday");
 
@@ -374,14 +374,14 @@ describe("Symptoms Page", () => {
 
   test("sends the answers with the saved description and shows the updated result", async () => {
     const user = userEvent.setup({ delay: null });
-    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
-    refineUrgency.mockResolvedValue(URGENT_REFINED);
+    assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+    assessUrgencyWithAnswers.mockResolvedValue(URGENT_REFINED);
 
     await submitSymptoms("Fever since yesterday");
     await user.click(await screen.findByLabelText("39.5°C or higher"));
     await user.click(screen.getByRole("button", { name: "Update my urgency" }));
 
-    expect(refineUrgency).toHaveBeenCalledWith("Fever since yesterday", {
+    expect(assessUrgencyWithAnswers).toHaveBeenCalledWith("Fever since yesterday", {
       "fever-temperature": "39.5-plus",
     });
     expect(await screen.findByRole("heading", { name: "Urgency: Urgent" })).toBeInTheDocument();
@@ -391,18 +391,18 @@ describe("Symptoms Page", () => {
 
   test("skipping the questions keeps the first result as the final one", async () => {
     const user = userEvent.setup({ delay: null });
-    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+    assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
 
     await submitSymptoms("Fever since yesterday");
     await user.click(await screen.findByRole("button", { name: "Skip questions" }));
 
     expect(screen.getByRole("heading", { name: "Urgency: See a doctor soon" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
-    expect(refineUrgency).not.toHaveBeenCalled();
+    expect(assessUrgencyWithAnswers).not.toHaveBeenCalled();
   });
 
   test("an emergency shows no questions, only the call-140 advice", async () => {
-    classifyUrgency.mockResolvedValue({ ...EMERGENCY_RESULT, followUpQuestions: [] });
+    assessUrgency.mockResolvedValue({ ...EMERGENCY_RESULT, followUpQuestions: [] });
 
     await submitSymptoms("Chest pain");
 
@@ -412,8 +412,8 @@ describe("Symptoms Page", () => {
 
   test("if updating fails, the first result and the questions stay so the user can retry", async () => {
     const user = userEvent.setup({ delay: null });
-    classifyUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
-    refineUrgency.mockRejectedValue(new Error("Request failed."));
+    assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
+    assessUrgencyWithAnswers.mockRejectedValue(new Error("Request failed."));
 
     await submitSymptoms("Fever since yesterday");
     await user.click(await screen.findByLabelText("Severe: I can hardly function"));
