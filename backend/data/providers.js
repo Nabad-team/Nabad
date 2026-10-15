@@ -1,0 +1,14 @@
+// Small, curated starter directory. Sources checked 2026-10-15; not a live availability feed.
+// Coordinates: Ministry of Public Health facility locator. Clinic pins indicate the campus,
+// not the individual entrance. Unverified services/hours are deliberately left unknown.
+const map = "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0";
+const aub = "https://aubmc.org.lb/patientcare/dep_div/ambulatory/Pages/pri_cli.aspx";
+const weekdays = (start, end) => [1, 2, 3, 4, 5].map(day => ({ day, start, end }));
+module.exports = [
+  { slug: "aubmc", name: "American University of Beirut Medical Center", type: "hospital", city: "Beirut", address: "Hamra, Cairo Street", latitude: 33.89812, longitude: 35.48538, phone: "+9611350000", specialties: ["emergency-medicine"], emergency24h: true, sources: [map, "https://www.aubmc.org.lb/patientcare/Pages/pat_info.aspx"] },
+  { slug: "lau-rizk", name: "LAU Medical Center – Rizk Hospital", type: "hospital", city: "Beirut", address: "Zahar Street, Achrafieh", latitude: 33.88554, longitude: 35.51449, phone: "+9611200800", specialties: ["emergency-medicine", "pediatrics", "dermatology", "neurology", "ophthalmology", "internal-medicine", "obstetrics-gynecology", "orthopedics"], emergency24h: true, sources: [map, "https://www.laumcrh.com/contact-us", "https://www.laumcrh.com/departments/medical-departments", "https://www.laumcrh.com/departments/medical-departments/internal-medicine/emergency-department"] },
+  { slug: "nini-hospital", name: "Nini Hospital", type: "hospital", city: "Tripoli", address: "Maarad Street", latitude: 34.43587, longitude: 35.83076, specialties: [], sources: [map] },
+  { slug: "hammoud-hospital", name: "Hammoud Hospital University Medical Center", type: "hospital", city: "Saida", address: "Skandarani, Dr. Ghassan Hammoud Street", latitude: 33.56025, longitude: 35.37551, specialties: [], sources: [map] },
+  { slug: "aubmc-specialty-clinics", name: "AUBMC Specialty Clinics", type: "clinic", city: "Beirut", address: "AUBMC campus: confirm the clinic building when booking", latitude: 33.89812, longitude: 35.48538, locationApproximate: true, phone: "+9611350000", specialties: ["pediatrics", "internal-medicine"], hoursKnown: true, hours: weekdays(480, 1020), sources: [map, aub] },
+  { slug: "aubmc-outpatient", name: "AUBMC Outpatient Department", type: "clinic", city: "Beirut", address: "AUBMC campus, Hamra: confirm the entrance when booking", latitude: 33.89812, longitude: 35.48538, locationApproximate: true, phone: "+9611350000", specialties: ["family-medicine", "internal-medicine", "pediatrics", "ophthalmology", "obstetrics-gynecology", "psychiatry", "dermatology", "surgery", "ent"], hoursKnown: true, hours: weekdays(450, 960), sources: [map, "https://www.aubmc.org/patientcare/dep_div/ambulatory/Pages/opd.aspx"] },
+].map(provider => ({ ...provider, verifiedAt: new Date("2026-10-15T00:00:00Z") }));
