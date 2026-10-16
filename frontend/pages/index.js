@@ -22,7 +22,7 @@ const features = [
     Illustration: SmallHouse,
     title: "Find hospitals and clinics",
     text: "Search by specialty, location and availability.",
-    comingSoon: true,
+    href: "/providers",
   },
   {
     Illustration: TwoHearts,
@@ -42,6 +42,7 @@ export default function HomePage() {
       width="wide"
       header={
         <SiteHeader width="wide">
+          <a href="/providers" className="site-nav__link">Find care</a>
           <a href="/login" className="site-nav__link">Log in</a>
           <Button href="/signup" size="small">Sign up</Button>
         </SiteHeader>
@@ -73,12 +74,12 @@ export default function HomePage() {
       <section className="section" aria-labelledby="features-heading">
         <h2 id="features-heading">How Nabad helps</h2>
         <ul className="feature-list">
-          {features.map(({ Illustration, title, text, comingSoon }) => (
+          {features.map(({ Illustration, title, text, comingSoon, href }) => (
             <li key={title}>
               <Illustration size="4.5rem" />
               <div>
                 <h3>
-                  {title}
+                  {href ? <a href={href}>{title}</a> : title}
                   {comingSoon && <> <Badge>Coming soon</Badge></>}
                 </h3>
                 <p>{text}</p>

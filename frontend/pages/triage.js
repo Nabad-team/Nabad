@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { triageProviderUrl } from "../lib/providerFilters";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { assessSymptoms } from "../lib/triageApi";
 import { getEmergencyContact } from "../lib/api";
@@ -253,6 +254,9 @@ export default function TriagePage() {
           </h2>
 
           <p>{result.disclaimer}</p>
+          {country === "LB" && <p><a className="button button--secondary" href={triageProviderUrl(result)}>
+            {isEmergency ? "Find hospitals with a published 24/7 ER" : "Find hospitals and clinics"}
+          </a></p>}
 
           {result.guidance && (
             <p>{result.guidance}</p>
