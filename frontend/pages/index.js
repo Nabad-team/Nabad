@@ -47,7 +47,12 @@ export default function HomePage() {
           <Button href="/signup" size="small">Sign up</Button>
         </SiteHeader>
       }
-      footer={<p>Nabad, built by Team 3 for CMPS 271, AUB</p>}
+     footer={
+  <p>
+    Nabad, built by Team 3 for CMPS 271, AUB ·{" "}
+    <a href="/privacy">Privacy Policy</a>
+  </p>
+}
     >
       {router.query.deleted && (
         <Alert tone="success" as="p" role="status">

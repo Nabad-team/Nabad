@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { signup, googleLoginUrl } from "../lib/api";
 import { findPasswordProblem } from "../lib/passwordPolicy";
@@ -22,14 +23,21 @@ export default function SignupPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const problem = findPasswordProblem(form.password, { name: form.name, email: form.email });
+
+    const problem = findPasswordProblem(form.password, {
+      name: form.name,
+      email: form.email,
+    });
+
     if (problem) {
       setError(problem.message);
       passwordRef.current?.focus();
       return;
     }
+
     setError("");
     setLoading(true);
+
     try {
       await signup(form.name, form.email, form.password);
       router.push("/onboarding");
@@ -42,24 +50,88 @@ export default function SignupPage() {
 
   return (
     <PageLayout title="Sign up">
-      <PageTitle lead="It takes about a minute. You can add family members later.">Create your Nabad account</PageTitle>
+      <PageTitle lead="It takes about a minute. You can add family members later.">
+        Create your Nabad account
+      </PageTitle>
+
       <div className="stack">
         <form onSubmit={handleSubmit} className="form">
-          <Input id="name" label="Name" autoComplete="name" value={form.name} onChange={update("name")} required />
-          <Input id="email" label="Email" type="email" autoComplete="email" value={form.email} onChange={update("email")} required />
+          <Input
+            id="name"
+            label="Name"
+            autoComplete="name"
+            value={form.name}
+            onChange={update("name")}
+            required
+          />
 
-          <NewPasswordField value={form.password} onChange={(password) => setForm({ ...form, password })} context={{ name: form.name, email: form.email }} inputRef={passwordRef} />
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={update("email")}
+            required
+          />
 
-          {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-          <Button type="submit" disabled={loading} block>
-            {loading ? "Creating account..." : "Sign up"}
+          <NewPasswordField
+            value={form.password}
+            onChange={(password) =>
+              setForm({ ...form, password })
+            }
+            context={{
+              name: form.name,
+              email: form.email,
+            }}
+            inputRef={passwordRef}
+          />
+
+          {error && (
+            <Alert tone="danger" as="p" role="alert">
+              {error}
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            disabled={loading}
+            block
+          >
+            {loading
+              ? "Creating account..."
+              : "Sign up"}
           </Button>
         </form>
-        <p className="divider-text">or</p>
+
+        <p>
+          By creating an account, you agree to how Nabad handles your
+          information as described in our{" "}
+          <Link href="/privacy">
+            Privacy Policy
+          </Link>.
+        </p>
+
+        <p className="divider-text">
+          or
+        </p>
+
         <div className="form">
-          <Button variant="secondary" href={googleLoginUrl()} block>Continue with Google</Button>
+          <Button
+            variant="secondary"
+            href={googleLoginUrl()}
+            block
+          >
+            Continue with Google
+          </Button>
         </div>
-        <p>Already have an account? <a href="/login">Log in</a></p>
+
+        <p>
+          Already have an account?{" "}
+          <a href="/login">
+            Log in
+          </a>
+        </p>
       </div>
     </PageLayout>
   );
