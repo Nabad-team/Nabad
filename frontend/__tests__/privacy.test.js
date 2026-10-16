@@ -7,7 +7,7 @@ describe("Privacy Policy Page", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Nabad Privacy Policy",
+        name: "Privacy Policy",
       })
     ).toBeInTheDocument();
   });
@@ -16,29 +16,56 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText("Information We Collect")
+      screen.getByText("Information Nabad stores")
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("How Your Information Is Used")
+      screen.getByText("How symptom information is used")
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Who Can Access Your Information")
+      screen.getByText("Services Nabad uses")
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Data Security")
+      screen.getByText("Logs and health information")
     ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Account security")
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Your choices and deleting your data")
+    ).toBeInTheDocument();
+  });
+
+  test("shows the last updated date", () => {
+    render(<PrivacyPolicy />);
+
+    expect(
+      screen.getByText(/October 16, 2026/)
+    ).toBeInTheDocument();
+  });
+
+  test("mentions the services Nabad uses", () => {
+    render(<PrivacyPolicy />);
+
+    expect(screen.getByText("Vercel")).toBeInTheDocument();
+    expect(screen.getByText("Render")).toBeInTheDocument();
+    expect(screen.getByText("MongoDB Atlas")).toBeInTheDocument();
+    expect(screen.getByText("Brevo")).toBeInTheDocument();
+    expect(screen.getByText("Google")).toBeInTheDocument();
+    expect(screen.getByText("OpenStreetMap")).toBeInTheDocument();
   });
 
   test("has a link back to the dashboard", () => {
     render(<PrivacyPolicy />);
 
-    const backLink = screen.getByRole("link", {
-      name: "Back to Dashboard",
-    });
-
-    expect(backLink).toHaveAttribute("href", "/dashboard");
+    expect(
+      screen.getByRole("link", {
+        name: "Back to Dashboard",
+      })
+    ).toHaveAttribute("href", "/dashboard");
   });
 });
