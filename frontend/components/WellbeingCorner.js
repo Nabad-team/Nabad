@@ -6,6 +6,26 @@ const dailyMessages = [
   "You do not have to handle everything at once.",
   "Try to make time for rest, food, and hydration.",
   "Checking in with someone you trust can help.",
+  "It is okay to slow down when things feel heavy.",
+  "A few quiet minutes can make the next step feel easier.",
+  "You can focus on what is manageable right now.",
+  "Rest is part of taking care of yourself.",
+  "A small positive step still counts.",
+  "Try to notice one thing around you that feels calm or familiar.",
+  "You do not need to solve everything today.",
+  "Taking care of basic needs can help when stress builds up.",
+  "Give yourself permission to pause for a moment.",
+  "Talking about how you feel can make things feel less overwhelming.",
+  "Try to be as patient with yourself as you would be with someone you care about.",
+  "A difficult day does not mean every day will feel the same.",
+  "You can take today in smaller pieces.",
+  "If your mind feels busy, focus on one simple task at a time.",
+  "Reaching out for support is a reasonable next step when things feel too much.",
+  "A glass of water, a meal, or some rest can be a useful place to start.",
+  "Try stepping away from the screen for a few minutes if you can.",
+  "You are allowed to make space for recovery and rest.",
+  "Slow breathing can help your body settle when you feel tense.",
+  "Staying connected with people you trust can help during stressful times.",
 ];
 
 function getDailyMessage() {
@@ -53,6 +73,27 @@ export default function WellbeingCorner() {
         <a href="tel:1564">
           Call 1564
         </a>
+      </p>
+
+      <p>
+        <strong>Lebanese Red Cross 140</strong>
+      </p>
+
+      <p>
+        If you or someone else is in immediate danger or needs
+        emergency medical help, call the Lebanese Red Cross.
+      </p>
+
+      <p>
+        <a href="tel:140">
+          Call 140
+        </a>
+      </p>
+
+      <p>
+        <small>
+          Numbers last verified: October 16, 2026
+        </small>
       </p>
     </Card>
   );
