@@ -82,6 +82,30 @@
     "orthopedics": "Orthopedics",
     "psychiatry": "Psychiatry",
     "surgery": "Surgery",
-    "ent": "Ear, nose and throat"
+    "ent": "Ear, nose and throat",
+    "cardiology": "Cardiology",
+    "radiology": "Radiology",
+    "nephrology": "Nephrology",
+    "neonatology": "Neonatology",
+    "oncology": "Oncology"
+  },
+  "publicHint": "Browse without an account. Sign in only to save providers.",
+  "signInToSave": "Sign in to save",
+  "governorate": "Governorate",
+  "allGovernorates": "All governorates",
+  "service": "Services and equipment",
+  "allServices": "All services",
+  "servicesUnknown": "Services and equipment not yet verified",
+  "servicesNote": "Listed capabilities are published information, not a guarantee of live availability. Unlisted services may be available; call to confirm.",
+  "directions": "Directions in Google Maps",
+  "services": {
+    "ct": "CT scan",
+    "mri": "MRI",
+    "cath-lab": "Cardiac catheterization lab",
+    "nicu": "Neonatal intensive care (NICU)",
+    "icu": "Intensive care (ICU)",
+    "burn-unit": "Burn unit",
+    "dialysis": "Dialysis",
+    "maternity": "Maternity"
   }
 }
