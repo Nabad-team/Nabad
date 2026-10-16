@@ -132,7 +132,7 @@ export default function DashboardPage() {
         <div className="button-row">
           <Button
             variant="secondary"
-            href="/triage"
+            href="/symptoms"
             aria-label={
               simplified
                 ? "Open safety check"

@@ -5,6 +5,7 @@ import SymptomsPage from "../pages/symptoms";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addSymptomRecord } from "../lib/symptomApi";
 import { assessUrgency, assessUrgencyWithAnswers } from "../lib/triageApi";
+import { getEmergencyContact } from "../lib/api";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
 
 // Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
@@ -24,6 +25,11 @@ jest.mock("../lib/triageApi", () => ({
   assessUrgencyWithAnswers: jest.fn(),
 }));
 
+jest.mock("../lib/api", () => ({
+  ...jest.requireActual("../lib/api"),
+  getEmergencyContact: jest.fn(),
+}));
+
 const EMERGENCY_RESULT = {
   level: "emergency",
   label: "Emergency",
@@ -40,6 +46,25 @@ const SOON_RESULT = {
   action: "Book an appointment with a doctor in the next day or two.",
   reasons: ["A fever should be checked by a doctor if it lasts or gets worse."],
   disclaimer: "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.",
+};
+
+const ROUTINE_RESULT = {
+  level: "routine",
+  label: "Routine / self-care",
+  timeframe: "Within a few days, if it does not improve",
+  action:
+    "Rest and monitor your symptoms. Book a regular appointment if they last more than a few days or get worse.",
+  reasons: [
+    "Mild, common symptoms like these can usually be managed at home.",
+  ],
+  selfCareGuidance: [
+    "Rest and avoid strenuous activity while you are feeling unwell.",
+    "Drink enough fluids unless a healthcare professional has told you to limit fluids.",
+    "Monitor your symptoms and how you are feeling.",
+    "Seek medical advice if your symptoms worsen, do not improve, or you become concerned.",
+  ],
+  disclaimer:
+    "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.",
 };
 
 const SOON_WITH_QUESTIONS = {
@@ -83,6 +108,7 @@ describe("Symptoms Page", () => {
 
     assessUrgency.mockResolvedValue(SOON_RESULT);
     addSymptomRecord.mockResolvedValue({ id: "symptom-1" });
+    getEmergencyContact.mockResolvedValue({ contact: null });
   });
 
   test("shows a message when no active profile is selected", () => {
@@ -391,6 +417,70 @@ describe("Symptoms Page", () => {
     );
   });
 
+  test("shows the saved emergency contact when the result is an emergency", async () => {
+    getEmergencyContact.mockResolvedValue({
+      contact: {
+        name: "Rana Hamdan",
+        phone: "+961 70 123 456",
+      },
+    });
+
+    assessUrgency.mockResolvedValue(EMERGENCY_RESULT);
+
+    await submitSymptoms("Chest pain");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Your emergency contact",
+      })
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("Rana Hamdan")).toBeInTheDocument();
+    expect(screen.getByText("+961 70 123 456")).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("link", {
+        name: "Call Rana Hamdan",
+      })
+    ).toHaveAttribute("href", "tel:+96170123456");
+
+    expect(getEmergencyContact).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows self-care guidance for a routine result", async () => {
+    assessUrgency.mockResolvedValue(ROUTINE_RESULT);
+
+    await submitSymptoms("Runny nose");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Urgency: Routine / self-care",
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Self-care guidance",
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        "Rest and avoid strenuous activity while you are feeling unwell."
+      )
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        "Drink enough fluids unless a healthcare professional has told you to limit fluids."
+      )
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Monitor your symptoms and how you are feeling.")
+    ).toBeInTheDocument();
+  });
+
   test("if urgency classification fails, symptoms are not saved", async () => {
     assessUrgency.mockRejectedValue(
       new Error("Request failed.")
@@ -469,7 +559,6 @@ describe("Symptoms Page", () => {
       })
     ).toBeInTheDocument();
 
-    // Nothing answered yet, so there is nothing to send.
     expect(
       screen.getByRole("button", { name: "Update my urgency" })
     ).toBeDisabled();
