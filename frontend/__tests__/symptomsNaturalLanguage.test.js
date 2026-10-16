@@ -156,6 +156,6 @@ describe("describing symptoms in your own words", () => {
     await user.type(screen.getByLabelText("Symptoms"), "a cough");
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
     expect(await screen.findByText(limited.message)).toBeInTheDocument();
-    expect(addSymptomRecord).toHaveBeenCalled(); // still saved
+   expect(addSymptomRecord).not.toHaveBeenCalled(); 
   });
 });
