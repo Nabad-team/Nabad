@@ -2,12 +2,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProvidersPage from "../pages/providers";
 import { getProviders, getProviderFavorites, setProviderFavorite } from "../lib/providerApi";
+let mockSignedIn = true;
+let mockRouter = { isReady: true, query: {}, asPath: "/providers", push: jest.fn() };
+jest.mock("next/router", () => ({ useRouter: () => mockRouter }));
+jest.mock("../components/SessionTimeout", () => ({ useSignedIn: () => mockSignedIn }));
 jest.mock("../lib/providerApi", () => ({ getProviders: jest.fn(), getProviderFavorites: jest.fn(), setProviderFavorite: jest.fn() }));
 jest.mock("../components/ProfileHeader", () => () => <header>Profile</header>);
 const provider = { id: "clinic", name: "Test Clinic", type: "clinic", city: "Beirut", address: "Clinic Street",
-  specialties: ["pediatrics"], phone: "+9611000000", sources: ["https://example.org"], verifiedAt: "2026-10-15T00:00:00Z" };
+  latitude: 33.9, longitude: 35.5, services: ["mri"], specialties: ["pediatrics"], phone: "+9611000000", sources: ["https://example.org"], verifiedAt: "2026-10-15T00:00:00Z" };
 const result = { providers: [provider], total: 1, specialties: ["pediatrics"], cities: ["Beirut"] };
-beforeEach(() => { jest.resetAllMocks(); getProviders.mockResolvedValue(result); getProviderFavorites.mockResolvedValue([]); setProviderFavorite.mockResolvedValue({}); });
+beforeEach(() => { jest.resetAllMocks(); mockSignedIn = true; mockRouter = { isReady: true, query: {}, asPath: "/providers", push: jest.fn() }; getProviders.mockResolvedValue(result); getProviderFavorites.mockResolvedValue([]); setProviderFavorite.mockResolvedValue({}); });
 test("lists providers and submits a specialty search", async () => {
   const user = userEvent.setup(); render(<ProvidersPage />);
   expect(await screen.findByRole("heading", { name: "Test Clinic" })).toBeInTheDocument();
@@ -15,7 +19,7 @@ test("lists providers and submits a specialty search", async () => {
   await user.type(screen.getByLabelText("Search by name or specialty"), "Test");
   await user.click(screen.getByRole("button", { name: "Search providers" }));
   await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ q: "Test", specialty: "pediatrics" }), expect.any(AbortSignal)));
-  expect(ProvidersPage.requireSignIn).toBe(true);
+  expect(ProvidersPage.requireSignIn).not.toBe(true);
 });
 test("location is opt-in, permission denial leaves city search usable", async () => {
   const locate = jest.fn((success, failure) => failure({ code: 1 }));
@@ -25,9 +29,9 @@ test("location is opt-in, permission denial leaves city search usable", async ()
   expect(locate).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "Use my location" }));
   expect(screen.getByRole("alert")).toHaveTextContent("choose a city");
-  await user.selectOptions(screen.getByLabelText("City"), "Beirut");
+  await user.selectOptions(screen.getByLabelText("City"), "beirut");
   await user.click(screen.getByRole("button", { name: "Search providers" }));
-  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ city: "Beirut" }), expect.any(AbortSignal)));
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ city: "beirut" }), expect.any(AbortSignal)));
 });
 test("location and radius are submitted and can be cleared", async () => {
   Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: success => success({ coords: { latitude: 33.9, longitude: 35.5 } }) } });
@@ -67,4 +71,29 @@ test("favorite filter uses the same server-side filtering as other searches", as
   await user.click(screen.getByLabelText("My saved providers"));
   await user.click(screen.getByRole("button", { name: "Search providers" }));
   await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ favorites: true }), expect.any(AbortSignal)));
+});
+
+test("public visitors can browse and get a sign-in link without a favorites request", async () => {
+  mockSignedIn = false;
+  render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  expect(getProviderFavorites).not.toHaveBeenCalled();
+  expect(screen.getByRole("link", { name: "Sign in to save" })).toHaveAttribute("href", "/login");
+  expect(screen.queryByLabelText("My saved providers")).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Directions in Google Maps" })).toHaveAttribute("href", "https://www.google.com/maps/dir/?api=1&destination=33.9%2C35.5");
+});
+test("URL filters hydrate on load and browser navigation restores them", async () => {
+  mockRouter = { ...mockRouter, query: { specialty: "pediatrics", emergency24h: "true", service: "mri" }, asPath: "/providers?specialty=pediatrics&emergency24h=true&service=mri" };
+  const view = render(<ProvidersPage />);
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ specialty: "pediatrics", emergency24h: true, service: "mri" }), expect.any(AbortSignal)));
+  mockRouter = { ...mockRouter, query: { city: "beirut" }, asPath: "/providers?city=beirut" };
+  view.rerender(<ProvidersPage />);
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ city: "beirut", specialty: "", emergency24h: false }), expect.any(AbortSignal)));
+});
+test("submitted filters update the URL without exposing coordinates", async () => {
+  const user = userEvent.setup(); render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  await user.selectOptions(screen.getByLabelText("Specialty"), "pediatrics");
+  await user.click(screen.getByRole("button", { name: "Search providers" }));
+  expect(mockRouter.push).toHaveBeenCalledWith("/providers?specialty=pediatrics", undefined, { shallow: true, scroll: false });
 });

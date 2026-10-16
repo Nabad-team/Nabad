@@ -69,13 +69,14 @@ describe("Header navigation", () => {
     expect(screen.getByRole("link", { name: "My profile" })).not.toHaveAttribute("aria-current");
   });
 
-  test("shows nothing but the logo while signed out", () => {
+  test("shows the logo and public care link while signed out", () => {
     mockSignedIn = false;
     renderHeader();
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Menu" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Find care" })).toHaveAttribute("href", "/providers");
   });
 });
 
