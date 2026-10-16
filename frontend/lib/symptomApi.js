@@ -1,52 +1,87 @@
-const STORAGE_KEY = "nabad-symptom-records";
+import { request } from "./api";
 
-function loadSymptoms() {
-  if (typeof window === "undefined") {
-    return [];
-  }
+// Old Sprint 1 storage key.
+// We remove it so health data is no longer left in the browser.
+const OLD_STORAGE_KEY = "nabad-symptom-records";
 
-  const storedSymptoms = localStorage.getItem(STORAGE_KEY);
-
-  if (!storedSymptoms) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(storedSymptoms);
-  } catch (error) {
-    console.error("Could not read symptom records:", error);
-    return [];
-  }
-}
-
-function saveSymptoms(records) {
+function clearOldSymptomStorage() {
   if (typeof window === "undefined") {
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  try {
+    localStorage.removeItem(OLD_STORAGE_KEY);
+  } catch (error) {
+    console.error(
+      "Could not clear old symptom records:",
+      error
+    );
+  }
 }
 
-export async function addSymptomRecord(profileId, profileName, symptoms) {
-  const records = loadSymptoms();
+const path = (profileId, id) =>
+  "/symptoms" +
+  (id ? "/" + encodeURIComponent(id) : "") +
+  "?profileId=" +
+  encodeURIComponent(profileId);
 
-  const newRecord = {
-    id: Date.now().toString(),
-    profileId,
+// Save one symptom record.
+export async function addSymptomRecord(
+  profileId,
+  profileName,
+  symptoms,
+  urgencyResult
+) {
+  clearOldSymptomStorage();
+
+  const data = await request(
+    path(profileId),
+    {
+      method: "POST",
+      body: JSON.stringify({
+        description: symptoms,
+        urgencyResult,
+      }),
+    }
+  );
+
+  return {
+    ...data.symptomRecord,
     profileName,
-    symptoms,
-    createdAt: new Date().toISOString(),
+    symptoms:
+      data.symptomRecord.description,
   };
-
-  const updatedRecords = [...records, newRecord];
-
-  saveSymptoms(updatedRecords);
-
-  return newRecord;
 }
 
-export async function getSymptomsForProfile(profileId) {
-  const records = loadSymptoms();
+// Get all symptom records for one profile.
+export async function getSymptomsForProfile(
+  profileId
+) {
+  clearOldSymptomStorage();
 
-  return records.filter((record) => record.profileId === profileId);
+  const data = await request(
+    path(profileId)
+  );
+
+  return data.symptomRecords.map(
+    (record) => ({
+      ...record,
+      symptoms: record.description,
+    })
+  );
+}
+
+// Delete one symptom record.
+export async function deleteSymptomRecord(
+  profileId,
+  recordId
+) {
+  clearOldSymptomStorage();
+
+  await request(
+    path(profileId, recordId),
+    {
+      method: "DELETE",
+    }
+  );
 }

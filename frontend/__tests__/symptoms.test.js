@@ -18,7 +18,7 @@ jest.mock("../lib/symptomApi", () => ({
   addSymptomRecord: jest.fn(),
 }));
 
-// SCRUM-128: the page asks the backend for an urgency level after saving (SCRUM-125: through AI triage).
+// SCRUM-128: the page asks the backend for an urgency level before saving the symptom record.
 jest.mock("../lib/triageApi", () => ({
   assessUrgency: jest.fn(),
   assessUrgencyWithAnswers: jest.fn(),
@@ -42,7 +42,6 @@ const SOON_RESULT = {
   disclaimer: "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.",
 };
 
-// SCRUM-126: a first result that comes back with follow-up questions.
 const SOON_WITH_QUESTIONS = {
   ...SOON_RESULT,
   followUpQuestions: [
@@ -81,6 +80,9 @@ describe("Symptoms Page", () => {
     jest.clearAllMocks();
     delete window.SpeechRecognition;
     delete window.webkitSpeechRecognition;
+
+    assessUrgency.mockResolvedValue(SOON_RESULT);
+    addSymptomRecord.mockResolvedValue({ id: "symptom-1" });
   });
 
   test("shows a message when no active profile is selected", () => {
@@ -133,6 +135,7 @@ describe("Symptoms Page", () => {
     ).toBeInTheDocument();
 
     expect(addSymptomRecord).not.toHaveBeenCalled();
+    expect(assessUrgency).not.toHaveBeenCalled();
   });
 
   test("saves symptoms for the selected linked profile", async () => {
@@ -144,6 +147,8 @@ describe("Symptoms Page", () => {
         fullName: "Maya Hamdan",
       },
     });
+
+    assessUrgency.mockResolvedValue(SOON_RESULT);
 
     addSymptomRecord.mockResolvedValue({
       id: "symptom-1",
@@ -163,10 +168,13 @@ describe("Symptoms Page", () => {
     );
 
     await waitFor(() => {
+      expect(assessUrgency).toHaveBeenCalledWith("Fever and headache");
+
       expect(addSymptomRecord).toHaveBeenCalledWith(
         "profile-1",
         "Maya Hamdan",
-        "Fever and headache"
+        "Fever and headache",
+        SOON_RESULT
       );
     });
   });
@@ -180,6 +188,8 @@ describe("Symptoms Page", () => {
         fullName: "Maya Hamdan",
       },
     });
+
+    assessUrgency.mockResolvedValue(SOON_RESULT);
 
     addSymptomRecord.mockResolvedValue({
       id: "symptom-1",
@@ -211,6 +221,7 @@ describe("Symptoms Page", () => {
         stop: jest.fn(),
         abort: jest.fn(),
       };
+
       return recognition;
     });
 
@@ -226,6 +237,7 @@ describe("Symptoms Page", () => {
     await user.click(screen.getByRole("button", { name: "Speak symptoms" }));
 
     expect(recognition.start).toHaveBeenCalled();
+
     expect(
       screen.getByRole("button", { name: "Stop listening" })
     ).toBeInTheDocument();
@@ -250,14 +262,30 @@ describe("Symptoms Page", () => {
   });
 
   test("starts listening straight away when opened from the dashboard's Speak button", async () => {
-    const recognition = { start: jest.fn(), stop: jest.fn(), abort: jest.fn() };
+    const recognition = {
+      start: jest.fn(),
+      stop: jest.fn(),
+      abort: jest.fn(),
+    };
+
     window.SpeechRecognition = jest.fn(() => recognition);
-    useActiveProfile.mockReturnValue({ activeProfile: { id: "profile-1", fullName: "Maya Hamdan" } });
+
+    useActiveProfile.mockReturnValue({
+      activeProfile: {
+        id: "profile-1",
+        fullName: "Maya Hamdan",
+      },
+    });
+
     window.history.pushState({}, "", "/symptoms?voice=1");
 
     try {
       render(<SymptomsPage />);
-      expect(await screen.findByRole("button", { name: "Stop listening" })).toBeInTheDocument();
+
+      expect(
+        await screen.findByRole("button", { name: "Stop listening" })
+      ).toBeInTheDocument();
+
       expect(recognition.start).toHaveBeenCalledTimes(1);
     } finally {
       window.history.pushState({}, "", "/");
@@ -283,32 +311,63 @@ describe("Symptoms Page", () => {
 
   async function submitSymptoms(text) {
     const user = userEvent.setup({ delay: null });
+
     useActiveProfile.mockReturnValue({
-      activeProfile: { id: "profile-1", fullName: "Maya Hamdan" },
+      activeProfile: {
+        id: "profile-1",
+        fullName: "Maya Hamdan",
+      },
     });
-    addSymptomRecord.mockResolvedValue({ id: "symptom-1" });
+
+    addSymptomRecord.mockResolvedValue({
+      id: "symptom-1",
+    });
+
     render(<SymptomsPage />);
+
     await user.type(
       screen.getByLabelText("Symptoms"),
       text
     );
-    await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Submit symptoms" })
+    );
   }
 
-  test("classifies the saved symptoms and shows how soon to get care", async () => {
+  test("classifies the symptoms and shows how soon to get care", async () => {
     assessUrgency.mockResolvedValue(SOON_RESULT);
 
     await submitSymptoms("Fever and headache");
 
     expect(assessUrgency).toHaveBeenCalledWith("Fever and headache");
+
     expect(
-      await screen.findByRole("heading", { name: "Urgency: See a doctor soon" })
+      await screen.findByRole("heading", {
+        name: "Urgency: See a doctor soon",
+      })
     ).toBeInTheDocument();
-    expect(screen.getByText("Within 24 to 48 hours")).toBeInTheDocument();
+
     expect(
-      screen.getByText("A fever should be checked by a doctor if it lasts or gets worse.")
+      screen.getByText("Within 24 to 48 hours")
     ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Call 140 now" })).not.toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        "A fever should be checked by a doctor if it lasts or gets worse."
+      )
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("link", { name: "Call 140 now" })
+    ).not.toBeInTheDocument();
+
+    expect(addSymptomRecord).toHaveBeenCalledWith(
+      "profile-1",
+      "Maya Hamdan",
+      "Fever and headache",
+      SOON_RESULT
+    );
   });
 
   test("an emergency result is announced as an alert with a call button", async () => {
@@ -317,41 +376,72 @@ describe("Symptoms Page", () => {
     await submitSymptoms("Chest pain");
 
     const alert = await screen.findByRole("alert");
+
     expect(alert).toHaveTextContent("Urgency: Emergency");
-    expect(screen.getByRole("link", { name: "Call 140 now" })).toHaveAttribute(
-      "href",
-      "tel:140"
+
+    expect(
+      screen.getByRole("link", { name: "Call 140 now" })
+    ).toHaveAttribute("href", "tel:140");
+
+    expect(addSymptomRecord).toHaveBeenCalledWith(
+      "profile-1",
+      "Maya Hamdan",
+      "Chest pain",
+      EMERGENCY_RESULT
     );
   });
 
-  test("if classification fails, symptoms stay saved and the user is told what to do", async () => {
-    assessUrgency.mockRejectedValue(new Error("Request failed."));
+  test("if urgency classification fails, symptoms are not saved", async () => {
+    assessUrgency.mockRejectedValue(
+      new Error("Request failed.")
+    );
 
     await submitSymptoms("Cough");
 
     expect(
-      await screen.findByText(/could not check how urgent they are right now/)
+      await screen.findByText(
+        "We could not check and save your symptoms right now. If you feel very unwell, call 140."
+      )
     ).toBeInTheDocument();
-    expect(screen.getByText("Symptoms recorded for Maya Hamdan.")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /Urgency:/ })).not.toBeInTheDocument();
+
+    expect(addSymptomRecord).not.toHaveBeenCalled();
+
+    expect(
+      screen.queryByRole("heading", { name: /Urgency:/ })
+    ).not.toBeInTheDocument();
   });
 
-  test("does not classify when saving the symptoms fails", async () => {
+  test("if saving fails after assessment, the user sees an error", async () => {
     const user = userEvent.setup({ delay: null });
+
     useActiveProfile.mockReturnValue({
-      activeProfile: { id: "profile-1", fullName: "Maya Hamdan" },
+      activeProfile: {
+        id: "profile-1",
+        fullName: "Maya Hamdan",
+      },
     });
+
+    assessUrgency.mockResolvedValue(SOON_RESULT);
     addSymptomRecord.mockRejectedValue(new Error("disk full"));
+
     render(<SymptomsPage />);
 
     await user.type(
       screen.getByLabelText("Symptoms"),
       "Cough"
     );
-    await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
 
-    expect(await screen.findByText("Could not save symptoms.")).toBeInTheDocument();
-    expect(assessUrgency).not.toHaveBeenCalled();
+    await user.click(
+      screen.getByRole("button", { name: "Submit symptoms" })
+    );
+
+    expect(assessUrgency).toHaveBeenCalledWith("Cough");
+
+    expect(
+      await screen.findByText(
+        "We could not check and save your symptoms right now. If you feel very unwell, call 140."
+      )
+    ).toBeInTheDocument();
   });
 
   // ---- SCRUM-126: follow-up questions ----
@@ -362,67 +452,153 @@ describe("Symptoms Page", () => {
     await submitSymptoms("Fever since yesterday");
 
     expect(
-      await screen.findByRole("heading", { name: "Urgency so far: See a doctor soon" })
+      await screen.findByRole("heading", {
+        name: "Urgency so far: See a doctor soon",
+      })
     ).toBeInTheDocument();
+
     expect(
-      screen.getByRole("group", { name: "What is the highest temperature you measured?" })
+      screen.getByRole("group", {
+        name: "What is the highest temperature you measured?",
+      })
     ).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "How bad are the symptoms right now?" })).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("group", {
+        name: "How bad are the symptoms right now?",
+      })
+    ).toBeInTheDocument();
+
     // Nothing answered yet, so there is nothing to send.
-    expect(screen.getByRole("button", { name: "Update my urgency" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Update my urgency" })
+    ).toBeDisabled();
   });
 
   test("sends the answers with the saved description and shows the updated result", async () => {
     const user = userEvent.setup({ delay: null });
+
     assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
     assessUrgencyWithAnswers.mockResolvedValue(URGENT_REFINED);
 
     await submitSymptoms("Fever since yesterday");
-    await user.click(await screen.findByLabelText("39.5°C or higher"));
-    await user.click(screen.getByRole("button", { name: "Update my urgency" }));
 
-    expect(assessUrgencyWithAnswers).toHaveBeenCalledWith("Fever since yesterday", {
-      "fever-temperature": "39.5-plus",
-    });
-    expect(await screen.findByRole("heading", { name: "Urgency: Urgent" })).toBeInTheDocument();
-    expect(screen.getByText("Updated using your answers.")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
+    await user.click(
+      await screen.findByLabelText("39.5°C or higher")
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Update my urgency" })
+    );
+
+    expect(
+      assessUrgencyWithAnswers
+    ).toHaveBeenCalledWith(
+      "Fever since yesterday",
+      {
+        "fever-temperature": "39.5-plus",
+      }
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Urgency: Urgent",
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Updated using your answers.")
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("heading", {
+        name: "A few quick questions",
+      })
+    ).not.toBeInTheDocument();
   });
 
   test("skipping the questions keeps the first result as the final one", async () => {
     const user = userEvent.setup({ delay: null });
+
     assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
 
     await submitSymptoms("Fever since yesterday");
-    await user.click(await screen.findByRole("button", { name: "Skip questions" }));
 
-    expect(screen.getByRole("heading", { name: "Urgency: See a doctor soon" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
-    expect(assessUrgencyWithAnswers).not.toHaveBeenCalled();
+    await user.click(
+      await screen.findByRole("button", { name: "Skip questions" })
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Urgency: See a doctor soon",
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("heading", {
+        name: "A few quick questions",
+      })
+    ).not.toBeInTheDocument();
+
+    expect(
+      assessUrgencyWithAnswers
+    ).not.toHaveBeenCalled();
   });
 
   test("an emergency shows no questions, only the call-140 advice", async () => {
-    assessUrgency.mockResolvedValue({ ...EMERGENCY_RESULT, followUpQuestions: [] });
+    assessUrgency.mockResolvedValue({
+      ...EMERGENCY_RESULT,
+      followUpQuestions: [],
+    });
 
     await submitSymptoms("Chest pain");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Urgency: Emergency");
-    expect(screen.queryByRole("heading", { name: "A few quick questions" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("alert")
+    ).toHaveTextContent("Urgency: Emergency");
+
+    expect(
+      screen.queryByRole("heading", {
+        name: "A few quick questions",
+      })
+    ).not.toBeInTheDocument();
   });
 
   test("if updating fails, the first result and the questions stay so the user can retry", async () => {
     const user = userEvent.setup({ delay: null });
+
     assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
-    assessUrgencyWithAnswers.mockRejectedValue(new Error("Request failed."));
+
+    assessUrgencyWithAnswers.mockRejectedValue(
+      new Error("Request failed.")
+    );
 
     await submitSymptoms("Fever since yesterday");
-    await user.click(await screen.findByLabelText("Severe: I can hardly function"));
-    await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+
+    await user.click(
+      await screen.findByLabelText(
+        "Severe: I can hardly function"
+      )
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Update my urgency" })
+    );
 
     expect(
-      await screen.findByText("We could not update the urgency with your answers. The result above still applies.")
+      await screen.findByText(
+        "We could not update the urgency with your answers. The result above still applies."
+      )
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Urgency so far: See a doctor soon" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Update my urgency" })).toBeEnabled();
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Urgency so far: See a doctor soon",
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: "Update my urgency" })
+    ).toBeEnabled();
   });
 });
