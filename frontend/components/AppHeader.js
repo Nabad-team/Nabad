@@ -10,11 +10,11 @@ import { providerText } from "../lib/providerText";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 export const MAIN_LINKS = [
-  { href: "/dashboard", label: "Dashboard", shortLabel: "Home" },
-  { href: "/my-health", label: "My health", shortLabel: "Health" },
-  { href: "/medications", label: "Medications", shortLabel: "Medicines" },
-  { href: "/water-and-sleep", label: "Water and sleep", shortLabel: "Water & sleep" },
-  { href: "/providers", label: providerText("title"), shortLabel: providerText("title") },
+  { href: "/dashboard", label: "Dashboard", shortLabel: "Home", icon: "dashboard" },
+  { href: "/my-health", label: "My health", shortLabel: "Health", icon: "health" },
+  { href: "/medications", label: "Medications", shortLabel: "Medicines", icon: "medications" },
+  { href: "/water-and-sleep", label: "Water and sleep", shortLabel: "Water & sleep", icon: "wellbeing" },
+  { href: "/providers", label: providerText("title"), shortLabel: providerText("title"), icon: "care" },
 ];
 // Pages about the account itself, in the account menu.
 export const ACCOUNT_LINKS = [
@@ -68,17 +68,30 @@ function useCurrentPath() {
   return path;
 }
 
-function NavLinks({ links, path, className, simplified = false }) {
+function NavIcon({ name }) {
+  const paths = {
+    dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
+    health: <><path d="M12 20S4 15.4 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 15.4 12 20 12 20Z" /><path d="M8.5 12h2l1-2.5 1.5 5 1-2.5h1.5" /></>,
+    medications: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5M14 15l3 3" /></>,
+    wellbeing: <><path d="M6 4v10M4 4v5a2 2 0 0 0 4 0V4M6 14v6" /><path d="M16 4v16M16 4c2.2 0 4 1.8 4 4v2h-4" /></>,
+    care: <><circle cx="10.5" cy="10" r="3.5" /><path d="M4 20c.7-3.1 2.8-4.5 6.5-4.5S16.3 16.9 17 20M17 4v6M14 7h6" /></>,
+  };
+  return <svg className="app-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
+}
+
+function NavLinks({ links, path, className, simplified = false, cards = false }) {
   return (
     <ul className={className}>
-      {links.map(({ href, label, shortLabel }) => (
+      {links.map(({ href, label, shortLabel, icon }) => (
         <li key={href}>
           <a
             href={href}
+            className={cards ? "app-nav__card" : undefined}
             aria-current={path === href ? "page" : undefined}
             aria-label={simplified ? label : undefined}
           >
-            {simplified ? shortLabel : label}
+            {cards && <NavIcon name={icon} />}
+            <span>{simplified ? shortLabel : label}</span>
           </a>
         </li>
       ))}
@@ -109,7 +122,7 @@ function ProfileSwitcher({ id, showLabel }) {
 }
 
 // The signed-in header.
-//   Desktop: logo, the main links, then (on the right) the profile switcher and the account menu.
+//   Desktop: logo and account controls, then a card-based section navigation row.
 //            There is room on the right for more controls later, such as a notifications bell.
 //   Phones (under 40rem / 640px): logo and a "Menu" button that opens a full-width panel with everything.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
@@ -127,12 +140,6 @@ export default function AppHeader() {
       <div className="container container--wide app-header__bar">
         <Logo />
         {!signedIn && <nav aria-label="Public"><a href="/providers">{providerText("title")}</a></nav>}
-
-        {signedIn && (
-          <nav aria-label="Main" className="app-nav app-header__desktop">
-            <NavLinks links={MAIN_LINKS} path={path} className="app-nav__list" simplified={preferences.simplifiedMode} />
-          </nav>
-        )}
 
         {signedIn && (
           <div className="app-header__end app-header__desktop">
@@ -188,11 +195,21 @@ export default function AppHeader() {
         )}
       </div>
 
+      {signedIn && (
+        <div className="app-header__navigation app-header__desktop">
+          <div className="container container--wide">
+            <nav aria-label="Main">
+              <NavLinks links={MAIN_LINKS} path={path} className="app-nav__list" simplified={preferences.simplifiedMode} cards />
+            </nav>
+          </div>
+        </div>
+      )}
+
       {signedIn && mobile.open && (
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
           <div className="container">
             <nav aria-label="Main">
-              <NavLinks links={MAIN_LINKS} path={path} className="mobile-menu__list" simplified={preferences.simplifiedMode} />
+              <NavLinks links={MAIN_LINKS} path={path} className="mobile-menu__list mobile-menu__cards" simplified={preferences.simplifiedMode} cards />
             </nav>
             <ProfileSwitcher id="profile-switcher-mobile" showLabel />
             <nav aria-label="Account">
