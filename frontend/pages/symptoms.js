@@ -17,6 +17,10 @@ import {
   assessUrgencyWithAnswers,
 } from "../lib/triageApi";
 
+import {
+  getEmergencyContact,
+} from "../lib/api";
+
 import UrgencyResult from "../components/UrgencyResult";
 import FollowUpQuestions from "../components/FollowUpQuestions";
 import ProfileHeader from "../components/ProfileHeader";
@@ -73,6 +77,11 @@ export default function SymptomsPage() {
   const [
     urgency,
     setUrgency,
+  ] = useState(null);
+
+  const [
+    emergencyContact,
+    setEmergencyContact,
   ] = useState(null);
 
   const [
@@ -290,6 +299,7 @@ export default function SymptomsPage() {
     setMessage("");
     setError("");
     setUrgency(null);
+    setEmergencyContact(null);
     setFollowUps([]);
 
 
@@ -348,6 +358,29 @@ export default function SymptomsPage() {
 
       // Show the urgency result.
       setUrgency(result);
+
+
+      // If this is an emergency,
+      // also load the user's saved
+      // emergency contact.
+      if (
+        result.level === "emergency"
+      ) {
+        try {
+          const contactResponse =
+            await getEmergencyContact();
+
+          setEmergencyContact(
+            contactResponse.contact ||
+              null
+          );
+        } catch {
+          // The emergency result must still
+          // be shown even if the contact
+          // cannot be loaded.
+          setEmergencyContact(null);
+        }
+      }
 
 
       // Emergencies normally return
@@ -420,6 +453,17 @@ export default function SymptomsPage() {
       setRefining(false);
     }
   }
+
+
+  const emergencyContactPhone =
+    emergencyContact?.phone
+      ? String(
+          emergencyContact.phone
+        ).replace(
+          /[^\d+]/g,
+          ""
+        )
+      : "";
 
 
   if (!activeProfile) {
@@ -574,6 +618,39 @@ export default function SymptomsPage() {
           followUps.length > 0
         }
       />
+
+
+      {urgency?.level ===
+        "emergency" &&
+        emergencyContact && (
+          <Alert
+            tone="danger"
+            role="alert"
+          >
+            <h3>
+              Your emergency contact
+            </h3>
+
+            <p>
+              <strong>
+                {emergencyContact.name}
+              </strong>
+            </p>
+
+            <p>
+              {emergencyContact.phone}
+            </p>
+
+            <p>
+              <a
+                href={`tel:${emergencyContactPhone}`}
+              >
+                Call{" "}
+                {emergencyContact.name}
+              </a>
+            </p>
+          </Alert>
+        )}
 
 
       <FollowUpQuestions

@@ -156,7 +156,7 @@ class NabadWebsiteTests(unittest.TestCase):
         for path in (
             "/onboarding",
             "/dashboard",
-            "/triage",
+            "/symptoms",
             "/medications",
             "/my-health",
             "/water-and-sleep",
@@ -177,7 +177,7 @@ class NabadWebsiteTests(unittest.TestCase):
         self.assertIn("Dashboard", self.driver.title)
         for label, path in (
             ("Type your symptoms", "/symptoms"),
-            ("Open safety check", "/triage"),
+            ("Open safety check", "/symptoms"),
             ("Open medications", "/medications"),
             ("Open my profile", "/profile"),
         ):
@@ -203,7 +203,7 @@ class NabadWebsiteTests(unittest.TestCase):
 
     def test_authenticated_triage_flow_and_read_aloud_control(self):
         self.login()
-        self.open("/triage")
+        self.open("/symptoms")
         self.visible((By.ID, "triage-symptoms")).send_keys(
             "Mild headache and tiredness"
         )
