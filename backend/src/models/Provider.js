@@ -13,12 +13,16 @@ const schema = new mongoose.Schema({
   name: { type: String, required: true, maxlength: 200 },
   type: { type: String, required: true, enum: ["hospital", "clinic"] },
   city: { type: String, required: true },
+  governorate: { type: String, default: "" },
   address: { type: String, required: true },
   latitude: { type: Number, required: true, min: -90, max: 90 },
   longitude: { type: Number, required: true, min: -180, max: 180 },
+  location: { type: { type: String, enum: ["Point"] }, coordinates: { type: [Number], default: undefined } },
   locationApproximate: { type: Boolean, default: false },
   phone: { type: String, default: "" },
   specialties: { type: [String], default: [] },
+  // A positive list of sourced capabilities; absence means unverified, not unavailable.
+  services: { type: [String], default: [] },
   // null = not verified, never infer a closed facility or a non-existent ER.
   emergency24h: { type: Boolean, default: null },
   hoursKnown: { type: Boolean, default: false },
@@ -27,4 +31,11 @@ const schema = new mongoose.Schema({
   verifiedAt: { type: Date, required: true },
 }, { timestamps: true });
 schema.index({ city: 1, specialties: 1 });
+schema.index({ location: "2dsphere" });
+schema.index({ name: "text", specialties: "text", services: "text", city: "text" }, { default_language: "english" });
+schema.index({ governorate: 1 });
+schema.index({ services: 1 });
+schema.pre("validate", function () {
+  this.location = { type: "Point", coordinates: [this.longitude, this.latitude] };
+});
 module.exports = mongoose.model("Provider", schema);

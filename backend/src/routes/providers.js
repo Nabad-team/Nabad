@@ -1,6 +1,7 @@
 const express = require("express");
 const Provider = require("../models/Provider");
-const { parseQuery, filterProviders } = require("../providers/query");
+const { parseQuery } = require("../providers/query");
+const { searchProviders } = require("../providers/search");
 const User = require("../models/User");
 const { requireAuth } = require("../middleware/authMiddleware");
 const rateLimit = require("express-rate-limit");
@@ -8,24 +9,19 @@ const router = express.Router();
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
 const view = p => ({ id: p.slug, name: p.name, type: p.type, city: p.city, address: p.address,
   latitude: p.latitude, longitude: p.longitude, locationApproximate: p.locationApproximate,
-  phone: p.phone, specialties: p.specialties, emergency24h: p.emergency24h,
+  phone: p.phone, specialties: p.specialties, services: p.services || [], governorate: p.governorate || "", emergency24h: p.emergency24h,
   hoursKnown: p.hoursKnown, hours: p.hours, openingStatus: p.openingStatus, sources: p.sources, verifiedAt: p.verifiedAt,
   distanceKm: p.distanceKm == null ? null : Math.round(p.distanceKm * 10) / 10 });
 router.get("/", (req, res, next) => req.query.favorites === "true" ? requireAuth(req, res, next) : next(), asyncRoute(async (req, res) => {
   let query;
   try { query = parseQuery(req.query); } catch (error) { return res.status(400).json({ error: error.message }); }
-  const providers = await Provider.find().sort({ name: 1 }).lean();
-  let candidates = providers;
+  let favorites;
   if (query.favorites) {
     const account = await User.findById(req.userId).select("favoriteProviders").lean();
-    const favorites = new Set(account?.favoriteProviders || []);
-    candidates = candidates.filter(provider => favorites.has(provider.slug));
+    favorites = account?.favoriteProviders || [];
   }
-  const matches = filterProviders(candidates, query);
-  const offset = (query.page - 1) * query.limit;
-  res.json({ providers: matches.slice(offset, offset + query.limit).map(view), total: matches.length, page: query.page, limit: query.limit,
-    specialties: [...new Set(providers.flatMap(p => p.specialties))].sort(),
-    cities: [...new Set(providers.map(p => p.city))].sort() });
+  const result = await searchProviders(query, favorites);
+  res.json({ ...result, providers: result.providers.map(view) });
 }));
 router.get("/favorites", requireAuth, asyncRoute(async (req, res) => {
   const account = await User.findById(req.userId).select("favoriteProviders").lean();

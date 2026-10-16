@@ -126,6 +126,7 @@ export default function AppHeader() {
     <header className="site-header app-header">
       <div className="container container--wide app-header__bar">
         <Logo />
+        {!signedIn && <nav aria-label="Public"><a href="/providers">{providerText("title")}</a></nav>}
 
         {signedIn && (
           <nav aria-label="Main" className="app-nav app-header__desktop">

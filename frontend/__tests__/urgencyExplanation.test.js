@@ -58,6 +58,17 @@ const explanationBox = () => screen.getByRole("heading", { name: "Why we suggest
 
 beforeEach(() => setSimplified(false));
 
+test("emergency directory link retains the call action and does not narrow to a specialty", () => {
+  render(<UrgencyResult result={EMERGENCY_RESULT} />);
+  expect(screen.getByRole("link", { name: "Call 140 now" })).toHaveAttribute("href", "tel:140");
+  expect(screen.getByRole("link", { name: "Browse published 24/7 ER facilities in Lebanon" })).toHaveAttribute("href", "/providers?emergency24h=true");
+});
+
+test("non-emergency directory browsing does not guess a specialty", () => {
+  render(<UrgencyResult result={URGENT_RESULT} />);
+  expect(screen.getByRole("link", { name: "Browse hospitals and clinics in Lebanon" })).toHaveAttribute("href", "/providers");
+});
+
 describe("UrgencyResult explanation", () => {
   test("shows a 'Why we suggest this' section with the one-sentence summary", () => {
     render(<UrgencyResult result={URGENT_RESULT} />);

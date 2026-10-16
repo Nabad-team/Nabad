@@ -70,7 +70,6 @@ describe("Landing Page", () => {
     const comingSoon = screen.getAllByText("Coming soon").map((badge) => badge.closest("h3").textContent);
     expect(comingSoon).toEqual([
       "The right hospital in an emergency Coming soon",
-      "Find hospitals and clinics Coming soon",
     ]);
   });
 });

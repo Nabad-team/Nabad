@@ -1,4 +1,5 @@
 import Button from "./ui/Button";
+import { triageProviderUrl } from "../lib/providerFilters";
 import ReadAloudButton from "./ReadAloudButton";
 import UrgencyExplanation from "./UrgencyExplanation";
 import { useAccessibility } from "../context/AccessibilityContext";
@@ -92,6 +93,11 @@ export default function UrgencyResult({ result, preliminary = false }) {
       )}
 
       <p className="text-sm">{result.disclaimer}</p>
+      <p>
+        <Button variant="secondary" href={triageProviderUrl(result)}>
+          {isEmergency ? "Browse published 24/7 ER facilities in Lebanon" : "Browse hospitals and clinics in Lebanon"}
+        </Button>
+      </p>
     </section>
   );
 }

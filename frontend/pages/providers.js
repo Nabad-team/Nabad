@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
+import { useSignedIn } from "../components/SessionTimeout";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import { readProviderFilters, providerUrl } from "../lib/providerFilters";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -11,7 +16,9 @@ import { providerText as t } from "../lib/providerText";
 import ProviderMap from "../components/ProviderMap";
 
 export default function ProvidersPage() {
-  const [draft, setDraft] = useState({ q: "", specialty: "", city: "", radiusKm: "", openNow: false, emergency24h: false, favorites: false });
+  const router = useRouter();
+  const signedIn = useSignedIn();
+  const [draft, setDraft] = useState(readProviderFilters({}));
   const [favorites, setFavorites] = useState(null);
   const [favoriteError, setFavoriteError] = useState("");
   const [favoriteRetry, setFavoriteRetry] = useState(0);
@@ -19,10 +26,12 @@ export default function ProvidersPage() {
   const [notice, setNotice] = useState("");
   useEffect(() => {
     let active = true;
+    setFavorites(null); setFavoriteError("");
+    if (!signedIn) return;
     getProviderFavorites().then(ids => { if (active) { setFavorites(ids); setFavoriteError(""); } })
       .catch(() => { if (active) setFavoriteError(t("favoritesError")); });
     return () => { active = false; };
-  }, [favoriteRetry]);
+  }, [favoriteRetry, signedIn]);
   async function toggleFavorite(provider) {
     if (saving || !favorites) return;
     const add = !favorites.includes(provider.id);
@@ -50,7 +59,18 @@ export default function ProvidersPage() {
       setLocation({ lat: position.coords.latitude, lng: position.coords.longitude }); setLocating(false);
     }, fail, { timeout: 10000, maximumAge: 60000 });
   }
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(null);
+  useEffect(() => {
+    if (!router.isReady) return;
+    const restored = readProviderFilters(router.query);
+    setDraft(restored);
+    // Coordinates are intentionally not read from or written to shareable URLs.
+    setFilters(old => ({ ...restored, ...(old?.lat == null ? {} : { lat: old.lat, lng: old.lng, radiusKm: old.radiusKm }) }));
+  }, [router.isReady, router.asPath]);
+  function applyFilters(next) {
+    setFilters(next);
+    router.push(providerUrl(next), undefined, { shallow: true, scroll: false });
+  }
   const [data, setData] = useState({ providers: [], specialties: [], cities: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,27 +80,28 @@ export default function ProvidersPage() {
   // Refresh scheduled availability while the page remains open.
   useEffect(() => { const timer = setInterval(() => setRetry(value => value + 1), 60000); return () => clearInterval(timer); }, []);
   useEffect(() => {
+    if (!filters) return;
     const controller = new AbortController();
     let current = true;
     // Background status refresh must not hide the list or take focus away from its controls.
     if (loadedFilters.current !== filters) setLoading(true);
     loadedFilters.current = filters;
     setError("");
-    getProviders(filters, controller.signal).then(result => { if (current) setData(result); })
+    getProviders({ ...filters, favorites: signedIn && filters.favorites }, controller.signal).then(result => { if (current) setData(result); })
       .catch(err => { if (current && err.name !== "AbortError") setError(t("loadError")); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; controller.abort(); };
-  }, [filters, retry]);
+  }, [filters, retry, signedIn]);
   const field = key => ({ value: draft[key], onChange: e => setDraft(old => ({ ...old, [key]: e.target.value })) });
   return <PageLayout title={t("title")} header={<ProfileHeader showPicture={false} />}>
     <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
     <p className="text-muted">{t("notice")}</p>
-    <p className="text-muted">{t("favoritesHint")}</p>
+    <p className="text-muted">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
     {notice && <p role="status">{notice}</p>}
     {favoriteError && <Alert tone="danger" role="alert"><p>{favoriteError}</p>
       {!favorites && <Button variant="secondary" onClick={() => setFavoriteRetry(value => value + 1)}>{t("retryFavorites")}</Button>}
     </Alert>}
-    <form className="form provider-filters" onSubmit={event => { event.preventDefault(); setFilters({ ...draft, ...(location || {}), page: 1 }); }}>
+    <form className="form provider-filters" onSubmit={event => { event.preventDefault(); applyFilters({ ...draft, ...(location || {}), page: 1 }); }}>
       <Input id="provider-search" label={t("search")} maxLength={100} {...field("q")} />
       <div className="field"><label htmlFor="provider-specialty" className="field__label">{t("specialty")}</label>
         <select id="provider-specialty" className="input" {...field("specialty")}>
@@ -91,7 +112,19 @@ export default function ProvidersPage() {
       <div className="field"><label htmlFor="provider-city" className="field__label">{t("city")}</label>
         <select id="provider-city" className="input" {...field("city")}>
           <option value="">{t("allCities")}</option>
-          {data.cities.map(city => <option key={city} value={city}>{city}</option>)}
+          {data.cities.map(city => <option key={city} value={city.toLowerCase()}>{city}</option>)}
+        </select>
+      </div>
+      <div className="field"><label htmlFor="provider-governorate" className="field__label">{t("governorate")}</label>
+        <select id="provider-governorate" className="input" {...field("governorate")}>
+          <option value="">{t("allGovernorates")}</option>
+          {(data.governorates || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
+        </select>
+      </div>
+      <div className="field"><label htmlFor="provider-service" className="field__label">{t("service")}</label>
+        <select id="provider-service" className="input" {...field("service")}>
+          <option value="">{t("allServices")}</option>
+          {(data.services || []).map(value => <option key={value} value={value}>{t(`services.${value}`)}</option>)}
         </select>
       </div>
       <p id="provider-location-hint">{t("locationHint")}</p>
@@ -100,7 +133,7 @@ export default function ProvidersPage() {
         {(location || locating) && <Button variant="secondary" onClick={() => {
           locationRequest.current += 1; setLocation(null); setLocating(false); setLocationError("");
           setDraft(old => ({ ...old, radiusKm: "" }));
-          setFilters(old => ({ ...old, lat: undefined, lng: undefined, radiusKm: "", page: 1 }));
+          applyFilters({ ...filters, lat: undefined, lng: undefined, radiusKm: "", page: 1 });
         }}>{t("clearLocation")}</Button>}
       </div>
       {locationError && <p role="alert">{locationError}</p>}
@@ -113,7 +146,7 @@ export default function ProvidersPage() {
       </div>
       <label><input type="checkbox" checked={draft.openNow} onChange={e => setDraft(old => ({ ...old, openNow: e.target.checked }))} /> {t("openNow")}</label>
       <label><input type="checkbox" checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> {t("emergencyOnly")}</label>
-      <label><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> {t("favoritesOnly")}</label>
+      {signedIn && <label><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> {t("favoritesOnly")}</label>}
       <Button type="submit">{t("submit")}</Button>
     </form>
     {loading ? <HeartbeatLoader label={t("loading")} /> : error ? <Alert tone="danger" role="alert">
@@ -124,33 +157,36 @@ export default function ProvidersPage() {
       {showMap && <ProviderMap providers={data.providers} />}
       {!data.providers.length && <p>{t("empty")}</p>}
       <ul className="provider-list" aria-label={t("results")}>
-        {data.providers.map(provider => <li className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
+        {data.providers.map(provider => <Card as="li" className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
           <h2>{provider.name}</h2>
-          <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
+          {signedIn ? <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
             aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}
-            onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button>
+            onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button> : <a className="button button--secondary" href="/login">{t("signInToSave")}</a>}
           <p>{t(provider.type)} · {provider.city}</p><p>{provider.address}</p>
-          {provider.distanceKm != null && <p>{t("distance", { km: provider.distanceKm })}</p>}
+          {provider.distanceKm != null && <p><Badge tone="neutral">{t("distance", { km: provider.distanceKm })}</Badge></p>}
           {provider.locationApproximate && <p>{t("approximatePin")}</p>}
           <p>{provider.specialties.length ? provider.specialties.map(s => t(`specialties.${s}`)).join(", ") : t("specialtiesUnknown")}</p>
-          <p>{t(provider.openingStatus || "unknown")}</p>
-          <p>{t(provider.emergency24h === true ? "erYes" : provider.emergency24h === false ? "erNo" : "erUnknown")}</p>
+          <p><Badge tone={provider.openingStatus === "open" ? "info" : "neutral"}>{t(provider.openingStatus || "unknown")}</Badge></p>
+          <p><Badge tone={provider.emergency24h === true ? "info" : "neutral"}>{t(provider.emergency24h === true ? "erYes" : provider.emergency24h === false ? "erNo" : "erUnknown")}</Badge></p>
+          <p>{provider.services?.length ? `${t("service")}: ${provider.services.map(s => t(`services.${s}`)).join(", ")}` : t("servicesUnknown")}</p>
+          <p className="text-muted">{t("servicesNote")}</p>
           {provider.hoursKnown && <details><summary>{t("hoursTitle")}</summary>
             <ul>{provider.hours.map((slot, index) => <li key={index}>{t(`day${slot.day}`)}: {formatTime(slot.start)}–{formatTime(slot.end)} {slot.end < slot.start ? t("overnight") : ""}</li>)}</ul>
           </details>}
           <p className="text-muted">{t("hoursNote")}</p>
           {provider.phone && <p><a href={`tel:${provider.phone}`}>{t("call", { name: provider.name })}</a></p>}
+          <p><a className="button button--secondary" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${provider.latitude},${provider.longitude}`)}`} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p>
           <p className="text-muted">{t("checked", { date: provider.verifiedAt.slice(0, 10) })}</p>
           <div className="provider-sources">{provider.sources.map((source, index) => <a key={source} href={source} target="_blank" rel="noopener noreferrer">{t("source", { number: index + 1 })}</a>)}</div>
-        </li>)}
+        </Card>)}
       </ul>
       {data.total > (data.limit || 20) && <div className="form-actions">
-        <Button variant="secondary" disabled={data.page <= 1} onClick={() => setFilters(old => ({ ...old, page: data.page - 1 }))}>{t("previous")}</Button>
+        <Button variant="secondary" disabled={data.page <= 1} onClick={() => applyFilters({ ...filters, page: data.page - 1 })}>{t("previous")}</Button>
         <span>{t("page", { page: data.page })}</span>
-        <Button variant="secondary" disabled={data.page * data.limit >= data.total} onClick={() => setFilters(old => ({ ...old, page: data.page + 1 }))}>{t("next")}</Button>
+        <Button variant="secondary" disabled={data.page * data.limit >= data.total} onClick={() => applyFilters({ ...filters, page: data.page + 1 })}>{t("next")}</Button>
       </div>}
     </>}
   </PageLayout>;
 }
-ProvidersPage.requireSignIn = true;
+// Public browsing; only the favorites endpoints require authentication.
 function formatTime(minutes) { return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`; }
