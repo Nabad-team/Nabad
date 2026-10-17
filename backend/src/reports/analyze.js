@@ -125,7 +125,7 @@ async function analyzeReport({ report, question = "", client }) {
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });
-    const reply = await client.complete(messages, { maxTokens: 1800 });
+    const reply = await client.complete(messages, { maxTokens: 1800, reasoningEffort: "low" });
     const result = parseReportReply(reply, { reportText: report.text, reportKind: report.kind });
     if (report.partial) {
       result.urgency = result.urgency === "emergency" || result.urgency === "urgent" ? result.urgency : "unclear";
