@@ -123,6 +123,11 @@ function createApp() {
   );
 
   app.use(
+    "/api/appointments",
+    require("./routes/appointments")
+  );
+
+  app.use(
     "/api/symptoms",
     require("./routes/symptoms")
   );

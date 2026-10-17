@@ -1254,6 +1254,9 @@ select.input {
 }
 
 .medications-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
 
@@ -1302,6 +1305,62 @@ select.input {
 
 .medication__heading .badge {
   margin-left: 0;
+}
+
+/* ---------- Appointments ---------- */
+
+.appointments-actions {
+  margin-bottom: var(--space-5);
+}
+
+.appointment-form {
+  margin-bottom: var(--space-6);
+}
+
+.appointment-form > h3 {
+  margin: 0;
+}
+
+.appointment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 0.0625rem solid var(--color-border);
+}
+
+.appointment {
+  padding-block: var(--space-5);
+  border-bottom: 0.0625rem solid var(--color-border);
+}
+
+.appointment--reminder {
+  padding-inline: var(--space-4);
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-md);
+}
+
+.appointment__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.appointment__heading h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.appointment__when,
+.appointment__place,
+.appointment__notes {
+  margin: 0 0 var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.appointment > .button-row {
+  margin-top: var(--space-4);
 }
 
 /* ---------- Water and sleep ---------- */

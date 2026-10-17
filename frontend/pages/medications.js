@@ -235,6 +235,7 @@ export default function MedicationsPage() {
           ) : (
             <div className="medications-actions">
               <Button onClick={() => open("add")}>{simplified ? "Add medicine" : "Add medication"}</Button>
+              <Button variant="secondary" href="/appointments">View appointments</Button>
             </div>
           )}
 
