@@ -1309,6 +1309,110 @@ select.input {
 
 /* ---------- Appointments ---------- */
 
+.calendar {
+  margin-bottom: var(--space-6);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-sunken);
+}
+
+.calendar__header h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  text-align: center;
+}
+
+.calendar__hint {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar__weekdays {
+  padding: 0 var(--space-2);
+  border-top: 0.0625rem solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.calendar__weekdays span {
+  padding: var(--space-2);
+}
+
+.calendar__day {
+  min-height: 5.5rem;
+  padding: var(--space-2);
+  border: 0;
+  border-top: 0.0625rem solid var(--color-border);
+  border-left: 0.0625rem solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar__day:nth-child(7n + 1) {
+  border-left: 0;
+}
+
+.calendar__day:hover,
+.calendar__day:focus-visible {
+  background: var(--color-primary-soft);
+}
+
+.calendar__day--outside {
+  color: var(--color-text-muted);
+  background: var(--color-sunken);
+}
+
+.calendar__day--today .calendar__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  min-height: 1.6rem;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.calendar__number {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.calendar__event {
+  display: block;
+  margin-top: var(--space-1);
+  padding: 0.15rem 0.3rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: 0.7rem;
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .appointments-actions {
   margin-bottom: var(--space-5);
 }
@@ -1361,6 +1465,17 @@ select.input {
 
 .appointment > .button-row {
   margin-top: var(--space-4);
+}
+
+@media (max-width: 40rem) {
+  .calendar__day {
+    min-height: 4.5rem;
+    padding: var(--space-1);
+  }
+
+  .calendar__event {
+    font-size: 0.65rem;
+  }
 }
 
 /* ---------- Water and sleep ---------- */

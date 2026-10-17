@@ -23,6 +23,27 @@ const emptyFields = () => ({
   appointmentTime: "", reminderMinutes: 60, notes: "",
 });
 
+function dateKey(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function monthLabel(date) {
+  return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+function monthDays(month) {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const start = new Date(first);
+  start.setDate(1 - first.getDay());
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date;
+  });
+}
+
 function appointmentDateTime(appointment) {
   return new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}:00`);
 }
@@ -90,6 +111,48 @@ function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCanc
   );
 }
 
+function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
+  const days = monthDays(month);
+  const appointmentsByDate = appointments.reduce((groups, appointment) => {
+    groups[appointment.appointmentDate] = (groups[appointment.appointmentDate] || []).concat(appointment);
+    return groups;
+  }, {});
+  const today = todayString();
+
+  return (
+    <section className="calendar" aria-label="Appointment calendar">
+      <div className="calendar__header">
+        <Button variant="secondary" size="small" onClick={() => onMonthChange(-1)} aria-label="Previous month">Previous</Button>
+        <h2>{monthLabel(month)}</h2>
+        <Button variant="secondary" size="small" onClick={() => onMonthChange(1)} aria-label="Next month">Next</Button>
+      </div>
+      <p className="calendar__hint">Double-click a date to add a doctor's appointment.</p>
+      <div className="calendar__grid calendar__weekdays" aria-hidden="true">
+        {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => <span key={day}>{day.slice(0, 3)}</span>)}
+      </div>
+      <div className="calendar__grid calendar__days">
+        {days.map((date) => {
+          const key = dateKey(date);
+          const events = appointmentsByDate[key] || [];
+          const inMonth = date.getMonth() === month.getMonth();
+          return (
+            <button
+              type="button"
+              key={key}
+              className={`calendar__day${inMonth ? "" : " calendar__day--outside"}${key === today ? " calendar__day--today" : ""}`}
+              onDoubleClick={() => onDateDoubleClick(key)}
+              aria-label={`${date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}`}
+            >
+              <span className="calendar__number">{date.getDate()}</span>
+              {events.map((appointment) => <span className="calendar__event" key={appointment.id}>{appointment.appointmentTime} {appointment.title}</span>)}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function AppointmentsPage() {
   const { activeProfile, error: profilesError } = useActiveProfile();
   const { preferences } = useAccessibility();
@@ -100,6 +163,8 @@ export default function AppointmentsPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => new Date());
+  const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [newAppointmentFields, setNewAppointmentFields] = useState(emptyFields);
   const profileId = activeProfile?.id;
   const profileRef = useRef(profileId);
   const notifiedRef = useRef(new Set());
@@ -148,6 +213,12 @@ export default function AppointmentsPage() {
     await load();
   }
 
+  function openNewAppointment(date = todayString()) {
+    setNotice("");
+    setNewAppointmentFields({ ...emptyFields(), appointmentDate: date });
+    setEditing("add");
+  }
+
   async function remove(appointment) {
     if (!window.confirm(`Delete ${appointment.title}?`)) return;
     setError("");
@@ -172,10 +243,16 @@ export default function AppointmentsPage() {
       {!loadError && !profilesError && appointments === null && <HeartbeatLoader label="Loading appointments..." />}
       {appointments !== null && (
         <>
+          <Calendar
+            month={month}
+            appointments={appointments}
+            onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
+            onDateDoubleClick={openNewAppointment}
+          />
           {editing === "add" ? (
-            <AppointmentForm idPrefix="new" initial={emptyFields()} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} />
+            <AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} />
           ) : (
-            <div className="appointments-actions"><Button onClick={() => { setNotice(""); setEditing("add"); }}>Add appointment</Button></div>
+            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>Add appointment</Button></div>
           )}
           {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet.">Add your next doctor's visit so Nabad can remind you.</EmptyState>}
           {appointments.length > 0 && (
