@@ -21,10 +21,7 @@ flowchart LR
         api["Node/Express API<br/>health check: /api/health/ready"]
     end
 
-    subgraph modelhost["Self-hosted model server"]
-        gateway["Caddy HTTPS gateway<br/>bearer-token check"]
-        ollama["Ollama<br/>Qwen multimodal model"]
-    end
+    gemini["Google Gemini<br/>(OpenAI-compatible endpoint)"]
 
     subgraph atlas["MongoDB Atlas"]
         db[("nabad_production")]
@@ -41,8 +38,7 @@ flowchart LR
 
     user -- "HTTPS: pages and /api/*" --> next
     next -- "HTTPS /api/* (rewrite)" --> api
-    api -- "HTTPS + bearer token<br/>health report/questions" --> gateway
-    gateway -- "private network" --> ollama
+    api -- "HTTPS + API key<br/>symptoms, questions, reports" --> gemini
     api -- "TLS, least-privilege user" --> db
     api -- "verification, reset and 2FA emails" --> brevo
     brevo -. "email" .-> user
@@ -57,7 +53,7 @@ flowchart LR
 
 - **Vercel** builds and hosts the web app from `frontend/` (https://nabad-psi.vercel.app). [next.config.js](../frontend/next.config.js) rewrites `/api/*` to `BACKEND_URL`; a production build without it fails on purpose.
 - **Render** runs the API from [render.yaml](../render.yaml) (`npm ci`, `npm start`, Node 24) and only routes traffic to it once `/api/health/ready` answers, which requires a working database connection. Secrets are entered in the Render dashboard, never committed.
-- **Self-hosted model server** runs Ollama on infrastructure you control. The API calls its HTTPS Caddy gateway using a bearer token; Ollama itself is not exposed publicly. See [self-hosted AI deployment](./self-hosted-ai.md). This removes a third-party inference API, but the API still sends health data to the model server you operate.
+- **Google Gemini** currently provides the AI for the symptom check, the health assistant and report review. The API calls Gemini's OpenAI-compatible endpoint over HTTPS with an API key; `LLM_PROVIDER`, `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` are set on the Render dashboard, so Blueprint deploys never overwrite them. Symptom descriptions, questions and attached reports are sent to Google, but never the user's name, email or profile, and the API does not log them. A self-hosted Ollama server is an optional alternative for the future; see [self-hosted AI](./self-hosted-ai.md).
 - **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`.
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.

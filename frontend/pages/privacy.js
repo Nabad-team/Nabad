@@ -61,19 +61,15 @@ export default function PrivacyPolicy() {
         <li>
           Unless the safety rules already found an emergency, your description
           and any follow-up answers you choose are sent over an encrypted
-          connection to an AI model that the Nabad team runs on its own server.
-          It is not sent to an outside AI company.
+          connection to Google&apos;s Gemini AI service to help assess urgency.
         </li>
         <li>
           If the safety rules find an emergency, the result is shown straight
-          away and your description is not sent to the AI model.
+          away and your description is not sent to the AI.
         </li>
         <li>
           Your name, email and profile details are not sent with your
           description.
-        </li>
-        <li>
-          Your description is not used to train AI models.
         </li>
         <li>
           Nabad does not write your description or the AI&apos;s reply to its
@@ -81,8 +77,31 @@ export default function PrivacyPolicy() {
           used.
         </li>
         <li>
-          If the AI model is unavailable, the safety rules give the result on
-          their own.
+          If the AI is unavailable, the safety rules give the result on their
+          own.
+        </li>
+      </ul>
+
+      <h2 id="ai-health-assistant">AI in the health assistant</h2>
+
+      <p>
+        The health assistant answers health questions and explains written test
+        reports. You confirm before anything is sent.
+      </p>
+
+      <ul>
+        <li>
+          Your question, the recent messages in the conversation and any report
+          you attach are sent over an encrypted connection to Google&apos;s
+          Gemini AI service to write the answer or the report review.
+        </li>
+        <li>
+          Your name, email and profile details are not sent with your question.
+        </li>
+        <li>
+          Nabad does not save your messages or files, and does not write them or
+          the AI&apos;s reply to its logs. They only record that a request
+          happened and whether it succeeded.
         </li>
       </ul>
 
@@ -117,8 +136,8 @@ export default function PrivacyPolicy() {
           <strong>OpenStreetMap</strong> map data for healthcare provider maps.
         </li>
         <li>
-          <strong>A self-hosted AI model</strong> (Ollama) run by the Nabad team
-          for the symptom check and the health assistant.
+          <strong>Google Gemini</strong> AI service for the symptom check, the
+          health assistant and report review.
         </li>
       </ul>
 

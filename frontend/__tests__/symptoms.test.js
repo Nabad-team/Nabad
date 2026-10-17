@@ -333,7 +333,7 @@ describe("Symptoms Page", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("tells the user the description is analysed by an AI model and links to the privacy policy", () => {
+  test("tells the user the description is sent to Google's Gemini AI and links to the privacy policy", () => {
     useActiveProfile.mockReturnValue({
       activeProfile: {
         id: "profile-1",
@@ -343,8 +343,10 @@ describe("Symptoms Page", () => {
 
     render(<SymptomsPage />);
 
-    expect(screen.getByText(/analysed by an AI model run by the Nabad team/)).toBeInTheDocument();
-    expect(screen.getByText(/isn't used to train AI/)).toBeInTheDocument();
+    expect(screen.getByText(/sent over an encrypted connection to Google's Gemini AI service to help assess urgency/)).toBeInTheDocument();
+    expect(screen.getByText(/checked by Nabad's safety rules first/)).toBeInTheDocument();
+    expect(screen.getByText(/doesn't write your description to its logs/)).toBeInTheDocument();
+    expect(screen.queryByText(/train AI/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "How this works" })).toHaveAttribute("href", "/privacy#ai-symptom-check");
   });
 
