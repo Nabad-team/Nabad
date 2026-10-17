@@ -81,7 +81,7 @@ async function answerChat({ question, history = [], report = null, client }) {
   if (typeof question !== "string" || question.trim().length < 3 || question.length > 1200) throw new ReportAnalysisError("invalid_question");
   const safeHistory = validateHistory(history);
   try {
-    const reply = await client.complete(buildChatMessages({ question: question.trim(), history: safeHistory, report }), { maxTokens: 1200 });
+    const reply = await client.complete(buildChatMessages({ question: question.trim(), history: safeHistory, report }), { maxTokens: 1200, reasoningEffort: "low" });
     return parseChatReply(reply, { report });
   } catch (error) {
     if (error instanceof ReportAnalysisError) throw error;

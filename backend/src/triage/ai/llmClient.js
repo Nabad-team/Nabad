@@ -65,23 +65,31 @@ function readLlmConfig(env = process.env) {
 function createLlmClient(config, fetchImpl = globalThis.fetch) {
   if (!config?.configured) throw new Error("createLlmClient needs a configured LLM config.");
 
-  async function complete(messages, { maxTokens = 600 } = {}) {
+  async function complete(messages, { maxTokens = 600, reasoningEffort } = {}) {
     // The timeout covers the whole exchange, including reading the reply body.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), config.timeoutMs);
     try {
-      return await send(messages, controller.signal, maxTokens);
+      return await send(messages, controller.signal, maxTokens, reasoningEffort);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  async function send(messages, signal, maxTokens) {
+  async function send(messages, signal, maxTokens, reasoningEffort) {
     let requestBody;
     try {
+      const geminiThree = config.provider === "openai-compatible" && /^gemini-3(?:\.|-)/i.test(config.model);
       requestBody = config.provider === "ollama"
         ? { model: config.model, messages: toOllamaMessages(messages), stream: false, format: "json", options: { temperature: 0, num_predict: maxTokens } }
-        : { model: config.model, messages, temperature: 0, max_tokens: maxTokens, response_format: { type: "json_object" } };
+        : {
+          model: config.model,
+          messages,
+          ...(!geminiThree ? { temperature: 0 } : {}),
+          ...(geminiThree && ["low", "medium", "high"].includes(reasoningEffort) ? { reasoning_effort: reasoningEffort } : {}),
+          max_tokens: maxTokens,
+          response_format: { type: "json_object" },
+        };
     } catch {
       throw new LlmError("bad_response");
     }
