@@ -5,6 +5,10 @@
 //
 // POST /api/triage/ai-assess { symptoms, answers?, location? } -> AI triage (SCRUM-180)
 //
+// The Sprint 1 safety check (POST /assess and /emergency-route, with its own rules in policy.js)
+// is retired: it could give the same symptoms a different level. Its emergency routing and
+// self-care now live in triage/careGuidance.js and come with the /ai-assess result.
+//
 // All require a signed-in user. The server is stateless: /refine classifies the symptoms
 // again itself instead of trusting a level sent by the browser.
 // All three urgency results include "explanation": why this was recommended, in plain language (SCRUM-130).
@@ -31,10 +35,8 @@ const {
 } = require("../triage/followUps");
 
 const {
-  assessSymptoms,
-  emergencyRoute,
   routineSelfCare,
-} = require("../triage/policy");
+} = require("../triage/careGuidance");
 
 const {
   getLlmClient,
@@ -70,61 +72,6 @@ const aiLimiter = rateLimit({
 });
 
 
-function assessmentSymptomsError(
-  symptoms
-) {
-  if (
-    typeof symptoms !== "string" ||
-    symptoms.trim().length < 3
-  ) {
-    return "Please describe your symptoms before starting an assessment.";
-  }
-
-  if (symptoms.length > 2000) {
-    return "Please keep the symptom description under 2000 characters.";
-  }
-
-  return null;
-}
-
-
-router.post(
-  "/assess",
-  (req, res) => {
-    const symptoms =
-      req.body?.symptoms;
-
-    const error =
-      assessmentSymptomsError(
-        symptoms
-      );
-
-    if (error) {
-      return res
-        .status(400)
-        .json({ error });
-    }
-
-    return res.json(
-      assessSymptoms(
-        symptoms.trim(),
-        req.body?.location
-      )
-    );
-  }
-);
-
-
-router.post(
-  "/emergency-route",
-  (req, res) => {
-    return res.json(
-      emergencyRoute(
-        req.body?.location
-      )
-    );
-  }
-);
 
 
 const DISCLAIMER =

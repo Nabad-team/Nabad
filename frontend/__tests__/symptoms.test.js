@@ -333,6 +333,21 @@ describe("Symptoms Page", () => {
     ).not.toBeInTheDocument();
   });
 
+  test("tells the user the description is analysed by an AI model and links to the privacy policy", () => {
+    useActiveProfile.mockReturnValue({
+      activeProfile: {
+        id: "profile-1",
+        fullName: "Maya Hamdan",
+      },
+    });
+
+    render(<SymptomsPage />);
+
+    expect(screen.getByText(/analysed by an AI model run by the Nabad team/)).toBeInTheDocument();
+    expect(screen.getByText(/isn't used to train AI/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "How this works" })).toHaveAttribute("href", "/privacy#ai-symptom-check");
+  });
+
   // ---- SCRUM-128: urgency classification ----
 
   async function submitSymptoms(text) {

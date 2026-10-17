@@ -49,6 +49,43 @@ export default function PrivacyPolicy() {
         stored in your Nabad account for the selected profile.
       </p>
 
+      <h2 id="ai-symptom-check">AI in the symptom check</h2>
+
+      <p>
+        Nabad&apos;s own safety rules check every symptom description first.
+        They always set the minimum urgency, and the AI can only make the result
+        more cautious, never less.
+      </p>
+
+      <ul>
+        <li>
+          Unless the safety rules already found an emergency, your description
+          and any follow-up answers you choose are sent over an encrypted
+          connection to an AI model that the Nabad team runs on its own server.
+          It is not sent to an outside AI company.
+        </li>
+        <li>
+          If the safety rules find an emergency, the result is shown straight
+          away and your description is not sent to the AI model.
+        </li>
+        <li>
+          Your name, email and profile details are not sent with your
+          description.
+        </li>
+        <li>
+          Your description is not used to train AI models.
+        </li>
+        <li>
+          Nabad does not write your description or the AI&apos;s reply to its
+          logs. They only record that a check happened and whether the AI was
+          used.
+        </li>
+        <li>
+          If the AI model is unavailable, the safety rules give the result on
+          their own.
+        </li>
+      </ul>
+
       <h2>Who can access your information</h2>
 
       <p>
@@ -78,6 +115,10 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>OpenStreetMap</strong> map data for healthcare provider maps.
+        </li>
+        <li>
+          <strong>A self-hosted AI model</strong> (Ollama) run by the Nabad team
+          for the symptom check and the health assistant.
         </li>
       </ul>
 

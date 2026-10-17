@@ -13,7 +13,7 @@
 
 const { classifyUrgency, LEVELS } = require("../urgency");
 const { getFollowUpQuestions, refineUrgency, SPECIFIC, GENERAL } = require("../followUps");
-const { emergencyRoute } = require("../policy");
+const { emergencyRoute } = require("../careGuidance");
 const { buildMessages } = require("./prompt");
 const { LlmError } = require("./llmClient");
 const { GuardrailError, cleanSymptoms, detectPromptInjection, parseModelReply, applySafetyFloor } = require("./guardrails");
