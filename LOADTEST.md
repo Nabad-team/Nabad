@@ -1,5 +1,20 @@
 # Backend load test
 
+## JMeter website capacity ramp
+
+Use [`loadtest/nabad.jmx`](./loadtest/nabad.jmx) with Apache JMeter 5.6.3 or newer to exercise the local website (`/`), anonymous session API, and API health endpoint. The wrapper increases concurrent visitors in stages and stops when the health check fails, sample errors reach 5%, or p95 response time reaches 2 seconds. It writes each stage's CSV and a summary under `loadtest/jmeter-results/` (ignored by Git).
+
+1. Start the app locally and confirm `http://localhost:3000` and `http://localhost:3000/api/health` work. The frontend's `/api` rewrite must point at the running backend.
+2. Install Apache JMeter, then run from the repository root:
+
+   ```powershell
+   node loadtest/jmeter-ladder.js
+   ```
+
+   The default stages are 10, 25, 50, 100, 200, and 500 visitors, with a 30-second ramp and 60-second hold per stage. JMeter must be on `PATH`; otherwise set `$env:JMETER` to its executable path. JMeter can also open `loadtest/nabad.jmx` in its GUI for a smaller manual run.
+
+Options: `$env:LEVELS='10,25,50'`, `$env:RAMP_SECONDS='15'`, `$env:HOLD_SECONDS='30'`, `$env:ERROR_STOP_PCT='5'`, `$env:P95_STOP_MS='2000'`, and `$env:HOST`/`$env:PORT`/`$env:PROTOCOL` (defaults: `localhost`/`3000`/`http`). Non-local targets are refused unless `$env:ALLOW_EXTERNAL_TARGET='true'` is explicitly set. Only load test systems you own or have permission to test. A load test identifies a performance limit; it cannot guarantee a universal audience count because hardware and deployment capacity affect the result.
+
 k6 scripts in [`loadtest/`](./loadtest) simulate three kinds of traffic against a local backend, stepping from 10 to 500 simultaneous virtual users (each waits 1 s between actions, like a person).
 
 | Script | What a user does |

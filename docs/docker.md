@@ -66,7 +66,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 
 Never put real secrets in `.env.docker.example` or anywhere else in git. The production startup checks are unchanged: with `APP_ENV=production` the API still refuses to start without every required secret.
 
-To try the health assistant locally, set `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` in `.env.docker`. Users can ask general health-information questions, attach PDF/DOCX/TXT/CSV reports or report photos, and ask follow-ups. If a report is attached, its contents are sent again with each follow-up. Photo analysis also requires `LLM_VISION_ENABLED=true` and a vision-capable model. Raw medical images (including DICOM) are not interpreted. This uses a general-purpose model, not a clinically trained or validated system; it cannot guarantee an answer to every question or be used to make medical decisions.
+The local example is pre-filled for Gemini's OpenAI-compatible endpoint. Copy it to `.env.docker`, set `LLM_API_KEY` to a Gemini API key, and restart the stack. Users can ask general health-information questions, attach PDF/DOCX/TXT/CSV reports or photos of written reports, and ask follow-ups. If a report is attached, its contents are sent again with each follow-up. Raw medical images (including DICOM) are not interpreted. This uses a general-purpose model, not a clinically trained or validated system; it cannot guarantee an answer to every question or be used to make medical decisions.
 
 ## Reset the local database
 
