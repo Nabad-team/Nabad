@@ -62,14 +62,14 @@ function parseChatReply(raw, { report = null } = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value) || typeof value.answer !== "string" || !Array.isArray(value.evidence) || value.evidence.length > MAX_EVIDENCE) {
     throw new ReportAnalysisError("invalid_response");
   }
-  const filtered = filterText(value.answer, MAX_ANSWER_CHARS);
+  const filtered = filterText(value.answer, MAX_ANSWER_CHARS, { ignore: ["medication_dose", "phone_number"] });
   if (filtered.removed) throw new ReportAnalysisError("unsafe_response");
   const answer = filtered.text;
   const textReport = report?.kind === "text" ? report.text : "";
   const reportNumbers = new Set(numericValues(textReport));
   if (textReport && numericValues(answer).some((number) => !reportNumbers.has(number))) throw new ReportAnalysisError("unsupported_quote");
   const evidence = value.evidence.map((quote) => {
-    const result = filterText(quote, 240);
+    const result = filterText(quote, 240, { ignore: ["medication_dose", "phone_number"] });
     if (result.removed || !textReport || !normalize(textReport).includes(normalize(result.text))) throw new ReportAnalysisError("unsupported_quote");
     return result.text;
   });

@@ -117,15 +117,17 @@ async function extractPdfText(buffer) {
   } catch {
     throw new ReportInputError("PDF reading is not configured on this server. Please try a clear photo of the written report.", 503);
   }
+  let loadingTask;
   let pdf;
   try {
-    pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false, useSystemFonts: true }).promise;
+    loadingTask = pdfjs.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false, useSystemFonts: true });
+    pdf = await loadingTask.promise;
   } catch {
     throw new ReportInputError("We could not open this PDF. Try a clear photo or another copy of the report.");
   }
   const pageCount = pdf.numPages;
   if (!pageCount || pageCount > MAX_PDF_PAGES) {
-    await pdf.destroy();
+    await loadingTask.destroy();
     throw new ReportInputError(`Choose a PDF with ${MAX_PDF_PAGES} pages or fewer.`);
   }
   const pages = [];
@@ -139,7 +141,7 @@ async function extractPdfText(buffer) {
   } catch {
     throw new ReportInputError("We could not read the text in this PDF. Try a searchable PDF or a clear photo of the written report.", 422);
   } finally {
-    await pdf.destroy().catch(() => {});
+    await loadingTask.destroy().catch(() => {});
   }
   const fullText = pages.join("\n").replace(/\s+/g, " ").trim();
   const partial = fullText.length > MAX_REPORT_TEXT || pages.length < pageCount;

@@ -75,11 +75,11 @@ const UNSAFE_TEXT = [
 ];
 
 // Returns { text, removed } where text is null if the sentence must not be shown.
-function filterText(value, maxChars) {
+function filterText(value, maxChars, { ignore = [] } = {}) {
   if (typeof value !== "string") return { text: null, removed: "not_text" };
   const text = value.replace(/\s+/g, " ").trim();
   if (!text) return { text: null, removed: "empty" };
-  const unsafe = UNSAFE_TEXT.find(({ pattern }) => pattern.test(text));
+  const unsafe = UNSAFE_TEXT.find(({ id, pattern }) => !ignore.includes(id) && pattern.test(text));
   if (unsafe) return { text: null, removed: unsafe.id };
   return { text: text.length > maxChars ? text.slice(0, maxChars - 1).trimEnd() + "…" : text, removed: null };
 }

@@ -55,9 +55,9 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
   }
   if (!value || typeof value !== "object" || Array.isArray(value) || !URGENCIES.has(value.urgency)) throw new ReportAnalysisError("invalid_response");
   if (value.documentType !== "written_report") throw new ReportAnalysisError("not_report");
-  const clean = (text, max) => {
+  const clean = (text, max, allowClinicalNumbers = false) => {
     if (typeof text !== "string" || text.length > max) throw new ReportAnalysisError("invalid_response");
-    const filtered = filterText(text, max);
+    const filtered = filterText(text, max, allowClinicalNumbers ? { ignore: ["medication_dose", "phone_number"] } : undefined);
     if (!filtered.text || /\b(?:you are|the patient is) (?:completely )?(?:healthy|fine)|nothing (?:is )?wrong|no (?:doctor|medical) (?:review|care|visit) (?:is )?needed|(?:everything|all (?:of )?(?:the )?(?:results|tests|values|findings)|the results) (?:is|are|looks|seems) (?:completely )?(?:fine|normal|okay|within (?:the )?(?:normal|expected) range)|you(?:'re| are) all clear\b/i.test(filtered.text)) throw new ReportAnalysisError("unsafe_response");
     return filtered.text;
   };
@@ -73,9 +73,9 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
     if (!item || typeof item !== "object") throw new ReportAnalysisError("invalid_response");
     const finding = {
       name: clean(item.name, 100),
-      sourceQuote: clean(item.sourceQuote, 240),
-      result: clean(item.result, 160),
-      reference: clean(item.reference || "The report does not provide a reference range.", 160),
+      sourceQuote: clean(item.sourceQuote, 240, true),
+      result: clean(item.result, 160, true),
+      reference: clean(item.reference || "The report does not provide a reference range.", 160, true),
       explanation: clean(item.explanation, 450),
       followUp: clean(item.followUp, 300),
     };
