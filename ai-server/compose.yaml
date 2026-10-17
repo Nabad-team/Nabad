@@ -1,0 +1,59 @@
+name: nabad-ai
+
+services:
+  ollama:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0}
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    volumes:
+      - ollama-models:/root/.ollama
+    expose: ["11434"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks: [ai-private]
+
+  model-pull:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0}
+    restart: "no"
+    entrypoint: ["ollama"]
+    command: ["pull", "${OLLAMA_MODEL:-qwen3.5:9b}"]
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    networks: [ai-private]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  gateway:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    restart: unless-stopped
+    environment:
+      OLLAMA_DOMAIN: ${OLLAMA_DOMAIN:?Set OLLAMA_DOMAIN in .env}
+      OLLAMA_API_TOKEN: ${OLLAMA_API_TOKEN:?Set OLLAMA_API_TOKEN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [ai-private]
+    depends_on:
+      model-pull:
+        condition: service_completed_successfully
+
+networks:
+  ai-private:
+
+volumes:
+  ollama-models:
+  caddy-data:
+  caddy-config:

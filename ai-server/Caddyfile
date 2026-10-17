@@ -1,0 +1,7 @@
+{$OLLAMA_DOMAIN} {
+	@unauthorized not header Authorization "Bearer {$OLLAMA_API_TOKEN}"
+	handle @unauthorized {
+		respond "Unauthorized" 401
+	}
+	reverse_proxy ollama:11434
+}

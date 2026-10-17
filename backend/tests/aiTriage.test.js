@@ -60,16 +60,18 @@ describe("LLM client: configuration", () => {
     assert.equal(config.timeoutMs, 15000);
   });
 
-  test("Gemini deployment settings resolve to Google's OpenAI-compatible chat endpoint and current model", () => {
+  test("self-hosted Ollama resolves to the native chat endpoint and configured model", () => {
     const config = readLlmConfig({
-      LLM_API_URL: "https://generativelanguage.googleapis.com/v1beta/openai",
-      LLM_API_KEY: "gemini-test-key",
-      LLM_MODEL: "gemini-3.8-flash",
+      LLM_PROVIDER: "ollama",
+      LLM_API_URL: "https://ai.example.test",
+      LLM_API_KEY: "gateway-token",
+      LLM_MODEL: "qwen3.5:9b",
     });
     assert.equal(config.configured, true);
-    assert.equal(config.endpoint, "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
-    assert.equal(config.model, "gemini-3.8-flash");
-    assert.equal(config.apiKey, "gemini-test-key");
+    assert.equal(config.endpoint, "https://ai.example.test/api/chat");
+    assert.equal(config.model, "qwen3.5:9b");
+    assert.equal(config.apiKey, "gateway-token");
+    assert.equal(config.provider, "ollama");
   });
 
   test("refuses plain HTTP to another machine, because symptoms are health data", () => {
@@ -80,6 +82,13 @@ describe("LLM client: configuration", () => {
     for (const url of ["http://localhost:11434/v1", "http://127.0.0.1:8080/v1"]) {
       assert.equal(readLlmConfig({ ...CONFIG_ENV, LLM_API_URL: url }).configured, true, url);
     }
+  });
+
+  test("allows the named Ollama service over HTTP only when enabled for the private Docker network", () => {
+    const localOllama = { ...CONFIG_ENV, LLM_PROVIDER: "ollama", LLM_API_URL: "http://ollama:11434" };
+    assert.equal(readLlmConfig(localOllama).problem, "insecure_url");
+    assert.equal(readLlmConfig({ ...localOllama, LLM_ALLOW_INSECURE_HTTP: "true" }).endpoint, "http://ollama:11434/api/chat");
+    assert.equal(readLlmConfig({ ...localOllama, LLM_ALLOW_INSECURE_HTTP: "true", LLM_API_URL: "http://other:11434/v1" }).problem, "insecure_url");
   });
 
   test("rejects a malformed URL, credentials in the URL and an out-of-range timeout", () => {
@@ -97,6 +106,21 @@ describe("LLM client: configuration", () => {
 });
 
 describe("LLM client: requests and errors", () => {
+  test("sends native Ollama JSON requests and converts report image data URLs", async () => {
+    const { fetchImpl, requests } = fakeFetch(() => jsonResponse(200, { message: { role: "assistant", content: "{\\\"ok\\\":true}" } }));
+    const config = readLlmConfig({ LLM_PROVIDER: "ollama", LLM_API_URL: "https://ai.example.test", LLM_API_KEY: "secret", LLM_MODEL: "qwen3.5:9b" });
+    const client = createLlmClient(config, fetchImpl);
+    const image = Buffer.from("image-bytes").toString("base64");
+    assert.equal(await client.complete([{ role: "user", content: [{ type: "text", text: "Read this" }, { type: "image_url", image_url: { url: `data:image/png;base64,${image}` } }] }]), "{\\\"ok\\\":true}");
+    const [request] = requests;
+    assert.equal(request.url, "https://ai.example.test/api/chat");
+    assert.equal(request.options.headers.Authorization, "Bearer secret");
+    assert.equal(request.body.model, "qwen3.5:9b");
+    assert.equal(request.body.stream, false);
+    assert.equal(request.body.format, "json");
+    assert.deepEqual(request.body.messages[0], { role: "user", content: "Read this", images: [image] });
+  });
+
   test("sends the model, the messages, temperature 0 and a JSON reply format, with the key as a bearer token", async () => {
     const { fetchImpl, requests } = fakeFetch(() => completion('{"level":"routine"}'));
     const client = createLlmClient(readLlmConfig(CONFIG_ENV), fetchImpl);

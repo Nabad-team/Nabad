@@ -64,15 +64,17 @@ services:
       # Must also be listed as an authorized redirect URI on the Google OAuth client.
       - key: GOOGLE_REDIRECT_URI
         value: https://nabad-psi.vercel.app/api/auth/google/callback
-      # Gemini uses Google's OpenAI-compatible endpoint. LLM_API_KEY must be set in Render.
+      # Set these to the TLS endpoint and bearer token of your self-hosted Ollama server.
+      - key: LLM_PROVIDER
+        value: ollama
       - key: LLM_API_URL
-        value: https://generativelanguage.googleapis.com/v1beta/openai
+        sync: false
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL
-        value: gemini-3.8-flash
+        value: qwen3.5:9b
       - key: LLM_TIMEOUT_MS
-        value: "30000"
-      # Enable only for a vision-capable Gemini model and photos of written reports.
+        value: "60000"
+      # Enable for the multimodal model; image uploads must be photos of written reports.
       - key: LLM_VISION_ENABLED
         value: "true"
