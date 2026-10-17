@@ -20,7 +20,7 @@ import time
 import unittest
 from pathlib import Path
 from urllib.error import URLError
-from urllib.parse import quote, urljoin, urlparse
+from urllib.parse import parse_qs, quote, urljoin, urlparse
 from urllib.request import urlopen
 
 from selenium import webdriver
@@ -259,15 +259,20 @@ class NabadWebsiteTests(unittest.TestCase):
         print(f"\nPASS {path} | title={title!r} | navigation_time={elapsed:.2f}s")
 
     def assert_redirects_to_login(self, path):
+        """Signed out, the page sends the visitor to /login?next=<path>, so they come back after signing in."""
         self.open(path)
         self.wait.until(EC.url_contains("/login"))
-        self.assertIn("/login", self.driver.current_url)
+        current = urlparse(self.driver.current_url)
+        self.assertEqual(current.path, "/login")
+        self.assertEqual(parse_qs(current.query).get("next"), [path])
 
     # ---- Signing in and out ----
 
     def sign_out_of_browser(self):
         """Forget every cookie and saved setting, as a new visitor would arrive."""
-        self.open("/")
+        # A plain JSON page on the same site: an app page would still be calling the API, and each signed-in
+        # response renews the session cookie, which could put it back right after it was deleted.
+        self.open("/api/health")
         self.driver.delete_all_cookies()
         self.driver.execute_script("window.localStorage.clear(); window.sessionStorage.clear();")
 
@@ -476,6 +481,7 @@ class PublicPageTests(NabadWebsiteTests):
         for path in (
             "/onboarding",
             "/dashboard",
+            "/symptoms",
             "/medications",
             "/my-health",
             "/water-and-sleep",
@@ -484,13 +490,6 @@ class PublicPageTests(NabadWebsiteTests):
         ):
             with self.subTest(path=path):
                 self.assert_redirects_to_login(path)
-
-    def test_signed_out_symptom_route_does_not_expose_private_form(self):
-        # /symptoms is not behind the sign-in redirect: signed out, it shows no form and no one's details.
-        self.open("/symptoms")
-        self.wait_for_text("No active profile selected")
-        self.assertIn("/symptoms", self.driver.current_url)
-        self.assertEqual(self.driver.find_elements(By.ID, "symptoms"), [])
 
 
 class SignedInWorkflowTests(NabadWebsiteTests):

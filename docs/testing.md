@@ -15,7 +15,7 @@ cd backend && npm ci && npm test
 cd frontend && npm ci && npm test
 ```
 
-The backend tests download a MongoDB binary the first time (mongodb-memory-server). Nothing else needs to be running. On a slow Windows machine, `node --test --test-concurrency=1 tests/*.test.js` runs the files one at a time if MongoDB instances time out starting in parallel.
+The backend tests download a MongoDB binary the first time (mongodb-memory-server). Nothing else needs to be running. `npm test` runs at most 4 test files at a time (`--test-concurrency=4`). Each file starts its own MongoDB, and starting one per CPU core at once makes them time out on Windows. Four is still as fast as Node's default on GitHub's 4-core runners.
 
 ## End-to-end (Selenium)
 
@@ -52,7 +52,7 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 
 ### What it covers
 
-- **Public pages:** page titles, the 404 page, wrong password, the sign-up password check, forgot password, the inactivity sign-out message, and that signed-in pages redirect to the login page. `/symptoms` is not behind the redirect: signed out, it shows "No active profile selected." and no form.
+- **Public pages:** page titles, the 404 page, wrong password, the sign-up password check, forgot password, the inactivity sign-out message, and that signed-in pages (including `/symptoms`) redirect to the login page with a `next` link back to the page.
 - **Account:** sign-up, email verification, sign-out, sign-in with an emailed 2FA code and a remembered device, and account deletion.
 - **Dashboard:** the greeting and the links to symptoms, My health, Medications, Water and sleep, and My profile (in the account menu).
 - **Symptoms and safety check:** symptoms are saved on the unified `/symptoms` page (the old `/triage` page was retired), and the urgency result shows how soon and what to do, with a "Read aloud" control.

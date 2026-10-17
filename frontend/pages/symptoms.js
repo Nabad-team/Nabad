@@ -682,3 +682,6 @@ export default function SymptomsPage() {
     </PageLayout>
   );
 }
+
+// Health data: only for signed-in users (see components/RequireSignIn.js).
+SymptomsPage.requireSignIn = true;
