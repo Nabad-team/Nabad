@@ -45,7 +45,10 @@ router.post("/analyze", analysisLimiter, async (req, res) => {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {
       const status = error.code === "not_configured" ? 503 : error.code === "invalid_question" ? 400 : error.code === "not_report" ? 422 : 502;
-      logEvent("report_analysis", { requestId, reason: `unavailable:${error.code}`, durationMs: Math.round(performance.now() - started) });
+      const reason = error.providerFailure
+        ? `provider_${error.providerFailure.code}${error.providerFailure.status ? `_${error.providerFailure.status}` : ""}`
+        : `unavailable:${error.code}`;
+      logEvent("report_analysis", { requestId, reason, durationMs: Math.round(performance.now() - started) });
       const messages = {
         not_configured: "AI report review is not configured on this server yet. Your file was not analyzed.",
         invalid_question: "Keep your question under 1200 characters.",
@@ -55,7 +58,7 @@ router.post("/analyze", analysisLimiter, async (req, res) => {
         not_report: "This appears to be a scan image or not a written report. Nabad cannot interpret raw MRI, CT, X-ray, or ultrasound images. Upload the radiologist's written report instead.",
         unsafe_response: "The AI response did not pass safety checks. No result was shown; please contact your clinician.",
       };
-      return res.status(status).json({ error: messages[error.code] || "The report could not be safely analyzed. No result was shown; please contact your clinician." });
+      return res.status(status).json({ error: messages[error.code] || "The report could not be safely analyzed. No result was shown; please contact your clinician.", requestId });
     }
     // Never log the document, extracted text, the question or a provider's raw error message.
     logEvent("report_analysis", { requestId, reason: "unavailable:internal_error", ...errorDetails(error), durationMs: Math.round(performance.now() - started) });
@@ -81,7 +84,10 @@ router.post("/chat", chatLimiter, async (req, res) => {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {
       const status = error.code === "not_configured" ? 503 : ["invalid_question", "invalid_history"].includes(error.code) ? 400 : 502;
-      logEvent("health_assistant_chat", { requestId, reason: `unavailable:${error.code}`, durationMs: Math.round(performance.now() - started) });
+      const reason = error.providerFailure
+        ? `provider_${error.providerFailure.code}${error.providerFailure.status ? `_${error.providerFailure.status}` : ""}`
+        : `unavailable:${error.code}`;
+      logEvent("health_assistant_chat", { requestId, reason, durationMs: Math.round(performance.now() - started) });
       const messages = {
         not_configured: "The health assistant is not configured on this server yet. Your message was not sent.",
         invalid_question: "Write a question between 3 and 1200 characters.",
@@ -91,7 +97,7 @@ router.post("/chat", chatLimiter, async (req, res) => {
         unsupported_quote: "The AI could not reliably ground that answer in the report. No answer was shown; try a clearer report or ask your clinician.",
         unsafe_response: "The AI response did not pass safety checks. No answer was shown; please contact a clinician for personal medical advice.",
       };
-      return res.status(status).json({ error: messages[error.code] || "The health assistant could not safely answer. Please contact a clinician for personal medical advice." });
+      return res.status(status).json({ error: messages[error.code] || "The health assistant could not safely answer. Please contact a clinician for personal medical advice.", requestId });
     }
     logEvent("health_assistant_chat", { requestId, reason: "unavailable:internal_error", ...errorDetails(error), durationMs: Math.round(performance.now() - started) });
     return res.status(500).json({ error: "The health assistant could not respond safely. Please try again later.", requestId });

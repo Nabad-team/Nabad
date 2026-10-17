@@ -117,6 +117,13 @@ export default function TestResultsPage() {
     if (input) input.value = "";
   }
 
+  function newConversation() {
+    clearFile();
+    setMessages([]);
+    setError("");
+    setQuestion("");
+  }
+
   return (
     <PageLayout
       title="Health assistant"
@@ -126,81 +133,70 @@ export default function TestResultsPage() {
         Health assistant
       </PageTitle>
 
-      <section className="results-intro" aria-labelledby="results-status">
-        <div className="results-intro__icon"><ResultsIcon /></div>
-        <h2 id="results-status">Ask a health question</h2>
-        <p>
-          {activeProfile?.fullName ? <>For <strong>{activeProfile.fullName}</strong>. </> : null}
-          Ask a general health question or attach a PDF, Word document, text or CSV file, or a clear photo of a written report. You can ask follow-up questions in the same conversation.
-        </p>
-        <p>
-          This tool cannot interpret raw MRI/CT scan images or DICOM files. It is not a diagnostic service,
-          cannot confirm that results are safe, and must not be used to delay care.
-        </p>
-      </section>
+      <section className="assistant-chat" aria-label="Health assistant conversation">
+        <header className="assistant-chat__header">
+          <div>
+            <span className="assistant-chat__status">Health assistant</span>
+            {activeProfile?.fullName && <p>Conversation for <strong>{activeProfile.fullName}</strong></p>}
+          </div>
+          {messages.length > 0 && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
+        </header>
+        {messages.length > 0 ? (
+          <section className="assistant-chat__history" aria-label="Conversation" aria-live="polite">
+            {messages.map((message, index) => (
+              <article className={`report-chat__message report-chat__message--${message.role}`} key={`${message.role}-${index}`}>
+                <h3>{message.role === "user" ? "You" : "Nabad assistant"}</h3>
+                <p>{message.content}</p>
+                {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
+                {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
+              </article>
+            ))}
+            {busy && <div className="assistant-chat__typing" role="status"><span /><span /><span /><span className="sr-only">The assistant is preparing a response</span></div>}
+          </section>
+        ) : (
+          <section className="assistant-chat__welcome" aria-labelledby="assistant-welcome-title">
+            <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
+            <h2 id="assistant-welcome-title">What can I help you understand?</h2>
+            <p>Ask a health question or get help understanding a written test report.</p>
+            <div className="assistant-chat__suggestions" aria-label="Suggested questions">
+              {["What does a high cholesterol result mean?", "How can I prepare for a blood test?", "What should I ask my doctor about a new medicine?"].map((suggestion) => (
+                <button className="assistant-chat__suggestion" key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>
+              ))}
+            </div>
+            {busy && <div className="assistant-chat__typing" role="status"><span /><span /><span /><span className="sr-only">The assistant is preparing a response</span></div>}
+          </section>
+        )}
 
-      <form className="report-form" onSubmit={sendMessage}>
-        <div className="field">
-          <label className="field__label" htmlFor="test-report-file">Attach a test result <span className="text-muted">(optional)</span></label>
-          <input
-            id="test-report-file"
-            className="input report-form__file"
-            type="file"
-            accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv,image/jpeg,image/png,image/webp,.pdf,.docx,.txt,.csv,.jpg,.jpeg,.png,.webp"
-            onChange={selectFile}
-            aria-describedby="report-file-help"
-            disabled={busy}
-          />
-          <p className="field__hint" id="report-file-help">PDF, DOCX, TXT, CSV, JPG, PNG, or WebP. Maximum 3 MB. Scanned PDFs and image-only Word files may not contain readable text.</p>
-        </div>
-
-        {file && <div className="report-form__selected" role="status"><span>{file.name}</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove file</Button></div>}
-
-        <div className="field">
-          <label className="field__label" htmlFor="report-question">Your question</label>
-          <textarea
-            id="report-question"
-            className="input report-form__question"
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            maxLength={1200}
-            rows={3}
-            placeholder="For example: What does this flagged result mean? Or ask a general health question."
-            required
-            disabled={busy}
-          />
-        </div>
-
-        <label className="check report-form__consent">
-          <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
-          I understand my question and any attached report will be sent over an encrypted connection to Google's Gemini AI service and may contain sensitive health information.
-        </label>
-
+      <form className="assistant-composer" onSubmit={sendMessage}>
+        {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>{file.name}</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
-
-        <div className="report-form__actions">
-          <Button type="submit" disabled={!question.trim() || !consent || busy}>{busy ? "Thinking..." : "Send question"}</Button>
-          <Button href="/symptoms" variant="secondary">Check symptoms</Button>
-          {messages.length > 0 && <Button type="button" variant="secondary" onClick={() => { setMessages([]); setResult(null); setError(""); }} disabled={busy}>New conversation</Button>}
+        <label className="sr-only" htmlFor="report-question">Your message</label>
+        <textarea
+          id="report-question"
+          className="assistant-composer__input"
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}
+          maxLength={1200}
+          rows={2}
+          placeholder="Ask anything about your health..."
+          required
+          disabled={busy}
+        />
+        <div className="assistant-composer__toolbar">
+          <div className="assistant-composer__tools">
+            <label className="assistant-composer__attach" htmlFor="test-report-file" title="Attach a test report"><span aria-hidden="true">+</span><span>Attach report</span></label>
+            <input id="test-report-file" className="sr-only" type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/csv,image/jpeg,image/png,image/webp,.pdf,.docx,.txt,.csv,.jpg,.jpeg,.png,.webp" onChange={selectFile} aria-describedby="report-file-help" disabled={busy} />
+            <span className="assistant-composer__file-help" id="report-file-help">PDF, DOCX, TXT, CSV, JPG, PNG or WebP, max 3 MB</span>
+          </div>
+          <Button type="submit" disabled={!question.trim() || !consent || busy} aria-label={busy ? "Sending message" : "Send message"}>{busy ? "Sending..." : "Send"}</Button>
         </div>
-
-        <p className="report-privacy-note">
-          Messages and files are processed for each request and are not saved by Nabad. If a file is attached, it is sent again with each follow-up. Upload only if you are comfortable sharing it.
-        </p>
+        <label className="check assistant-composer__consent">
+          <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
+          I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
+        </label>
+        <p className="report-privacy-note">Messages and files are processed for each request and are not saved by Nabad. A file is sent again with follow-up questions. Upload only if you are comfortable sharing it.</p>
       </form>
-
-      {messages.length > 0 && (
-        <section className="report-chat" aria-label="Conversation" aria-live="polite">
-          {messages.map((message, index) => (
-            <article className={`report-chat__message report-chat__message--${message.role}`} key={`${message.role}-${index}`}>
-              <h3>{message.role === "user" ? "You" : "Nabad assistant"}</h3>
-              <p>{message.content}</p>
-              {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
-              {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
-            </article>
-          ))}
-        </section>
-      )}
 
       {result && (
         <section className={`report-result report-result--${result.urgency}`} aria-labelledby="report-result-heading" aria-live="polite">
@@ -236,6 +232,7 @@ export default function TestResultsPage() {
           <p className="report-result__disclaimer">{result.disclaimer}</p>
         </section>
       )}
+      </section>
 
       <p className="results-safety-note">
         If symptoms feel severe or this may be an emergency, contact local emergency services or seek urgent medical care now. Do not wait for an online result review.

@@ -23,10 +23,11 @@ Return only a JSON object with this exact shape:
 Use 1 to 8 findings for written reports, or an empty list if no finding is clearly marked abnormal. Use an empty uncertainties array only when the complete report text is readable. Do not include markdown.`;
 
 class ReportAnalysisError extends Error {
-  constructor(code) {
+  constructor(code, providerFailure = null) {
     super(`Report analysis failed: ${code}`);
     this.name = "ReportAnalysisError";
     this.code = code;
+    this.providerFailure = providerFailure;
   }
 }
 
@@ -134,7 +135,10 @@ async function analyzeReport({ report, question = "", client }) {
     return result;
   } catch (error) {
     if (error instanceof ReportAnalysisError) throw error;
-    if (error instanceof LlmError) throw new ReportAnalysisError(error.code === "timeout" ? "timeout" : "provider_unavailable");
+    if (error instanceof LlmError) {
+      const providerFailure = { code: error.code, ...(Number.isInteger(error.status) ? { status: error.status } : {}) };
+      throw new ReportAnalysisError(error.code === "timeout" ? "timeout" : "provider_unavailable", providerFailure);
+    }
     throw error;
   }
 }
