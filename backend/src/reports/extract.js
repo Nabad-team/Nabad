@@ -136,8 +136,10 @@ async function extractPdfText(buffer) {
       pages.push(content.items.map((item) => item.str).filter(Boolean).join(" "));
       if (pages.join("\n").length > MAX_REPORT_TEXT) break;
     }
+  } catch {
+    throw new ReportInputError("We could not read the text in this PDF. Try a searchable PDF or a clear photo of the written report.", 422);
   } finally {
-    await pdf.destroy();
+    await pdf.destroy().catch(() => {});
   }
   const fullText = pages.join("\n").replace(/\s+/g, " ").trim();
   const partial = fullText.length > MAX_REPORT_TEXT || pages.length < pageCount;

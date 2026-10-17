@@ -100,7 +100,8 @@ export default function TestResultsPage() {
       }
       setQuestion("");
     } catch (err) {
-      setError(err.message || "The report could not be safely analyzed. Please try again or ask your clinician.");
+      const message = err.message || "The report could not be safely analyzed. Please try again or ask your clinician.";
+      setError(err.requestId ? `${message} (Reference: ${err.requestId})` : message);
     } finally {
       setBusy(false);
     }

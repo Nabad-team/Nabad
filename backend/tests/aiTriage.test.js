@@ -60,6 +60,18 @@ describe("LLM client: configuration", () => {
     assert.equal(config.timeoutMs, 15000);
   });
 
+  test("Gemini deployment settings resolve to Google's OpenAI-compatible chat endpoint and current model", () => {
+    const config = readLlmConfig({
+      LLM_API_URL: "https://generativelanguage.googleapis.com/v1beta/openai",
+      LLM_API_KEY: "gemini-test-key",
+      LLM_MODEL: "gemini-3.8-flash",
+    });
+    assert.equal(config.configured, true);
+    assert.equal(config.endpoint, "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+    assert.equal(config.model, "gemini-3.8-flash");
+    assert.equal(config.apiKey, "gemini-test-key");
+  });
+
   test("refuses plain HTTP to another machine, because symptoms are health data", () => {
     assert.deepEqual(readLlmConfig({ ...CONFIG_ENV, LLM_API_URL: "http://llm.example.test/v1" }), { configured: false, problem: "insecure_url" });
   });
