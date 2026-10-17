@@ -1,4 +1,5 @@
 import ProfileHeader from "../components/ProfileHeader";
+import { MainNavigation } from "../components/AppHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCard from "../components/WellbeingCard";
 import WellbeingCorner from "../components/WellbeingCorner";
@@ -70,6 +71,10 @@ export default function DashboardPage() {
           Welcome, {firstName(activeProfile.fullName)}
         </PageTitle>
       )}
+
+      <section className="dashboard-navigation" aria-label="Dashboard sections">
+        <MainNavigation />
+      </section>
 
       {error && (
         <Alert tone="danger" as="p" role="alert">

@@ -99,6 +99,26 @@ function NavLinks({ links, path, className, simplified = false, cards = false })
   );
 }
 
+export function MainNavigation({ className = "app-nav__list" }) {
+  const { preferences } = useAccessibility();
+  const signedIn = useSignedIn();
+  const path = useCurrentPath();
+
+  if (!signedIn) return null;
+
+  return (
+    <nav aria-label="Main">
+      <NavLinks
+        links={MAIN_LINKS}
+        path={path}
+        className={className}
+        simplified={preferences.simplifiedMode}
+        cards
+      />
+    </nav>
+  );
+}
+
 function ProfileSwitcher({ id, showLabel }) {
   const { selfProfile, linkedProfiles = [], activeProfile, switchProfile } = useActiveProfile() || {};
   if (!selfProfile || !activeProfile) return null;
@@ -138,7 +158,7 @@ export default function AppHeader() {
   return (
     <header className="site-header app-header">
       <div className="container container--wide app-header__bar">
-        <Logo />
+        <Logo href={signedIn ? "/dashboard" : "/"} />
         {!signedIn && <nav aria-label="Public"><a href="/providers">{providerText("title")}</a></nav>}
 
         {signedIn && (
@@ -194,16 +214,6 @@ export default function AppHeader() {
           </Button>
         )}
       </div>
-
-      {signedIn && (
-        <div className="app-header__navigation app-header__desktop">
-          <div className="container container--wide">
-            <nav aria-label="Main">
-              <NavLinks links={MAIN_LINKS} path={path} className="app-nav__list" simplified={preferences.simplifiedMode} cards />
-            </nav>
-          </div>
-        </div>
-      )}
 
       {signedIn && mobile.open && (
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
