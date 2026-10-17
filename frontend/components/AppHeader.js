@@ -20,6 +20,9 @@ export const MAIN_LINKS = [
 export const ACCOUNT_LINKS = [
   { href: "/profile", label: "My profile", shortLabel: "Profile" },
   { href: "/security", label: "Security", shortLabel: "Security" },
+  { href: "/symptoms", label: "Safety check", shortLabel: "Safety" },
+  { href: "/medications", label: "Medications", shortLabel: "Medicines" },
+  { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
 ];
 
 // A button that shows and hides a panel (the "disclosure" pattern, which suits navigation links better

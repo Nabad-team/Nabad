@@ -164,10 +164,11 @@ describe("Dashboard Page", () => {
     expect(screen.queryByText(/You're managing/)).not.toBeInTheDocument();
   });
 
-  test("My profile link points to /profile", async () => {
+  test("account menu contains the account links", async () => {
     renderDashboard();
     await screen.findByText("Welcome, Demo");
 
+    fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     expect(
       screen.getByRole("link", { name: "My profile" })
     ).toHaveAttribute("href", "/profile");
@@ -196,9 +197,11 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     expect(await screen.findByRole("heading", { name: "How do you feel?" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open safety check" })).toHaveTextContent("Safety");
-    expect(screen.getByRole("link", { name: "Open medications" })).toHaveTextContent("Medicines");
-    expect(screen.getByRole("link", { name: "Open my profile" })).toHaveTextContent("Profile");
+    fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
+    const accountMenu = document.getElementById("account-menu");
+    expect(within(accountMenu).getByRole("link", { name: "Safety check" })).toHaveTextContent("Safety");
+    expect(within(accountMenu).getByRole("link", { name: "Medications" })).toHaveTextContent("Medicines");
+    expect(within(accountMenu).getByRole("link", { name: "My profile" })).toHaveTextContent("Profile");
   });
 
   test("shows today's water and last night's sleep on the Water and sleep card", async () => {

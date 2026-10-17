@@ -98,7 +98,11 @@ describe("Account menu", () => {
     expect(panel).toBeInTheDocument();
     expect(within(panel).getByText("Demo User")).toBeInTheDocument();
     expect(within(panel).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
-      ["My profile", "/profile"], ["Security", "/security"],
+      ["My profile", "/profile"],
+      ["Security", "/security"],
+      ["Safety check", "/symptoms"],
+      ["Medications", "/medications"],
+      ["Privacy Policy", "/privacy"],
     ]);
     expect(within(panel).getByRole("link", { name: "My profile" })).toHaveFocus();
   });
@@ -132,6 +136,12 @@ describe("Account menu", () => {
     expect(screen.getByRole("link", { name: "My profile" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Security" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Safety check" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Medications" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("button", { name: "Sign out" })).toHaveFocus();
     await user.tab();
@@ -182,7 +192,13 @@ describe("Phone menu", () => {
     expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Medications", "Water and sleep", "Find care"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
-    expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual(["My profile", "Security"]);
+    expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([
+      "My profile",
+      "Security",
+      "Safety check",
+      "Medications",
+      "Privacy Policy",
+    ]);
     expect(within(panel).getByLabelText("Acting for")).toHaveValue("self");
     expect(within(panel).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     // Focus moves to the first link.
