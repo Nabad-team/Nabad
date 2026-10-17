@@ -305,10 +305,10 @@ describe("My health page", () => {
     expect(await screen.findByText("Nabad knows you better: 0 of 5 basics filled in.")).toBeInTheDocument();
   });
 
-  test("has the page title and a header link, and is only for signed-in users", async () => {
+  test("has the page title and dashboard logo link, and is only for signed-in users", async () => {
     renderPage();
     await screen.findByRole("heading", { level: 1 });
-    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "My health" })).toHaveAttribute("href", "/my-health");
+    expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
     expect(MyHealthPage.requireSignIn).toBe(true);
   });
 });

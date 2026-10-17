@@ -40,22 +40,17 @@ describe("Header navigation", () => {
     jest.clearAllMocks();
   });
 
-  test("shows the main links in order, in one Main navigation", async () => {
+  test("keeps the desktop header focused on account controls", async () => {
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
-    const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(within(nav).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
-      ["Dashboard", "/dashboard"], ["My health", "/my-health"], ["Medications", "/medications"], ["Water and sleep", "/water-and-sleep"], ["Find care", "/providers"],
-    ]);
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
   });
 
-  test("marks the current page with aria-current, and only that link", async () => {
+  test("does not render desktop section navigation on the current page", async () => {
     renderHeader("/medications");
     await screen.findByRole("option", { name: "Demo User (you)" });
-    const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(within(nav).getByRole("link", { name: "Medications" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
-    expect(within(nav).getByRole("link", { name: "Water and sleep" })).not.toHaveAttribute("aria-current");
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
   });
 
   test("on an account page, the account button and the link inside the menu show it", async () => {
@@ -63,7 +58,7 @@ describe("Header navigation", () => {
     renderHeader("/security");
     await screen.findByRole("option", { name: "Demo User (you)" });
     expect(accountButton()).toHaveClass("account-menu__button--current");
-    expect(within(screen.getByRole("navigation", { name: "Main" })).queryByRole("link", { current: "page" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
     await user.click(accountButton());
     expect(screen.getByRole("link", { name: "Security" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "My profile" })).not.toHaveAttribute("aria-current");

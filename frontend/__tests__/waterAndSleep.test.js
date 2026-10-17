@@ -213,10 +213,10 @@ describe("Water and sleep page", () => {
     expect(screen.getByLabelText("Daily goal (glasses)")).toHaveAccessibleDescription(/Only if a goal suits Sami Haddad\. If a doctor has asked them to limit fluids/);
   });
 
-  test("has the page title and a header link, and is only for signed-in users", async () => {
+  test("has the page title and dashboard logo link, and is only for signed-in users", async () => {
     renderPage();
     await screen.findByRole("heading", { level: 1 });
-    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
     expect(WaterAndSleepPage.requireSignIn).toBe(true);
   });
 });

@@ -240,10 +240,10 @@ describe("Medications page", () => {
     expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
   });
 
-  test("has the page title and a Medications link in the header", async () => {
+  test("has the page title and a dashboard logo link in the header", async () => {
     renderPage();
     expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();
-    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Medications" })).toHaveAttribute("href", "/medications");
+    expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
   });
 
   test("is only shown to signed-in users", () => {
