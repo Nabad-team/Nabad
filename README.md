@@ -4,6 +4,10 @@
 
 With Docker Desktop running, `docker compose up` from the repository root starts the whole app: http://localhost:3000, with every email (verification, reset, 2FA codes) in a local inbox at http://localhost:8025. See [docs/docker.md](./docs/docker.md).
 
+## Testing
+
+Backend, frontend and Selenium end-to-end tests run on every pull request. [docs/testing.md](./docs/testing.md) explains each layer and how to run the end-to-end suite locally against Docker.
+
 ## Architecture
 
 [docs/architecture.md](./docs/architecture.md) describes production (Vercel, Render, MongoDB Atlas, Brevo, Google sign-in, GitHub Actions) and local development, with diagrams, the backend modules and the security layers.

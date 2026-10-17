@@ -17,3 +17,8 @@ coverage/
 
 # Vercel CLI project link (created by `vercel`); local to each machine.
 .vercel
+
+# Python bytecode, and the Selenium suite's failure screenshots (tests/test_nabad.py).
+__pycache__/
+*.pyc
+tests/artifacts/

@@ -5,6 +5,7 @@ Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express AP
 - Frontend: [frontend/](../frontend) (Next.js pages router, React)
 - Backend: [backend/](../backend) (Express, Mongoose)
 - Local development: [docker.md](./docker.md)
+- Tests: [testing.md](./testing.md)
 
 ## Production
 
@@ -30,7 +31,7 @@ flowchart LR
 
     subgraph github["GitHub"]
         repo["Nabad repository<br/>(main branch)"]
-        ci["GitHub Actions<br/>tests, build, Docker images"]
+        ci["GitHub Actions<br/>tests, build, Docker images, end-to-end"]
     end
 
     user -- "HTTPS: pages and /api/*" --> next
@@ -52,7 +53,7 @@ flowchart LR
 - **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`.
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
-- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, and a build of both Docker images. Merging to `main` triggers the Vercel and Render deploys.
+- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` triggers the Vercel and Render deploys.
 
 ## Local development (Docker Compose)
 
