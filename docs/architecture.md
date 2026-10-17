@@ -89,7 +89,7 @@ flowchart LR
     mongo --- vol
 ```
 
-`docker compose up` starts the web app, API, database, local email inbox, Ollama and the model pull job. The backend waits for MongoDB and the model download; the frontend waits for the backend to be ready. Every email lands in Mailpit. Configuration comes from [.env.docker.example](../.env.docker.example) and [docker-compose.yml](../docker-compose.yml). See [docker.md](./docker.md).
+`docker compose up` starts the web app, API, database and local email inbox for regular development and Selenium. Add [docker-compose.ai.yml](../docker-compose.ai.yml) to run Ollama locally; this downloads several GB of model data on first use. Every email lands in Mailpit. Configuration comes from [.env.docker.example](../.env.docker.example) and the Compose files. See [docker.md](./docker.md).
 
 ## Backend modules
 

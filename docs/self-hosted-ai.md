@@ -40,7 +40,7 @@ Existing report extraction handles searchable PDF, DOCX, TXT/CSV and photos of w
 
 ## Local development
 
-The repository-root `docker-compose.yml` runs Ollama alongside the app, downloads the configured model into a persistent Docker volume, and keeps the inference port private. The first run downloads several GB. See [Docker development](docker.md).
+The optional `docker-compose.ai.yml` overlay runs Ollama alongside the app, downloads the model into a persistent Docker volume, and keeps the inference port private. The first run downloads several GB. Start it with `docker compose -f docker-compose.yml -f docker-compose.ai.yml up`. See [Docker development](docker.md).
 
 ## References
 
