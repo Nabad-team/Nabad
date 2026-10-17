@@ -89,13 +89,17 @@ function createApp() {
     })
   );
 
+  app.use(cookieParser());
+
+  // Route-local parsing keeps report uploads larger than ordinary API JSON while parsing only
+  // after the report router has authenticated the caller.
+  app.use("/api/reports", require("./routes/reports"));
+
   app.use(
     express.json({
       limit: "100kb",
     })
   );
-
-  app.use(cookieParser());
 
   app.use(
     "/api/health",

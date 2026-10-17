@@ -61,18 +61,18 @@ function readLlmConfig(env = process.env) {
 function createLlmClient(config, fetchImpl = globalThis.fetch) {
   if (!config?.configured) throw new Error("createLlmClient needs a configured LLM config.");
 
-  async function complete(messages) {
+  async function complete(messages, { maxTokens = 600 } = {}) {
     // The timeout covers the whole exchange, including reading the reply body.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), config.timeoutMs);
     try {
-      return await send(messages, controller.signal);
+      return await send(messages, controller.signal, maxTokens);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  async function send(messages, signal) {
+  async function send(messages, signal, maxTokens) {
     let response;
     try {
       response = await fetchImpl(config.endpoint, {
@@ -85,7 +85,7 @@ function createLlmClient(config, fetchImpl = globalThis.fetch) {
           model: config.model,
           messages,
           temperature: 0, // the same symptoms should get the same answer
-          max_tokens: 600,
+          max_tokens: maxTokens,
           response_format: { type: "json_object" },
         }),
         signal,
