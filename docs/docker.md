@@ -17,6 +17,12 @@ From the repository root:
 docker compose up
 ```
 
+This starts the app without the large language model, which is suitable for the regular end-to-end Selenium suite. To run the self-hosted assistant locally, include its optional Compose overlay:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ai.yml up
+```
+
 The first run builds the images and takes a few minutes. It is ready when the `frontend` container logs `Ready`. Add `-d` to run in the background (`docker compose logs -f` shows the logs), and `--build` after you change code, so the images are rebuilt.
 
 Stop with `Ctrl+C`, or `docker compose down` if it runs in the background. Your data is kept.
@@ -46,9 +52,10 @@ Google sign-in is off locally unless you add your own OAuth client (see Configur
 | Service | Image | What it does |
 | --- | --- | --- |
 | `frontend` | built from [frontend/Dockerfile](../frontend/Dockerfile) | Next.js app on port 3000. Its `/api/*` rewrite forwards to `http://backend:5000`, set at build time through the `BACKEND_URL` build argument. |
-| `backend` | built from [backend/Dockerfile](../backend/Dockerfile) | Node/Express API on port 5000, in `APP_ENV=development`. Starts once MongoDB is healthy. |
+| `backend` | built from [backend/Dockerfile](../backend/Dockerfile) | Node/Express API on port 5000, in `APP_ENV=development`. Starts after MongoDB is healthy and the model pull job succeeds. |
 | `mongo` | `mongo:8.0` | Database `nabad_development`, stored in the `mongo-data` volume. |
 | `mailpit` | `axllent/mailpit` | Catches all email (SMTP on 1025, inside the network only) and shows it at port 8025. |
+| `ollama` + `ollama-model-pull` | Optional: `docker-compose.ai.yml` | Runs the self-hosted Qwen model and pulls it into the `ollama-models` volume. The inference port is private to Compose. |
 
 The services talk to each other by name on a private Compose network. Both app images run as the unprivileged `node` user. See [architecture.md](./architecture.md#local-development-docker-compose) for a diagram.
 
@@ -66,7 +73,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 
 Never put real secrets in `.env.docker.example` or anywhere else in git. The production startup checks are unchanged: with `APP_ENV=production` the API still refuses to start without every required secret.
 
-The local example is pre-filled for Gemini's OpenAI-compatible endpoint and `gemini-3.8-flash`. Copy it to `.env.docker`, set `LLM_API_KEY` to a Gemini API key, and restart the stack. Users can ask general health-information questions, attach PDF/DOCX/TXT/CSV reports or photos of written reports, and ask follow-ups. If a report is attached, its contents are sent again with each follow-up. Raw medical images (including DICOM) are not interpreted. This uses a general-purpose model, not a clinically trained or validated system; it cannot guarantee an answer to every question or be used to make medical decisions.
+The optional AI overlay runs Ollama and downloads `qwen3.5:9b` into a persistent Docker volume the first time it starts; no Gemini API key is needed. The model download is several gigabytes, so allow time and disk space on first boot. Users can ask general health-information questions, attach PDF/DOCX/TXT/CSV reports or photos of written reports, and ask follow-ups. If a report is attached, its contents are sent again with each follow-up. Raw medical images (including DICOM) are not interpreted. This uses a general-purpose model, not a clinically trained or validated system; it cannot guarantee an answer to every question or be used to make medical decisions. See [self-hosted AI deployment](./self-hosted-ai.md) for production setup.
 
 ## Reset the local database
 

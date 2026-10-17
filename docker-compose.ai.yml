@@ -1,0 +1,48 @@
+# Optional local model overlay: docker compose -f docker-compose.yml -f docker-compose.ai.yml up
+# The base stack remains small for Selenium/CI; this overlay downloads several GB on first use.
+services:
+  ollama:
+    image: ollama/ollama:0.34.0
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    volumes:
+      - ollama-models:/root/.ollama
+    networks: [nabad]
+    expose: ["11434"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  ollama-model-pull:
+    image: ollama/ollama:0.34.0
+    restart: "no"
+    entrypoint: ["ollama"]
+    command: ["pull", "qwen3.5:9b"]
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    networks: [nabad]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  backend:
+    depends_on:
+      ollama-model-pull:
+        condition: service_completed_successfully
+    environment:
+      LLM_PROVIDER: ollama
+      LLM_API_URL: http://ollama:11434
+      LLM_API_KEY: ollama
+      LLM_MODEL: qwen3.5:9b
+      LLM_TIMEOUT_MS: "60000"
+      LLM_VISION_ENABLED: "true"
+      LLM_ALLOW_INSECURE_HTTP: "true"
+
+volumes:
+  ollama-models:

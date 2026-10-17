@@ -21,6 +21,11 @@ flowchart LR
         api["Node/Express API<br/>health check: /api/health/ready"]
     end
 
+    subgraph modelhost["Self-hosted model server"]
+        gateway["Caddy HTTPS gateway<br/>bearer-token check"]
+        ollama["Ollama<br/>Qwen multimodal model"]
+    end
+
     subgraph atlas["MongoDB Atlas"]
         db[("nabad_production")]
     end
@@ -36,6 +41,8 @@ flowchart LR
 
     user -- "HTTPS: pages and /api/*" --> next
     next -- "HTTPS /api/* (rewrite)" --> api
+    api -- "HTTPS + bearer token<br/>health report/questions" --> gateway
+    gateway -- "private network" --> ollama
     api -- "TLS, least-privilege user" --> db
     api -- "verification, reset and 2FA emails" --> brevo
     brevo -. "email" .-> user
@@ -50,6 +57,7 @@ flowchart LR
 
 - **Vercel** builds and hosts the web app from `frontend/` (https://nabad-psi.vercel.app). [next.config.js](../frontend/next.config.js) rewrites `/api/*` to `BACKEND_URL`; a production build without it fails on purpose.
 - **Render** runs the API from [render.yaml](../render.yaml) (`npm ci`, `npm start`, Node 24) and only routes traffic to it once `/api/health/ready` answers, which requires a working database connection. Secrets are entered in the Render dashboard, never committed.
+- **Self-hosted model server** runs Ollama on infrastructure you control. The API calls its HTTPS Caddy gateway using a bearer token; Ollama itself is not exposed publicly. See [self-hosted AI deployment](./self-hosted-ai.md). This removes a third-party inference API, but the API still sends health data to the model server you operate.
 - **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`.
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
@@ -81,7 +89,7 @@ flowchart LR
     mongo --- vol
 ```
 
-`docker compose up` starts all four services. The backend waits for MongoDB to be healthy, and the frontend waits for the backend to be ready. Every email (verification, password reset, 2FA codes) lands in the Mailpit inbox instead of a real mailbox. Configuration comes from [.env.docker.example](../.env.docker.example) (local placeholders only) and [docker-compose.yml](../docker-compose.yml). See [docker.md](./docker.md).
+`docker compose up` starts the web app, API, database and local email inbox for regular development and Selenium. Add [docker-compose.ai.yml](../docker-compose.ai.yml) to run Ollama locally; this downloads several GB of model data on first use. Every email lands in Mailpit. Configuration comes from [.env.docker.example](../.env.docker.example) and the Compose files. See [docker.md](./docker.md).
 
 ## Backend modules
 
@@ -112,7 +120,7 @@ All health data is stored per profile with two ids: `owner` (the account) and `p
 
 | File | Role |
 | --- | --- |
-| `llmClient.js` | One client for any OpenAI-compatible provider, chosen by `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL`. HTTPS only (HTTP only for localhost), 15 s timeout. Unset means AI triage is off. |
+| `llmClient.js` | Uses Ollama's native `/api/chat` when `LLM_PROVIDER=ollama`, or an OpenAI-compatible endpoint otherwise. Hosted URLs require HTTPS; private Docker Ollama HTTP requires an explicit flag. Default timeout is 15 s (up to 60 s). Unset means model-assisted triage is off. |
 | `prompt.js` | The fixed instructions (levels, never diagnose, no medicines or doses, no phone numbers or links, never below the minimum level) and the user message with the user's text inside `<symptoms>` tags, treated as data. |
 | `guardrails.js` | Before the model: removes `<symptoms>` tags and control characters, and skips the model when the text tries to give it orders. After: the reply must be JSON with a known level and a reason; sentences with a dose, a phone number, a link, a certain diagnosis or false reassurance are dropped; the final level is the more serious of the rules and the model. |
 | `aiTriage.js` | Runs the rules first. An emergency answers at once without the model. If the model is off, slow, unreachable or its reply is rejected, the rules answer alone and `ai.reason` says why. |
@@ -121,7 +129,7 @@ The model can raise the urgency but never lower it. Self-care steps are only sho
 
 ### AI report explanations
 
-`POST /api/reports/analyze` requires sign-in and accepts PDF, DOCX, UTF-8 TXT/CSV, or a JPG/PNG/WebP photo (3 MB maximum). `reports/extract.js` extracts searchable PDF text in memory (up to 25 pages / 30,000 characters), reads the Word document body without extracting files to disk, and limits all extracted text. Photos are sent as image input only when `LLM_VISION_ENABLED=true` and the configured OpenAI-compatible model supports vision. Only written reports are in scope: raw MRI/CT/X-ray/ultrasound images and DICOM are not interpreted. The report and optional question are sent to the configured AI provider, are not persisted by Nabad, and are excluded from logs. Each account can request five structured report explanations per 15 minutes.
+`POST /api/reports/analyze` requires sign-in and accepts PDF, DOCX, UTF-8 TXT/CSV, or a JPG/PNG/WebP photo (3 MB maximum). `reports/extract.js` extracts searchable PDF text in memory (up to 25 pages / 30,000 characters), reads the Word document body without extracting files to disk, and limits all extracted text. Photos are sent as image input only when `LLM_VISION_ENABLED=true` and the configured model supports vision. Only written reports are in scope: raw MRI/CT/X-ray/ultrasound images and DICOM are not interpreted. The report and optional question are sent to the configured model server, are not persisted by Nabad, and are excluded from logs. Each account can request five structured report explanations per 15 minutes.
 
 `POST /api/reports/chat` supports general health-information questions and follow-up questions about an optional supported attachment. The browser keeps the conversation in memory and sends only the last eight messages to the API; Nabad does not persist the chat. An attachment is re-sent to the configured provider on every follow-up. Chat is limited to 20 messages per account every 15 minutes. Answers are filtered for unsafe content and, for text reports, their numeric values and quoted evidence are checked against the extracted report.
 
