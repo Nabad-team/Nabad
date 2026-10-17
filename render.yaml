@@ -64,10 +64,15 @@ services:
       # Must also be listed as an authorized redirect URI on the Google OAuth client.
       - key: GOOGLE_REDIRECT_URI
         value: https://nabad-psi.vercel.app/api/auth/google/callback
-      # AI triage (optional): leave LLM_API_URL or LLM_MODEL empty and the safety rules answer alone.
+      # Gemini uses Google's OpenAI-compatible endpoint. LLM_API_KEY must be set in Render.
       - key: LLM_API_URL
-        sync: false
+        value: https://generativelanguage.googleapis.com/v1beta/openai
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL
-        sync: false
+        value: gemini-1.5-pro
+      - key: LLM_TIMEOUT_MS
+        value: "30000"
+      # Enable only for a vision-capable Gemini model and photos of written reports.
+      - key: LLM_VISION_ENABLED
+        value: "true"
