@@ -6,6 +6,7 @@ import ProfilePage from "../pages/profile";
 import SecurityPage from "../pages/security";
 import OnboardingPage from "../pages/onboarding";
 import MyHealthPage from "../pages/my-health";
+import SymptomsPage from "../pages/symptoms";
 import HomePage from "../pages/index";
 import LoginPage from "../pages/login";
 import SignupPage from "../pages/signup";
@@ -123,6 +124,7 @@ describe("Pages that need sign-in", () => {
     ["/security", SecurityPage],
     ["/onboarding", OnboardingPage],
     ["/my-health", MyHealthPage],
+    ["/symptoms", SymptomsPage],
   ])("the real %s page sends a signed-out visitor to log in without showing anything", async (path, Page) => {
     asPath = path;
     getSession.mockImplementation(signedOut);
@@ -148,8 +150,8 @@ describe("Pages that need sign-in", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  test("the dashboard, profile, security and onboarding pages need sign-in", () => {
-    for (const page of [DashboardPage, ProfilePage, SecurityPage, OnboardingPage]) {
+  test("the dashboard, profile, security, onboarding and symptoms pages need sign-in", () => {
+    for (const page of [DashboardPage, ProfilePage, SecurityPage, OnboardingPage, SymptomsPage]) {
       expect(page.requireSignIn).toBe(true);
     }
     for (const page of [HomePage, LoginPage, SignupPage, ForgotPasswordPage, ResetPasswordPage]) {
