@@ -548,6 +548,14 @@ export default function SymptomsPage() {
           />
 
 
+          {/* Tells the user where their words go. Keep it true for the model set in LLM_* on Render. */}
+          <p className="field__hint symptoms-ai-notice">
+            {simplified
+              ? "An AI model run by the Nabad team helps check how urgent this is. It is not kept in Nabad's logs or used to train AI."
+              : "Your description is checked by Nabad's safety rules and analysed by an AI model run by the Nabad team to assess urgency. It isn't written to Nabad's logs and isn't used to train AI."}{" "}
+            <a href="/privacy#ai-symptom-check">How this works</a>
+          </p>
+
           {symptoms.length >=
             SHOW_COUNT_FROM && (
             <p className="field__hint">

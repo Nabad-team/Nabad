@@ -103,7 +103,7 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. |
 | Water and sleep | `routes/wellbeing.js`, `models/Wellbeing.js` | Daily water glasses against a target, sleep hours and quality, and history. Days are the user's local calendar date. |
 | My health | `routes/healthProfile.js`, `healthProfile.js`, `models/HealthFact.js` | Health facts per profile (sex, height, weight, blood type, pregnancy, conditions, allergies, smoking), each with a source and a confirmed/suggested status, and the **AI health summary**. |
-| Triage | `routes/triage.js`, `triage/` | Symptom assessment, urgency classification with follow-up questions, red-flag detection and emergency routing. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
+| Triage | `routes/triage.js`, `triage/` | One triage engine: urgency classification with follow-up questions, red-flag detection, emergency routing and self-care (`triage/careGuidance.js`). The Sprint 1 safety check (`policy.js`, `/assess`, `/emergency-route`, the `/triage` page) is retired. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
 | Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
 
 ### The shared ownership check

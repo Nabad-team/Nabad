@@ -55,14 +55,13 @@ Run these checks in staging before each release. Record build/commit, browser an
 
 ## Triage and emergency routing — release gate
 
-Clinical policy is supplied through `TRIAGE_RULES_JSON`; keep it empty until the clinical/product owner approves the patterns and guidance. The application defaults to `needs_clinical_review` when no approved rule matches.
+There is one triage engine: the safety rules in `backend/src/triage/urgency.js` set the minimum level, and the optional AI model (`triage/ai/`, turned on by the `LLM_*` variables) can only raise it. The only triage page is Dashboard → Type / Speak (`/symptoms`).
 
-1. A signed-in user can submit a symptom description from Dashboard → Safety check and receives non-diagnostic guidance.
-2. An unauthenticated request to `/api/triage/assess` or `/api/triage/emergency-route` returns 401.
-3. An approved emergency rule returns the configured emergency level and routing without unnecessary follow-up steps.
-4. A Lebanon location routes to Lebanese Red Cross **140**; a non-Lebanon location uses the generic local-emergency fallback and does not invent a number or facility.
-5. Missing location data uses the documented Lebanon default only when no location is supplied; verify the product owner approves that deployment default.
-6. Empty, non-text, and overlong symptom descriptions are rejected with clear validation messages.
-7. Confirm no scenario is presented as a definitive diagnosis and verify the emergency contact instructions against the approved regional configuration.
+1. A signed-in user can submit a symptom description on `/symptoms` and receives an urgency level, how soon to get care and a plain-language explanation, never a diagnosis.
+2. An unauthenticated request to `/api/triage/ai-assess` returns 401. `/api/triage/assess` and `/api/triage/emergency-route` (retired) return 404.
+3. "Chest pain and trouble breathing" returns Emergency straight away, with no follow-up questions, a call-140 link and, if one is saved, the user's emergency contact.
+4. "Runny nose and sneezing" returns a routine result with self-care guidance; urgent and soon results never show self-care.
+5. Empty, non-text, and overlong symptom descriptions are rejected with clear validation messages.
+6. The AI notice shows under the symptom box, and "How this works" opens the "AI in the symptom check" section of the privacy policy. Check it is still true for the model set on Render.
 
 Do not approve a release containing triage or routing changes while any corresponding scenario is blocked or failing.

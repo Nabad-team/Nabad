@@ -48,6 +48,16 @@ describe("Privacy Policy Page", () => {
     ).toBeInTheDocument();
   });
 
+  test("explains how the AI in the symptom check uses the description", () => {
+    const { container } = render(<PrivacyPolicy />);
+
+    expect(screen.getByRole("heading", { name: "AI in the symptom check" })).toHaveAttribute("id", "ai-symptom-check");
+    expect(container).toHaveTextContent("not sent to an outside AI company");
+    expect(container).toHaveTextContent("Your description is not used to train AI models.");
+    expect(container).toHaveTextContent("your description is not sent to the AI model");
+    expect(screen.getByText("A self-hosted AI model")).toBeInTheDocument();
+  });
+
   test("mentions the services Nabad uses", () => {
     render(<PrivacyPolicy />);
 
