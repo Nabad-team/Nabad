@@ -5,7 +5,7 @@ const { getLlmClient } = require("../triage/ai/llmClient");
 const { extractReport, ReportInputError } = require("../reports/extract");
 const { analyzeReport, ReportAnalysisError } = require("../reports/analyze");
 const { answerChat } = require("../reports/chat");
-const { logEvent } = require("../logger");
+const { logEvent, errorDetails } = require("../logger");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -58,8 +58,8 @@ router.post("/analyze", analysisLimiter, async (req, res) => {
       return res.status(status).json({ error: messages[error.code] || "The report could not be safely analyzed. No result was shown; please contact your clinician." });
     }
     // Never log the document, extracted text, the question or a provider's raw error message.
-    logEvent("report_analysis", { requestId, reason: "unavailable:internal_error", durationMs: Math.round(performance.now() - started) });
-    return res.status(500).json({ error: "The report could not be safely analyzed. No result was shown; please try again later." });
+    logEvent("report_analysis", { requestId, reason: "unavailable:internal_error", ...errorDetails(error), durationMs: Math.round(performance.now() - started) });
+    return res.status(500).json({ error: "The report could not be safely analyzed. No result was shown; please try again later.", requestId });
   }
 });
 
@@ -93,8 +93,8 @@ router.post("/chat", chatLimiter, async (req, res) => {
       };
       return res.status(status).json({ error: messages[error.code] || "The health assistant could not safely answer. Please contact a clinician for personal medical advice." });
     }
-    logEvent("health_assistant_chat", { requestId, reason: "unavailable:internal_error", durationMs: Math.round(performance.now() - started) });
-    return res.status(500).json({ error: "The health assistant could not respond safely. Please try again later." });
+    logEvent("health_assistant_chat", { requestId, reason: "unavailable:internal_error", ...errorDetails(error), durationMs: Math.round(performance.now() - started) });
+    return res.status(500).json({ error: "The health assistant could not respond safely. Please try again later.", requestId });
   }
 });
 

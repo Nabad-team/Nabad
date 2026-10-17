@@ -70,7 +70,7 @@ services:
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL
-        value: gemini-1.5-pro
+        value: gemini-3.8-flash
       - key: LLM_TIMEOUT_MS
         value: "30000"
       # Enable only for a vision-capable Gemini model and photos of written reports.

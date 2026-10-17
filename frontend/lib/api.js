@@ -11,6 +11,7 @@ export async function request(path, options = {}) {
   if (!res.ok) {
     const error = new Error(data.error || "Request failed.");
     error.status = res.status; // lets callers tell "signed out" (401) apart from a network problem
+    error.requestId = data.requestId;
     throw error;
   }
   return data;
