@@ -1181,6 +1181,196 @@ select.input {
   min-width: 7.5rem;
 }
 
+.results-intro {
+  padding: var(--space-5);
+  background: var(--color-primary-soft);
+  border: 0.0625rem solid var(--color-primary-line);
+  border-radius: var(--radius-lg);
+}
+
+.results-intro h2 {
+  margin-bottom: var(--space-3);
+}
+
+.results-intro p {
+  max-width: var(--width-prose);
+}
+
+.results-intro__icon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: var(--space-4);
+  place-items: center;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 0.0625rem solid var(--color-primary-line);
+  border-radius: var(--radius-md);
+}
+
+.results-intro__icon svg {
+  width: 2rem;
+  height: 2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.results-safety-note {
+  max-width: var(--width-prose);
+  margin-top: var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.report-form {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+}
+
+.report-form .field,
+.report-result > * {
+  margin-bottom: 0;
+}
+
+.report-form__file {
+  height: auto;
+  padding: var(--space-3);
+}
+
+.report-form__question {
+  min-height: 6rem;
+  padding: var(--space-3);
+  resize: vertical;
+}
+
+.report-form__selected,
+.report-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.report-form__selected {
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: var(--color-sunken);
+  border-radius: var(--radius-md);
+  overflow-wrap: anywhere;
+}
+
+.report-privacy-note {
+  max-width: var(--width-prose);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.report-chat {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.report-chat__message {
+  max-width: min(48rem, 92%);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow-wrap: anywhere;
+}
+
+.report-chat__message--user {
+  justify-self: end;
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-line);
+}
+
+.report-chat__message h3 {
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.report-chat__message p {
+  margin-bottom: 0;
+  white-space: pre-wrap;
+}
+
+.report-chat__evidence {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 0.0625rem solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.report-chat__disclaimer {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.report-result {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 0.0625rem solid var(--color-primary-line);
+  border-inline-start: 0.35rem solid var(--color-primary);
+  border-radius: var(--radius-lg);
+}
+
+.report-result--urgent,
+.report-result--soon {
+  background: var(--color-urgent-soft);
+  border-color: var(--color-urgent);
+}
+
+.report-result--emergency {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+.report-result__eyebrow {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.report-findings {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.report-finding {
+  padding: var(--space-4);
+  background: var(--color-bg);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.report-finding h4 {
+  margin-bottom: var(--space-2);
+}
+
+.report-finding p + p {
+  margin-top: var(--space-2);
+}
+
+.report-result__disclaimer {
+  padding-top: var(--space-3);
+  border-top: 0.0625rem solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .banner {
   margin-bottom: var(--space-6);
 }

@@ -118,6 +118,14 @@ All health data is stored per profile with two ids: `owner` (the account) and `p
 
 The model can raise the urgency but never lower it. Self-care steps are only shown for routine results. Only the outcome code and duration are logged, never the symptoms or the model's words. Each account can run 30 AI assessments per 15 minutes. The unit tests use a fake model, so they need no API key.
 
+### AI report explanations
+
+`POST /api/reports/analyze` requires sign-in and accepts PDF, DOCX, UTF-8 TXT/CSV, or a JPG/PNG/WebP photo (3 MB maximum). `reports/extract.js` extracts searchable PDF text in memory (up to 25 pages / 30,000 characters), reads the Word document body without extracting files to disk, and limits all extracted text. Photos are sent as image input only when `LLM_VISION_ENABLED=true` and the configured OpenAI-compatible model supports vision. Only written reports are in scope: raw MRI/CT/X-ray/ultrasound images and DICOM are not interpreted. The report and optional question are sent to the configured AI provider, are not persisted by Nabad, and are excluded from logs. Each account can request five structured report explanations per 15 minutes.
+
+`POST /api/reports/chat` supports general health-information questions and follow-up questions about an optional supported attachment. The browser keeps the conversation in memory and sends only the last eight messages to the API; Nabad does not persist the chat. An attachment is re-sent to the configured provider on every follow-up. Chat is limited to 20 messages per account every 15 minutes. Answers are filtered for unsafe content and, for text reports, their numeric values and quoted evidence are checked against the extracted report.
+
+`reports/analyze.js` asks for a fixed JSON schema and validates every output field. It rejects non-report documents, unverifiable quotes from extracted report text, unsafe or malformed model replies, and unavailable model responses; it never substitutes fabricated output. Explicit critical/urgent wording in extracted text cannot be downgraded below same-day review. The health assistant uses a configurable general-purpose language model, not a clinically validated diagnostic device. It can answer common health-information questions, but it cannot guarantee a reliable answer to every question. A clinician/product owner must approve the prompts, provider/data handling, and clinical behavior before enabling it for patients; it must not be presented as a diagnosis or confirmation that a result is safe.
+
 ### The health-data deletion helper
 
 [profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (medications, water, sleep, wellbeing settings, health facts). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind.
