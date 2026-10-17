@@ -52,10 +52,21 @@ describe("Privacy Policy Page", () => {
     const { container } = render(<PrivacyPolicy />);
 
     expect(screen.getByRole("heading", { name: "AI in the symptom check" })).toHaveAttribute("id", "ai-symptom-check");
-    expect(container).toHaveTextContent("not sent to an outside AI company");
-    expect(container).toHaveTextContent("Your description is not used to train AI models.");
-    expect(container).toHaveTextContent("your description is not sent to the AI model");
-    expect(screen.getByText("A self-hosted AI model")).toBeInTheDocument();
+    expect(container).toHaveTextContent("sent over an encrypted connection to Google's Gemini AI service to help assess urgency");
+    expect(container).toHaveTextContent("your description is not sent to the AI");
+    expect(container).toHaveTextContent("Your name, email and profile details are not sent with your description.");
+    expect(container).toHaveTextContent("Nabad does not write your description or the AI's reply to its logs.");
+    expect(container).not.toHaveTextContent("train AI");
+    expect(container).not.toHaveTextContent("outside AI company");
+    expect(screen.getByText("Google Gemini")).toBeInTheDocument();
+  });
+
+  test("explains how the health assistant and report review use the AI", () => {
+    const { container } = render(<PrivacyPolicy />);
+
+    expect(screen.getByRole("heading", { name: "AI in the health assistant" })).toHaveAttribute("id", "ai-health-assistant");
+    expect(container).toHaveTextContent("any report you attach are sent over an encrypted connection to Google's Gemini AI service");
+    expect(container).toHaveTextContent("Your name, email and profile details are not sent with your question.");
   });
 
   test("mentions the services Nabad uses", () => {

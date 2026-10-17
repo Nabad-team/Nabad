@@ -64,15 +64,16 @@ services:
       # Must also be listed as an authorized redirect URI on the Google OAuth client.
       - key: GOOGLE_REDIRECT_URI
         value: https://nabad-psi.vercel.app/api/auth/google/callback
-      # Set these to the TLS endpoint and bearer token of your self-hosted Ollama server.
+      # The AI provider is set on the Render dashboard (production uses Google Gemini through its
+      # OpenAI-compatible endpoint), so Blueprint deploys never overwrite it.
       - key: LLM_PROVIDER
-        value: ollama
+        sync: false
       - key: LLM_API_URL
         sync: false
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL
-        value: qwen3.5:9b
+        sync: false
       - key: LLM_TIMEOUT_MS
         value: "60000"
       # Enable for the multimodal model; image uploads must be photos of written reports.

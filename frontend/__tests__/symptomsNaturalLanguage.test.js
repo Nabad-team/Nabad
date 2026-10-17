@@ -63,6 +63,14 @@ describe("describing symptoms in your own words", () => {
     expect(screen.getByLabelText("Symptoms")).toHaveAccessibleDescription("Say it in your own words.");
   });
 
+  test("simplified mode says the description goes to Google's Gemini AI", () => {
+    setUp({ simplifiedMode: true });
+    render(<SymptomsPage />);
+    expect(screen.getByText(/sent over an encrypted connection to Google's Gemini AI service/)).toBeInTheDocument();
+    expect(screen.getByText(/Emergencies are not sent/)).toBeInTheDocument();
+    expect(screen.queryByText(/train AI/)).not.toBeInTheDocument();
+  });
+
   test("everyday words are sent as written to the AI assessment", async () => {
     const user = setUp();
     assessUrgency.mockResolvedValue(RESULT);

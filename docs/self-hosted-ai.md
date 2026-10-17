@@ -1,6 +1,8 @@
 # Self-hosted AI model
 
-This deployment runs the model you configure with Ollama on a server you control. The app sends report content and health questions to that server; it does not call Gemini, OpenAI, or another hosted model API. Keep in mind the model host is still a remote server reachable by the production API, and the host operator can access the requests unless you control the machine and its logs.
+> **Production currently uses Google Gemini**, not this setup. The API calls Gemini through its OpenAI-compatible endpoint (`LLM_PROVIDER=openai-compatible`, `LLM_API_URL=https://generativelanguage.googleapis.com/v1beta/openai`), with the provider, URL, key and model set on the Render dashboard. A self-hosted Ollama server, described below, is an optional alternative for the future. The `docker-compose.ai.yml` overlay remains for running Ollama locally.
+
+With this option, the model you configure runs with Ollama on a server you control. The app sends report content and health questions to that server instead of a hosted model API. Keep in mind the model host is still a remote server reachable by the production API, and the host operator can access the requests unless you control the machine and its logs. Switching production to it means updating the privacy policy and the AI notices in the app, which currently name Google Gemini.
 
 ## Model host setup
 
@@ -19,9 +21,9 @@ Use a Linux server with Docker Compose, a DNS name pointed at its public IP, and
 
 Only Caddy publishes network ports. Ollama's port 11434 is private to the Compose network; do not publish it in the firewall or add a host port mapping. Caddy automatically obtains and renews TLS certificates and rejects requests without the bearer token.
 
-## Connect the production API
+## Connect the production API (if you switch from Gemini)
 
-Configure these backend environment variables in Render (or the API host's secret manager), then redeploy:
+Configure these backend environment variables in the Render dashboard (or the API host's secret manager), then redeploy:
 
 | Variable | Value |
 | --- | --- |
@@ -32,7 +34,7 @@ Configure these backend environment variables in Render (or the API host's secre
 | `LLM_TIMEOUT_MS` | `60000` |
 | `LLM_VISION_ENABLED` | `true` |
 
-The Render Blueprint marks the URL and token as unsynced secrets. Set the URL and token in the Render dashboard. The API needs outbound HTTPS access to the model host.
+The Render Blueprint marks the provider, URL, token and model as unsynced (`sync: false`), so they are set only in the Render dashboard and Blueprint deploys never overwrite them. The API needs outbound HTTPS access to the model host.
 
 ## What the assistant can process
 

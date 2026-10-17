@@ -173,7 +173,7 @@ export default function TestResultsPage() {
 
         <label className="check report-form__consent">
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
-          I understand my question and any attached report will be sent to Nabad's configured AI provider and may contain sensitive health information.
+          I understand my question and any attached report will be sent over an encrypted connection to Google's Gemini AI service and may contain sensitive health information.
         </label>
 
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
