@@ -86,7 +86,10 @@ async function answerChat({ question, history = [], report = null, client }) {
   } catch (error) {
     if (error instanceof ReportAnalysisError) throw error;
     const { LlmError } = require("../triage/ai/llmClient");
-    if (error instanceof LlmError) throw new ReportAnalysisError(error.code === "timeout" ? "timeout" : "provider_unavailable");
+    if (error instanceof LlmError) {
+      const providerFailure = { code: error.code, ...(Number.isInteger(error.status) ? { status: error.status } : {}) };
+      throw new ReportAnalysisError(error.code === "timeout" ? "timeout" : "provider_unavailable", providerFailure);
+    }
     throw error;
   }
 }
