@@ -1,6 +1,5 @@
-// Curated published information checked 2026-10-15. Not live service availability.
-// Coordinates and addresses: MoPH locator. Capabilities: linked hospital/MoPH/partner sources.
-// Missing services and null emergency status mean unverified, never unavailable.
+// Published directory information; verifiedAt is a source-review date, not live availability.
+// Unknown capabilities remain empty/null. See docs/provider-data-import.md for provenance and exclusions.
 module.exports = [
   {
     "slug": "aubmc",
@@ -550,5 +549,782 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-15T20:50:00Z",
     "phone": "+9616411111"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "abdullah-al-rassi-governmental",
+    "name": "Abdullah Al Rassi Governmental Hospital",
+    "city": "Halba",
+    "governorate": "Akkar",
+    "address": "Akkar Halba Idbil",
+    "latitude": 34.53469000031114,
+    "longitude": 36.09089000021515,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "tripoli-governmental",
+    "name": "Tripoli Governmental Hospital",
+    "city": "Tripoli",
+    "governorate": "North",
+    "address": "North tripoli kobbe",
+    "latitude": 34.437170000284794,
+    "longitude": 35.86018000040306,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "minieh-governmental",
+    "name": "Minieh Governmental Hospital",
+    "city": "Minieh",
+    "governorate": "North",
+    "address": "المنية الاوتوستراد-مفرق المخاضة",
+    "latitude": 34.47249566259358,
+    "longitude": 35.91558887315341,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "bsharri-governmental",
+    "name": "Bsharri Governmental Hospital",
+    "city": "Bsharri",
+    "governorate": "North",
+    "address": "Bcharri - North Lebanon ",
+    "latitude": 34.251074441353055,
+    "longitude": 36.01680299136137,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "bouar-governmental",
+    "name": "Bouar Governmental Hospital",
+    "city": "Bouar",
+    "governorate": "Keserwan-Jbeil",
+    "address": "Mont - Lebanon, Ftouh Kesrouan Bouar – Near Municipality",
+    "latitude": 34.04484313433658,
+    "longitude": 35.648287348613955,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "rafic-hariri-university",
+    "name": "Rafic Hariri University Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Bir  Hasan - Jnah",
+    "latitude": 33.86238000011404,
+    "longitude": 35.492150000372945,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "baabda-governmental",
+    "name": "Baabda Governmental University Hospital",
+    "city": "Baabda",
+    "governorate": "Mount Lebanon",
+    "address": "Baabda",
+    "latitude": 33.835091811790555,
+    "longitude": 35.538722248081356,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "sibline-governmental",
+    "name": "Sibline Governmental Hospital",
+    "city": "Sibline",
+    "governorate": "Mount Lebanon",
+    "address": "Sibline",
+    "latitude": 33.6169700003301,
+    "longitude": 35.43330999981845,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "elias-hraoui-governmental",
+    "name": "President Elias Hraoui Governmental Hospital",
+    "city": "Zahle",
+    "governorate": "Bekaa",
+    "address": "Zahle- Maalaka",
+    "latitude": 33.84146000011046,
+    "longitude": 35.91698999975657,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "rachaya-governmental",
+    "name": "Rachaya Governmental Hospital",
+    "city": "Rachaya",
+    "governorate": "Bekaa",
+    "address": "Rachaya Al Akaba",
+    "latitude": 33.509640000067975,
+    "longitude": 35.82720999960762,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "saida-governmental",
+    "name": "Saida Governmental Hospital",
+    "city": "Saida",
+    "governorate": "South",
+    "address": "Saida, Lebanon",
+    "latitude": 33.54585000035841,
+    "longitude": 35.38149999998014,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "jezzine-governmental",
+    "name": "Jezzine Governmental Hospital",
+    "city": "Jezzine",
+    "governorate": "South",
+    "address": "Jezzine",
+    "latitude": 33.53833999967561,
+    "longitude": 35.58114999964889,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "hasbaya-governmental",
+    "name": "Hasbaya Governmental Hospital",
+    "city": "Hasbaya",
+    "governorate": "Nabatieh",
+    "address": "Hasbaya -nabatieh-south",
+    "latitude": 33.403149999843095,
+    "longitude": 35.68881999988505,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "marjayoun-governmental",
+    "name": "Marjayoun Governmental Hospital",
+    "city": "Marjayoun",
+    "governorate": "Nabatieh",
+    "address": "Marjayoun",
+    "latitude": 33.36391000029835,
+    "longitude": 35.58702999959621,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "tebnine-governmental",
+    "name": "Tebnine Governmental Hospital",
+    "city": "Tebnine",
+    "governorate": "Nabatieh",
+    "address": "Nabatieh, Bint Jbeil, Tibnin Main Road",
+    "latitude": 33.19579687631792,
+    "longitude": 35.41222880475301,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "bint-jbeil-governmental",
+    "name": "Bint Jbeil Governmental Hospital",
+    "city": "Bint Jbeil",
+    "governorate": "Nabatieh",
+    "address": "Bint Jbeil",
+    "latitude": 33.127575317544306,
+    "longitude": 35.43526311780753,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "al-mazloum-hospital",
+    "name": "Al Mazloum Hospital",
+    "city": "Tripoli",
+    "governorate": "North",
+    "address": "TRIPOLI DAM W FAREZ ",
+    "latitude": 34.431915698257164,
+    "longitude": 35.8328470412032,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [
+      "burn-unit"
+    ],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "al-salam-tripoli",
+    "name": "Al Salam Hospital (Hopital de la Paix)",
+    "city": "Tripoli",
+    "governorate": "North",
+    "address": "Tripoli Salam square ",
+    "latitude": 34.42065298169831,
+    "longitude": 35.82569946359275,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
+      "https://hopitaldelapaix.com/en"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "beit-chabab-hospital",
+    "name": "Beit Chabab Hospital",
+    "city": "Beit Chabab",
+    "governorate": "Mount Lebanon",
+    "address": "  Beit Chabab",
+    "latitude": 33.93215000021501,
+    "longitude": 35.672899999825994,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "hotel-dieu-de-france",
+    "name": "Hotel Dieu de France",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Achrafieh - After Aust",
+    "latitude": 33.88124000009534,
+    "longitude": 35.51914999991103,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "rosaire-hospital",
+    "name": "Rosaire Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Pasteur Street, Gemmayze, Medawar, Beirut, Lebanon",
+    "latitude": 33.895818664828326,
+    "longitude": 35.5151130887035,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "makassed-general",
+    "name": "Makassed General Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Tarik Jadidah ",
+    "latitude": 33.87499999973547,
+    "longitude": 35.50361099961851,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "trad-hospital",
+    "name": "Trad Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Hamra",
+    "latitude": 33.896750000304735,
+    "longitude": 35.4916199997452,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "fouad-khoury-hospital",
+    "name": "Fouad Khoury Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Hamra -Abdel Aziz Street - Moktahi Bldg",
+    "latitude": 33.8985773637328,
+    "longitude": 35.48424781366931,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "dar-al-ajaza-al-islamia",
+    "name": "Dar Al-Ajaza Al-Islamia Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Beirut, Tarik Al Jadida, Abdel Rahman Labban St., East Of Sports City",
+    "latitude": 33.86806088170207,
+    "longitude": 35.498784159357484,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "al-iman-aley",
+    "name": "Al Iman Hospital",
+    "city": "Aley",
+    "governorate": "Mount Lebanon",
+    "address": "Aley",
+    "latitude": 33.81069163130556,
+    "longitude": 35.61274911832015,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "al-watani-aley",
+    "name": "Al Watani Hospital",
+    "city": "Aley",
+    "governorate": "Mount Lebanon",
+    "address": "Aley - Sarayya Street",
+    "latitude": 33.80682999972848,
+    "longitude": 35.59677000013226,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "ain-w-zain",
+    "name": "Ain W Zain Medical Village",
+    "city": "Ain W Zain",
+    "governorate": "Mount Lebanon",
+    "address": " عين وزين public street",
+    "latitude": 33.68024000011827,
+    "longitude": 35.61124999989252,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "khoury-general-zahle",
+    "name": "Khoury General Hospital",
+    "city": "Zahle",
+    "governorate": "Bekaa",
+    "address": "Zahle- Brazilia Street",
+    "latitude": 33.85272000023655,
+    "longitude": 35.89553000040714,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "tal-chiha-hospital",
+    "name": "Tal Chiha Hospital",
+    "city": "Zahle",
+    "governorate": "Bekaa",
+    "address": "Zahle Mar Elias",
+    "latitude": 33.8414900002688,
+    "longitude": 35.9055100002444,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "rayak-hospital",
+    "name": "Rayak Hospital",
+    "city": "Rayak",
+    "governorate": "Bekaa",
+    "address": "Rayak Bekaa",
+    "latitude": 33.863679999966955,
+    "longitude": 36.011239999691284,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "taanayel-general",
+    "name": "Taanayel General Hospital",
+    "city": "Taanayel",
+    "governorate": "Bekaa",
+    "address": "تعنايل الطريق العام",
+    "latitude": 33.79409999972943,
+    "longitude": 35.8777700000163,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "libano-francais",
+    "name": "Libano-Francais Hospital",
+    "city": "Zahle",
+    "governorate": "Bekaa",
+    "address": "Zahle- Haouch El Omara",
+    "latitude": 33.8336000002158,
+    "longitude": 35.91230999990848,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "west-bekaa-hospital",
+    "name": "West Bekaa Hospital",
+    "city": "Sahmar",
+    "governorate": "Bekaa",
+    "address": "سحمر",
+    "latitude": 33.51581999974949,
+    "longitude": 35.7017299996502,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "hamed-farhat-hospital",
+    "name": "Dr Hamed Farhat Hospital",
+    "city": "Kamed El Louz",
+    "governorate": "Bekaa",
+    "address": "Kamed Louz Main road",
+    "latitude": 33.629700000130136,
+    "longitude": 35.80335199970955,
+    "sources": [
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "hermel-governmental",
+    "name": "Hermel Governmental Hospital",
+    "city": "Hermel",
+    "governorate": "Baalbek-Hermel",
+    "address": "Hermel",
+    "latitude": 34.381376,
+    "longitude": 36.424584,
+    "phone": "+9618225312",
+    "sources": [
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital",
+      "https://www.cedro-undp.org/projects-implementations/hermel-public-hospital"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "beirut-general",
+    "name": "Beirut General Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Ramlet Baida, Beirut central street",
+    "latitude": 33.873355,
+    "longitude": 35.492513,
+    "phone": "+9611850213",
+    "sources": [
+      "https://www.cmsm.org.lb/index.php/providers?page=2",
+      "https://www.moph.gov.lb/en/HealthFacilities/view/0/55728/84542/beirut-general-hospital?facility_type=8"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "najjar-hospital",
+    "name": "Najjar Hospital",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Hamra, Wardieh, Abdel-Baki Street",
+    "latitude": 33.896817,
+    "longitude": 35.486719,
+    "phone": "+9611340626",
+    "sources": [
+      "https://www.cmsm.org.lb/index.php/providers?keywords=Najjar",
+      "https://www.moph.gov.lb/fr/HealthFacilities/view/17/85908/84540/najjar-hospital?facility_type=8"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "al-najdeh-hospital",
+    "name": "Al Najdeh Al Chaabiyeh Hospital",
+    "city": "Habbouch",
+    "governorate": "Nabatieh",
+    "address": "Kfarremman main road",
+    "latitude": 33.413443,
+    "longitude": 35.484123,
+    "phone": "+9617530971",
+    "sources": [
+      "https://www.cmsm.org.lb/index.php/providers?keywords=Najd",
+      "https://beirut.diplo.de/resource/blob/2494926/ad07b020fe965573107e810926c50de7/krankenhaeuserliste-data.pdf"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [
+      "emergency-medicine"
+    ],
+    "services": [],
+    "emergency24h": true,
+    "hoursKnown": false,
+    "slug": "clemenceau-medical-center",
+    "name": "Clemenceau Medical Center",
+    "city": "Beirut",
+    "governorate": "Beirut",
+    "address": "Clemenceau Street",
+    "latitude": 33.89752,
+    "longitude": 35.49003,
+    "locationApproximate": true,
+    "phone": "+9611372888",
+    "sources": [
+      "https://www.cmc.com.lb/",
+      "https://mapcarta.com/W566103031"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "qana-governmental",
+    "name": "Qana Governmental Hospital",
+    "city": "Qana",
+    "governorate": "South",
+    "address": "Qana",
+    "latitude": 33.21521,
+    "longitude": 35.2917,
+    "locationApproximate": true,
+    "sources": [
+      "https://moph.gov.lb/en/Search/tags/1484",
+      "https://mapcarta.com/W1019828085"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
+  },
+  {
+    "type": "hospital",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "slug": "bchamoun-speciality",
+    "name": "Bchamoun Speciality Hospital",
+    "city": "Bchamoun",
+    "governorate": "Mount Lebanon",
+    "address": "Bchamoun",
+    "latitude": 33.78287,
+    "longitude": 35.52315,
+    "locationApproximate": true,
+    "phone": "+9615270970",
+    "sources": [
+      "https://moph.gov.lb/en/HealthFacilities/index/3/188/8/sort%3AHealthFacility.title/direction%3Aasc/page%3A2",
+      "https://mapcarta.com/fr/N4661434309"
+    ],
+    "verifiedAt": "2026-10-18T12:00:00Z"
   }
 ];
