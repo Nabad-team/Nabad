@@ -1,6 +1,6 @@
 // SCRUM-130 (backlog #29): "As a user, I want a plain-language explanation of why a recommendation
 // was given so that I trust the result."
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import UrgencyResult from "../components/UrgencyResult";
 import { useAccessibility } from "../context/AccessibilityContext";
 
@@ -70,6 +70,14 @@ test("non-emergency directory browsing does not guess a specialty", () => {
 });
 
 describe("UrgencyResult explanation", () => {
+  test("offers to print the result or save it as a PDF", () => {
+    const print = jest.fn();
+    window.print = print;
+    render(<UrgencyResult result={URGENT_RESULT} />);
+    fireEvent.click(screen.getByRole("button", { name: "Print or save as PDF" }));
+    expect(print).toHaveBeenCalledTimes(1);
+  });
+
   test("shows a 'Why we suggest this' section with the one-sentence summary", () => {
     render(<UrgencyResult result={URGENT_RESULT} />);
     expect(screen.getByRole("heading", { name: "Why we suggest this" })).toBeInTheDocument();

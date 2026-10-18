@@ -1,6 +1,9 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const { requireAuth } = require("../middleware/authMiddleware");
+const { resolveProfile } = require("../middleware/profileAccess");
+const ReportConversation = require("../models/ReportConversation");
 const { getLlmClient } = require("../triage/ai/llmClient");
 const { extractReport, ReportInputError } = require("../reports/extract");
 const { analyzeReport, ReportAnalysisError } = require("../reports/analyze");
@@ -10,6 +13,35 @@ const { logEvent, errorDetails } = require("../logger");
 const router = express.Router();
 router.use(requireAuth);
 router.use(express.json({ limit: "7mb" }));
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+
+function analysisMessages(question, result) {
+  const explanation = [result.summary, ...result.findings.map((finding) => `${finding.name}: ${finding.explanation} Next step: ${finding.followUp}`), result.nextStep].join("\n").slice(0, 4000);
+  return [
+    { role: "user", content: question.slice(0, 4000) },
+    { role: "assistant", content: explanation, disclaimer: result.disclaimer },
+  ];
+}
+
+function chatMessages(question, result) {
+  return [
+    { role: "user", content: question.slice(0, 4000) },
+    { role: "assistant", content: result.answer, evidence: result.evidence, disclaimer: result.disclaimer },
+  ];
+}
+
+router.get("/conversations", resolveProfile, asyncRoute(async (req, res) => {
+  const conversations = await ReportConversation.find({ owner: req.userId, profileId: req.profileId })
+    .sort({ updatedAt: -1 }).limit(30).lean();
+  return res.json({ conversations: conversations.map(({ _id, ...conversation }) => ({ id: String(_id), ...conversation })) });
+}));
+
+router.delete("/conversations/:id", resolveProfile, asyncRoute(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Conversation not found." });
+  const result = await ReportConversation.deleteOne({ _id: req.params.id, owner: req.userId, profileId: req.profileId });
+  if (!result.deletedCount) return res.status(404).json({ error: "Conversation not found." });
+  return res.status(204).end();
+}));
 
 const analysisLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -25,7 +57,7 @@ const chatLimiter = rateLimit({
   message: { error: "You have reached the assistant message limit. Please wait a little before asking another question." },
 });
 
-router.post("/analyze", analysisLimiter, async (req, res) => {
+router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
   const requestId = req.requestId;
   const started = performance.now();
   try {
@@ -39,8 +71,15 @@ router.post("/analyze", analysisLimiter, async (req, res) => {
       return res.status(503).json({ error: "Photo reading is not enabled for the configured AI model. Try a searchable PDF, DOCX, TXT, or CSV report instead." });
     }
     const result = await analyzeReport({ report: extracted, question, client });
+    const conversation = await ReportConversation.create({
+      owner: req.userId,
+      profileId: req.profileId,
+      title: question.trim().slice(0, 120) || "Report review",
+      messages: analysisMessages(question, result),
+      reportResult: result,
+    });
     logEvent("report_analysis", { requestId, reason: `success:${result.urgency}`, durationMs: Math.round(performance.now() - started) });
-    return res.json(result);
+    return res.json({ ...result, conversationId: String(conversation._id) });
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {
@@ -66,20 +105,41 @@ router.post("/analyze", analysisLimiter, async (req, res) => {
   }
 });
 
-router.post("/chat", chatLimiter, async (req, res) => {
+router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
   const requestId = req.requestId;
   const started = performance.now();
   try {
     if (req.body?.consent !== true) return res.status(400).json({ error: "Confirm that you agree to send your question and any attachment to the configured AI provider." });
+    let savedConversation = null;
+    if (req.body?.conversationId !== undefined) {
+      if (!mongoose.isValidObjectId(req.body.conversationId)) return res.status(404).json({ error: "Conversation not found." });
+      savedConversation = await ReportConversation.findOne({ _id: req.body.conversationId, owner: req.userId, profileId: req.profileId });
+      if (!savedConversation) return res.status(404).json({ error: "Conversation not found." });
+      if (savedConversation.messages.length + 2 > 80) return res.status(400).json({ error: "This saved conversation has reached its message limit. Start a new conversation." });
+    }
     const client = getLlmClient();
     if (!client) throw new ReportAnalysisError("not_configured");
     const report = req.body?.file ? await extractReport(req.body.file) : null;
     if (report?.kind === "image" && process.env.LLM_VISION_ENABLED !== "true") {
       return res.status(503).json({ error: "Photo reading is not enabled for the configured AI model. Try a searchable written report or ask without the photo." });
     }
-    const result = await answerChat({ question: req.body?.question, history: req.body?.history, report, client });
+    const history = savedConversation
+      ? savedConversation.messages.slice(-8).map(({ role, content }) => ({ role, content }))
+      : req.body?.history;
+    const result = await answerChat({ question: req.body?.question, history, report, client });
+    if (savedConversation) {
+      savedConversation.messages.push(...chatMessages(req.body.question, result));
+      await savedConversation.save();
+    } else {
+      savedConversation = await ReportConversation.create({
+        owner: req.userId,
+        profileId: req.profileId,
+        title: req.body.question.trim().slice(0, 120),
+        messages: chatMessages(req.body.question, result),
+      });
+    }
     logEvent("health_assistant_chat", { requestId, reason: "success", durationMs: Math.round(performance.now() - started) });
-    return res.json(result);
+    return res.json({ ...result, conversationId: String(savedConversation._id) });
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {

@@ -2448,3 +2448,126 @@ select.input {
 .provider-item { padding-block: var(--space-5); border-bottom: 1px solid var(--color-border); }
 .provider-item h2 { font-size: var(--text-lg); }
 .provider-sources { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); }
+
+.progress-summary__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.progress-summary__list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.progress-summary__list h3,
+.progress-summary__list p {
+  margin: 0;
+}
+
+.progress-summary__list h3 {
+  margin-bottom: var(--space-1);
+}
+
+.symptom-history__list {
+  padding-left: var(--space-5);
+}
+
+.symptom-history__list > li {
+  margin-block: var(--space-3);
+}
+
+.symptom-history__list summary {
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+}
+
+.assistant-chat__saved ul {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-chat__saved li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.assistant-chat__saved li > span {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.symptom-history__list ol {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 38rem) {
+  .progress-summary__list > li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media print {
+  body:has(.report-result) .skip-link,
+  body:has(.report-result) .site-header,
+  body:has(.report-result) .profile-strip,
+  body:has(.report-result) .page-main > :not(:has(.report-result)),
+  body:has(.report-result) .page-main > :has(.report-result) > :not(.report-result),
+  .report-result__print {
+    display: none !important;
+  }
+
+  body:has(.report-result),
+  body:has(.report-result) .page-main {
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    background: #fff;
+    color: #000;
+  }
+
+  .report-result {
+    margin: 0;
+    border: 0;
+    color: #000;
+    break-inside: avoid;
+  }
+
+  body:has(.urgency) .skip-link,
+  body:has(.urgency) .site-header,
+  body:has(.urgency) .profile-strip,
+  body:has(.urgency) .page-main > :not(.urgency),
+  .urgency__print {
+    display: none !important;
+  }
+
+  body:has(.urgency),
+  body:has(.urgency) .page-main {
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    background: #fff;
+    color: #000;
+  }
+
+  .urgency {
+    margin: 0;
+    border: 0;
+    color: #000;
+    break-inside: avoid;
+  }
+}

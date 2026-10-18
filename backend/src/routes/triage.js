@@ -20,6 +20,9 @@ const {
   requireAuth,
 } = require("../middleware/authMiddleware");
 
+const { resolveProfile } = require("../middleware/profileAccess");
+const SymptomRecord = require("../models/SymptomRecord");
+
 const {
   logEvent,
 } = require("../logger");
@@ -202,6 +205,7 @@ router.post(
 
 router.post(
   "/ai-assess",
+  resolveProfile,
   aiLimiter,
   async (
     req,
@@ -226,6 +230,15 @@ router.post(
       performance.now();
 
     try {
+      const previousChecks = await SymptomRecord.find({
+        owner: req.userId,
+        profileId: req.profileId,
+      }).sort({ createdAt: -1 }).limit(3).lean();
+      const priorConversations = previousChecks.reverse().map((record) => ({
+        symptoms: record.description,
+        messages: (record.conversation || []).slice(-6).map(({ role, content }) => ({ role, content })),
+      }));
+
       const result =
         await assessWithAi(
           symptoms,
@@ -238,6 +251,8 @@ router.post(
 
             location:
               req.body?.location,
+
+            priorConversations,
           }
         );
 

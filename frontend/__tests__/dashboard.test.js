@@ -204,15 +204,15 @@ describe("Dashboard Page", () => {
     expect(within(accountMenu).getByRole("link", { name: "My profile" })).toHaveTextContent("Profile");
   });
 
-  test("shows today's water and last night's sleep on the Water and sleep card", async () => {
+  test("combines health profile and today's water and sleep in the progress summary", async () => {
     fakeWellbeing.seedWater("self", todayString(), [250, 500, 500]);
     fakeWellbeing.seedSleep("self", todayString(), 7.5, 4);
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Water and sleep" });
-    expect(await within(card).findByText("1.3 L today")).toBeInTheDocument();
-    expect(within(card).getByText("7.5 hours, slept well")).toBeInTheDocument();
+    const card = await screen.findByRole("region", { name: "Your progress" });
+    expect(await within(card).findByText(/Water: 1.3 L today\. Sleep: 7.5 hours, slept well\./)).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Open water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
   });
 
   test("the Water and sleep card shows the goal or limit only when set, in litres, and says when sleep isn't logged", async () => {
@@ -220,9 +220,8 @@ describe("Dashboard Page", () => {
     fakeWellbeing.seedGoal("self", { type: "atMost", ml: 1500 });
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Water and sleep" });
-    expect(await within(card).findByText("0.9 L of the 1.5 L limit")).toBeInTheDocument();
-    expect(within(card).getByText("Not logged yet")).toBeInTheDocument();
+    const card = await screen.findByRole("region", { name: "Your progress" });
+    expect(await within(card).findByText(/Water: 0.9 L of the 1.5 L limit\. Sleep: Not logged yet\./)).toBeInTheDocument();
   });
 
   test("the My health card counts the basics gently and links to My health", async () => {
@@ -230,8 +229,8 @@ describe("Dashboard Page", () => {
     fakeHealth.seedFact("self", "bloodType", "unknown");
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "My health" });
-    expect(await within(card).findByText("Nabad knows you better: 2 of 5 basics filled in.")).toBeInTheDocument();
+    const card = await screen.findByRole("region", { name: "Your progress" });
+    expect(await within(card).findByText("2 of 5 health basics filled in.")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
   });
 
@@ -241,8 +240,8 @@ describe("Dashboard Page", () => {
     localStorage.setItem("nabad-active-profile-id", child.id);
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "My health" });
-    expect(await within(card).findByText("Nabad knows Sami Haddad better: 1 of 5 basics filled in.")).toBeInTheDocument();
+    const card = await screen.findByRole("region", { name: "Your progress" });
+    expect(await within(card).findByText("1 of 5 health basics filled in for Sami Haddad.")).toBeInTheDocument();
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 });

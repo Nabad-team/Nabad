@@ -6,6 +6,7 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../src/models/User");
+const ReportConversation = require("../src/models/ReportConversation");
 
 const provider = { content: "", requests: [] };
 function startFakeProvider() {
@@ -53,7 +54,7 @@ describe("POST /api/reports routes", () => {
     mongod = await MongoMemoryServer.create();
     process.env.MONGO_URI = mongod.getUri();
     await mongoose.connect(process.env.MONGO_URI);
-    await User.init();
+    await Promise.all([User.init(), ReportConversation.init()]);
     const account = await User.create({ name: "Leen", email: "leen-report@example.test", passwordHash: "x" });
     token = jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
     fakeProvider = await startFakeProvider();
@@ -69,11 +70,12 @@ describe("POST /api/reports routes", () => {
     await mongoose.disconnect();
     if (mongod) await mongod.stop();
   });
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.LLM_API_URL = `http://127.0.0.1:${fakeProvider.address().port}/v1`;
     process.env.LLM_API_KEY = "fake-provider-key";
     process.env.LLM_MODEL = "fake-model";
     provider.requests = [];
+    await ReportConversation.deleteMany({});
   });
   async function call(path, body) {
     const response = await fetch(`${base}/${path}`, {
@@ -90,11 +92,23 @@ describe("POST /api/reports routes", () => {
       findings: [{ name: "Hemoglobin", sourceQuote: "Hemoglobin 13.5 g/dL", result: "13.5 g/dL", reference: "12.0-15.5 g/dL", explanation: "This is the reported hemoglobin value.", followUp: "Ask the ordering clinician to review the complete report." }],
       nextStep: "Please have the ordering clinician review the complete report.", uncertainties: [],
     });
-    const res = await call("analyze", { consent: true, file: { mimeType: "application/pdf", extension: "pdf", data: makeSamplePdf() } });
+    const res = await call("analyze", { consent: true, question: "What does this CBC report say?", file: { mimeType: "application/pdf", extension: "pdf", data: makeSamplePdf() } });
     assert.equal(res.status, 200, JSON.stringify(res.body));
     assert.equal(res.body.findings[0].result, "13.5 g/dL");
     assert.equal(res.body.findings[0].reference, "12.0-15.5 g/dL");
+    assert.ok(res.body.conversationId);
     assert.equal(provider.requests.length, 1);
+
+    const saved = await fetch(`${base}/conversations?profileId=self`, { headers: { Cookie: `accessToken=${token}` } });
+    const history = await saved.json();
+    assert.equal(history.conversations.length, 1);
+    assert.match(history.conversations[0].messages[0].content, /CBC report/);
+    assert.match(history.conversations[0].reportResult.summary, /blood count/);
+
+    const outsider = await User.create({ name: "Other", email: `other-report-${Date.now()}@example.test`, passwordHash: "x" });
+    const outsiderToken = jwt.sign({ sub: String(outsider._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    const privateHistoryResponse = await fetch(`${base}/conversations?profileId=self`, { headers: { Cookie: `accessToken=${outsiderToken}` } });
+    assert.deepEqual((await privateHistoryResponse.json()).conversations, []);
   });
 
   test("answers a chat question about a lab value", async () => {
@@ -108,6 +122,29 @@ describe("POST /api/reports routes", () => {
     assert.equal(res.status, 200, JSON.stringify(res.body));
     assert.match(res.body.answer, /13\.5 g\/dL/);
     assert.deepEqual(res.body.evidence, ["Hemoglobin 13.5 g/dL, reference range 12.0-15.5 g/dL"]);
+    assert.ok(res.body.conversationId);
     assert.equal(provider.requests.length, 1);
+  });
+
+  test("saves chat turns, uses saved history on follow-up, and allows deletion", async () => {
+    provider.content = JSON.stringify({ answer: "Hemoglobin carries oxygen in the blood.", evidence: [] });
+    const first = await call("chat", { consent: true, question: "What does hemoglobin do?" });
+    assert.equal(first.status, 200);
+
+    provider.content = JSON.stringify({ answer: "Your earlier question was about hemoglobin.", evidence: [] });
+    const second = await call("chat", { consent: true, question: "Can you explain my earlier question?", conversationId: first.body.conversationId });
+    assert.equal(second.status, 200);
+    assert.match(provider.requests[1].messages[1].content[0].text, /What does hemoglobin do/);
+
+    const saved = await fetch(`${base}/conversations?profileId=self`, { headers: { Cookie: `accessToken=${token}` } });
+    const history = await saved.json();
+    assert.equal(history.conversations.length, 1);
+    assert.equal(history.conversations[0].messages.length, 4);
+
+    const deleted = await fetch(`${base}/conversations/${first.body.conversationId}?profileId=self`, {
+      method: "DELETE", headers: { Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${token}` },
+    });
+    assert.equal(deleted.status, 204);
+    assert.equal(await ReportConversation.countDocuments(), 0);
   });
 });

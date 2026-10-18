@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
 const Appointment = require("../src/models/Appointment");
+const ReportConversation = require("../src/models/ReportConversation");
 let mongod, server, base;
 const password = "Profile test password 123!";
 let passwordHash;
@@ -19,7 +20,7 @@ before(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User.init(), LinkedProfile.init(), Appointment.init()]);
+  await Promise.all([User.init(), LinkedProfile.init(), Appointment.init(), ReportConversation.init()]);
   passwordHash = await bcrypt.hash(password, 12);
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
@@ -31,7 +32,7 @@ after(async () => {
   await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
-beforeEach(async () => { await User.deleteMany({}); await LinkedProfile.deleteMany({}); await Appointment.deleteMany({}); });
+beforeEach(async () => { await User.deleteMany({}); await LinkedProfile.deleteMany({}); await Appointment.deleteMany({}); await ReportConversation.deleteMany({}); });
 
 async function user(email = "owner@example.test", extra = {}) { return User.create({ name: "Owner", email, passwordHash, ...extra }); }
 function token(account) { return jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" }); }
@@ -111,11 +112,15 @@ test("deleting a linked profile removes only its appointments", async () => {
   const childRecord = await ownAppointment(child.id, account._id);
   const selfRecord = await ownAppointment(account._id, account._id);
   const otherRecord = await ownAppointment(otherChild.id, other._id);
+  const childChat = await ReportConversation.create({ owner: account._id, profileId: child.id, title: "Child chat", messages: [{ role: "user", content: "Child health question" }] });
+  const selfChat = await ReportConversation.create({ owner: account._id, profileId: account._id, title: "My chat", messages: [{ role: "user", content: "My health question" }] });
 
   assert.equal((await request("DELETE", `/profile/linked/${child.id}`, { cookie })).status, 204);
   assert.equal(await Appointment.findById(childRecord._id), null);
   assert.ok(await Appointment.findById(selfRecord._id));
   assert.ok(await Appointment.findById(otherRecord._id));
+  assert.equal(await ReportConversation.findById(childChat._id), null);
+  assert.ok(await ReportConversation.findById(selfChat._id));
 });
 
 test("rejects invalid linked profiles and more than 10", async () => {
@@ -180,6 +185,8 @@ test("deleting a password account needs DELETE and the right password, then remo
   const ownVisit = await addAppointment(account._id, account._id);
   const dependentVisit = await addAppointment(account._id, childId);
   const otherVisit = await addAppointment(other._id, other._id);
+  const ownChat = await ReportConversation.create({ owner: account._id, profileId: account._id, title: "Private chat", messages: [{ role: "user", content: "Private health question" }] });
+  const otherChat = await ReportConversation.create({ owner: other._id, profileId: other._id, title: "Other chat", messages: [{ role: "user", content: "Other health question" }] });
   for (const body of [{ password }, { confirm: "delete", password }, { confirm: "DELETE", password: "wrong password" }, { confirm: "DELETE" }, { confirm: "DELETE", email: "owner@example.test" }]) {
     assert.equal((await request("DELETE", "/profile/me", { cookie, body })).status, 400, JSON.stringify(body));
   }
@@ -191,6 +198,8 @@ test("deleting a password account needs DELETE and the right password, then remo
   assert.equal(await Appointment.findById(ownVisit._id), null);
   assert.equal(await Appointment.findById(dependentVisit._id), null);
   assert.ok(await Appointment.findById(otherVisit._id));
+  assert.equal(await ReportConversation.findById(ownChat._id), null);
+  assert.ok(await ReportConversation.findById(otherChat._id));
   assert.equal(await LinkedProfile.countDocuments({ owner: account._id }), 0);
   assert.equal((await request("GET", "/profile/me", { cookie })).status, 401);
   assert.equal((await request("GET", "/auth/me", { cookie })).status, 401);

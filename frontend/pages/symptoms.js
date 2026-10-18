@@ -10,6 +10,8 @@ import {
 
 import {
   addSymptomRecord,
+  getSymptomsForProfile,
+  updateSymptomRecord,
 } from "../lib/symptomApi";
 
 import {
@@ -104,6 +106,9 @@ export default function SymptomsPage() {
     setAssessmentCount,
   ] = useState(0);
 
+  const [savedRecord, setSavedRecord] = useState(null);
+  const [history, setHistory] = useState([]);
+
   const [
     isListening,
     setIsListening,
@@ -144,6 +149,25 @@ export default function SymptomsPage() {
     },
     []
   );
+
+  useEffect(() => {
+    let current = true;
+    setSavedRecord(null);
+    setHistory([]);
+    if (activeProfile?.id) {
+      getSymptomsForProfile(activeProfile.id)
+        .then((records) => {
+          if (current && records.length > 0) {
+            setHistory((existing) => {
+              const fetchedIds = new Set(records.map((record) => record.id));
+              return [...existing.filter((record) => !fetchedIds.has(record.id)), ...records];
+            });
+          }
+        })
+        .catch(() => { if (current) setHistory([]); });
+    }
+    return () => { current = false; };
+  }, [activeProfile?.id]);
 
 
   function toggleSpeechInput() {
@@ -342,18 +366,21 @@ export default function SymptomsPage() {
       // to assess the symptoms.
       const result =
         await assessUrgency(
-          description
+          description,
+          activeProfile.id
         );
 
 
       // Save BOTH the symptom description
       // and its urgency result on the backend.
-      await addSymptomRecord(
+      const saved = await addSymptomRecord(
         activeProfile.id,
         activeProfile.fullName,
         description,
         result
       );
+      setSavedRecord(saved);
+      setHistory((records) => [saved, ...records]);
 
 
       // Show the urgency result.
@@ -435,12 +462,24 @@ export default function SymptomsPage() {
       const updatedResult =
         await assessUrgencyWithAnswers(
           lastDescription,
-          answers
+          answers,
+          activeProfile.id
         );
 
       setUrgency(
         updatedResult
       );
+
+      if (savedRecord?.id) {
+        const updated = await updateSymptomRecord(
+          activeProfile.id,
+          savedRecord.id,
+          answers,
+          updatedResult
+        );
+        setSavedRecord(updated);
+        setHistory((records) => records.map((item) => item.id === updated.id ? updated : item));
+      }
 
       setFollowUps([]);
     } catch (err) {
@@ -687,6 +726,27 @@ export default function SymptomsPage() {
           {error}
         </Alert>
       )}
+
+      <section className="symptom-history section" aria-labelledby="symptom-history-heading">
+        <h2 id="symptom-history-heading">Previous symptom checks</h2>
+        {history.length === 0 ? <p className="text-muted">Your saved conversations will appear here.</p> : (
+          <ul className="symptom-history__list">
+            {history.slice(0, 10).map((record) => (
+              <li key={record.id}>
+                <details>
+                  <summary>{record.createdAt ? new Date(record.createdAt).toLocaleString() : "Previous check"} · {record.urgencyResult?.label || "Urgency check"}</summary>
+                  <ol aria-label="Saved conversation">
+                    {(record.conversation || [
+                      { role: "patient", content: record.description },
+                      { role: "assistant", content: `${record.urgencyResult?.label || ""}. ${record.urgencyResult?.timeframe || ""}. ${record.urgencyResult?.action || ""}` },
+                    ]).map((turn, index) => <li key={`${record.id}-${index}`}><strong>{turn.role === "patient" ? "You" : "Nabad"}:</strong> {turn.content}</li>)}
+                  </ol>
+                </details>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </PageLayout>
   );
 }

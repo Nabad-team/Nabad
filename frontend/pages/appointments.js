@@ -58,6 +58,10 @@ function reminderDue(appointment, now) {
   return time.getTime() >= now.getTime() && start <= now.getTime();
 }
 
+function reminderSignature(appointment) {
+  return `${appointment.appointmentDate}|${appointment.appointmentTime}|${appointment.reminderMinutes}`;
+}
+
 function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCancel }) {
   const [fields, setFields] = useState(initial);
   const [problems, setProblems] = useState({});
@@ -170,7 +174,8 @@ export default function AppointmentsPage() {
   const [newAppointmentFields, setNewAppointmentFields] = useState(emptyFields);
   const profileId = activeProfile?.id;
   const profileRef = useRef(profileId);
-  const notifiedRef = useRef(new Set());
+  const notifiedRef = useRef(new Map());
+  const scheduleRef = useRef(new Map());
   profileRef.current = profileId;
   const forSelf = !activeProfile || activeProfile.isSelf;
   const name = activeProfile?.fullName;
@@ -199,14 +204,20 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     if (!appointments || typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    appointments.filter((appointment) => reminderDue(appointment, now)).forEach((appointment) => {
-      if (notifiedRef.current.has(appointment.id)) return;
-      notifiedRef.current.add(appointment.id);
+    appointments.forEach((appointment) => {
+      const key = `${profileId}:${appointment.id}`;
+      const signature = reminderSignature(appointment);
+      const previousSignature = scheduleRef.current.get(key);
+      if (previousSignature !== undefined && previousSignature !== signature) notifiedRef.current.delete(key);
+      scheduleRef.current.set(key, signature);
+      if (!reminderDue(appointment, now)) return;
+      if (notifiedRef.current.get(key) === signature) return;
+      notifiedRef.current.set(key, signature);
       new Notification(`Reminder: ${appointment.title}`, {
         body: `${formatDate(appointment.appointmentDate)} at ${appointment.appointmentTime} · ${appointment.hospital}`,
       });
     });
-  }, [appointments, now]);
+  }, [appointments, now, profileId]);
 
   async function save(fields) {
     if (editing === "add") await addAppointment(profileId, fields);

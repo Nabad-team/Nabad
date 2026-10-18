@@ -14,7 +14,11 @@ jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 jest.mock("../context/ActiveProfileContext", () => ({ useActiveProfile: jest.fn() }));
 jest.mock("../context/AccessibilityContext", () => ({ useAccessibility: jest.fn() }));
-jest.mock("../lib/symptomApi", () => ({ addSymptomRecord: jest.fn() }));
+jest.mock("../lib/symptomApi", () => ({
+  addSymptomRecord: jest.fn(),
+  getSymptomsForProfile: jest.fn().mockResolvedValue([]),
+  updateSymptomRecord: jest.fn().mockResolvedValue({ id: "symptom-1" }),
+}));
 jest.mock("../lib/triageApi", () => ({ assessUrgency: jest.fn(), assessUrgencyWithAnswers: jest.fn() }));
 
 const RESULT = {
@@ -77,7 +81,7 @@ describe("describing symptoms in your own words", () => {
     render(<SymptomsPage />);
     await user.type(screen.getByLabelText("Symptoms"), "my chest hurts really bad");
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
-    await waitFor(() => expect(assessUrgency).toHaveBeenCalledWith("my chest hurts really bad"));
+    await waitFor(() => expect(assessUrgency).toHaveBeenCalledWith("my chest hurts really bad", "profile-1"));
     expect(await screen.findByText(RESULT.explanation.summary)).toBeInTheDocument();
   });
 
@@ -95,7 +99,7 @@ describe("describing symptoms in your own words", () => {
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
     await user.click(await screen.findByLabelText("Mild"));
     await user.click(screen.getByRole("button", { name: "Update my urgency" }));
-    await waitFor(() => expect(assessUrgencyWithAnswers).toHaveBeenCalledWith("i feel feverish", { severity: "mild" }));
+    await waitFor(() => expect(assessUrgencyWithAnswers).toHaveBeenCalledWith("i feel feverish", { severity: "mild" }, "profile-1"));
   });
 
   test("a description that is too short is not sent, and the user is told what to write", async () => {
@@ -153,7 +157,7 @@ describe("describing symptoms in your own words", () => {
       recognition.onresult({ resultIndex: 0, results: [{ isFinal: true, 0: { transcript: "i cant catch my breath" } }] });
     });
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
-    await waitFor(() => expect(assessUrgency).toHaveBeenCalledWith("i cant catch my breath"));
+    await waitFor(() => expect(assessUrgency).toHaveBeenCalledWith("i cant catch my breath", "profile-1"));
   });
 
   test("too many checks: the server's message (with when to call 140) is shown", async () => {

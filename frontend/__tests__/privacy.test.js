@@ -44,7 +44,7 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/October 16, 2026/)
+      screen.getByText(/October 18, 2026/)
     ).toBeInTheDocument();
   });
 

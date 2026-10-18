@@ -38,7 +38,7 @@ function describeAnswers(answers) {
 
 // client: from llmClient.getLlmClient(), or null when AI triage is off.
 // answers: optional follow-up answers, as for POST /api/triage/refine.
-async function assessWithAi(symptoms, { client = null, answers, location } = {}) {
+async function assessWithAi(symptoms, { client = null, answers, location, priorConversations = [] } = {}) {
   const hasAnswers = answers !== undefined && answers !== null;
   // The safety floor. refineUrgency validates the answers and throws AnswerError if they are wrong.
   const floor = hasAnswers ? refineUrgency(symptoms, answers) : classifyUrgency(symptoms);
@@ -72,7 +72,7 @@ async function assessWithAi(symptoms, { client = null, answers, location } = {})
 
   let reply;
   try {
-    const messages = buildMessages({ symptoms: cleanSymptoms(symptoms), minimumLevel: floor.level, answered: describeAnswers(answers) });
+    const messages = buildMessages({ symptoms: cleanSymptoms(symptoms), minimumLevel: floor.level, answered: describeAnswers(answers), priorConversations });
     reply = parseModelReply(await client.complete(messages));
   } catch (error) {
     if (error instanceof LlmError || error instanceof GuardrailError) return rulesOnly(error.code);

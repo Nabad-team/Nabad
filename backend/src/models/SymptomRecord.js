@@ -7,7 +7,14 @@ const mongoose = require("mongoose");
 
 const LIMITS = {
   description: 2000,
+  conversationMessage: 4000,
 };
+
+const conversationMessageSchema = new mongoose.Schema({
+  role: { type: String, enum: ["patient", "assistant"], required: true },
+  content: { type: String, required: true, maxlength: LIMITS.conversationMessage },
+  createdAt: { type: Date, default: Date.now },
+}, { _id: false });
 
 const symptomRecordSchema = new mongoose.Schema(
   {
@@ -37,6 +44,9 @@ const symptomRecordSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       required: true,
     },
+
+    // Patient and assistant turns are retained with the symptom assessment for later review.
+    conversation: { type: [conversationMessageSchema], default: [] },
   },
   {
     timestamps: true,

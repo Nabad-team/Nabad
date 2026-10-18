@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { act } from "react";
 import SymptomsPage from "../pages/symptoms";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { addSymptomRecord } from "../lib/symptomApi";
+import { addSymptomRecord, getSymptomsForProfile } from "../lib/symptomApi";
 import { assessUrgency, assessUrgencyWithAnswers } from "../lib/triageApi";
 import { getEmergencyContact } from "../lib/api";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
@@ -17,6 +17,8 @@ jest.mock("../context/ActiveProfileContext", () => ({
 
 jest.mock("../lib/symptomApi", () => ({
   addSymptomRecord: jest.fn(),
+  getSymptomsForProfile: jest.fn().mockResolvedValue([]),
+  updateSymptomRecord: jest.fn().mockResolvedValue({ id: "symptom-1" }),
 }));
 
 // SCRUM-128: the page asks the backend for an urgency level before saving the symptom record.
@@ -140,6 +142,25 @@ describe("Symptoms Page", () => {
     ).toBeInTheDocument();
   });
 
+  test("shows saved symptom conversation turns for later review", async () => {
+    useActiveProfile.mockReturnValue({ activeProfile: { id: "profile-1", fullName: "Maya Hamdan" } });
+    getSymptomsForProfile.mockResolvedValue([{
+      id: "saved-check", createdAt: "2026-10-18T09:00:00.000Z", description: "Past cough",
+      urgencyResult: SOON_RESULT,
+      conversation: [
+        { role: "patient", content: "Past cough" },
+        { role: "assistant", content: "Please answer this question." },
+        { role: "patient", content: "I said the cough is getting worse." },
+      ],
+    }]);
+
+    render(<SymptomsPage />);
+    const summary = await screen.findByText(/See a doctor soon/);
+    expect(summary.closest("summary")).toHaveTextContent("See a doctor soon");
+    await userEvent.setup().click(summary.closest("summary"));
+    expect(screen.getByText(/I said the cough is getting worse/)).toBeInTheDocument();
+  });
+
   test("does not submit when symptoms are empty", async () => {
     const user = userEvent.setup({ delay: null });
 
@@ -194,7 +215,7 @@ describe("Symptoms Page", () => {
     );
 
     await waitFor(() => {
-      expect(assessUrgency).toHaveBeenCalledWith("Fever and headache");
+      expect(assessUrgency).toHaveBeenCalledWith("Fever and headache", "profile-1");
 
       expect(addSymptomRecord).toHaveBeenCalledWith(
         "profile-1",
@@ -383,7 +404,7 @@ describe("Symptoms Page", () => {
 
     await submitSymptoms("Fever and headache");
 
-    expect(assessUrgency).toHaveBeenCalledWith("Fever and headache");
+    expect(assessUrgency).toHaveBeenCalledWith("Fever and headache", "profile-1");
 
     expect(
       await screen.findByRole("heading", {
@@ -542,7 +563,7 @@ describe("Symptoms Page", () => {
       screen.getByRole("button", { name: "Submit symptoms" })
     );
 
-    expect(assessUrgency).toHaveBeenCalledWith("Cough");
+    expect(assessUrgency).toHaveBeenCalledWith("Cough", "profile-1");
 
     expect(
       await screen.findByText(
@@ -603,7 +624,8 @@ describe("Symptoms Page", () => {
       "Fever since yesterday",
       {
         "fever-temperature": "39.5-plus",
-      }
+      },
+      "profile-1"
     );
 
     expect(

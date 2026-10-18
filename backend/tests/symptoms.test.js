@@ -420,6 +420,9 @@ test(
       urgencyResult
     );
 
+    assert.deepEqual(record.conversation.map((message) => message.role), ["patient", "assistant"]);
+    assert.match(record.conversation[0].content, /Mild cough/);
+
     assert.ok(
       record.createdAt
     );
@@ -446,6 +449,31 @@ test(
   }
 );
 
+
+test("saves patient follow-up answers and the updated assistant response for later review", async () => {
+  const cookie = token(await user());
+  const created = await add(cookie);
+  const id = created.body.symptomRecord.id;
+  const updatedResult = {
+    level: "urgent",
+    label: "Urgent",
+    timeframe: "Within a few hours (today)",
+    action: "Get seen today at an emergency department or urgent care clinic. Call 140 if it gets worse.",
+  };
+
+  const updated = await request("PATCH", `/symptoms/${id}?profileId=self`, {
+    cookie,
+    body: { answers: { severity: "severe" }, urgencyResult: updatedResult },
+  });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.symptomRecord.urgencyResult.level, "urgent");
+  assert.equal(updated.body.symptomRecord.conversation.length, 4);
+  assert.match(updated.body.symptomRecord.conversation[2].content, /Severe: I can hardly function/);
+  assert.match(updated.body.symptomRecord.conversation[3].content, /Urgent/);
+
+  const history = await request("GET", "/symptoms?profileId=self", { cookie });
+  assert.equal(history.body.symptomRecords[0].conversation.length, 4);
+});
 
 test(
   "owner and profileId in the request body are ignored",

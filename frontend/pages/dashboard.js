@@ -1,9 +1,8 @@
 import ProfileHeader from "../components/ProfileHeader";
 import { MainNavigation } from "../components/AppHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
-import WellbeingCard from "../components/WellbeingCard";
 import WellbeingCorner from "../components/WellbeingCorner";
-import HealthCard from "../components/HealthCard";
+import ProgressSummary from "../components/ProgressSummary";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
@@ -120,9 +119,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {activeProfile && <HealthCard />}
-
-      {activeProfile && <WellbeingCard />}
+      {activeProfile && <ProgressSummary />}
 
       <WellbeingCorner />
     </PageLayout>

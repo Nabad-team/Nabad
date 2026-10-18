@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> October 16, 2026
+        <strong>Last updated:</strong> October 18, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -32,6 +32,8 @@ export default function PrivacyPolicy() {
         <li>Emergency contact information</li>
         <li>Linked profile information</li>
         <li>Symptoms entered into the application</li>
+        <li>Saved symptom-check conversations and follow-up answers</li>
+        <li>Health assistant conversations and report explanations you choose to save</li>
         <li>Medications and other saved health information</li>
         <li>Wellbeing information that you choose to save</li>
       </ul>
@@ -46,7 +48,8 @@ export default function PrivacyPolicy() {
 
       <p>
         The symptom description and resulting urgency assessment can then be
-        stored in your Nabad account for the selected profile.
+        stored in your Nabad account for the selected profile, together with
+        the follow-up conversation so you can review earlier checks.
       </p>
 
       <h2 id="ai-symptom-check">AI in the symptom check</h2>
@@ -62,6 +65,11 @@ export default function PrivacyPolicy() {
           Unless the safety rules already found an emergency, your description
           and any follow-up answers you choose are sent over an encrypted
           connection to Google&apos;s Gemini AI service to help assess urgency.
+        </li>
+        <li>
+          For a non-emergency check, up to three earlier saved symptom checks
+          for the same profile may also be sent as historical context. Past
+          symptoms are identified as history and are not assumed to be current.
         </li>
         <li>
           If the safety rules find an emergency, the result is shown straight
@@ -99,9 +107,15 @@ export default function PrivacyPolicy() {
           Your name, email and profile details are not sent with your question.
         </li>
         <li>
-          Nabad does not save your messages or files, and does not write them or
-          the AI&apos;s reply to its logs. They only record that a request
-          happened and whether it succeeded.
+          Nabad saves your conversation messages, AI replies, and report
+          findings to the selected profile for later review. Uploaded files
+          themselves are not stored. You can delete saved conversations from
+          the health assistant.
+        </li>
+        <li>
+          Nabad does not write your messages, files or the AI&apos;s reply to
+          its logs. Logs only record that a request happened and whether it
+          succeeded.
         </li>
       </ul>
 

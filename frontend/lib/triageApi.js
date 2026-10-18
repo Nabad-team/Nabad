@@ -12,9 +12,11 @@ export const refineUrgency = (symptoms, answers) =>
 // SCRUM-125: the symptoms page sends the user's own words to AI triage (/ai-assess). The server
 // keeps the safety rules as the floor and answers with the rules alone when the AI is off or
 // unavailable, so this is never less safe than /classify. Same response shape, plus an explanation.
-export const assessUrgency = (symptoms) =>
-  request("/triage/ai-assess", { method: "POST", body: JSON.stringify({ symptoms }) });
+const profilePath = (profileId) => `/triage/ai-assess?profileId=${encodeURIComponent(profileId || "self")}`;
+
+export const assessUrgency = (symptoms, profileId) =>
+  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms }) });
 
 // SCRUM-125: the same assessment again with the follow-up answers ({ questionId: optionValue }).
-export const assessUrgencyWithAnswers = (symptoms, answers) =>
-  request("/triage/ai-assess", { method: "POST", body: JSON.stringify({ symptoms, answers }) });
+export const assessUrgencyWithAnswers = (symptoms, answers, profileId) =>
+  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, answers }) });
