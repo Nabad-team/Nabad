@@ -37,7 +37,7 @@ test("directory is readable and only exposes public facility fields", async () =
   assert.equal(result.body.total, seedData.length);
   assert.ok(result.body.services.every(value => typeof value === "string" && value));
   assert.ok(result.body.providers.every(p => p.id && p.sources.length && !p._id));
-  assert.equal(result.body.providers.find(p => p.id === "nini-hospital").emergency24h, null);
+  assert.equal((await get("?q=Nini")).body.providers[0].emergency24h, null);
 });
 test("schema rejects invalid coordinates and hours", async () => {
   const fixture = require("../data/providers")[0];
@@ -76,14 +76,14 @@ test("rejects nested, repeated and excessively long filter parameters", async ()
 });
 test("distance filters and sorting use coordinates before pagination", async () => {
   const near = await get("?lat=34.43587&lng=35.83076&radiusKm=5");
-  assert.equal(near.body.total, 5); assert.equal(near.body.providers[0].id, "nini-hospital");
+  assert.ok(near.body.total >= 10); assert.equal(near.body.providers[0].id, "nini-hospital");
   assert.ok(near.body.providers.every(p => p.distanceKm <= 5));
   assert.ok(near.body.providers.every((p, i, list) => i === 0 || p.distanceKm >= list[i - 1].distanceKm));
   assert.equal(near.body.providers[0].distanceKm, 0);
   const page = await get("?lat=34.43587&lng=35.83076&limit=1&page=2");
-  assert.equal(page.body.total, seedData.length); assert.equal(page.body.providers.length, 1);
+  assert.equal(page.body.total, seedData.filter(p => p.latitude != null).length); assert.equal(page.body.providers.length, 1);
   assert.notEqual(page.body.providers[0].id, "nini-hospital");
-  assert.equal((await get("?city=saida")).body.providers[0].id, "hammoud-hospital");
+  assert.ok((await get("?city=saida")).body.providers.some(p => p.id === "hammoud-hospital"));
 });
 test("invalid locations, radii and pagination are rejected", async () => {
   for (const query of ["lat=91&lng=0", "lat=0", "lng=0", "lat=&lng=0", "lat=NaN&lng=0", "radiusKm=10", "lat=0&lng=0&radiusKm=-1", "page=0", "limit=101", "page=1.5"]) {
@@ -166,10 +166,16 @@ test("curated seed covers all governorates with unique identities and sourced ca
   }
 });
 
-test("expanded directory offers both Saida hospitals and paginates without loss or duplicates", async () => {
+test("expanded directory distinguishes Saida city from its district and paginates without loss", async () => {
   const saida = await get("?city=Saida&governorate=South");
   assert.equal(saida.status, 200);
-  assert.deepEqual(saida.body.providers.map(p => p.id).sort(), ["hammoud-hospital", "saida-governmental"]);
+  assert.ok(saida.body.total >= 5);
+  const district = await get("?district=Saida&governorate=South&limit=100");
+  assert.ok(district.body.total > saida.body.total);
+  assert.ok(district.body.total > 10);
+  assert.ok(district.body.providers.every(p => p.district === "Saida"));
+  assert.ok(district.body.districts.includes("Tripoli"));
+  assert.equal((await get("?district[$ne]=x")).status, 400);
   const ids = [];
   for (let page = 1; ids.length < seedData.length; page++) {
     const result = await get(`?limit=20&page=${page}`);
@@ -179,6 +185,24 @@ test("expanded directory offers both Saida hospitals and paginates without loss 
   }
   assert.equal(ids.length, seedData.length);
   assert.equal(new Set(ids).size, seedData.length);
+});
+
+test("unlocated hospitals remain searchable and saveable without a fabricated geo point", async () => {
+  const fixture = seedData.find(p => p.latitude === null);
+  const row = await Provider.findOne({ slug: fixture.slug }).lean();
+  assert.ok(!row.location);
+  assert.ok((await get(`?district=${encodeURIComponent(fixture.district)}&limit=100`)).body.providers.some(p => p.id === fixture.slug));
+  const { cookie } = await account("unlocated@example.test");
+  assert.equal((await favoriteRequest("PUT", `/${fixture.slug}/favorite`, cookie)).status, 200);
+  const geo = await (await favoriteRequest("GET", "?favorites=true&lat=33.9&lng=35.5", cookie)).json();
+  assert.equal(geo.total, 0);
+  await assert.rejects(new Provider({ ...fixture, latitude: 33.9 }).validate());
+  const known = { ...fixture, latitude: 33.9, longitude: 35.5, verifiedAt: "2030-01-01" };
+  await seedProviders([known]);
+  assert.deepEqual((await Provider.findOne({ slug: fixture.slug }).lean()).location.coordinates, [35.5, 33.9]);
+  await seedProviders([{ ...fixture, verifiedAt: "2031-01-01" }]);
+  await seedProviders();
+  assert.ok(!(await Provider.findOne({ slug: fixture.slug }).lean()).location);
 });
 
 test("new location-only listings remain unknown and do not qualify for emergency routing", async () => {
