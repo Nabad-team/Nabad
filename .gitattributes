@@ -1,0 +1,2 @@
+# Generated JMeter HTML dashboards: exclude from GitHub language stats and collapse in diffs
+loadtest/jmeter/reports/** linguist-generated
