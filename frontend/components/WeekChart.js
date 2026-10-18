@@ -7,8 +7,8 @@ import { shortDay, longDay } from "../lib/wellbeing";
 // so the chart is never the only way to read the data.
 //   days:      [{ date: "YYYY-MM-DD", value: number or null }], oldest first
 //   max:       the value at the top of the chart
-//   format:    value -> text, e.g. 3 -> "3 glasses"
-//   reference: optional { value, label } drawn as a thin line (the water goal)
+//   format:    value -> text, e.g. 1250 -> "1.3 L"
+//   reference: optional { value, label } drawn as a thin line (the water goal or limit)
 export default function WeekChart({ id, title, summary, days, max, format, reference, today }) {
   const percent = (value) => `${Math.min(100, (value / max) * 100)}%`;
   return (

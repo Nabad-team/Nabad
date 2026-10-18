@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { buildHealthSummary, ageFrom, ageText } = require("../src/healthProfile");
+const { buildHealthSummary, trackingText, ageFrom, ageText } = require("../src/healthProfile");
 
 // The plain-text health summary that Nabad's guidance (triage) will use, built from a profile's facts.
 const fact = (category, value, status = "confirmed") => ({ category, value, status });
@@ -63,6 +63,32 @@ test("the user's own words stay on their line, so they can't pose as another lin
   assert.match(summary, /^Allergies: Latex Current medications: none \(other, reaction: Itching badly\)$/m);
   assert.match(summary, /^Current medications: Aspirin Age: 5 years$/m);
   assert.match(summary, /^Age: not recorded$/m);
+});
+
+test("water and sleep: one factual line, only with recent data, and never any advice", () => {
+  assert.equal(trackingText(), "");
+  assert.equal(trackingText({ fluidsTodayMl: 0, goal: { type: "atMost", ml: 1500 }, sleepHours: [] }), "", "a goal alone is not recent data");
+  assert.equal(trackingText({ fluidsTodayMl: 1250 }), "Water and sleep log: fluids today 1.3 L");
+  assert.equal(trackingText({ fluidsTodayMl: 900, goal: { type: "atMost", ml: 1500 } }), "Water and sleep log: fluids today 0.9 L (daily goal set: stay under 1.5 L)");
+  assert.equal(trackingText({ fluidsTodayMl: 2000, goal: { type: "atLeast", ml: 2000 } }), "Water and sleep log: fluids today 2.0 L (daily goal set: drink at least 2.0 L)");
+  assert.equal(trackingText({ sleepHours: [7.5] }), "Water and sleep log: average sleep over the last 7 days 7.5 hours (1 night logged)");
+  assert.equal(
+    trackingText({ fluidsTodayMl: 1600, goal: { type: "atMost", ml: 1500 }, sleepHours: [6, 7.33, 8, 4.5] }),
+    "Water and sleep log: fluids today 1.6 L (daily goal set: stay under 1.5 L); average sleep over the last 7 days 6.5 hours (4 nights logged)",
+  );
+  // Facts only: being over a limit or sleeping little is stated, never interpreted.
+  const line = trackingText({ fluidsTodayMl: 3000, goal: { type: "atMost", ml: 1000 }, sleepHours: [3, 3, 3] });
+  assert.doesNotMatch(line, /should|\btoo\b|\blow\b|\bhigh\b|exceed|over (the|your) (goal|limit)|dehydrat|risk|advi[cs]e|recommend|warning|close|more/i);
+});
+
+test("the water and sleep line comes last, and is left out when there is nothing recent", () => {
+  const empty = buildHealthSummary({ age: null, tracking: { fluidsTodayMl: 0, goal: null, sleepHours: [] } });
+  assert.equal(empty.split("\n").length, 5);
+  const summary = buildHealthSummary({ age: null, tracking: { fluidsTodayMl: 500, goal: null, sleepHours: [7] } });
+  assert.deepEqual(summary.split("\n").slice(-2), [
+    "Current medications: none recorded",
+    "Water and sleep log: fluids today 0.5 L; average sleep over the last 7 days 7 hours (1 night logged)",
+  ]);
 });
 
 test("age: whole years from 2, months for babies, and not before the birthday", () => {

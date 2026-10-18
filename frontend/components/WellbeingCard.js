@@ -6,7 +6,7 @@ import { getToday } from "../lib/wellbeingApi";
 import { todayString } from "../lib/dates";
 import { hoursText, sleptText, waterCountText } from "../lib/wellbeing";
 
-// The dashboard's "Water and sleep" card: today's glasses and last night's sleep for the active profile.
+// The dashboard's "Water and sleep" card: today's fluids (in litres) and last night's sleep for the active profile.
 export default function WellbeingCard() {
   const { activeProfile } = useActiveProfile();
   const profileId = activeProfile?.id;
@@ -30,7 +30,7 @@ export default function WellbeingCard() {
       {failed && <p className="text-muted">We couldn't load today's water and sleep.</p>}
       {today && (
         <div className="details">
-          <p><span className="details__label">Water today</span>{waterCountText(today.water.glasses, today.water.target)}</p>
+          <p><span className="details__label">Water today</span>{waterCountText(today.water.totalMl, today.water.goal)}</p>
           <p>
             <span className="details__label">Last night</span>
             {today.sleep ? `${hoursText(today.sleep.hours)}, ${sleptText(today.sleep.quality).toLowerCase()}` : "Not logged yet"}

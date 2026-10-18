@@ -1150,8 +1150,11 @@ select.input {
   gap: var(--space-4);
 }
 
+/* Cards fill their column, and a long label ("Water and sleep") wraps instead of making a 375px phone scroll sideways. */
 .dashboard-navigation .app-nav__list a {
+  width: 100%;
   min-height: 4.5rem;
+  white-space: normal;
 }
 
 @media (min-width: 40rem) {
@@ -1966,61 +1969,235 @@ select.input {
   margin: 0 0 var(--space-2);
 }
 
-/* Today's glasses: big enough to tap (3.5rem), wrapping onto more rows on phones. */
-.glasses {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.tracker__status .alert {
+  margin: 0 0 var(--space-4);
+}
+
+/* Today against the goal or limit. A thin track; the bar turns to the warning colour near or over a limit
+   (the text above always says so too, so colour is never the only signal). */
+.fluid-progress {
+  height: 0.5rem;
+  margin-bottom: var(--space-5);
+  overflow: hidden;
+  border-radius: 0.25rem;
+  background: var(--color-sunken);
+}
+
+.fluid-progress__bar {
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.fluid-progress__bar--limit {
+  background: var(--color-warning);
+}
+
+/* Glass, Bottle, Custom amount: side by side, wrapping onto more rows on phones. */
+.drink-buttons {
+  margin-top: var(--space-2);
+}
+
+.tracker__custom {
   margin-top: var(--space-4);
 }
 
-.glasses__slot,
-.glasses__add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
+.drink-log {
+  margin-top: var(--space-5);
 }
 
-.glasses__add {
+.drink-log h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+}
+
+.drink-log ul {
+  margin: 0 0 var(--space-3);
   padding: 0;
-  background: var(--color-surface);
-  border: 0.0625rem dashed var(--color-border-strong);
-  border-radius: var(--radius-md);
-  cursor: pointer;
+  list-style: none;
 }
 
-.glasses__add:hover {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary);
+.drink-log li {
+  padding: var(--space-1) 0;
+  border-bottom: 0.0625rem solid var(--color-border);
 }
 
-.glasses__add:focus-visible {
+.drink-log__time {
+  display: inline-block;
+  min-width: 3.5rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* An amount and its unit on one row; the unit stays narrow. */
+.amount-unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 11rem);
+  gap: var(--space-3);
+  align-items: end;
+}
+
+/* Bedtime and wake-up time side by side, even on a 375px phone. */
+.sleep-times__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.sleep-times .button {
+  align-self: flex-start;
+  justify-self: start;
+  width: auto;
+}
+
+/* Summary for your doctor: facts, then one table. On a phone the table scrolls inside its own box,
+   never the page. */
+.doctor-summary__title {
+  margin: 0 0 var(--space-3);
+}
+
+.doctor-summary__title:focus {
+  outline: none;
+}
+
+.doctor-summary__title:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.doctor-summary__facts {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-4);
+}
+
+.doctor-summary__facts > div {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 10rem) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.doctor-summary__facts dt {
+  color: var(--color-text-muted);
+}
+
+.doctor-summary__facts dd {
+  margin: 0;
+}
+
+.doctor-summary__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.doctor-summary__scroll:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
 
-.glasses__add:disabled {
-  cursor: default;
-  opacity: 0.6;
+.doctor-summary__table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
 }
 
-.glass {
-  width: 2rem;
-  height: 2.5rem;
+.doctor-summary__table caption {
+  padding-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  text-align: left;
 }
 
-.glass__outline {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 2;
-  stroke-linejoin: round;
+.doctor-summary__table th,
+.doctor-summary__table td {
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-bottom: 0.0625rem solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+  font-weight: var(--weight-regular);
 }
 
-.glass__water {
-  fill: var(--color-primary);
-  opacity: 0.85;
+.doctor-summary__table thead th {
+  border-bottom-color: var(--color-border-strong);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+/* Short values stay on one line; only the note wraps. */
+.doctor-summary__table tbody th,
+.doctor-summary__table td:not(:last-child) {
+  white-space: nowrap;
+}
+
+.doctor-summary__source {
+  margin: var(--space-3) 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+/* Printing the doctor summary: while it is open, the page prints only the summary, in black on white,
+   with the table at full width (no scrolling box) and rows kept whole across pages. */
+@media print {
+  body:has(.doctor-summary) .skip-link,
+  body:has(.doctor-summary) .site-header,
+  body:has(.doctor-summary) .profile-strip,
+  body:has(.doctor-summary) .page-main > :not(:has(.doctor-summary)),
+  body:has(.doctor-summary) .page-main > :has(.doctor-summary) > :not(.doctor-section),
+  .doctor-section > h2,
+  .doctor-summary__actions {
+    display: none !important;
+  }
+
+  body:has(.doctor-summary) {
+    background: #fff;
+    color: #000;
+  }
+
+  body:has(.doctor-summary) .page-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .doctor-section {
+    margin: 0;
+  }
+
+  .doctor-summary__title {
+    font-size: 16pt;
+    color: #000;
+  }
+
+  .doctor-summary,
+  .doctor-summary .text-muted,
+  .doctor-summary__facts dt,
+  .doctor-summary__table caption,
+  .doctor-summary__table thead th {
+    color: #000;
+  }
+
+  .doctor-summary__scroll {
+    overflow: visible;
+  }
+
+  .doctor-summary__table {
+    min-width: 0;
+    font-size: 10pt;
+  }
+
+  .doctor-summary__table th,
+  .doctor-summary__table td {
+    border-bottom: 0.5pt solid #777;
+  }
+
+  .doctor-summary__table thead {
+    display: table-header-group;
+  }
+
+  .doctor-summary__table tr {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 15mm;
+  }
 }
 
 /* Weekly charts: one series each, thin columns rounded at the top, a hairline baseline. */

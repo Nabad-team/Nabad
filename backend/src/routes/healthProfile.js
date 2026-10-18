@@ -6,6 +6,7 @@ const { CATEGORIES, SINGLE_CATEGORIES } = HealthFact;
 const { readValue, slotFor, ageText, loadHealthProfile } = require("../healthProfile");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile, profileView } = require("../middleware/profileAccess");
+const { readToday } = require("../days");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 // "My health" for the signed-in user and the people they look after. Mounted at /api/health-profile
@@ -42,8 +43,10 @@ const isDuplicate = (error) => error.code === 11000;
 
 // The whole profile: age (from the date of birth on the profile), confirmed facts, suggestions to review,
 // the active medications (read only here), and the summary Nabad's guidance uses.
+// ?date= is the user's local date, for "fluids today" in the summary (UTC today when it is missing or not today).
 router.get("/", asyncRoute(async (req, res) => {
-  const { dateOfBirth, age, facts, medications, summary } = await loadHealthProfile(req.userId, req.profileId);
+  const today = readToday(req.query.date) || undefined;
+  const { dateOfBirth, age, facts, medications, summary } = await loadHealthProfile(req.userId, req.profileId, { today });
   return res.json({
     dateOfBirth: dateString(dateOfBirth),
     age: age ? { years: age.years, text: ageText(age) } : null,

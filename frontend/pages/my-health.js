@@ -14,7 +14,7 @@ import {
   SEX_OPTIONS, BLOOD_TYPE_OPTIONS, PREGNANCY_OPTIONS, SMOKING_OPTIONS, CONDITION_OPTIONS, ALLERGY_TYPE_OPTIONS, LIMITS, BASICS,
   factText, sourceText, basicsFilled, knowsYouText, pregnancyRelevant,
 } from "../lib/healthProfile";
-import { formatDate } from "../lib/dates";
+import { formatDate, todayString } from "../lib/dates";
 
 const CATEGORY_LABELS = {
   sex: "Sex assigned at birth", height: "Height", weight: "Weight", bloodType: "Blood type", pregnancy: "Pregnancy",
@@ -371,7 +371,7 @@ export default function MyHealthPage() {
     const requested = profileRef.current;
     setLoadError("");
     try {
-      const data = await getHealthProfile(requested);
+      const data = await getHealthProfile(requested, todayString());
       if (profileRef.current === requested) setProfile(data);
     } catch {
       if (profileRef.current === requested) setLoadError("We couldn't load this health information. Please check your connection and try again.");
@@ -510,6 +510,11 @@ export default function MyHealthPage() {
             <h2 id="summary-heading">What Nabad's guidance takes into account</h2>
             <p className="text-muted">This is exactly what Nabad will use when it gives {who ? `${who} ` : "you "}guidance.</p>
             <pre className="health-summary">{profile.summary}</pre>
+            <p className="text-muted">
+              The last line, about water and sleep, appears only when something was logged in the last 7 days: today's fluids
+              (with the daily goal, if one is set) and the average sleep. It lists facts only. You can update them
+              in <a href="/water-and-sleep">Water and sleep</a>.
+            </p>
           </section>
         </div>
       )}

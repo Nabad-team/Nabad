@@ -7,12 +7,14 @@ import { request } from "./api";
 //   facts / suggestions: [{ id, category, value, source, status, recordedAt, updatedAt }]
 //     (see lib/healthProfile.js for the categories and their values)
 //   medications: the active ones, read only here: [{ id, name, dose, unit, form, frequency }]
-//   summary: the plain text Nabad's guidance takes into account
+//   summary: the plain text Nabad's guidance takes into account; its last line covers recent water and sleep,
+//     only when something was logged in the last 7 days
 
 const path = (profileId, rest = "") => "/health-profile" + rest + "?profileId=" + encodeURIComponent(profileId);
 const id = (value) => "/" + encodeURIComponent(value);
 
-export const getHealthProfile = (profileId) => request(path(profileId));
+// date: the user's local "YYYY-MM-DD", so "fluids today" in the summary means their today (optional).
+export const getHealthProfile = (profileId, date) => request(path(profileId) + (date ? "&date=" + date : ""));
 export const addHealthFact = (profileId, category, value) =>
   request(path(profileId, "/facts"), { method: "POST", body: JSON.stringify({ category, value }) }).then((data) => data.fact);
 export const updateHealthFact = (profileId, factId, value) =>

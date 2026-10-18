@@ -205,23 +205,23 @@ describe("Dashboard Page", () => {
   });
 
   test("shows today's water and last night's sleep on the Water and sleep card", async () => {
-    fakeWellbeing.seedWater("self", todayString(), 3);
+    fakeWellbeing.seedWater("self", todayString(), [250, 500, 500]);
     fakeWellbeing.seedSleep("self", todayString(), 7.5, 4);
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Water and sleep" });
-    expect(await within(card).findByText("3 glasses today")).toBeInTheDocument();
+    expect(await within(card).findByText("1.3 L today")).toBeInTheDocument();
     expect(within(card).getByText("7.5 hours, slept well")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Open water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
   });
 
-  test("the Water and sleep card shows the goal only when set, and says when sleep isn't logged", async () => {
-    fakeWellbeing.seedWater("self", todayString(), 2);
-    fakeWellbeing.seedTarget("self", 6);
+  test("the Water and sleep card shows the goal or limit only when set, in litres, and says when sleep isn't logged", async () => {
+    fakeWellbeing.seedWater("self", todayString(), 900);
+    fakeWellbeing.seedGoal("self", { type: "atMost", ml: 1500 });
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Water and sleep" });
-    expect(await within(card).findByText("2 of 6 glasses")).toBeInTheDocument();
+    expect(await within(card).findByText("0.9 L of the 1.5 L limit")).toBeInTheDocument();
     expect(within(card).getByText("Not logged yet")).toBeInTheDocument();
   });
 

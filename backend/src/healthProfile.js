@@ -3,6 +3,8 @@ const { SINGLE_CATEGORIES } = HealthFact;
 const Medication = require("./models/Medication");
 const User = require("./models/User");
 const LinkedProfile = require("./models/LinkedProfile");
+const { HydrationEntry, SleepEntry, WellbeingSettings } = require("./models/Wellbeing");
+const { DAY, utcToday } = require("./days");
 
 // "My health": what each kind of health fact may hold, and the plain-text summary Nabad's guidance uses.
 
@@ -102,13 +104,30 @@ function medicationText(medication) {
   return [what, medication.frequency && oneLine(medication.frequency)].filter(Boolean).join(", ");
 }
 const PREGNANCY_TEXT = { pregnant: "pregnant", not_pregnant: "not pregnant" };
+const litres = (ml) => `${(ml / 1000).toFixed(1)} L`;
+const GOAL_TEXT = { atLeast: "drink at least", atMost: "stay under" };
+// Recent water and sleep as one factual line, or "" when nothing recent was logged. Facts only: no interpretation.
+//   tracking: { fluidsTodayMl, goal, sleepHours } from loadTracking(). goal is { type, ml } or null; it is only
+//   mentioned with today's fluids. sleepHours: the hours of each night logged in the last 7 days.
+function trackingText({ fluidsTodayMl = 0, goal = null, sleepHours = [] } = {}) {
+  const parts = [];
+  if (fluidsTodayMl > 0) {
+    parts.push(`fluids today ${litres(fluidsTodayMl)}${goal ? ` (daily goal set: ${GOAL_TEXT[goal.type]} ${litres(goal.ml)})` : ""}`);
+  }
+  if (sleepHours.length) {
+    const average = Math.round((sleepHours.reduce((sum, hours) => sum + hours, 0) / sleepHours.length) * 10) / 10;
+    parts.push(`average sleep over the last 7 days ${average} hours (${sleepHours.length} ${sleepHours.length === 1 ? "night" : "nights"} logged)`);
+  }
+  return parts.length ? `Water and sleep log: ${parts.join("; ")}` : "";
+}
 
 // The short, plain-text health summary given to Nabad's guidance (triage), and shown to the user on "My health"
 // exactly as it is sent. Only confirmed facts count: a suggestion is never used until the user confirms it.
 //   age: from ageFrom() or null. facts: HealthFact documents (or plain objects). medications: the active ones.
 // Every line is always present ("not recorded", "none recorded") except pregnancy, which appears only when it is
-// set to pregnant or not pregnant and the sex isn't male.
-function buildHealthSummary({ age, facts = [], medications = [] }) {
+// set to pregnant or not pregnant and the sex isn't male, and the water and sleep line, which appears only when
+// something was logged recently (see trackingText).
+function buildHealthSummary({ age, facts = [], medications = [], tracking }) {
   const confirmed = facts.filter((fact) => fact.status === "confirmed");
   const single = (category) => confirmed.find((fact) => fact.category === category)?.value;
   const list = (category, text) => confirmed.filter((fact) => fact.category === category).map((fact) => text(fact.value));
@@ -124,6 +143,7 @@ function buildHealthSummary({ age, facts = [], medications = [] }) {
     `Long-term conditions: ${conditions.length ? conditions.join("; ") : "none recorded"}`,
     `Allergies: ${allergies.length ? allergies.join("; ") : "none recorded"}`,
     `Current medications: ${current.length ? current.join("; ") : "none recorded"}`,
+    trackingText(tracking),
   ].filter(Boolean).join("\n");
 }
 
@@ -135,25 +155,40 @@ async function dateOfBirthOf(owner, profileId) {
   return profile ? profile.dateOfBirth : null;
 }
 
-// Everything "My health" and the summary need for one profile. The caller has already checked that the
-// profile belongs to owner (middleware/profileAccess.js).
-async function loadHealthProfile(owner, profileId) {
+// Today's fluids, the water goal, and the nights logged in the 7 days up to today, for trackingText().
+// today: the user's local date as UTC midnight (see days.js); UTC today when the caller doesn't know it.
+async function loadTracking(owner, profileId, today = utcToday()) {
   const scope = { owner, profileId };
-  const [dateOfBirth, facts, medications] = await Promise.all([
+  const [water, settings, nights] = await Promise.all([
+    HydrationEntry.findOne({ ...scope, date: today }).select("totalMl"),
+    WellbeingSettings.findOne(scope).select("waterGoal"),
+    SleepEntry.find({ ...scope, date: { $gte: new Date(today.getTime() - 6 * DAY), $lte: today } }).select("hours"),
+  ]);
+  const goal = settings?.waterGoal ? { type: settings.waterGoal.type, ml: settings.waterGoal.ml } : null;
+  return { fluidsTodayMl: water?.totalMl || 0, goal, sleepHours: nights.map((night) => night.hours) };
+}
+
+// Everything "My health" and the summary need for one profile. The caller has already checked that the
+// profile belongs to owner (middleware/profileAccess.js). today: as for loadTracking.
+async function loadHealthProfile(owner, profileId, { today } = {}) {
+  const scope = { owner, profileId };
+  const [dateOfBirth, facts, medications, tracking] = await Promise.all([
     dateOfBirthOf(owner, profileId),
     HealthFact.find(scope).sort({ recordedAt: 1, _id: 1 }),
     Medication.find({ ...scope, status: "active" }).sort({ createdAt: -1, _id: -1 }),
+    loadTracking(owner, profileId, today),
   ]);
   const age = ageFrom(dateOfBirth);
-  return { dateOfBirth, age, facts, medications, summary: buildHealthSummary({ age, facts, medications }) };
+  return { dateOfBirth, age, facts, medications, summary: buildHealthSummary({ age, facts, medications, tracking }) };
 }
 
 // The health summary for one profile, for triage (Sprint 3). Check the profile is the user's own first.
-async function getHealthSummary(owner, profileId) {
-  return (await loadHealthProfile(owner, profileId)).summary;
+// options.today: the user's local date as UTC midnight, if known (otherwise UTC today).
+async function getHealthSummary(owner, profileId, options) {
+  return (await loadHealthProfile(owner, profileId, options)).summary;
 }
 
 module.exports = {
   SEXES, BLOOD_TYPES, PREGNANCY, SMOKING, CONDITIONS, ALLERGY_TYPES, LIMITS,
-  readValue, slotFor, ageFrom, ageText, buildHealthSummary, loadHealthProfile, getHealthSummary,
+  readValue, slotFor, ageFrom, ageText, trackingText, buildHealthSummary, loadTracking, loadHealthProfile, getHealthSummary,
 };

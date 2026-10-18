@@ -11,6 +11,11 @@ async function start() {
   const missingGoogle = missingGoogleCredentials();
   if (process.env.APP_ENV === "production" && missingGoogle.length) logEvent("google_signin_disabled", { missingVariables: missingGoogle });
   await connectDB();
+  // Before taking requests, so nobody logs water against a day still counted in glasses. Safe to run every start.
+  // On failure the old days read as empty until the next start retries, so the rest of Nabad stays up.
+  await require("./migrations/fluidsInMl").migrateFluidsToMl()
+    .then((converted) => { if (converted.days || converted.goals) logEvent("fluids_migrated_to_ml", converted); })
+    .catch((error) => logEvent("fluids_migration_failed", { errorType: error.name }));
   // Directory failures must not take authentication and the rest of Nabad offline.
   await require("./providers/seed").seedProviders().catch(error => {
     logEvent("provider_seed_failed", { errorType: error.name });

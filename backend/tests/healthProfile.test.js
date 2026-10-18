@@ -9,6 +9,7 @@ const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
 const Medication = require("../src/models/Medication");
 const HealthFact = require("../src/models/HealthFact");
+const { HydrationEntry, SleepEntry, WellbeingSettings } = require("../src/models/Wellbeing");
 const { getHealthSummary } = require("../src/healthProfile");
 let mongod, server, base;
 const password = "Health profile test password 123!";
@@ -34,7 +35,7 @@ after(async () => {
   if (mongod) await mongod.stop();
 });
 beforeEach(async () => {
-  await Promise.all([User, LinkedProfile, Medication, HealthFact].map((Model) => Model.deleteMany({})));
+  await Promise.all([User, LinkedProfile, Medication, HealthFact, HydrationEntry, SleepEntry, WellbeingSettings].map((Model) => Model.deleteMany({})));
 });
 
 async function user(email = "owner@example.test", fields = {}) { return User.create({ name: "Owner", email, passwordHash, ...fields }); }
@@ -235,6 +236,46 @@ test("shows the active medications (read only) and puts them in the summary", as
   ].join("\n"));
   // The function triage will call gives exactly the summary the page shows.
   assert.equal(await getHealthSummary(account._id, account._id), profile.summary);
+});
+
+test("adds one factual water and sleep line only when something was logged recently", async () => {
+  const account = await user(); const cookie = token(account);
+  const day = (offset = 0) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  const mine = { owner: account._id, profileId: account._id };
+  const drinks = (date, ml) => HydrationEntry.create({ ...mine, date: new Date(date), totalMl: ml, entries: [{ ml, at: new Date() }] });
+  const night = (date, hours) => SleepEntry.create({ ...mine, date: new Date(date), hours, quality: 3 });
+  const trackingLine = async (path = "/health-profile") => (await request("GET", path, { cookie })).body.summary.split("\n").find((line) => line.startsWith("Water and sleep"));
+
+  // Old data, a goal on its own, and an undone day are not recent data.
+  await drinks(day(-1), 1800); await night(day(-8), 4);
+  await WellbeingSettings.create({ ...mine, waterGoal: { type: "atMost", ml: 1500 } });
+  await HydrationEntry.create({ ...mine, date: new Date(day()), totalMl: 0, entries: [] });
+  assert.equal((await getProfile(cookie)).body.summary, EMPTY_SUMMARY);
+
+  await HydrationEntry.updateOne({ ...mine, date: new Date(day()) }, { $set: { totalMl: 1250, entries: [{ ml: 1250, at: new Date() }] } });
+  assert.equal(await trackingLine(), "Water and sleep log: fluids today 1.3 L (daily goal set: stay under 1.5 L)");
+  await night(day(-6), 6.5); await night(day(-2), 7.33); await night(day(), 8);
+  assert.equal(await trackingLine(), "Water and sleep log: fluids today 1.3 L (daily goal set: stay under 1.5 L); average sleep over the last 7 days 7.3 hours (3 nights logged)");
+  await WellbeingSettings.updateOne(mine, { $set: { waterGoal: { type: "atLeast", ml: 2000 } } });
+  assert.match(await trackingLine(), /^Water and sleep log: fluids today 1\.3 L \(daily goal set: drink at least 2\.0 L\); /);
+  await WellbeingSettings.updateOne(mine, { $set: { waterGoal: null } });
+  assert.match(await trackingLine(), /^Water and sleep log: fluids today 1\.3 L; average sleep/);
+  // The line comes last, after everything else, and the function triage will call gives the same summary.
+  const summary = (await getProfile(cookie)).body.summary;
+  assert.equal(summary.split("\n").at(-1), await trackingLine());
+  assert.equal(await getHealthSummary(account._id, account._id), summary);
+
+  // "Today" is the user's own date when the page sends it: yesterday there, the 1.8 L and 3 nights counted from then.
+  assert.equal(await trackingLine(`/health-profile?date=${day(-1)}`), "Water and sleep log: fluids today 1.8 L; average sleep over the last 7 days 6.9 hours (2 nights logged)");
+  assert.equal(await getHealthSummary(account._id, account._id, { today: new Date(day(-1)) }), (await request("GET", `/health-profile?date=${day(-1)}`, { cookie })).body.summary);
+  // A date that isn't today anywhere is ignored.
+  assert.equal(await trackingLine(`/health-profile?date=${day(-5)}`), await trackingLine());
+
+  // Only sleep: just the sleep part. A dependent's data stays out of the owner's summary and vice versa.
+  await HydrationEntry.deleteMany({});
+  assert.equal(await trackingLine(), "Water and sleep log: average sleep over the last 7 days 7.3 hours (3 nights logged)");
+  const childId = await dependent(cookie);
+  assert.equal((await getProfile(cookie, childId)).body.summary.includes("Water and sleep"), false);
 });
 
 test("suggestions wait for review, are never in the summary, and can be confirmed or dismissed", async () => {
