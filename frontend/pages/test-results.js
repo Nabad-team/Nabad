@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -6,6 +6,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { request } from "../lib/api";
 import { useActiveProfile } from "../context/ActiveProfileContext";
+import { getReportConversations, deleteReportConversation } from "../lib/reportConversationApi";
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "csv", "jpg", "jpeg", "png", "webp"]);
@@ -36,14 +37,44 @@ export default function TestResultsPage() {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [conversationId, setConversationId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [historyError, setHistoryError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState(false);
+  const profileId = activeProfile?.id || "self";
+  const profileRef = useRef(profileId);
+  profileRef.current = profileId;
+
+  useEffect(() => {
+    let current = true;
+    setConversations([]);
+    setConversationId(null);
+    setMessages([]);
+    setResult(null);
+    setFile(null);
+    setHistoryError("");
+    getReportConversations(profileId)
+      .then((data) => { if (current && profileRef.current === profileId) setConversations(data.conversations); })
+      .catch(() => { if (current && profileRef.current === profileId) setHistoryError("Saved conversations could not be loaded."); });
+    return () => { current = false; };
+  }, [profileId]);
+
+  async function refreshConversations() {
+    try {
+      const data = await getReportConversations(profileId);
+      if (profileRef.current === profileId) setConversations(data.conversations);
+    } catch {
+      setHistoryError("Your new conversation was saved, but the history list could not be refreshed.");
+    }
+  }
 
   function selectFile(event) {
     const selected = event.target.files?.[0] || null;
     setResult(null);
     setMessages([]);
+    setConversationId(null);
     setError("");
     setConsent(false);
     if (!selected) { setFile(null); return; }
@@ -68,6 +99,7 @@ export default function TestResultsPage() {
     event.preventDefault();
     if (!question.trim() || !consent || busy) return;
     const currentQuestion = question.trim();
+    const requestedProfileId = profileId;
     const previousMessages = messages.slice(-8);
     setError("");
     setBusy(true);
@@ -84,19 +116,25 @@ export default function TestResultsPage() {
         upload = { mimeType, extension, data: btoa(binary) };
       }
       if (file && !result) {
-        const analysis = await request("/reports/analyze", {
+        const analysis = await request(`/reports/analyze?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
           body: JSON.stringify({ file: upload, question: currentQuestion, consent: true }),
         });
+        if (profileRef.current !== requestedProfileId) return;
         setResult(analysis);
+        setConversationId(analysis.conversationId);
         const explanation = [analysis.summary, ...analysis.findings.map((finding) => `${finding.name}: ${finding.explanation} Next step: ${finding.followUp}`), analysis.nextStep].join("\n").slice(0, 1200);
         setMessages([...messages, { role: "user", content: currentQuestion }, { role: "assistant", content: explanation, disclaimer: analysis.disclaimer }].slice(-20));
+        await refreshConversations();
       } else {
-        const answer = await request("/reports/chat", {
+        const answer = await request(`/reports/chat?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
-          body: JSON.stringify({ file: upload, question: currentQuestion, history: previousMessages, consent: true }),
+          body: JSON.stringify({ file: upload, question: currentQuestion, history: previousMessages, conversationId, consent: true }),
         });
+        if (profileRef.current !== requestedProfileId) return;
+        setConversationId(answer.conversationId);
         setMessages([...messages, { role: "user", content: currentQuestion }, { role: "assistant", content: answer.answer, evidence: answer.evidence, disclaimer: answer.disclaimer }].slice(-20));
+        await refreshConversations();
       }
       setQuestion("");
     } catch (err) {
@@ -111,6 +149,7 @@ export default function TestResultsPage() {
     setFile(null);
     setResult(null);
     setMessages([]);
+    setConversationId(null);
     setError("");
     setConsent(false);
     const input = document.getElementById("test-report-file");
@@ -122,6 +161,29 @@ export default function TestResultsPage() {
     setMessages([]);
     setError("");
     setQuestion("");
+  }
+
+  function openConversation(conversation) {
+    setFile(null);
+    setResult(conversation.reportResult || null);
+    setMessages(conversation.messages || []);
+    setConversationId(conversation.id);
+    setQuestion("");
+    setConsent(false);
+    setError("");
+    const input = document.getElementById("test-report-file");
+    if (input) input.value = "";
+  }
+
+  async function removeConversation(conversation) {
+    if (!window.confirm(`Delete the saved conversation “${conversation.title}”?`)) return;
+    try {
+      await deleteReportConversation(profileId, conversation.id);
+      setConversations((items) => items.filter((item) => item.id !== conversation.id));
+      if (conversationId === conversation.id) newConversation();
+    } catch {
+      setError("Could not delete this saved conversation. Please try again.");
+    }
   }
 
   return (
@@ -141,6 +203,21 @@ export default function TestResultsPage() {
           </div>
           {messages.length > 0 && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
         </header>
+        {messages.length === 0 && conversations.length > 0 && (
+          <section className="assistant-chat__saved" aria-labelledby="saved-conversations-heading">
+            <h2 id="saved-conversations-heading">Previous conversations</h2>
+            {historyError && <Alert tone="danger" role="alert">{historyError}</Alert>}
+            <ul>{conversations.map((conversation) => (
+              <li key={conversation.id}>
+                <Button type="button" variant="secondary" onClick={() => openConversation(conversation)}>{conversation.title}</Button>
+                <span>{new Date(conversation.updatedAt).toLocaleDateString()}</span>
+                <Button type="button" variant="secondary" size="small" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`}>Delete</Button>
+              </li>
+            ))}</ul>
+          </section>
+        )}
+        {messages.length === 0 && historyError && conversations.length === 0 && <Alert tone="danger" role="alert">{historyError}</Alert>}
+        {messages.length > 0 && historyError && <Alert tone="danger" role="alert">{historyError}</Alert>}
         {messages.length > 0 ? (
           <section className="assistant-chat__history" aria-label="Conversation" aria-live="polite">
             {messages.map((message, index) => (
@@ -195,12 +272,13 @@ export default function TestResultsPage() {
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
           I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
         </label>
-        <p className="report-privacy-note">Messages and files are processed for each request and are not saved by Nabad. A file is sent again with follow-up questions. Upload only if you are comfortable sharing it.</p>
+        <p className="report-privacy-note">Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
       </form>
 
       {result && (
         <section className={`report-result report-result--${result.urgency}`} aria-labelledby="report-result-heading" aria-live="polite">
           <p className="report-result__eyebrow">AI explanation · not reviewed by a clinician</p>
+          <p className="report-result__meta">Prepared for {activeProfile?.fullName || "the selected profile"}</p>
           <h2 id="report-result-heading">{URGENCY_LABELS[result.urgency] || URGENCY_LABELS.unclear}</h2>
           <p>{result.summary}</p>
 
@@ -230,6 +308,7 @@ export default function TestResultsPage() {
           )}
           {result.urgency === "emergency" && <p className="report-result__emergency"><strong>If you may be in immediate danger, contact local emergency services now.</strong></p>}
           <p className="report-result__disclaimer">{result.disclaimer}</p>
+          <p className="report-result__print"><Button variant="secondary" onClick={() => window.print()}>Print or save as PDF</Button></p>
         </section>
       )}
       </section>

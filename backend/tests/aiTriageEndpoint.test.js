@@ -10,6 +10,7 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../src/models/User");
+const SymptomRecord = require("../src/models/SymptomRecord");
 
 // ---- The fake model provider ----
 const provider = { status: 200, content: "", requests: [] };
@@ -110,6 +111,33 @@ describe("POST /api/triage/ai-assess", () => {
     assert.equal(request.authorization, "Bearer fake-provider-key");
     assert.equal(request.body.model, "fake-model");
     assert.match(request.body.messages[1].content, /<symptoms>\nsore throat and I can barely swallow my saliva\n<\/symptoms>/);
+  });
+
+  test("AI memory uses only prior saved conversations for the same profile", async () => {
+    const account = await User.create({ name: "Rana", email: `memory-${++counter}@example.test`, passwordHash: "x" });
+    const other = await User.create({ name: "Other", email: `memory-${++counter}@example.test`, passwordHash: "x" });
+    await SymptomRecord.create({
+      owner: account._id, profileId: account._id, description: "old cough from my saved check",
+      urgencyResult: { level: "routine" },
+      conversation: [{ role: "patient", content: "old cough from my saved check" }, { role: "assistant", content: "Saved routine result" }],
+    });
+    await SymptomRecord.create({
+      owner: other._id, profileId: other._id, description: "PRIVATE-OTHER-PATIENT-MARKER",
+      urgencyResult: { level: "routine" },
+      conversation: [{ role: "patient", content: "PRIVATE-OTHER-PATIENT-MARKER" }],
+    });
+    await SymptomRecord.create({
+      owner: account._id, profileId: new mongoose.Types.ObjectId(), description: "PRIVATE-OTHER-PROFILE-MARKER",
+      urgencyResult: { level: "routine" },
+      conversation: [{ role: "patient", content: "PRIVATE-OTHER-PROFILE-MARKER" }],
+    });
+
+    const res = await call({ cookie: cookieFor(account), body: { symptoms: "a headache today" } });
+    assert.equal(res.status, 200);
+    const prompt = provider.requests[0].body.messages[1].content;
+    assert.match(prompt, /old cough from my saved check/);
+    assert.doesNotMatch(prompt, /PRIVATE-OTHER-PATIENT-MARKER/);
+    assert.doesNotMatch(prompt, /PRIVATE-OTHER-PROFILE-MARKER/);
   });
 
   test("an emergency is answered by the rules without calling the provider", async () => {

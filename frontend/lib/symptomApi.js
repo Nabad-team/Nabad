@@ -71,6 +71,14 @@ export async function getSymptomsForProfile(
   );
 }
 
+export async function updateSymptomRecord(profileId, recordId, answers, urgencyResult) {
+  const data = await request(path(profileId, recordId), {
+    method: "PATCH",
+    body: JSON.stringify({ answers, urgencyResult }),
+  });
+  return { ...data.symptomRecord, symptoms: data.symptomRecord.description };
+}
+
 // Delete one symptom record.
 export async function deleteSymptomRecord(
   profileId,

@@ -304,6 +304,12 @@ export default function UrgencyResult({
         {result.disclaimer}
       </p>
 
+      <p className="urgency__print">
+        <Button variant="secondary" onClick={() => window.print()}>
+          Print or save as PDF
+        </Button>
+      </p>
+
 
       <p>
         <Button
