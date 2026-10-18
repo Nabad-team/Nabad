@@ -32,12 +32,12 @@ test("seed is repeatable, includes hospitals and clinics, and preserves existing
   assert.equal(await Provider.countDocuments({ type: "clinic" }), 2);
 });
 test("directory is readable and only exposes public facility fields", async () => {
-  const result = await get();
+  const result = await get("?limit=100");
   assert.equal(result.status, 200);
   assert.equal(result.body.total, seedData.length);
   assert.ok(result.body.services.every(value => typeof value === "string" && value));
   assert.ok(result.body.providers.every(p => p.id && p.sources.length && !p._id));
-  assert.equal(result.body.providers.find(p => p.id === "nini-hospital").emergency24h, null);
+  assert.equal((await get("?q=Nini")).body.providers[0].emergency24h, null);
 });
 test("schema rejects invalid coordinates and hours", async () => {
   const fixture = require("../data/providers")[0];
@@ -76,12 +76,14 @@ test("rejects nested, repeated and excessively long filter parameters", async ()
 });
 test("distance filters and sorting use coordinates before pagination", async () => {
   const near = await get("?lat=34.43587&lng=35.83076&radiusKm=5");
-  assert.equal(near.body.total, 2); assert.equal(near.body.providers[0].id, "nini-hospital");
+  assert.ok(near.body.total >= 10); assert.equal(near.body.providers[0].id, "nini-hospital");
+  assert.ok(near.body.providers.every(p => p.distanceKm <= 5));
+  assert.ok(near.body.providers.every((p, i, list) => i === 0 || p.distanceKm >= list[i - 1].distanceKm));
   assert.equal(near.body.providers[0].distanceKm, 0);
   const page = await get("?lat=34.43587&lng=35.83076&limit=1&page=2");
-  assert.equal(page.body.total, seedData.length); assert.equal(page.body.providers.length, 1);
+  assert.equal(page.body.total, seedData.filter(p => p.latitude != null).length); assert.equal(page.body.providers.length, 1);
   assert.notEqual(page.body.providers[0].id, "nini-hospital");
-  assert.equal((await get("?city=saida")).body.providers[0].id, "hammoud-hospital");
+  assert.ok((await get("?city=saida")).body.providers.some(p => p.id === "hammoud-hospital"));
 });
 test("invalid locations, radii and pagination are rejected", async () => {
   for (const query of ["lat=91&lng=0", "lat=0", "lng=0", "lat=&lng=0", "lat=NaN&lng=0", "radiusKm=10", "lat=0&lng=0&radiusKm=-1", "page=0", "limit=101", "page=1.5"]) {
@@ -118,7 +120,7 @@ test("database schedule filter agrees with Beirut hours before pagination", asyn
 });
 test("24/7 ER filtering excludes unknown status and exposes separate clinic hours", async () => {
   const result = await get("?emergency24h=true");
-  assert.equal(result.body.total, 4);
+  assert.equal(result.body.total, 5);
   assert.ok(result.body.providers.every(p => p.emergency24h && p.openingStatus === "unknown"));
   assert.equal((await get("?openNow=maybe")).status, 400);
 });
@@ -156,10 +158,61 @@ test("missing providers cannot be saved; account favorite limit is enforced", as
 test("curated seed covers all governorates with unique identities and sourced capabilities", async () => {
   assert.equal(new Set(seedData.map(p => p.slug)).size, seedData.length);
   assert.deepEqual([...new Set(seedData.map(p => p.governorate))].sort(), ["Akkar", "Baalbek-Hermel", "Beirut", "Bekaa", "Keserwan-Jbeil", "Mount Lebanon", "Nabatieh", "North", "South"]);
-  assert.ok(seedData.every(p => p.specialties.length && p.sources.length >= 2));
+  assert.ok(seedData.every(p => Array.isArray(p.specialties) && p.sources.length >= 1));
   for (const service of ["ct", "mri", "cath-lab", "nicu", "burn-unit", "dialysis", "maternity"]) {
     const response = await get(`?service=${service}`);
     assert.ok(response.body.total > 0, service);
     assert.ok(response.body.providers.every(p => p.services.includes(service)), service);
   }
+});
+
+test("expanded directory distinguishes Saida city from its district and paginates without loss", async () => {
+  const saida = await get("?city=Saida&governorate=South");
+  assert.equal(saida.status, 200);
+  assert.ok(saida.body.total >= 5);
+  const district = await get("?district=Saida&governorate=South&limit=100");
+  assert.ok(district.body.total > saida.body.total);
+  assert.ok(district.body.total > 10);
+  assert.ok(district.body.providers.every(p => p.district === "Saida"));
+  assert.ok(district.body.districts.includes("Tripoli"));
+  assert.equal((await get("?district[$ne]=x")).status, 400);
+  const ids = [];
+  for (let page = 1; ids.length < seedData.length; page++) {
+    const result = await get(`?limit=20&page=${page}`);
+    assert.equal(result.body.total, seedData.length);
+    assert.ok(result.body.providers.length > 0);
+    ids.push(...result.body.providers.map(p => p.id));
+  }
+  assert.equal(ids.length, seedData.length);
+  assert.equal(new Set(ids).size, seedData.length);
+});
+
+test("unlocated hospitals remain searchable and saveable without a fabricated geo point", async () => {
+  const fixture = seedData.find(p => p.latitude === null);
+  const row = await Provider.findOne({ slug: fixture.slug }).lean();
+  assert.ok(!row.location);
+  assert.ok((await get(`?district=${encodeURIComponent(fixture.district)}&limit=100`)).body.providers.some(p => p.id === fixture.slug));
+  const { cookie } = await account("unlocated@example.test");
+  assert.equal((await favoriteRequest("PUT", `/${fixture.slug}/favorite`, cookie)).status, 200);
+  const geo = await (await favoriteRequest("GET", "?favorites=true&lat=33.9&lng=35.5", cookie)).json();
+  assert.equal(geo.total, 0);
+  await assert.rejects(new Provider({ ...fixture, latitude: 33.9 }).validate());
+  const known = { ...fixture, latitude: 33.9, longitude: 35.5, verifiedAt: "2030-01-01" };
+  await seedProviders([known]);
+  assert.deepEqual((await Provider.findOne({ slug: fixture.slug }).lean()).location.coordinates, [35.5, 33.9]);
+  await seedProviders([{ ...fixture, verifiedAt: "2031-01-01" }]);
+  await seedProviders();
+  assert.ok(!(await Provider.findOne({ slug: fixture.slug }).lean()).location);
+});
+
+test("new location-only listings remain unknown and do not qualify for emergency routing", async () => {
+  const result = await get("?q=Saida&city=Saida&limit=100");
+  const hospital = result.body.providers.find(p => p.id === "saida-governmental");
+  assert.ok(hospital);
+  assert.equal(hospital.emergency24h, null);
+  assert.equal(hospital.openingStatus, "unknown");
+  assert.deepEqual(hospital.specialties, []);
+  assert.deepEqual(hospital.services, []);
+  assert.equal((await get("?city=Saida&emergency24h=true")).body.total, 0);
+  assert.equal((await get("?q=Clemenceau&emergency24h=true")).body.total, 1);
 });
