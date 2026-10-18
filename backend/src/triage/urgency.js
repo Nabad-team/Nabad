@@ -49,10 +49,14 @@ const RULES = [
   // ---- Emergency ----
   { id: "chest-pain", level: "emergency", reason: "Chest pain or pressure can be a sign of a heart attack.",
     any: ["chest pain", "chest pressure", "chest tightness", "pain in my chest", "pressure in my chest", "crushing pain"] },
+  { id: "suspected-heart-attack", level: "emergency", currentEmergency: true, reason: "A suspected heart attack needs emergency care.",
+    any: ["heart attack", "heart-attack", "heartattack", "myocardial infarction"] },
   { id: "breathing", level: "emergency", reason: "Severe difficulty breathing needs immediate care.",
     any: ["can't breathe", "cannot breathe", "cant breathe", "struggling to breathe", "difficulty breathing", "trouble breathing", "short of breath at rest", "gasping", "choking", "lips turning blue", "blue lips"] },
   { id: "stroke", level: "emergency", reason: "Face drooping, arm weakness or slurred speech can be signs of a stroke.",
     any: ["face drooping", "drooping face", "face is drooping", "slurred speech", "can't speak", "cannot speak", "one side of my body", "one side of the body", "sudden weakness", "sudden numbness", "arm weakness"] },
+  { id: "suspected-stroke", level: "emergency", currentEmergency: true, reason: "A suspected stroke needs emergency care.",
+    any: ["stroke", "cerebrovascular accident"] },
   { id: "consciousness", level: "emergency", reason: "Loss of consciousness or a seizure needs emergency care.",
     any: ["unconscious", "passed out", "fainted", "not waking up", "won't wake up", "unresponsive", "seizure", "convulsion"] },
   { id: "bleeding", level: "emergency", reason: "Heavy bleeding that will not stop is an emergency.",
@@ -171,7 +175,27 @@ function mentions(text, phrase, understood) {
   return containsPositive(text, phrase) || understood.some((item) => item.means === phrase);
 }
 
+// A named emergency is a red flag when it describes the current speaker or
+// someone currently present. Do not treat a clearly historical/third-person
+// mention as a current emergency.
+function containsCurrentEmergency(text, phrase) {
+  let from = 0;
+  while (true) {
+    const index = text.indexOf(phrase, from);
+    if (index === -1) return false;
+    const previousClause = text.lastIndexOf(".", index);
+    const nextClause = text.indexOf(".", index + phrase.length);
+    const before = text.slice(previousClause + 1, index);
+    const after = text.slice(index + phrase.length, nextClause === -1 ? undefined : nextClause);
+    const historical = /\b(had|years ago|last year|in the past|previously|history of|recovered from)\b/.test(`${before} ${after}`);
+    const otherPerson = /\b(my|his|her|their)\s+(father|mother|dad|mom|mum|parent|grandfather|grandmother|brother|sister|friend|uncle|aunt|child|son|daughter)\b/.test(before);
+    if (!isNegatedAt(text, index) && !historical && !otherPerson) return true;
+    from = index + phrase.length;
+  }
+}
+
 function ruleMatches(text, rule, understood = []) {
+  if (rule.currentEmergency) return rule.any.some((phrase) => containsCurrentEmergency(text, phrase));
   if (rule.all) return rule.all.every((phrase) => mentions(text, phrase, understood));
   return rule.any.some((phrase) => mentions(text, phrase, understood));
 }

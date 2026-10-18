@@ -3,6 +3,9 @@ name: End-to-end Tests
 # Runs the Selenium suite (tests/test_nabad.py) in headless Chrome against a throwaway copy of the whole app,
 # started from docker-compose.yml. Never production: the database, inbox and accounts are gone after the job.
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main

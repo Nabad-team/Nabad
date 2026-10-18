@@ -162,6 +162,9 @@ export default function AppointmentsPage() {
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    typeof Notification === "undefined" ? "unsupported" : Notification.permission
+  );
   const [now, setNow] = useState(() => new Date());
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [newAppointmentFields, setNewAppointmentFields] = useState(emptyFields);
@@ -213,6 +216,22 @@ export default function AppointmentsPage() {
     await load();
   }
 
+  async function enableReminders() {
+    setError("");
+    if (typeof Notification === "undefined") {
+      setNotificationPermission("unsupported");
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      if (permission === "granted") setNotice("Browser reminders are enabled while this page is open.");
+      else if (permission === "denied") setError("Notifications are blocked in your browser settings. You can change that there.");
+    } catch {
+      setError("We couldn't enable browser notifications. Please check your browser settings.");
+    }
+  }
+
   function openNewAppointment(date = todayString()) {
     setNotice("");
     setNewAppointmentFields({ ...emptyFields(), appointmentDate: date });
@@ -235,7 +254,10 @@ export default function AppointmentsPage() {
   return (
     <PageLayout title="Appointments" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>{simplified ? "Calendar" : listName}</PageTitle>
-      <p className="page-intro">Keep your doctor's appointments together and get a reminder before each visit.</p>
+      <p className="page-intro">Keep your doctor's appointments together and get browser reminders before visits while this page is open.</p>
+      {notificationPermission === "default" && <Button variant="secondary" onClick={enableReminders}>Enable reminders</Button>}
+      {notificationPermission === "denied" && <p className="text-muted text-sm">Notifications are blocked in browser settings. Change that setting, then reload this page to try again.</p>}
+      {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser notifications are not available here. Reminders only work while this page is open.</p>}
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}

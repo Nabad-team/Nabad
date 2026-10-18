@@ -26,6 +26,18 @@ describe("classifier rules", () => {
     }
   });
 
+  test("explicit current heart attack, stroke and overdose statements are emergency", () => {
+    for (const text of ["I'm having a heart attack", "I think I'm having a stroke", "I may be having an overdose"]) {
+      assert.equal(levelOf(text), "emergency", text);
+    }
+  });
+
+  test("historical and third-person heart attack or stroke mentions are not current red flags", () => {
+    for (const text of ["My father had a stroke years ago", "My mother had a heart attack last year"]) {
+      assert.notEqual(levelOf(text), "emergency", text);
+    }
+  });
+
   test("serious but not life-threatening symptoms are urgent", () => {
     assert.equal(levelOf("I have a high fever and shivering"), "urgent");
     assert.equal(levelOf("Severe abdominal pain on the right side"), "urgent");

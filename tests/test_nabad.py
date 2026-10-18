@@ -527,6 +527,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
 
     def test_authenticated_dashboard_navigation(self):
         self.open("/dashboard")
+        self.wait.until(lambda d: d.title.strip() and "Dashboard" in d.title)
         self.assertIn("Dashboard", self.driver.title)
         self.wait_for_text(f"Welcome, {RunAccount.name.split()[0]}", (By.TAG_NAME, "h1"))
         for locator, path in (

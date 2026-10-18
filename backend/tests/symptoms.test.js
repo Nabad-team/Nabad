@@ -222,11 +222,11 @@ async function request(
 
 const urgencyResult = {
   level: "routine",
-  label: "Routine",
+  label: "Routine / self-care",
   timeframe:
-    "Monitor symptoms",
+    "Within a few days, if it does not improve",
   action:
-    "Self-care and monitor symptoms.",
+    "Rest and monitor your symptoms. Book a regular appointment if they last more than a few days or get worse.",
 };
 
 
@@ -614,6 +614,18 @@ test(
         {
           urgencyResult: [],
         },
+        "A valid urgency result is required.",
+      ],
+      [
+        { urgencyResult: { ...urgencyResult, level: "critical" } },
+        "A valid urgency result is required.",
+      ],
+      [
+        { urgencyResult: { level: "routine", timeframe: "soon", action: "Wait" } },
+        "A valid urgency result is required.",
+      ],
+      [
+        { urgencyResult: { ...urgencyResult, level: "emergency" } },
         "A valid urgency result is required.",
       ],
     ];

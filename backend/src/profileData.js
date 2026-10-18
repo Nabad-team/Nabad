@@ -6,6 +6,10 @@ const SymptomRecord = require(
   "./models/SymptomRecord"
 );
 
+const Appointment = require(
+  "./models/Appointment"
+);
+
 const HealthFact = require(
   "./models/HealthFact"
 );
@@ -25,6 +29,7 @@ const {
 const PROFILE_MODELS = [
   Medication,
   SymptomRecord,
+  Appointment,
   HydrationEntry,
   SleepEntry,
   WellbeingSettings,
