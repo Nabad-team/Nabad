@@ -97,3 +97,16 @@ test("submitted filters update the URL without exposing coordinates", async () =
   await user.click(screen.getByRole("button", { name: "Search providers" }));
   expect(mockRouter.push).toHaveBeenCalledWith("/providers?specialty=pediatrics", undefined, { shallow: true, scroll: false });
 });
+
+test("district search is shareable and unlocated facilities do not offer fake directions", async () => {
+  getProviders.mockResolvedValue({ ...result, districts: ["Saida"], providers: [{ ...provider, district: "Saida", city: "", address: "", latitude: null, longitude: null }] });
+  const user = userEvent.setup(); render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  expect(screen.queryByRole("link", { name: "Directions in Google Maps" })).not.toBeInTheDocument();
+  expect(screen.getByText(/Map location not yet verified/)).toBeInTheDocument();
+  expect(screen.getByText("Street address not yet verified")).toBeInTheDocument();
+  await user.selectOptions(screen.getByLabelText("District"), "saida");
+  await user.click(screen.getByRole("button", { name: "Search providers" }));
+  expect(mockRouter.push).toHaveBeenCalledWith("/providers?district=saida", undefined, { shallow: true, scroll: false });
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ district: "saida", city: "" }), expect.any(AbortSignal)));
+});
