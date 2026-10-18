@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import TestResultsPage from "../pages/test-results";
 import { getReportConversations } from "../lib/reportConversationApi";
+import { request } from "../lib/api";
 
 jest.mock("../components/ProfileHeader", () => () => <div />);
 jest.mock("../context/ActiveProfileContext", () => ({
@@ -45,4 +46,24 @@ test("loads saved chats for review and prints the report explanation as PDF", as
   expect(screen.getByText("The report lists a result for review.")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Print or save as PDF" }));
   expect(print).toHaveBeenCalledTimes(1);
+});
+
+test("sends a follow-up in the selected saved conversation and displays its answer", async () => {
+  request.mockResolvedValue({
+    answer: "Here is the follow-up answer.",
+    evidence: [],
+    disclaimer: "AI information is not a diagnosis.",
+    conversationId: savedConversation.id,
+  });
+  render(<TestResultsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
+  fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Can you explain that further?" } });
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+
+  expect(await screen.findByText("Here is the follow-up answer.")).toBeInTheDocument();
+  expect(request).toHaveBeenCalledWith("/reports/chat?profileId=self", expect.objectContaining({
+    method: "POST",
+    body: expect.stringContaining(`"conversationId":"${savedConversation.id}"`),
+  }));
 });
