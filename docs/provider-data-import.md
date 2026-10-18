@@ -1,76 +1,73 @@
-# Hospital directory expansion — 18 October 2026
+# Hospital directory source review
 
-The supplied `lebanon_healthcare_directory_verified_partial_2026.pdf` is a
-candidate list, not evidence of current operating status. Its 55 hospital rows
-were reconciled against the existing directory and public sources. The 22
-primary healthcare centers are outside this hospital import.
+Reviewed 18 October 2026. The directory contains **173 hospital listings and 2 clinics**. Of the hospital listings, **138 have sourced coordinates and 35 have no verified map location**. These are published listings, not confirmation of current operation, live capacity or emergency readiness.
 
-## Outcome
+## Sources and identity matching
 
-- Preserve all 17 existing records and their stable slugs, favorites and review dates.
-- Add 42 hospitals: 59 providers total (57 hospitals and 2 clinics).
-- Represent 53 of the PDF's 55 hospital rows: 11 already present, 42 newly added.
-- Saida now has Hammoud and Saida Governmental, under South governorate.
-- Hold two records pending a reliable facility-specific location: Al Hikme in
-  Nabatieh and Janoub–Nabatieh. Do not substitute Dar El Hikmeh in Baalbek or
-  Al-Janoub/Shuayb in Saida; those are different facilities.
+- [MoPH private hospital locator](https://www.moph.gov.lb/en/HealthFacilities/index/3/188/8/health-facility-locator): all five pages, 141 rows.
+- [MoPH governmental hospital locator](https://www.moph.gov.lb/en/HealthFacilities/index/3/188/1/health-facility-locator): both pages, 33 rows.
+- [MoPH facility map layer](https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0): hospital-only query returned 157 records, including duplicates and obvious test/placeholder records.
+- [CMSM hospital network](https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1): four pages, used to resolve selected facility coordinates when MoPH pins contradicted the facility address.
 
-The API still paginates at 20 results by default. The map displays the current
-result page. The total count is the total matching the selected filters.
+167 of the 174 table rows are represented using stable identities; seven are held below. Six additional hospital identities come from the MoPH map: Khalaf Al Habtoor, Lebanese Italian, LAU Saint John, Family Medical Center, Salah Ghandour and Mazboud Central. Existing hospital slugs and favorites are preserved. The two AUB clinics remain clinics and are excluded from hospital counts.
 
-## Evidence and uncertainty
+Each imported record links to its own MoPH detail or map-feature page. Identity matches were reviewed explicitly, not accepted from fuzzy name matching. Older spelling variants such as Nine/Nini, Jeatawi/Geitaoui and Beirut Governmental/Rafic Hariri reuse existing records. District names are normalized separately from cities. Fakih's Saksakiyeh address/map places it in Saida; Qana belongs to Tyre. The conflicting table district labels are not copied blindly.
 
-35 new locations use the [MoPH facility locator](https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0).
-Only HOSPITAL records were considered; similarly named vaccination/health-center
-records were excluded. Each seed record includes the public source URLs and a
-source-review date. This date does not certify the hospital is operating today.
+## Location and capability rules
 
-- Hermel: MoPH identity and the [UNDP CEDRO hospital project map](https://www.cedro-undp.org/projects-implementations/hermel-public-hospital).
-- Beirut General, Najjar and Al Najdeh: facility-specific map pins in the
-  [CMSM provider network](https://www.cmsm.org.lb/index.php/providers), cross-checked
-  against MoPH or the German Embassy hospital network list.
-- Clemenceau, Qana and Bchamoun: institutional identity corroboration plus
-  OpenStreetMap-derived Mapcarta locations. These three are marked
-  `locationApproximate: true`; they are not verified entrance coordinates.
-  Map data credit: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
-  ([ODbL](https://opendatacommons.org/licenses/odbl/1-0/)). Links to each map appear
-  in the records' `sources` arrays.
-- Jezzine and Marjayoun locator street-address text incorrectly says Roumieh;
-  retain the matching town, district and map pin, omitting that conflicting text.
-- Al Salam / Hopital de la Paix are one hospital, confirmed by its official
-  website. The official site confirms its burn department.
-- Clemenceau's official site explicitly states its emergency department is 24/7.
-  This is published service information, not a live capacity check.
+No placeholder pins or district centroids were added. Obvious map test entries (test, fdfa, fddfsfd, errds, To be changed), repeated placeholder coordinates, and duplicate aliases are not separate facilities. Conflicting pins for Rassoul Al Aazam, Dar Al Amal, Rayan, Keserwan Medical Center, Family Medical Center, Batroun and Salah Ghandour use the matching CMSM facility location instead. Al Batoul and Universal remain unlocated because available location evidence conflicts.
 
-All other newly added capabilities remain empty, ER status null and hours
-unknown until sourced. These hospitals can be found by name/city/governorate,
-but are not silently treated as matching a specialty or emergency requirement.
-No specialties or services were inferred merely from the word “hospital.”
+Unknown coordinates are null, with no GeoJSON point. The public list and favorites still work; the map, directions and distance searches omit unlocated facilities. A newer source snapshot can add or withdraw a location without retaining a stale point. Location backfill only runs on numeric coordinate pairs.
 
-## Existing identity matches (no duplicate inserts)
+The original PDF comparison added 42 hospitals to the earlier 17 providers before the broader MoPH import. Hermel Governmental uses a UNDP facility location. Clemenceau, Qana and Bchamoun retain explicitly approximate community-map locations with their source URLs. Review dates describe source checks, not a telephone confirmation of current operation.
 
-| PDF name | Existing slug |
-| --- | --- |
-| Baalbek Governmental | `baalbek-governmental` |
-| Nabatiyeh Governmental | `nabih-berri-hospital` |
-| Nini | `nini-hospital` |
-| Albert Haykel | `albert-haykel` |
-| Notre Dame des Secours | `notre-dame-des-secours` |
-| Bellevue | `bellevue-medical-center` |
-| AUBMC | `aubmc` |
-| Saint George University Medical Center | `saint-george-beirut` |
-| LAU Rizk | `lau-rizk` |
-| Geitaoui | `geitaoui` |
-| Chtoura | `chtoura-hospital` |
+No new specialties, services, opening hours or 24/7 ER claims are inferred from a hospital's name or size. Clemenceau's published ER and Al Salam's published burn unit are sourced; other unverified capabilities stay empty/null. The directory must not be interpreted as an exhaustive list of operational emergency destinations.
 
-## Deployment and checks
+## District coverage
 
-The existing startup seed inserts missing slugs and updates only newer source
-snapshots. No schema migration, route duplication or manual database deletion
-is needed. Existing records keep their timestamps and are not overwritten by
-this import. The production API total changes after the backend deployment
-successfully connects to MongoDB and runs the seed.
+Counts are hospitals only, including unlocated listings. A district includes towns outside its namesake city. For example, Saida district has 12 listings, while the exact Saida city filter has 5. Tripoli district has 14 listings and 10 currently assigned to Tripoli city. Choosing a city and a district combines both restrictions.
 
-Backend integration tests cover repeat seeding, preservation of edits, two
-Saida results, pagination without duplicate/lost records, distance ordering and
-radius exclusion, unknown capabilities, and explicit 24/7 ER filtering.
+| District | Hospital listings |
+| --- | ---: |
+| Akkar | 5 |
+| Aley | 7 |
+| Baabda | 15 |
+| Baalbek | 8 |
+| Batroun | 2 |
+| Beirut | 19 |
+| Bint Jbeil | 3 |
+| Bsharri | 1 |
+| Chouf | 6 |
+| Hasbaya | 1 |
+| Hermel | 4 |
+| Jbeil | 4 |
+| Jezzine | 1 |
+| Keserwan | 7 |
+| Koura | 2 |
+| Marjayoun | 2 |
+| Metn | 20 |
+| Minieh-Dinnie | 3 |
+| Nabatieh | 7 |
+| Rachaya | 2 |
+| Saida | 12 |
+| Tripoli | 14 |
+| Tyre | 8 |
+| West Bekaa | 5 |
+| Zahle | 10 |
+| Zgharta | 5 |
+
+The source does not support more than ten hospitals in every district. Counts are not inflated by moving facilities, duplicating aliases or calling clinics hospitals.
+
+## Held table rows
+
+- [Al Jabal Hospital](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84570/al-jabal-hospital?facility_type=8): MoPH Al Jabal location/district conflicts with insurer listing; identity/location require confirmation.
+- [Hospital Almarkazi](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84588/hospital-almarkazi?facility_type=8): Almarkazi may refer to Mazboud Central; identity unresolved.
+- [Hospital al Hajj](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84598/hospital-al-hajj?facility_type=8): Hospital al Hajj may overlap a renamed Keserwan facility; identity unresolved.
+- [Hopital Al Koura](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84629/hopital-al-koura?facility_type=8): Al Koura has conflicting source locations (Btouratij versus Aaba); identity/location require confirmation.
+- [Miniyeh Hospital](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84632/miniyeh-hospital?facility_type=8): Miniyeh Hospital could overlap existing government/Al Kheir listing; identity unresolved.
+- [Ehden Hospital](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84648/ehden-hospital?facility_type=8): Ehden Hospital may duplicate Ehden Governmental; identity unresolved.
+- [Kharroubi Hospital](https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84649/kharroubi-hospital?facility_type=8): MoPH listing conflicts with a later published closure listing; current operation needs confirmation.
+
+## Validation
+
+Provider tests cover repeatable/newer-only seeding, stable favorites, indexed text and distance queries, whole-directory pagination, Saida city versus district, unknown ER status and unlocated facilities gaining/losing map coordinates. Data checks verify at least 100 hospitals, unique slugs/MoPH identities and no repeated hospital pin coordinates. GitHub CI must pass for the final PR head before merging.
