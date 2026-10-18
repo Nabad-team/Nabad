@@ -3,6 +3,9 @@ name: Docker Images
 # Builds both images on every pull request so the Dockerfiles and docker-compose.yml never silently break.
 # Nothing is pushed: production still deploys from Render (render.yaml) and Vercel.
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main

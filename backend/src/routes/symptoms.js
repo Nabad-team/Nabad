@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 
 const SymptomRecord = require("../models/SymptomRecord");
+const { LEVELS } = require("../triage/urgency");
+const URGENCY_LEVELS = new Set(["emergency", "urgent", "soon", "routine"]);
 const { LIMITS } = SymptomRecord;
 
 const {
@@ -112,11 +114,20 @@ function readSymptomRecord(body) {
 
   const urgencyResult =
     body.urgencyResult;
+  const expectedLevel =
+    urgencyResult && LEVELS[urgencyResult.level];
 
   if (
     !urgencyResult ||
     typeof urgencyResult !== "object" ||
-    Array.isArray(urgencyResult)
+    Array.isArray(urgencyResult) ||
+    !URGENCY_LEVELS.has(urgencyResult.level) ||
+    !expectedLevel ||
+    ["label", "timeframe", "action"].some((field) =>
+      typeof urgencyResult[field] !== "string" ||
+      !urgencyResult[field].trim() ||
+      urgencyResult[field] !== expectedLevel[field]
+    )
   ) {
     return {
       error:

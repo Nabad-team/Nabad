@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
+const Appointment = require("../src/models/Appointment");
 let mongod, server, base;
 const password = "Profile test password 123!";
 let passwordHash;
@@ -18,7 +19,7 @@ before(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User.init(), LinkedProfile.init()]);
+  await Promise.all([User.init(), LinkedProfile.init(), Appointment.init()]);
   passwordHash = await bcrypt.hash(password, 12);
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
@@ -30,7 +31,7 @@ after(async () => {
   await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
-beforeEach(async () => { await User.deleteMany({}); await LinkedProfile.deleteMany({}); });
+beforeEach(async () => { await User.deleteMany({}); await LinkedProfile.deleteMany({}); await Appointment.deleteMany({}); });
 
 async function user(email = "owner@example.test", extra = {}) { return User.create({ name: "Owner", email, passwordHash, ...extra }); }
 function token(account) { return jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" }); }
@@ -99,6 +100,24 @@ test("creates, lists and deletes linked profiles, always owned by the signed-in 
   assert.equal((await request("DELETE", `/profile/linked/${created.body.profile.id}`, { cookie })).status, 404);
 });
 
+test("deleting a linked profile removes only its appointments", async () => {
+  const account = await user(); const other = await user("other@example.test");
+  const cookie = token(account); const otherCookie = token(other);
+  const child = (await addDependent(cookie)).body.profile;
+  const otherChild = (await addDependent(otherCookie)).body.profile;
+  const ownAppointment = (profileId, owner) => Appointment.create({
+    owner, profileId, title: "Visit", hospital: "Clinic", appointmentDate: "2026-11-01", appointmentTime: "10:00",
+  });
+  const childRecord = await ownAppointment(child.id, account._id);
+  const selfRecord = await ownAppointment(account._id, account._id);
+  const otherRecord = await ownAppointment(otherChild.id, other._id);
+
+  assert.equal((await request("DELETE", `/profile/linked/${child.id}`, { cookie })).status, 204);
+  assert.equal(await Appointment.findById(childRecord._id), null);
+  assert.ok(await Appointment.findById(selfRecord._id));
+  assert.ok(await Appointment.findById(otherRecord._id));
+});
+
 test("rejects invalid linked profiles and more than 10", async () => {
   const cookie = token(await user());
   for (const fields of [{ fullName: "" }, { dateOfBirth: "" }, { dateOfBirth: "2999-01-01" }, { relationship: "self" }, { relationship: "friend" }]) {
@@ -156,6 +175,11 @@ test("deleting a password account needs DELETE and the right password, then remo
   const other = await user("other@example.test", { emergencyContact: { name: "Dad", phone: "71123457" } });
   const cookie = token(account); const otherCookie = token(other);
   await addDependent(cookie); await addDependent(cookie, { fullName: "Second" }); await addDependent(otherCookie, { fullName: "Other Child" });
+  const childId = (await LinkedProfile.findOne({ owner: account._id }))._id;
+  const addAppointment = (owner, profileId) => Appointment.create({ owner, profileId, title: "Visit", hospital: "Clinic", appointmentDate: "2026-11-01", appointmentTime: "10:00" });
+  const ownVisit = await addAppointment(account._id, account._id);
+  const dependentVisit = await addAppointment(account._id, childId);
+  const otherVisit = await addAppointment(other._id, other._id);
   for (const body of [{ password }, { confirm: "delete", password }, { confirm: "DELETE", password: "wrong password" }, { confirm: "DELETE" }, { confirm: "DELETE", email: "owner@example.test" }]) {
     assert.equal((await request("DELETE", "/profile/me", { cookie, body })).status, 400, JSON.stringify(body));
   }
@@ -164,6 +188,9 @@ test("deleting a password account needs DELETE and the right password, then remo
   assert.equal(deleted.status, 204);
   assert.match(deleted.headers.getSetCookie().at(-1), /^accessToken=;.*Expires=Thu, 01 Jan 1970/);
   assert.equal(await User.findById(account._id), null);
+  assert.equal(await Appointment.findById(ownVisit._id), null);
+  assert.equal(await Appointment.findById(dependentVisit._id), null);
+  assert.ok(await Appointment.findById(otherVisit._id));
   assert.equal(await LinkedProfile.countDocuments({ owner: account._id }), 0);
   assert.equal((await request("GET", "/profile/me", { cookie })).status, 401);
   assert.equal((await request("GET", "/auth/me", { cookie })).status, 401);
