@@ -1,0 +1,21 @@
+{
+  "spikeBrowse": 0,
+  "spikeApp": 0,
+  "thinkMin": 500,
+  "thinkExtra": 1000,
+  "stopErrorPct": null,
+  "type": "soak",
+  "name": "soak-200-users-15-min",
+  "browse": 100,
+  "app": 100,
+  "rampup": 60,
+  "duration": 900,
+  "target": "http://localhost",
+  "date": "2026-10-18T11:05:35.932Z",
+  "stoppedEarly": null,
+  "backendMemory": {
+    "start": "172.1MiB",
+    "end": "383.5MiB",
+    "peak": "410MiB"
+  }
+}

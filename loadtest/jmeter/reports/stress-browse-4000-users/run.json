@@ -1,0 +1,24 @@
+{
+  "spikeBrowse": 0,
+  "spikeApp": 0,
+  "thinkMin": 1000,
+  "thinkExtra": 4000,
+  "stopErrorPct": 20,
+  "type": "stress",
+  "rampup": 60,
+  "duration": 180,
+  "name": "stress-browse-4000-users",
+  "browse": 4000,
+  "app": 0,
+  "target": "http://localhost",
+  "date": "2026-10-18T10:24:38.472Z",
+  "stoppedEarly": {
+    "afterSeconds": 30,
+    "reason": "error rate above 20% for 20 s"
+  },
+  "backendMemory": {
+    "start": "155.8MiB",
+    "end": "158.5MiB",
+    "peak": "165.5MiB"
+  }
+}

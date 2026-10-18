@@ -15,6 +15,11 @@ node_modules/
 *.log
 coverage/
 loadtest/jmeter-results/
+# Raw JMeter results are large; only the HTML dashboards in loadtest/jmeter/reports/ are kept.
+*.jtl
+jmeter.log
+# Written by loadtest/jmeter/seed-users.js: passwords of the local load-test accounts.
+loadtest/jmeter/users.csv
 
 # Vercel CLI project link (created by `vercel`); local to each machine.
 .vercel

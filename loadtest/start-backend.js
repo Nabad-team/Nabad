@@ -8,15 +8,9 @@ const crypto = require("crypto");
 const backend = path.join(__dirname, "..", "backend");
 const fromBackend = (name) => require(require.resolve(name, { paths: [backend] }));
 
-// Relax rate limits: the backend allows e.g. 5 signups per hour per IP, and all k6 users share
-// one IP (127.0.0.1), so the test would only measure 429 responses. Before the backend loads,
-// swap express-rate-limit in Node's module cache for a wrapper that keeps every limiter but
-// raises its limit. Only this process is affected; normal `npm start` keeps the real limits.
-const rateLimitPath = require.resolve("express-rate-limit", { paths: [backend] });
-const realRateLimit = require(rateLimitPath);
-const relaxed = (options = {}) => realRateLimit({ ...options, max: 1e9, limit: 1e9 });
-Object.assign(relaxed, realRateLimit, { default: relaxed, rateLimit: relaxed });
-require.cache[rateLimitPath].exports = relaxed;
+// Relax rate limits before the backend loads: all k6 users share one IP (127.0.0.1), so the real
+// per-IP limits would only measure 429 responses. Only this process is affected (see the file).
+require("./relax-rate-limits");
 
 const PORT = process.env.LOADTEST_PORT || "5100";
 
