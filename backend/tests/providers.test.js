@@ -32,7 +32,7 @@ test("seed is repeatable, includes hospitals and clinics, and preserves existing
   assert.equal(await Provider.countDocuments({ type: "clinic" }), 2);
 });
 test("directory is readable and only exposes public facility fields", async () => {
-  const result = await get();
+  const result = await get("?limit=100");
   assert.equal(result.status, 200);
   assert.equal(result.body.total, seedData.length);
   assert.ok(result.body.services.every(value => typeof value === "string" && value));
@@ -76,7 +76,9 @@ test("rejects nested, repeated and excessively long filter parameters", async ()
 });
 test("distance filters and sorting use coordinates before pagination", async () => {
   const near = await get("?lat=34.43587&lng=35.83076&radiusKm=5");
-  assert.equal(near.body.total, 2); assert.equal(near.body.providers[0].id, "nini-hospital");
+  assert.equal(near.body.total, 5); assert.equal(near.body.providers[0].id, "nini-hospital");
+  assert.ok(near.body.providers.every(p => p.distanceKm <= 5));
+  assert.ok(near.body.providers.every((p, i, list) => i === 0 || p.distanceKm >= list[i - 1].distanceKm));
   assert.equal(near.body.providers[0].distanceKm, 0);
   const page = await get("?lat=34.43587&lng=35.83076&limit=1&page=2");
   assert.equal(page.body.total, seedData.length); assert.equal(page.body.providers.length, 1);
@@ -118,7 +120,7 @@ test("database schedule filter agrees with Beirut hours before pagination", asyn
 });
 test("24/7 ER filtering excludes unknown status and exposes separate clinic hours", async () => {
   const result = await get("?emergency24h=true");
-  assert.equal(result.body.total, 4);
+  assert.equal(result.body.total, 5);
   assert.ok(result.body.providers.every(p => p.emergency24h && p.openingStatus === "unknown"));
   assert.equal((await get("?openNow=maybe")).status, 400);
 });
@@ -156,10 +158,37 @@ test("missing providers cannot be saved; account favorite limit is enforced", as
 test("curated seed covers all governorates with unique identities and sourced capabilities", async () => {
   assert.equal(new Set(seedData.map(p => p.slug)).size, seedData.length);
   assert.deepEqual([...new Set(seedData.map(p => p.governorate))].sort(), ["Akkar", "Baalbek-Hermel", "Beirut", "Bekaa", "Keserwan-Jbeil", "Mount Lebanon", "Nabatieh", "North", "South"]);
-  assert.ok(seedData.every(p => p.specialties.length && p.sources.length >= 2));
+  assert.ok(seedData.every(p => Array.isArray(p.specialties) && p.sources.length >= 1));
   for (const service of ["ct", "mri", "cath-lab", "nicu", "burn-unit", "dialysis", "maternity"]) {
     const response = await get(`?service=${service}`);
     assert.ok(response.body.total > 0, service);
     assert.ok(response.body.providers.every(p => p.services.includes(service)), service);
   }
+});
+
+test("expanded directory offers both Saida hospitals and paginates without loss or duplicates", async () => {
+  const saida = await get("?city=Saida&governorate=South");
+  assert.equal(saida.status, 200);
+  assert.deepEqual(saida.body.providers.map(p => p.id).sort(), ["hammoud-hospital", "saida-governmental"]);
+  const ids = [];
+  for (let page = 1; ids.length < seedData.length; page++) {
+    const result = await get(`?limit=20&page=${page}`);
+    assert.equal(result.body.total, seedData.length);
+    assert.ok(result.body.providers.length > 0);
+    ids.push(...result.body.providers.map(p => p.id));
+  }
+  assert.equal(ids.length, seedData.length);
+  assert.equal(new Set(ids).size, seedData.length);
+});
+
+test("new location-only listings remain unknown and do not qualify for emergency routing", async () => {
+  const result = await get("?q=Saida&city=Saida&limit=100");
+  const hospital = result.body.providers.find(p => p.id === "saida-governmental");
+  assert.ok(hospital);
+  assert.equal(hospital.emergency24h, null);
+  assert.equal(hospital.openingStatus, "unknown");
+  assert.deepEqual(hospital.specialties, []);
+  assert.deepEqual(hospital.services, []);
+  assert.equal((await get("?city=Saida&emergency24h=true")).body.total, 0);
+  assert.equal((await get("?q=Clemenceau&emergency24h=true")).body.total, 1);
 });
