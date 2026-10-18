@@ -7,6 +7,8 @@ export const SITE_DESCRIPTION =
   "Tell Nabad how you feel. It helps you understand how urgent it is and find a hospital that can treat you.";
 // Social sites need a full URL for the preview image, so it points at the official site.
 export const SITE_URL = "https://nabad-psi.vercel.app";
+// Where people reach the team (the Contact page). A placeholder until the team picks a shared inbox.
+export const CONTACT_EMAIL = "nabad.team3@example.com";
 
 // "Log in" -> "Log in · Nabad". Without a title (the landing page) the tab shows the site title.
 export function pageTitle(title) {
@@ -18,16 +20,15 @@ export function pageTitle(title) {
 //   title:  the browser tab title, e.g. "Log in" (shown as "Log in · Nabad"). Leave it out only on the landing page.
 //   header: what goes in the top bar. Defaults to the logo alone; signed-in pages pass <ProfileHeader />.
 //   width:  "content" (46rem, most pages) or "wide" (68rem, the landing page).
-//   footer: optional content for the bottom of the page.
+//   footer: optional page-specific note, shown above the site footer that every page gets.
 export default function PageLayout({ title, header, width = "content", footer, children }) {
   const container = width === "wide" ? "container container--wide" : "container";
   const fullTitle = pageTitle(title);
   return (
-    <>
+    <div className="page-shell">
       {/* The key props stop Next.js from repeating a tag when a page adds its own. */}
       <Head>
         <title>{fullTitle}</title>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <meta name="description" content={SITE_DESCRIPTION} key="description" />
         <meta property="og:type" content="website" key="og:type" />
         <meta property="og:site_name" content={SITE_NAME} key="og:site_name" />
@@ -44,12 +45,32 @@ export default function PageLayout({ title, header, width = "content", footer, c
       <main id="main" className={`${container} page-main`}>
         {children}
       </main>
-      {footer && (
-        <footer className="site-footer">
-          <div className={container}>{footer}</div>
-        </footer>
-      )}
-    </>
+      {footer && <div className={`${container} page-note`}>{footer}</div>}
+      <SiteFooter width={width} />
+    </div>
+  );
+}
+
+// The bottom of every page: the legal and contact links, the medical disclaimer and who made Nabad.
+export function SiteFooter({ width = "content" }) {
+  const container = width === "wide" ? "container container--wide" : "container";
+  return (
+    <footer className="site-footer">
+      <div className={`${container} site-footer__inner`}>
+        <nav aria-label="Footer">
+          <ul className="site-footer__links">
+            <li><a href="/privacy">Privacy</a></li>
+            <li><a href="/terms">Terms of Use</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </nav>
+        <p className="site-footer__disclaimer">
+          Nabad gives guidance, not a diagnosis. In an emergency, call <a href="tel:140">140</a>.
+        </p>
+        <p>© 2026 Nabad</p>
+        <p className="site-footer__credit">Built by Team 3 for CMPS 271 at the American University of Beirut.</p>
+      </div>
+    </footer>
   );
 }
 

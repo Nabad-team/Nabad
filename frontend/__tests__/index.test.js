@@ -72,4 +72,12 @@ describe("Landing Page", () => {
       "The right hospital in an emergency Coming soon",
     ]);
   });
+
+  test("credits the team only once, in the site footer", () => {
+    const { container } = render(<HomePage />);
+
+    expect(container).not.toHaveTextContent("Nabad, built by Team 3 for CMPS 271, AUB");
+    expect(screen.getAllByText(/Built by Team 3 for CMPS 271/)).toHaveLength(1);
+    expect(screen.getByRole("contentinfo")).toHaveTextContent("Built by Team 3 for CMPS 271 at the American University of Beirut.");
+  });
 });

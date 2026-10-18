@@ -1,0 +1,26 @@
+# Public pages: the landing page, Find care (/providers), /privacy, /terms and /contact.
+# Everything else is a signed-in page or part of signing in, and /api is the backend.
+User-agent: *
+Allow: /$
+Allow: /providers
+Allow: /privacy
+Allow: /terms
+Allow: /contact
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /my-health
+Disallow: /test-results
+Disallow: /medications
+Disallow: /appointments
+Disallow: /water-and-sleep
+Disallow: /symptoms
+Disallow: /profile
+Disallow: /security
+Disallow: /onboarding
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+Sitemap: https://nabad-psi.vercel.app/sitemap.xml
