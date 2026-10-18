@@ -12,11 +12,13 @@ const schema = new mongoose.Schema({
   slug: { type: String, required: true, unique: true, match: /^[a-z0-9-]+$/ },
   name: { type: String, required: true, maxlength: 200 },
   type: { type: String, required: true, enum: ["hospital", "clinic"] },
-  city: { type: String, required: true },
+  city: { type: String, default: "" },
+  district: { type: String, default: "" },
   governorate: { type: String, default: "" },
-  address: { type: String, required: true },
-  latitude: { type: Number, required: true, min: -90, max: 90 },
-  longitude: { type: Number, required: true, min: -180, max: 180 },
+  address: { type: String, default: "" },
+  // A listed facility can be searchable before its map location is verified.
+  latitude: { type: Number, default: null, min: -90, max: 90 },
+  longitude: { type: Number, default: null, min: -180, max: 180 },
   location: { type: { type: String, enum: ["Point"] }, coordinates: { type: [Number], default: undefined } },
   locationApproximate: { type: Boolean, default: false },
   phone: { type: String, default: "" },
@@ -34,8 +36,10 @@ schema.index({ city: 1, specialties: 1 });
 schema.index({ location: "2dsphere" });
 schema.index({ name: "text", specialties: "text", services: "text", city: "text" }, { default_language: "english" });
 schema.index({ governorate: 1 });
+schema.index({ district: 1 });
 schema.index({ services: 1 });
 schema.pre("validate", function () {
-  this.location = { type: "Point", coordinates: [this.longitude, this.latitude] };
+  if ((this.latitude == null) !== (this.longitude == null)) this.invalidate("latitude", "Provide both coordinates or neither.");
+  this.location = this.latitude == null || this.longitude == null ? undefined : { type: "Point", coordinates: [this.longitude, this.latitude] };
 });
 module.exports = mongoose.model("Provider", schema);
