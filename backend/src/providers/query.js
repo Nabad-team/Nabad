@@ -1,7 +1,7 @@
 // Parse scalar strings explicitly: objects/arrays must never become MongoDB operators.
 function parseQuery(query) {
   const parsed = {};
-  for (const key of ["q", "specialty", "city", "service", "governorate"]) {
+  for (const key of ["q", "specialty", "city", "district", "service", "governorate"]) {
     const value = query[key];
     if (value !== undefined && (typeof value !== "string" || value.length > 100)) {
       throw new Error("Invalid search filters.");

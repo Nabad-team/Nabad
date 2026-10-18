@@ -6,7 +6,7 @@ const { openingStatus } = require("./hours");
 async function searchProviders(query, favorites, now = new Date()) {
   const match = {};
   for (const key of ["specialty", "service"]) if (query[key]) match[key === "specialty" ? "specialties" : "services"] = query[key];
-  for (const key of ["city", "governorate"]) if (query[key]) match[key] = new RegExp(`^${query[key].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+  for (const key of ["city", "district", "governorate"]) if (query[key]) match[key] = new RegExp(`^${query[key].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
   if (query.emergency24h) match.emergency24h = true;
   if (query.favorites) match.slug = { $in: favorites || [] };
   // Words/phrases only: do not interpret quotes or leading '-' as search operators.
@@ -26,11 +26,12 @@ async function searchProviders(query, favorites, now = new Date()) {
   if (query.openNow) pipeline.push({ $match: openNowMatch(now) });
   pipeline.push({ $sort: geo ? { distanceKm: 1, name: 1, slug: 1 } : { name: 1, slug: 1 } },
     { $facet: { providers: [{ $skip: (query.page - 1) * query.limit }, { $limit: query.limit }], count: [{ $count: "total" }] } });
-  const [result, specialties, cities, services, governorates] = await Promise.all([
+  const [result, specialties, cities, services, governorates, districts] = await Promise.all([
     Provider.aggregate(pipeline), Provider.distinct("specialties"), Provider.distinct("city"), Provider.distinct("services"), Provider.distinct("governorate"),
+    Provider.distinct("district"),
   ]);
   return { providers: result[0].providers.map(p => ({ ...p, openingStatus: openingStatus(p, now) })), total: result[0].count[0]?.total || 0,
-    page: query.page, limit: query.limit, specialties: choices(specialties), cities: choices(cities), services: choices(services), governorates: choices(governorates) };
+    page: query.page, limit: query.limit, specialties: choices(specialties), cities: choices(cities), services: choices(services), governorates: choices(governorates), districts: choices(districts) };
 }
 const choices = values => values.filter(value => typeof value === "string" && value.length > 0).sort();
 
