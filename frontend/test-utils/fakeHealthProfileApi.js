@@ -21,7 +21,7 @@ export function resetFakeHealth() {
 resetFakeHealth();
 
 function profile(profileId) {
-  if (!store[profileId]) store[profileId] = { dateOfBirth: "", age: null, facts: [], medications: [] };
+  if (!store[profileId]) store[profileId] = { dateOfBirth: "", age: null, facts: [], medications: [], tracking: "" };
   return store[profileId];
 }
 const fail = (message, status) => { throw Object.assign(new Error(message), { status }); };
@@ -35,6 +35,8 @@ export function seedFact(profileId, category, value, fields = {}) {
 }
 export const seedSuggestion = (profileId, category, value) => seedFact(profileId, category, value, { source: "lab_report", status: "suggested" });
 export function seedMedication(profileId, medication) { profile(profileId).medications.push({ id: `med-${nextId++}`, dose: "", unit: "", form: "tablet", frequency: "", ...medication }); }
+// The water and sleep line the server adds when something was logged recently (built and tested in the backend).
+export function seedTracking(profileId, line) { profile(profileId).tracking = line; }
 export const fakeFacts = (profileId) => profile(profileId).facts;
 export function failFakeHealthLoading() { failLoading = true; }
 
@@ -56,7 +58,8 @@ function summary(profileId) {
     `Long-term conditions: ${conditions.join("; ") || "none recorded"}`,
     `Allergies: ${allergies.join("; ") || "none recorded"}`,
     `Current medications: ${data.medications.map((m) => m.name).join("; ") || "none recorded"}`,
-  ].join("\n");
+    data.tracking,
+  ].filter(Boolean).join("\n");
 }
 function findFact(profileId, id, status) {
   const fact = profile(profileId).facts.find((item) => item.id === id && item.status === status);
@@ -64,8 +67,8 @@ function findFact(profileId, id, status) {
   return fact;
 }
 
-export async function getHealthProfile(profileId) {
-  calls.push(["getHealthProfile", profileId]);
+export async function getHealthProfile(profileId, date) {
+  calls.push(date ? ["getHealthProfile", profileId, date] : ["getHealthProfile", profileId]);
   if (failLoading) fail("Request failed.", 500);
   const data = profile(profileId);
   return {

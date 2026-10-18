@@ -6,6 +6,7 @@ import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fake from "../test-utils/fakeHealthProfileApi";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+import { todayString } from "../lib/dates";
 
 // Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
 jest.setTimeout(PAGE_FLOW_TIMEOUT);
@@ -253,6 +254,17 @@ describe("My health page", () => {
       "Age: 34 years", "Sex assigned at birth: female", "Long-term conditions: none recorded",
       "Allergies: Peanuts (food)", "Current medications: none recorded",
     ].join("\n"));
+  });
+
+  test("the summary preview shows recent water and sleep as its last line, and asks the server for the user's own today", async () => {
+    fake.seedTracking("self", "Water and sleep log: fluids today 1.3 L (daily goal set: stay under 1.5 L); average sleep over the last 7 days 6.8 hours (5 nights logged)");
+    renderPage();
+    const text = (await summary()).textContent.split("\n");
+    expect(text.at(-1)).toBe("Water and sleep log: fluids today 1.3 L (daily goal set: stay under 1.5 L); average sleep over the last 7 days 6.8 hours (5 nights logged)");
+    const section = await region("What Nabad's guidance takes into account");
+    expect(within(section).getByText(/appears only when something was logged in the last 7 days/)).toBeInTheDocument();
+    expect(within(section).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(fake.calls).toContainEqual(["getHealthProfile", "self", todayString()]);
   });
 
   test("follows the header profile switcher, and keeps each person's information apart", async () => {
