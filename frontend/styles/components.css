@@ -117,8 +117,27 @@
   text-decoration: underline;
 }
 
+/* Header, content, footer: the content grows so the footer sits at the bottom of short pages. */
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .page-main {
+  flex: 1 0 auto;
   padding-block: var(--space-6) var(--space-8);
+}
+
+/* A page's own closing note (e.g. on the Privacy Policy), just above the site footer. */
+.page-note {
+  padding-bottom: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.page-note p {
+  margin: 0;
 }
 
 .site-footer {
@@ -128,8 +147,43 @@
   font-size: var(--text-sm);
 }
 
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .site-footer p {
   margin: 0;
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer__links li {
+  margin: 0;
+}
+
+/* Full-height tap targets, with the text still lined up with the rest of the footer. */
+.site-footer__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  font-weight: var(--weight-medium);
+}
+
+.site-footer__disclaimer {
+  color: var(--color-text);
+}
+
+.site-footer__credit {
+  font-size: var(--text-xs);
 }
 
 /* ---------- Page title with the heartbeat divider ---------- */
@@ -441,6 +495,11 @@ select.input {
 
 .alert > :last-child {
   margin-bottom: 0;
+}
+
+/* A banner near the top of a page, with the page's sections following it. */
+.page-alert {
+  margin-bottom: var(--space-6);
 }
 
 .alert a {

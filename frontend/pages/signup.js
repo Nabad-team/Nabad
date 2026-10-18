@@ -105,11 +105,9 @@ export default function SignupPage() {
         </form>
 
         <p>
-          By creating an account, you agree to how Nabad handles your
-          information as described in our{" "}
-          <Link href="/privacy">
-            Privacy Policy
-          </Link>.
+          By creating an account you agree to the{" "}
+          <Link href="/terms">Terms of Use</Link> and{" "}
+          <Link href="/privacy">Privacy Policy</Link>.
         </p>
 
         <p className="divider-text">

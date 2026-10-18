@@ -1,0 +1,13 @@
+{
+  "name": "Nabad: know where to go when it matters",
+  "short_name": "Nabad",
+  "description": "Tell Nabad how you feel. It helps you understand how urgent it is and find a hospital that can treat you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf6ef",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

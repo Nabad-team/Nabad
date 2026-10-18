@@ -134,3 +134,13 @@ describe("Signup links", () => {
     expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", "/api/auth/google");
   });
 });
+
+describe("Signup agreement", () => {
+  test("says that creating an account means agreeing to the Terms and the Privacy Policy, with links", () => {
+    const { container } = render(<SignupPage />);
+    expect(container).toHaveTextContent("By creating an account you agree to the Terms of Use and Privacy Policy.");
+    const main = screen.getByRole("main");
+    expect(within(main).getByRole("link", { name: "Terms of Use" })).toHaveAttribute("href", "/terms");
+    expect(within(main).getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
+  });
+});
