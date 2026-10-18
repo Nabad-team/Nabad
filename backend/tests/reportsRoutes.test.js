@@ -147,4 +147,20 @@ describe("POST /api/reports routes", () => {
     assert.equal(deleted.status, 204);
     assert.equal(await ReportConversation.countDocuments(), 0);
   });
+
+  test("continues a saved chat when an earlier assistant reply exceeds the history context limit", async () => {
+    provider.content = JSON.stringify({ answer: "A".repeat(1300), evidence: [] });
+    const first = await call("chat", { consent: true, question: "What should I know about this?" });
+    assert.equal(first.status, 200, JSON.stringify(first.body));
+
+    provider.content = JSON.stringify({ answer: "Here is the follow-up answer.", evidence: [] });
+    const second = await call("chat", {
+      consent: true,
+      question: "Can you explain that further?",
+      conversationId: first.body.conversationId,
+    });
+    assert.equal(second.status, 200, JSON.stringify(second.body));
+    assert.equal(second.body.answer, "Here is the follow-up answer.");
+    assert.equal(provider.requests.length, 2);
+  });
 });

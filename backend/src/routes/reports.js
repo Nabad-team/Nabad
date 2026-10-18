@@ -124,7 +124,7 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
       return res.status(503).json({ error: "Photo reading is not enabled for the configured AI model. Try a searchable written report or ask without the photo." });
     }
     const history = savedConversation
-      ? savedConversation.messages.slice(-8).map(({ role, content }) => ({ role, content }))
+      ? savedConversation.messages.slice(-8).map(({ role, content }) => ({ role, content: content.slice(0, 1200) }))
       : req.body?.history;
     const result = await answerChat({ question: req.body?.question, history, report, client });
     if (savedConversation) {
