@@ -1,5 +1,7 @@
 # Backend load test
 
+The full JMeter suite (load, stress, spike and soak tests of the whole app in Docker, with HTML reports and slide charts) is in [`loadtest/jmeter/`](./loadtest/jmeter/README.md).
+
 ## JMeter website capacity ramp
 
 Use [`loadtest/nabad.jmx`](./loadtest/nabad.jmx) with Apache JMeter 5.6.3 or newer to exercise the local website (`/`), anonymous session API, and API health endpoint. The wrapper increases concurrent visitors in stages and stops when the health check fails, sample errors reach 5%, or p95 response time reaches 2 seconds. It writes each stage's CSV and a summary under `loadtest/jmeter-results/` (ignored by Git).
@@ -35,7 +37,7 @@ Options: `LEVELS=10,50`, `DURATION=30s`, `SCENARIOS=me`, `K6="C:\Program Files\k
 
 **Isolation.** `start-backend.js` starts its own throwaway MongoDB (mongodb-memory-server) with database `nabad_loadtest` and deletes it on exit. Every setting is passed explicitly, so nothing from `backend/.env` (real `MONGO_URI`, SMTP, Google) is used.
 
-**Rate limits.** The backend allows e.g. 5 signups per hour per IP, and all k6 users come from 127.0.0.1, so the test would only measure `429 Too many attempts`. `start-backend.js` swaps `express-rate-limit` in Node's module cache for a wrapper that keeps every limiter but raises its limit to 10⁹, before the backend code loads. Only that one process is affected: `backend/src` is unchanged, and `npm start` or Render always use the real limits.
+**Rate limits.** The backend allows e.g. 5 signups per hour per IP, and all k6 users come from 127.0.0.1, so the test would only measure `429 Too many attempts`. `start-backend.js` swaps `express-rate-limit` in Node's module cache for a wrapper that keeps every limiter but raises its limit to 10⁹, before the backend code loads (the code is in `loadtest/relax-rate-limits.js`, shared with the JMeter suite). Only that one process is affected: `backend/src` is unchanged, and `npm start` or Render always use the real limits.
 
 **Outside services.** `start-backend.js` also turns off the Have I Been Pwned check (`PWNED_PASSWORDS_CHECK=off`): a load test must not send thousands of requests to a public service, and the network time would hide the server's own work.
 

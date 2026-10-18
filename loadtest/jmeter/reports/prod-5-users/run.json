@@ -1,0 +1,17 @@
+{
+  "spikeBrowse": 0,
+  "spikeApp": 0,
+  "thinkMin": 500,
+  "thinkExtra": 1000,
+  "stopErrorPct": null,
+  "type": "prod",
+  "name": "prod-5-users",
+  "browse": 5,
+  "app": 0,
+  "rampup": 10,
+  "duration": 120,
+  "target": "https://nabad-psi.vercel.app",
+  "date": "2026-10-18T11:07:41.718Z",
+  "stoppedEarly": null,
+  "backendMemory": null
+}

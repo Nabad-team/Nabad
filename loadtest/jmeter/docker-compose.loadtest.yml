@@ -1,0 +1,27 @@
+# Load-test override for the local Docker stack ONLY. Production never reads this file: the API deploys
+# to Render (render.yaml) and the web app to Vercel, and plain `docker compose up` keeps every limit.
+#
+#   docker compose -f docker-compose.yml -f loadtest/jmeter/docker-compose.loadtest.yml up -d --build
+#
+# Run it from the repository root: paths here are relative to the first compose file's folder.
+# What it changes, for the backend container only:
+# - Rate limits relaxed in that one Node process, exactly like the k6 setup (loadtest/relax-rate-limits.js,
+#   preloaded with NODE_OPTIONS). Every JMeter user comes from the same IP, so the real per-IP limits would
+#   only measure 429 responses. backend/src and the backend image are not changed.
+# - No Have I Been Pwned calls (PWNED_PASSWORDS_CHECK=off), as in the k6 setup.
+# - Container logs capped, so a long run can't fill the disk with request logs.
+# The seeded load-test accounts have 2FA off (loadtest/jmeter/seed-users.js); TWO_FACTOR_ON_SIGNUP is unchanged.
+
+services:
+  backend:
+    volumes:
+      - ./loadtest/relax-rate-limits.js:/loadtest/relax-rate-limits.js:ro
+    environment:
+      NODE_OPTIONS: --require /loadtest/relax-rate-limits.js
+      LOADTEST_BACKEND_DIR: /app
+      PWNED_PASSWORDS_CHECK: "off"
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "2"
