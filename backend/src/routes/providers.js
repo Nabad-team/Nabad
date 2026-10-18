@@ -7,7 +7,7 @@ const { requireAuth } = require("../middleware/authMiddleware");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
-const view = p => ({ id: p.slug, name: p.name, type: p.type, city: p.city, address: p.address,
+const view = p => ({ id: p.slug, name: p.name, type: p.type, city: p.city, district: p.district || "", address: p.address,
   latitude: p.latitude, longitude: p.longitude, locationApproximate: p.locationApproximate,
   phone: p.phone, specialties: p.specialties, services: p.services || [], governorate: p.governorate || "", emergency24h: p.emergency24h,
   hoursKnown: p.hoursKnown, hours: p.hours, openingStatus: p.openingStatus, sources: p.sources, verifiedAt: p.verifiedAt,
