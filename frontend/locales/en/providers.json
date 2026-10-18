@@ -16,10 +16,10 @@
   "showMap": "Show map",
   "hideMap": "Hide map",
   "mapTitle": "Map of provider results",
-  "mapNotice": "The map shows results on this page. A number on a marker shows facilities sharing that location. Select a marker for details. Map tiles are loaded from OpenStreetMap.",
+  "mapNotice": "The map shows results on this page with a sourced location. Listings without verified coordinates remain in the list. A number on a marker shows facilities sharing that location. Select a marker for details. Map tiles are loaded from OpenStreetMap.",
   "mapError": "The map could not fully load. Provider details are still available in the list below.",
   "lead": "Find hospitals and clinics in Lebanon, and keep useful places close at hand.",
-  "notice": "This is a starter directory, not a complete list. Call to confirm services, appointments and hours before travelling.",
+  "notice": "This directory includes published MoPH hospital listings. A listing is not confirmation that a facility is currently operating. Call to confirm services, appointments and hours before travelling.",
   "search": "Search by name or specialty",
   "specialty": "Specialty",
   "allSpecialties": "All specialties",
@@ -46,7 +46,7 @@
   "location": "Use my location",
   "locating": "Finding your location…",
   "clearLocation": "Clear my location",
-  "locationHint": "Optional: share your location with Nabad for this search. It is not saved to your account. Distances are straight-line estimates, not road distances.",
+  "locationHint": "Optional: share your location with Nabad for this search. It is not saved to your account. Distance searches include only facilities with sourced coordinates. Distances are straight-line estimates, not road distances.",
   "locationError": "We couldn't get your location. You can still choose a city.",
   "locationReady": "Your location is ready. Search to apply it.",
   "radius": "Maximum distance",
@@ -107,5 +107,10 @@
     "burn-unit": "Burn unit",
     "dialysis": "Dialysis",
     "maternity": "Maternity"
-  }
+  },
+  "district": "District",
+  "allDistricts": "All districts",
+  "districtHint": "A district includes nearby towns. Choose All cities to search the whole district; selected filters are combined.",
+  "addressUnknown": "Street address not yet verified",
+  "locationUnknown": "Map location not yet verified. Directions are unavailable for this listing."
 }
