@@ -121,6 +121,13 @@ export default function ProvidersPage() {
           {(data.governorates || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
         </select>
       </div>
+      <div className="field"><label htmlFor="provider-district" className="field__label">{t("district")}</label>
+        <select id="provider-district" className="input" {...field("district")}>
+          <option value="">{t("allDistricts")}</option>
+          {(data.districts || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
+        </select>
+        <p className="text-muted">{t("districtHint")}</p>
+      </div>
       <div className="field"><label htmlFor="provider-service" className="field__label">{t("service")}</label>
         <select id="provider-service" className="input" {...field("service")}>
           <option value="">{t("allServices")}</option>
@@ -162,7 +169,8 @@ export default function ProvidersPage() {
           {signedIn ? <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
             aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}
             onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button> : <a className="button button--secondary" href="/login">{t("signInToSave")}</a>}
-          <p>{t(provider.type)} · {provider.city}</p><p>{provider.address}</p>
+          <p>{t(provider.type)}{provider.city ? ` · ${provider.city}` : ""}{provider.district ? ` · ${t("district")}: ${provider.district}` : ""}</p>
+          <p>{provider.address || t("addressUnknown")}</p>
           {provider.distanceKm != null && <p><Badge tone="neutral">{t("distance", { km: provider.distanceKm })}</Badge></p>}
           {provider.locationApproximate && <p>{t("approximatePin")}</p>}
           <p>{provider.specialties.length ? provider.specialties.map(s => t(`specialties.${s}`)).join(", ") : t("specialtiesUnknown")}</p>
@@ -175,7 +183,7 @@ export default function ProvidersPage() {
           </details>}
           <p className="text-muted">{t("hoursNote")}</p>
           {provider.phone && <p><a href={`tel:${provider.phone}`}>{t("call", { name: provider.name })}</a></p>}
-          <p><a className="button button--secondary" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${provider.latitude},${provider.longitude}`)}`} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p>
+          {Number.isFinite(provider.latitude) && Number.isFinite(provider.longitude) ? <p><a className="button button--secondary" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${provider.latitude},${provider.longitude}`)}`} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p> : <p>{t("locationUnknown")}</p>}
           <p className="text-muted">{t("checked", { date: provider.verifiedAt.slice(0, 10) })}</p>
           <div className="provider-sources">{provider.sources.map((source, index) => <a key={source} href={source} target="_blank" rel="noopener noreferrer">{t("source", { number: index + 1 })}</a>)}</div>
         </Card>)}
