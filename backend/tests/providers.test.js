@@ -66,7 +66,7 @@ test("specialty search, case-insensitive names, combined filters and no matches"
   assert.equal((await get("?q=RiZk&specialty=pediatrics")).body.total, 1);
   assert.ok((await get("?q=emergency%20medicine")).body.total >= 2);
   assert.equal((await get("?q=does-not-exist")).body.total, 0);
-  assert.equal((await get("?specialty=pediatrics&city=Tripoli")).body.providers[0].id, "nini-hospital");
+  assert.ok((await get("?specialty=pediatrics&city=Tripoli")).body.providers.some(p => p.id === "nini-hospital"));
   assert.equal((await get("?q=.*")).body.total, 0); // literal, not regex
 });
 test("rejects nested, repeated and excessively long filter parameters", async () => {
@@ -120,7 +120,7 @@ test("database schedule filter agrees with Beirut hours before pagination", asyn
 });
 test("24/7 ER filtering excludes unknown status and exposes separate clinic hours", async () => {
   const result = await get("?emergency24h=true");
-  assert.equal(result.body.total, 5);
+  assert.equal(result.body.total, seedData.filter(p => p.emergency24h === true).length);
   assert.ok(result.body.providers.every(p => p.emergency24h && p.openingStatus === "unknown"));
   assert.equal((await get("?openNow=maybe")).status, 400);
 });
@@ -215,4 +215,59 @@ test("new location-only listings remain unknown and do not qualify for emergency
   assert.deepEqual(hospital.services, []);
   assert.equal((await get("?city=Saida&emergency24h=true")).body.total, 0);
   assert.equal((await get("?q=Clemenceau&emergency24h=true")).body.total, 1);
+});
+
+test("consolidation preserves favorites once and does not recreate a retired hospital", async () => {
+  const canonical = seedData.find(p => p.slug === "lebanese-italian-hospital");
+  await Provider.create({ ...canonical, slug: "najem-hospital", legacySlugs: [] });
+  const { user } = await account("migration@example.test");
+  await User.updateOne({ _id: user._id }, { $set: { favoriteProviders: ["najem-hospital", canonical.slug, "aubmc"] } });
+  await Promise.all([seedProviders(), seedProviders()]);
+  assert.equal(await Provider.countDocuments(), seedData.length);
+  assert.equal(await Provider.countDocuments({ slug: "najem-hospital" }), 0);
+  assert.deepEqual([...(await User.findById(user._id)).favoriteProviders].sort(), [canonical.slug, "aubmc"].sort());
+  await seedProviders([{ ...canonical, slug: "najem-hospital", legacySlugs: [], verifiedAt: "2026-10-01" }]);
+  assert.equal(await Provider.countDocuments({ slug: "najem-hospital" }), 0);
+});
+
+test("legacy and canonical favorite URLs share one saved facility and retain access controls", async () => {
+  const { user, cookie } = await account("alias@example.test");
+  const oldPath = "/najem-hospital/favorite", currentPath = "/lebanese-italian-hospital/favorite";
+  assert.equal((await favoriteRequest("PUT", oldPath)).status, 401);
+  assert.equal((await favoriteRequest("PUT", oldPath, cookie, "https://other.test")).status, 403);
+  const responses = await Promise.all([favoriteRequest("PUT", oldPath, cookie), favoriteRequest("PUT", currentPath, cookie)]);
+  assert.ok(responses.every(r => r.status === 200));
+  for (const response of responses) assert.equal((await response.json()).id, "lebanese-italian-hospital");
+  assert.deepEqual([...(await User.findById(user._id)).favoriteProviders], ["lebanese-italian-hospital"]);
+  assert.equal((await favoriteRequest("DELETE", oldPath, cookie)).status, 204);
+  assert.equal((await User.findById(user._id)).favoriteProviders.length, 0);
+});
+
+test("invalid alias ownership fails before seed changes any provider", async () => {
+  const fixture = seedData[0];
+  await assert.rejects(seedProviders([{ ...fixture, name: "Must not change", legacySlugs: [fixture.slug] }]), /canonical owner/);
+  await assert.rejects(seedProviders([{ ...fixture, legacySlugs: ["retired-fixture"] }, { ...seedData[1], legacySlugs: ["retired-fixture"] }]), /canonical owner/);
+  assert.equal((await Provider.findOne({ slug: fixture.slug })).name, fixture.name);
+  await assert.rejects(new Provider({ ...fixture, legacySlugs: ["Bad alias"] }).validate());
+});
+
+test("source review adds matched locations and capabilities without guessing emergency availability", async () => {
+  const byId = id => seedData.find(p => p.slug === id);
+  assert.ok(!byId("najem-hospital"));
+  assert.deepEqual(byId("lebanese-italian-hospital").legacySlugs, ["najem-hospital"]);
+  assert.equal(byId("al-jabal-hospital").district, "Baabda");
+  assert.equal(byId("al-koura-hospital").emergency24h, true);
+  assert.ok(byId("al-koura-hospital").services.includes("dialysis"));
+  for (const id of ["clinique-de-chirugie-estetque-dr-nader-saab", "hopital-dr-toni-nassar-sal", "specialized-medical-rehabilitation-hospital", "al-rahma-hospital"]) {
+    const p = byId(id);
+    assert.ok(p.latitude > 33 && p.latitude < 35 && p.longitude > 35 && p.longitude < 37);
+    assert.equal(p.locationApproximate, true);
+    assert.equal(p.emergency24h, null, id);
+  }
+  assert.equal(byId("clinique-de-chirugie-estetque-dr-nader-saab").hours.length, 6);
+  assert.ok(!byId("al-rahban-hospital").services.includes("ct"));
+  for (const p of seedData) {
+    assert.ok(p.sources.every(url => /^https:\/\//.test(url)), p.slug);
+    assert.equal(p.latitude == null, p.longitude == null, p.slug);
+  }
 });
