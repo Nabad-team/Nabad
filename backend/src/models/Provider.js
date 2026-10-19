@@ -10,6 +10,7 @@ interval.pre("validate", function () {
 });
 const schema = new mongoose.Schema({
   slug: { type: String, required: true, unique: true, match: /^[a-z0-9-]+$/ },
+  legacySlugs: { type: [String], default: [], validate: values => values.length <= 10 && values.every(value => /^[a-z0-9-]+$/.test(value)) },
   name: { type: String, required: true, maxlength: 200 },
   type: { type: String, required: true, enum: ["hospital", "clinic"] },
   city: { type: String, default: "" },
@@ -37,8 +38,10 @@ schema.index({ location: "2dsphere" });
 schema.index({ name: "text", specialties: "text", services: "text", city: "text" }, { default_language: "english" });
 schema.index({ governorate: 1 });
 schema.index({ district: 1 });
+schema.index({ legacySlugs: 1 });
 schema.index({ services: 1 });
 schema.pre("validate", function () {
+  if (this.legacySlugs.includes(this.slug)) this.invalidate("legacySlugs", "A provider cannot retire its own slug.");
   if ((this.latitude == null) !== (this.longitude == null)) this.invalidate("latitude", "Provide both coordinates or neither.");
   this.location = this.latitude == null || this.longitude == null ? undefined : { type: "Point", coordinates: [this.longitude, this.latitude] };
 });
