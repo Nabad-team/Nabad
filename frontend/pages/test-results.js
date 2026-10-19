@@ -196,6 +196,21 @@ export default function TestResultsPage() {
       </PageTitle>
 
       <section className="assistant-chat" aria-label="Health assistant conversation">
+        <aside className="assistant-chat__sidebar" aria-label="Chat history">
+          <Button type="button" onClick={newConversation} disabled={busy}>+ New chat</Button>
+          <h2>Recent chats</h2>
+          {historyError && conversations.length === 0 && <p className="text-muted" role="status">{historyError}</p>}
+          {conversations.length > 0 ? <ul>{conversations.map((conversation) => (
+            <li key={conversation.id}>
+              <button type="button" className={`assistant-chat__history-link${conversationId === conversation.id ? " is-current" : ""}`} onClick={() => openConversation(conversation)} aria-label={conversation.title} aria-current={conversationId === conversation.id ? "page" : undefined}>
+                <span>{conversation.title}</span>
+                <small>{new Date(conversation.updatedAt).toLocaleDateString()}</small>
+              </button>
+              <button type="button" className="assistant-chat__delete" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`} disabled={busy}>x</button>
+            </li>
+          ))}</ul> : <p className="text-muted">Your saved chats will appear here.</p>}
+        </aside>
+        <div className="assistant-chat__main">
         <header className="assistant-chat__header">
           <div>
             <span className="assistant-chat__status">Health assistant</span>
@@ -203,20 +218,6 @@ export default function TestResultsPage() {
           </div>
           {messages.length > 0 && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
         </header>
-        {messages.length === 0 && conversations.length > 0 && (
-          <section className="assistant-chat__saved" aria-labelledby="saved-conversations-heading">
-            <h2 id="saved-conversations-heading">Previous conversations</h2>
-            {historyError && <Alert tone="danger" role="alert">{historyError}</Alert>}
-            <ul>{conversations.map((conversation) => (
-              <li key={conversation.id}>
-                <Button type="button" variant="secondary" onClick={() => openConversation(conversation)}>{conversation.title}</Button>
-                <span>{new Date(conversation.updatedAt).toLocaleDateString()}</span>
-                <Button type="button" variant="secondary" size="small" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`}>Delete</Button>
-              </li>
-            ))}</ul>
-          </section>
-        )}
-        {messages.length === 0 && historyError && conversations.length === 0 && <Alert tone="danger" role="alert">{historyError}</Alert>}
         {messages.length > 0 && historyError && <Alert tone="danger" role="alert">{historyError}</Alert>}
         {messages.length > 0 ? (
           <section className="assistant-chat__history" aria-label="Conversation" aria-live="polite">
@@ -311,6 +312,7 @@ export default function TestResultsPage() {
           <p className="report-result__print"><Button variant="secondary" onClick={() => window.print()}>Print or save as PDF</Button></p>
         </section>
       )}
+        </div>
       </section>
 
       <p className="results-safety-note">

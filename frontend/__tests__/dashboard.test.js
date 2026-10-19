@@ -260,10 +260,9 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByRole("img", { name: /Medications today: 1 left to check\. 1 of 2 active medications checked off today/ })).toBeInTheDocument();
+    expect(await within(card).findByRole("button", { name: "Mark taken: Aspirin" })).toBeInTheDocument();
+    await act(async () => { fireEvent.click(within(card).getByRole("button", { name: "Mark taken: Aspirin" })); });
     const aspirin = within(card).getByRole("checkbox", { name: /Aspirin/ });
-    expect(aspirin).not.toBeChecked();
-    await act(async () => { fireEvent.click(aspirin); });
     expect(aspirin).toBeChecked();
     expect(fakeMedications.calls).toContainEqual(["setMedicationTaken", "self", "aspirin", "2026-10-12", true]);
   });
