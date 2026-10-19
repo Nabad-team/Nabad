@@ -38,7 +38,7 @@ mapping must use supported slugs and preserve emergency guidance.
 
 ## Data and update rules
 
-The curated seed contains 17 entries across nine governorates. Each entry includes
+The curated seed contains 176 entries (174 hospital listings and 2 clinics) across nine governorates. See `provider-data-import.md` for source review, district counts and unresolved data. Each entry includes
 its sources and a source-check timestamp. MoPH supplies facility coordinates;
 hospital, hospital-syndicate and institutional partner pages supply capabilities.
 This remains a curated directory, not a complete national registry or live routing
@@ -50,7 +50,7 @@ New slugs are inserted. Existing records are updated only when the incoming
 snapshots preserve curated changes. To publish a correction, verify the sources
 and advance that record's timestamp. Never advance dates without checking sources.
 Defaults clear old optional fields when a newer curated snapshot omits them.
-Unique slugs prevent duplicate records and preserve existing favorite references.
+Unique slugs prevent duplicate records. Verified duplicate identities use `legacySlugs`: seed migration replaces retired favorite IDs with the canonical slug, removes duplicate favorites and retires the duplicate provider. Legacy favorite PUT/DELETE URLs resolve to the same canonical provider and retain authentication, origin checks and limits. A known retired slug is skipped when an older snapshot is seeded. Alias ownership is validated before any writes.
 
 ## Database search and deployment
 
