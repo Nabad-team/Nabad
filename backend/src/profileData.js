@@ -1,6 +1,9 @@
 const Medication = require(
   "./models/Medication"
 );
+const MedicationAdherence = require(
+  "./models/MedicationAdherence"
+);
 
 const SymptomRecord = require(
   "./models/SymptomRecord"
@@ -32,6 +35,7 @@ const {
 
 const PROFILE_MODELS = [
   Medication,
+  MedicationAdherence,
   SymptomRecord,
   ReportConversation,
   Appointment,

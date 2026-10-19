@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../src/models/User");
 const Medication = require("../src/models/Medication");
+const MedicationAdherence = require("../src/models/MedicationAdherence");
 const LinkedProfile = require("../src/models/LinkedProfile");
 let mongod, server, base;
 const password = "Medication test password 123!";
@@ -19,7 +20,7 @@ before(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User.init(), Medication.init(), LinkedProfile.init()]);
+  await Promise.all([User.init(), Medication.init(), MedicationAdherence.init(), LinkedProfile.init()]);
   passwordHash = await bcrypt.hash(password, 12);
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
@@ -31,7 +32,7 @@ after(async () => {
   await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
-beforeEach(async () => { await User.deleteMany({}); await Medication.deleteMany({}); await LinkedProfile.deleteMany({}); });
+beforeEach(async () => { await User.deleteMany({}); await Medication.deleteMany({}); await MedicationAdherence.deleteMany({}); await LinkedProfile.deleteMany({}); });
 
 async function user(email = "owner@example.test") { return User.create({ name: "Owner", email, passwordHash }); }
 function token(account) { return jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" }); }
@@ -58,6 +59,7 @@ const names = async (cookie, profileId = "self") => (await request("GET", forPro
 
 test("every medication route requires sign-in and writes require our Origin", async () => {
   const routes = [["GET", "/medications"], ["POST", "/medications"], ["PUT", `/medications/${MISSING_ID}`],
+    ["GET", "/medications/adherence?date=2026-10-19"], ["PUT", `/medications/${MISSING_ID}/adherence`],
     ["PATCH", `/medications/${MISSING_ID}/status`], ["DELETE", `/medications/${MISSING_ID}`]];
   for (const [method, path] of routes) assert.equal((await request(method, path, { body: method === "GET" ? undefined : {} })).status, 401, `${method} ${path}`);
   const cookie = token(await user());
@@ -298,7 +300,7 @@ test("removing a dependent removes their medications, and nobody else's", async 
   const childId = await dependent(cookie, "Child");
   const siblingId = await dependent(cookie, "Sibling");
   await add(cookie, { name: "Mine" });
-  await request("POST", forProfile("/medications", childId), { cookie, body: { ...paracetamol, name: "Child 1" } });
+  const childMedication = (await request("POST", forProfile("/medications", childId), { cookie, body: { ...paracetamol, name: "Child 1" } })).body.medication;
   await request("POST", forProfile("/medications", childId), { cookie, body: { ...paracetamol, name: "Child 2" } });
   await request("POST", forProfile("/medications", siblingId), { cookie, body: { ...paracetamol, name: "Sibling" } });
   await add(other, { name: "Other user" });
@@ -306,12 +308,36 @@ test("removing a dependent removes their medications, and nobody else's", async 
   // Someone else can't remove the dependent (or its medications).
   assert.equal((await request("DELETE", `/profile/linked/${childId}`, { cookie: other })).status, 404);
   assert.equal(await Medication.countDocuments({ profileId: childId }), 2);
+  await request("PUT", forProfile(`/medications/${childMedication.id}/adherence`, childId), { cookie, body: { date: "2026-10-19", taken: true } });
 
   assert.equal((await request("DELETE", `/profile/linked/${childId}`, { cookie })).status, 204);
   assert.equal(await Medication.countDocuments({ profileId: childId }), 0);
+  assert.equal(await MedicationAdherence.countDocuments({ profileId: childId }), 0);
   assert.deepEqual(await names(cookie), ["Mine"]);
   assert.deepEqual(await names(cookie, siblingId), ["Sibling"]);
   assert.deepEqual(await names(other), ["Other user"]);
   // The removed profile is gone for medications too.
   assert.equal((await request("GET", forProfile("/medications", childId), { cookie })).status, 404);
+});
+
+test("daily medication check-ins are saved per medication, date and profile", async () => {
+  const account = await user();
+  const cookie = token(account);
+  const childId = await dependent(cookie);
+  const mine = (await add(cookie)).body.medication.id;
+  const childs = (await request("POST", forProfile("/medications", childId), { cookie, body: { ...paracetamol, name: "Child medicine" } })).body.medication.id;
+  const date = "2026-10-19";
+  const selfPath = `/medications/adherence?profileId=self&date=${date}`;
+  const childPath = `/medications/adherence?profileId=${childId}&date=${date}`;
+
+  assert.deepEqual((await request("GET", selfPath, { cookie })).body.medications.map(({ id, taken }) => ({ id, taken })), [{ id: mine, taken: false }]);
+  assert.equal((await request("PUT", forProfile(`/medications/${mine}/adherence`, "self"), { cookie, body: { date, taken: true } })).body.taken, true);
+  assert.deepEqual((await request("GET", selfPath, { cookie })).body.medications.map(({ id, taken }) => ({ id, taken })), [{ id: mine, taken: true }]);
+  assert.deepEqual((await request("GET", childPath, { cookie })).body.medications.map(({ id, taken }) => ({ id, taken })), [{ id: childs, taken: false }]);
+  assert.equal(await MedicationAdherence.countDocuments(), 1, "repeating a check-in is idempotent");
+
+  assert.equal((await request("PUT", forProfile(`/medications/${mine}/adherence`, "self"), { cookie, body: { date, taken: false } })).status, 200);
+  assert.equal((await request("GET", selfPath, { cookie })).body.medications[0].taken, false);
+  assert.equal((await request("PUT", forProfile(`/medications/${mine}/adherence`, "self"), { cookie, body: { date: "2026-02-30", taken: true } })).status, 400);
+  assert.equal((await request("GET", `/medications/adherence?profileId=self&date=2026-02-30`, { cookie })).status, 400);
 });

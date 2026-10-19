@@ -2512,27 +2512,100 @@ select.input {
 .provider-sources { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); }
 
 .progress-summary__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--space-4);
   list-style: none;
-  margin: 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
 }
 
-.progress-summary__list > li {
-  display: flex;
+.progress-summary__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-5);
-  padding-block: var(--space-4);
-  border-top: 1px solid var(--color-border);
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-.progress-summary__list h3,
-.progress-summary__list p {
+.progress-summary__visual {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  flex: none;
+}
+
+.progress-summary__ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+.progress-summary__ring-track,
+.progress-summary__ring-value { fill: none; stroke-width: 6; }
+.progress-summary__ring-track { stroke: var(--color-border); }
+.progress-summary__ring-value {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 350ms ease;
+}
+.progress-summary__item--complete .progress-summary__ring-value { stroke: var(--color-success); }
+.progress-summary__ring-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+.progress-summary__copy { min-width: 0; }
+.progress-summary__copy h3,
+.progress-summary__copy p {
   margin: 0;
 }
 
-.progress-summary__list h3 {
-  margin-bottom: var(--space-1);
+.progress-summary__status { margin-top: var(--space-1) !important; font-weight: var(--weight-semibold); }
+.progress-summary__copy .text-muted { margin-top: var(--space-1); }
+.progress-summary__copy .button { margin-top: var(--space-3); }
+
+@media (max-width: 760px) {
+  .progress-summary__item { grid-template-columns: 5.5rem minmax(0, 1fr); }
+}
+
+.progress-summary__medications,
+.progress-summary__appointments {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+}
+.progress-summary__medications h3,
+.progress-summary__appointments h3,
+.progress-summary__medications p,
+.progress-summary__appointments p { margin: 0; }
+.progress-summary__medications > p { margin-top: var(--space-1); }
+.progress-summary__medication-list {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+.progress-summary__medication-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+.progress-summary__medication-list input { margin-top: 0.35rem; }
+.progress-summary__appointments {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.progress-summary__appointments p { margin-top: var(--space-1); }
+@media (max-width: 520px) {
+  .progress-summary__appointments { align-items: flex-start; flex-direction: column; }
 }
 
 .symptom-history__list {
