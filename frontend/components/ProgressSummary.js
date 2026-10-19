@@ -10,14 +10,14 @@ import { getMedicationAdherence, setMedicationTaken } from "../lib/medicationApi
 import { getAppointments } from "../lib/appointmentApi";
 import { hoursText, litresText, sleptText } from "../lib/wellbeing";
 
-function ProgressRing({ label, value, progress, status, detail, href, linkLabel, complete = false }) {
+function ProgressRing({ label, value, progress, status, detail, href, linkLabel, complete = false, onAction, actionLabel, actionDisabled = false }) {
   const circumference = 2 * Math.PI * 34;
   const boundedProgress = Math.max(0, Math.min(100, progress ?? 0));
   const dashOffset = circumference * (1 - boundedProgress / 100);
 
   return (
     <li className={`progress-summary__item${complete ? " progress-summary__item--complete" : ""}`}>
-      <div className="progress-summary__visual" role="img" aria-label={`${label}: ${status}. ${detail}`}>
+      <div className="progress-summary__visual" role={onAction ? undefined : "img"} aria-label={onAction ? undefined : `${label}: ${status}. ${detail}`}>
         <svg className="progress-summary__ring" viewBox="0 0 80 80" aria-hidden="true" focusable="false">
           <circle className="progress-summary__ring-track" cx="40" cy="40" r="34" />
           {progress !== null && (
@@ -29,7 +29,11 @@ function ProgressRing({ label, value, progress, status, detail, href, linkLabel,
             />
           )}
         </svg>
-        <span className="progress-summary__ring-label" aria-hidden="true">{value}</span>
+        {onAction ? (
+          <button type="button" className="progress-summary__ring-action" onClick={onAction} disabled={actionDisabled} aria-label={actionLabel} title={actionLabel}>
+            <span className="progress-summary__ring-label" aria-hidden="true">{value}</span>
+          </button>
+        ) : <span className="progress-summary__ring-label" aria-hidden="true">{value}</span>}
       </div>
       <div className="progress-summary__copy">
         <h3>{label}</h3>
@@ -95,6 +99,7 @@ export default function ProgressSummary() {
   const water = wellbeing?.water;
   const sleep = wellbeing?.sleep;
   const takenCount = medications?.filter((medication) => medication.taken).length || 0;
+  const nextMedicationAction = medications?.find((medication) => !medication.taken) || medications?.[0];
   const nextAppointment = appointments?.map((appointment) => ({
     ...appointment,
     dateTime: new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}:00`),
@@ -155,12 +160,15 @@ export default function ProgressSummary() {
           href="/medications"
           linkLabel="Open medications"
           complete={!!medications?.length && takenCount === medications.length}
+          onAction={medications?.length ? () => toggleMedication(nextMedicationAction) : undefined}
+          actionLabel={nextMedicationAction ? `${nextMedicationAction.taken ? "Undo taken" : "Mark taken"}: ${nextMedicationAction.name}` : undefined}
+          actionDisabled={!medications?.length || !!savingMedication}
         />
       </ul>
       <section className="progress-summary__medications" aria-labelledby="medication-checkin-heading">
         <h3 id="medication-checkin-heading">Medication check-in</h3>
         <p className="text-muted">{medications?.length
-          ? "Check off each medicine after taking it as prescribed. This is one daily check-in, not a dose-by-dose record."
+          ? "Tap the medication ring to check off the next medicine you took as prescribed, or use the list below. This is one daily check-in, not a dose-by-dose record."
           : medicationsFailed ? "Medication reminders are unavailable right now."
             : medications ? "No active medications on your list. Add one to get a daily check-in here."
               : "Loading your active medication list."}</p>
