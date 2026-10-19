@@ -20,7 +20,7 @@
   "mapError": "The map could not fully load. Provider details are still available in the list below.",
   "lead": "Find hospitals and clinics in Lebanon, and keep useful places close at hand.",
   "notice": "This directory includes published MoPH hospital listings. A listing is not confirmation that a facility is currently operating. Call to confirm services, appointments and hours before travelling.",
-  "search": "Search by name or specialty",
+  "search": "Search by hospital or clinic name",
   "specialty": "Specialty",
   "allSpecialties": "All specialties",
   "openNow": "Open per schedule or 24/7 ER",
@@ -112,5 +112,6 @@
   "allDistricts": "All districts",
   "districtHint": "A district includes nearby towns. Choose All cities to search the whole district; selected filters are combined.",
   "addressUnknown": "Street address not yet verified",
-  "locationUnknown": "Map location not yet verified. Directions are unavailable for this listing."
+  "locationUnknown": "Map location not yet verified. Directions are unavailable for this listing.",
+  "moreFilters": "More filters"
 }

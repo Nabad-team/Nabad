@@ -16,7 +16,7 @@ test("lists providers and submits a specialty search", async () => {
   const user = userEvent.setup(); render(<ProvidersPage />);
   expect(await screen.findByRole("heading", { name: "Test Clinic" })).toBeInTheDocument();
   await user.selectOptions(screen.getByLabelText("Specialty"), "pediatrics");
-  await user.type(screen.getByLabelText("Search by name or specialty"), "Test");
+  await user.type(screen.getByLabelText("Search by hospital or clinic name"), "Test");
   await user.click(screen.getByRole("button", { name: "Search providers" }));
   await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ q: "Test", specialty: "pediatrics" }), expect.any(AbortSignal)));
   expect(ProvidersPage.requireSignIn).not.toBe(true);

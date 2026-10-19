@@ -115,45 +115,50 @@ export default function ProvidersPage() {
           {data.cities.map(city => <option key={city} value={city.toLowerCase()}>{city}</option>)}
         </select>
       </div>
-      <div className="field"><label htmlFor="provider-governorate" className="field__label">{t("governorate")}</label>
-        <select id="provider-governorate" className="input" {...field("governorate")}>
-          <option value="">{t("allGovernorates")}</option>
-          {(data.governorates || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
-        </select>
-      </div>
-      <div className="field"><label htmlFor="provider-district" className="field__label">{t("district")}</label>
-        <select id="provider-district" className="input" {...field("district")}>
-          <option value="">{t("allDistricts")}</option>
-          {(data.districts || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
-        </select>
-        <p className="text-muted">{t("districtHint")}</p>
-      </div>
-      <div className="field"><label htmlFor="provider-service" className="field__label">{t("service")}</label>
-        <select id="provider-service" className="input" {...field("service")}>
-          <option value="">{t("allServices")}</option>
-          {(data.services || []).map(value => <option key={value} value={value}>{t(`services.${value}`)}</option>)}
-        </select>
-      </div>
-      <p id="provider-location-hint">{t("locationHint")}</p>
-      <div className="form-actions">
-        <Button variant="secondary" disabled={locating} aria-describedby="provider-location-hint" onClick={locate}>{t(locating ? "locating" : "location")}</Button>
-        {(location || locating) && <Button variant="secondary" onClick={() => {
-          locationRequest.current += 1; setLocation(null); setLocating(false); setLocationError("");
-          setDraft(old => ({ ...old, radiusKm: "" }));
-          applyFilters({ ...filters, lat: undefined, lng: undefined, radiusKm: "", page: 1 });
-        }}>{t("clearLocation")}</Button>}
-      </div>
-      {locationError && <p role="alert">{locationError}</p>}
-      {location && <p role="status">{t("locationReady")}</p>}
-      <div className="field"><label htmlFor="provider-radius" className="field__label">{t("radius")}</label>
-        <select id="provider-radius" className="input" disabled={!location} {...field("radiusKm")}>
-          <option value="">{t("anyDistance")}</option>
-          {[5, 10, 25, 50, 100].map(km => <option key={km} value={km}>{t("within", { km })}</option>)}
-        </select>
-      </div>
-      <label><input type="checkbox" checked={draft.openNow} onChange={e => setDraft(old => ({ ...old, openNow: e.target.checked }))} /> {t("openNow")}</label>
-      <label><input type="checkbox" checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> {t("emergencyOnly")}</label>
-      {signedIn && <label><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> {t("favoritesOnly")}</label>}
+      <details className="provider-filters__advanced">
+        <summary>{t("moreFilters")}</summary>
+        <div className="provider-filters__advanced-content">
+          <div className="field"><label htmlFor="provider-district" className="field__label">{t("district")}</label>
+            <select id="provider-district" className="input" {...field("district")}>
+              <option value="">{t("allDistricts")}</option>
+              {(data.districts || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
+            </select>
+            <p className="text-muted">{t("districtHint")}</p>
+          </div>
+          <div className="field"><label htmlFor="provider-governorate" className="field__label">{t("governorate")}</label>
+            <select id="provider-governorate" className="input" {...field("governorate")}>
+              <option value="">{t("allGovernorates")}</option>
+              {(data.governorates || []).map(value => <option key={value} value={value.toLowerCase()}>{value}</option>)}
+            </select>
+          </div>
+          <div className="field"><label htmlFor="provider-service" className="field__label">{t("service")}</label>
+            <select id="provider-service" className="input" {...field("service")}>
+              <option value="">{t("allServices")}</option>
+              {(data.services || []).map(value => <option key={value} value={value}>{t(`services.${value}`)}</option>)}
+            </select>
+          </div>
+          <p id="provider-location-hint">{t("locationHint")}</p>
+          <div className="form-actions">
+            <Button variant="secondary" disabled={locating} aria-describedby="provider-location-hint" onClick={locate}>{t(locating ? "locating" : "location")}</Button>
+            {(location || locating) && <Button variant="secondary" onClick={() => {
+              locationRequest.current += 1; setLocation(null); setLocating(false); setLocationError("");
+              setDraft(old => ({ ...old, radiusKm: "" }));
+              applyFilters({ ...filters, lat: undefined, lng: undefined, radiusKm: "", page: 1 });
+            }}>{t("clearLocation")}</Button>}
+          </div>
+          {locationError && <p role="alert">{locationError}</p>}
+          {location && <p role="status">{t("locationReady")}</p>}
+          <div className="field"><label htmlFor="provider-radius" className="field__label">{t("radius")}</label>
+            <select id="provider-radius" className="input" disabled={!location} {...field("radiusKm")}>
+              <option value="">{t("anyDistance")}</option>
+              {[5, 10, 25, 50, 100].map(km => <option key={km} value={km}>{t("within", { km })}</option>)}
+            </select>
+          </div>
+          <label><input type="checkbox" checked={draft.openNow} onChange={e => setDraft(old => ({ ...old, openNow: e.target.checked }))} /> {t("openNow")}</label>
+          <label><input type="checkbox" checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> {t("emergencyOnly")}</label>
+          {signedIn && <label><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> {t("favoritesOnly")}</label>}
+        </div>
+      </details>
       <Button type="submit">{t("submit")}</Button>
     </form>
     {loading ? <HeartbeatLoader label={t("loading")} /> : error ? <Alert tone="danger" role="alert">
