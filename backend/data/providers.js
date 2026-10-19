@@ -11,17 +11,41 @@ module.exports = [
     "longitude": 35.48538,
     "phone": "+9611350000",
     "specialties": [
-      "emergency-medicine"
+      "emergency-medicine",
+      "cardiology",
+      "dermatology",
+      "ent",
+      "family-medicine",
+      "internal-medicine",
+      "neonatology",
+      "nephrology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "radiology",
+      "surgery"
     ],
     "emergency24h": true,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.aubmc.org.lb/patientcare/Pages/pat_info.aspx",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84535/american-university-of-beirut-medical-center?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84535/american-university-of-beirut-medical-center?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/208"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "governorate": "Beirut",
-    "services": [],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri",
+      "nicu"
+    ],
     "district": "Beirut"
   },
   {
@@ -41,7 +65,8 @@ module.exports = [
       "ophthalmology",
       "internal-medicine",
       "obstetrics-gynecology",
-      "orthopedics"
+      "orthopedics",
+      "radiology"
     ],
     "emergency24h": true,
     "sources": [
@@ -49,11 +74,16 @@ module.exports = [
       "https://www.laumcrh.com/contact-us",
       "https://www.laumcrh.com/departments/medical-departments",
       "https://www.laumcrh.com/departments/medical-departments/internal-medicine/emergency-department",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84544/university-medical-center-rizk-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84544/university-medical-center-rizk-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/41"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "governorate": "Beirut",
-    "services": [],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "district": "Beirut"
   },
   {
@@ -70,19 +100,25 @@ module.exports = [
       "surgery",
       "obstetrics-gynecology",
       "pediatrics",
-      "radiology"
+      "radiology",
+      "emergency-medicine",
+      "oncology"
     ],
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.hopitalnini.com/en/component/jecontact/",
       "https://www.hopitalnini.com/en/departments/2-uncategorised",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84639/nine-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84639/nine-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/52"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "governorate": "North",
     "services": [
       "mri",
-      "maternity"
+      "maternity",
+      "cath-lab",
+      "ct",
+      "dialysis"
     ],
     "phone": "+9616431400",
     "district": "Tripoli"
@@ -111,16 +147,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://hhumc.org.lb/en/department-MD.php",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84651/hammoud-hospital-university-medical-center?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84651/hammoud-hospital-university-medical-center?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/194"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "governorate": "South",
     "services": [
       "ct",
       "mri",
-      "dialysis"
+      "dialysis",
+      "cath-lab"
     ],
-    "district": "Saida"
+    "district": "Saida",
+    "phone": "+9617723111"
   },
   {
     "slug": "aubmc-specialty-clinics",
@@ -241,18 +280,39 @@ module.exports = [
     "latitude": 33.89516,
     "longitude": 35.52322,
     "specialties": [
-      "radiology"
+      "radiology",
+      "cardiology",
+      "dermatology",
+      "emergency-medicine",
+      "ent",
+      "family-medicine",
+      "internal-medicine",
+      "nephrology",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "surgery"
     ],
     "services": [
       "ct",
-      "mri"
+      "mri",
+      "cath-lab",
+      "dialysis",
+      "icu",
+      "maternity",
+      "nicu"
     ],
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://betasite.stgeorgehospital.org/services/110/department-of-medical-imaging",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84546/saint-george-hospital-university-medical-center?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84546/saint-george-hospital-university-medical-center?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/118"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "district": "Beirut"
   },
   {
@@ -271,7 +331,17 @@ module.exports = [
       "nephrology",
       "surgery",
       "emergency-medicine",
-      "radiology"
+      "radiology",
+      "dermatology",
+      "ent",
+      "family-medicine",
+      "internal-medicine",
+      "neonatology",
+      "neurology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "psychiatry"
     ],
     "services": [
       "burn-unit",
@@ -285,9 +355,10 @@ module.exports = [
       "https://www.hopital-libanais.com/",
       "https://www.hopital-libanais.com/department/critical-care-units",
       "https://syndicateofhospitals.org.lb/Hospitals/Details/130",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84548/jeatawi-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84548/jeatawi-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/130"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9611590000",
     "district": "Beirut"
   },
@@ -308,21 +379,26 @@ module.exports = [
       "neurology",
       "neonatology",
       "pediatrics",
-      "emergency-medicine"
+      "emergency-medicine",
+      "oncology",
+      "radiology"
     ],
     "services": [
       "nicu",
       "icu",
-      "maternity"
+      "maternity",
+      "ct"
     ],
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.chtourahospital.com/node/1",
       "https://chtourahospital.com/departments",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84558/chtoura-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84558/chtoura-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/155"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618544022"
   },
   {
     "slug": "bekaa-hospital",
@@ -339,21 +415,26 @@ module.exports = [
       "pediatrics",
       "cardiology",
       "radiology",
-      "nephrology"
+      "nephrology",
+      "oncology",
+      "orthopedics",
+      "surgery"
     ],
     "services": [
       "nicu",
       "icu",
       "dialysis",
-      "maternity"
+      "maternity",
+      "ct"
     ],
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://bekaahospital.com/departments/",
       "https://www.bekaahospital.com/index.php",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84562/bekaa-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84562/bekaa-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/160"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "emergency24h": true,
     "phone": "+9618543150",
     "district": "Zahle"
@@ -376,7 +457,8 @@ module.exports = [
       "nephrology",
       "surgery",
       "orthopedics",
-      "obstetrics-gynecology"
+      "obstetrics-gynecology",
+      "ent"
     ],
     "services": [
       "ct",
@@ -390,9 +472,10 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://syndicateofhospitals.org.lb/Hospitals/Details/47",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84582/mount-lebanon-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84582/mount-lebanon-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/47"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9615957000",
     "district": "Baabda"
   },
@@ -408,18 +491,35 @@ module.exports = [
     "specialties": [
       "emergency-medicine",
       "cardiology",
-      "radiology"
+      "radiology",
+      "dermatology",
+      "ent",
+      "family-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "surgery"
     ],
     "services": [
-      "cath-lab"
+      "cath-lab",
+      "ct",
+      "icu",
+      "maternity",
+      "mri",
+      "nicu"
     ],
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.bmc.com.lb/about-bmc/useful-information/",
       "https://www.bmc.com.lb/contact-us/",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84611/belle-vue-hopital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84611/belle-vue-hopital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/231"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "emergency24h": true,
     "phone": "+9611682666",
     "district": "Metn"
@@ -446,20 +546,26 @@ module.exports = [
       "pediatrics",
       "psychiatry",
       "emergency-medicine",
-      "radiology"
+      "radiology",
+      "oncology"
     ],
     "services": [
       "icu",
-      "cath-lab"
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "mri"
     ],
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://chu-nds.org/en",
       "https://chu-nds.org/fr/ServicesAndunits/unit%C3%A9-de-cath%C3%A9t%C3%A9risme-cardiaque/14/unit%C3%A9-de-cath%C3%A9t%C3%A9risme-cardiaque",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84593/chu-notre-dame-de-secours-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84593/chu-notre-dame-de-secours-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/91"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Jbeil"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Jbeil",
+    "phone": "+9619541700"
   },
   {
     "slug": "nabih-berri-hospital",
@@ -543,8 +649,9 @@ module.exports = [
       "https://www.unicef.org/lebanon/press-releases/enhancing-neonatal-health-lebanon-partnership-between-ministry-public-health-unicef",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84383/baalbeck-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Baalbek"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Baalbek",
+    "phone": "+9618370880"
   },
   {
     "slug": "albert-haykel",
@@ -599,8 +706,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84372/dr-abdullah-al-rassi-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Akkar"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Akkar",
+    "phone": "+9616694455"
   },
   {
     "type": "hospital",
@@ -619,8 +727,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84377/tripoli-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Tripoli"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Tripoli",
+    "phone": "+9616385300"
   },
   {
     "type": "hospital",
@@ -639,8 +748,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84391/menyeh-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Minieh-Dinnie"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Minieh-Dinnie",
+    "phone": "+9616463933"
   },
   {
     "type": "hospital",
@@ -659,8 +769,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84375/bcharreh-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Bsharri"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Bsharri",
+    "phone": "+9616671357"
   },
   {
     "type": "hospital",
@@ -679,8 +790,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84367/ftouh-keserwan-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Keserwan"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Keserwan",
+    "phone": "+9619440440"
   },
   {
     "type": "hospital",
@@ -699,8 +811,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84388/beirut-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611830000"
   },
   {
     "type": "hospital",
@@ -719,8 +832,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84390/baabda-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Baabda"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Baabda",
+    "phone": "+9615920041"
   },
   {
     "type": "hospital",
@@ -739,8 +853,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84365/siblin-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Chouf"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Chouf",
+    "phone": "+9617971723"
   },
   {
     "type": "hospital",
@@ -759,8 +874,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84363/president-elias-harawi-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618825600"
   },
   {
     "type": "hospital",
@@ -779,8 +895,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84362/rachaya-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Rachaya"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Rachaya",
+    "phone": "+9618591503"
   },
   {
     "type": "hospital",
@@ -799,8 +916,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84379/saida-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Saida"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Saida",
+    "phone": "+9617721606"
   },
   {
     "type": "hospital",
@@ -819,8 +937,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84378/jezzine-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Jezzine"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Jezzine",
+    "phone": "+9617780106"
   },
   {
     "type": "hospital",
@@ -839,8 +958,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84368/hasbaya-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Hasbaya"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Hasbaya",
+    "phone": "+9617550420"
   },
   {
     "type": "hospital",
@@ -859,8 +979,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84369/marjaayoun-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Marjayoun"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Marjayoun",
+    "phone": "+9617830066"
   },
   {
     "type": "hospital",
@@ -879,8 +1000,9 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84385/tebnin-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Bint Jbeil"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Bint Jbeil",
+    "phone": "+9617325528"
   },
   {
     "type": "hospital",
@@ -899,13 +1021,19 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84384/bent-jbeil-governmental-hospital?facility_type=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Bint Jbeil"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Bint Jbeil",
+    "phone": "+9617452000"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "al-mazloum-hospital",
@@ -917,16 +1045,33 @@ module.exports = [
     "longitude": 35.8328470412032,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84643/new-mazloum-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84643/new-mazloum-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/180"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Tripoli"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Tripoli",
+    "phone": "+9616410025"
   },
   {
     "type": "hospital",
-    "specialties": [],
+    "specialties": [
+      "dermatology",
+      "emergency-medicine",
+      "ent",
+      "obstetrics-gynecology",
+      "oncology",
+      "orthopedics",
+      "radiology",
+      "surgery"
+    ],
     "services": [
-      "burn-unit"
+      "burn-unit",
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri"
     ],
     "emergency24h": null,
     "hoursKnown": false,
@@ -940,15 +1085,24 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://hopitaldelapaix.com/en",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84634/al-salam-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84634/al-salam-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/89"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Tripoli"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Tripoli",
+    "phone": "+9616411700"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "dialysis"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "beit-chabab-hospital",
@@ -960,15 +1114,40 @@ module.exports = [
     "longitude": 35.672899999825994,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84616/hopital-beit-chabab?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84616/hopital-beit-chabab?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/111"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Metn"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Metn",
+    "phone": "+9614983393"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "ent",
+      "internal-medicine",
+      "neonatology",
+      "nephrology",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "hotel-dieu-de-france",
@@ -980,15 +1159,21 @@ module.exports = [
     "longitude": 35.51914999991103,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84549/hotel-dieu-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84549/hotel-dieu-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/40"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611615300"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "rosaire-hospital",
@@ -1000,15 +1185,32 @@ module.exports = [
     "longitude": 35.5151130887035,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84539/rosaire-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84539/rosaire-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/115"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611447980"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "ent",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "makassed-general",
@@ -1020,15 +1222,34 @@ module.exports = [
     "longitude": 35.50361099961851,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84550/makasid-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84550/makasid-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/43"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611636000"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "family-medicine",
+      "internal-medicine",
+      "neonatology",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "psychiatry",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "trad-hospital",
@@ -1040,14 +1261,27 @@ module.exports = [
     "longitude": 35.4916199997452,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84551/trad-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84551/trad-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/127"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611366130"
   },
   {
     "type": "hospital",
-    "specialties": [],
+    "specialties": [
+      "ent",
+      "family-medicine",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "radiology",
+      "surgery"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
@@ -1060,14 +1294,25 @@ module.exports = [
     "longitude": 35.48424781366931,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84541/fouad-khoury-hospital-associates-sal?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84541/fouad-khoury-hospital-associates-sal?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/59"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611742140"
   },
   {
     "type": "hospital",
-    "specialties": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "internal-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "ophthalmology",
+      "psychiatry",
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
@@ -1080,15 +1325,21 @@ module.exports = [
     "longitude": 35.498784159357484,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84543/dar-al-ajaza-al-islamia-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84543/dar-al-ajaza-al-islamia-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/54"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Beirut",
+    "phone": "+9611856658"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "al-iman-aley",
@@ -1100,15 +1351,22 @@ module.exports = [
     "longitude": 35.61274911832015,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84571/al-iman-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84571/al-iman-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/150"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Aley"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Aley",
+    "phone": "+9615554264"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "icu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "al-watani-aley",
@@ -1120,15 +1378,31 @@ module.exports = [
     "longitude": 35.59677000013226,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84566/al-watani-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84566/al-watani-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/154"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Aley"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Aley",
+    "phone": "+9615557880"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "obstetrics-gynecology",
+      "oncology",
+      "pediatrics",
+      "psychiatry",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "maternity",
+      "mri",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "ain-w-zain",
@@ -1140,15 +1414,35 @@ module.exports = [
     "longitude": 35.61124999989252,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84586/ain-wzen-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84586/ain-wzen-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/49"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Chouf"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Chouf",
+    "phone": "+9615509001"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "emergency-medicine",
+      "ent",
+      "internal-medicine",
+      "neonatology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "khoury-general-zahle",
@@ -1160,15 +1454,25 @@ module.exports = [
     "longitude": 35.89553000040714,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84561/khoury-general-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84561/khoury-general-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/163"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618811181"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "tal-chiha-hospital",
@@ -1180,15 +1484,32 @@ module.exports = [
     "longitude": 35.9055100002444,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84563/tal-chiha-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84563/tal-chiha-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/168"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618807782"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "emergency-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "rayak-hospital",
@@ -1200,10 +1521,12 @@ module.exports = [
     "longitude": 36.011239999691284,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84557/rayak-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84557/rayak-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/61"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618901300"
   },
   {
     "type": "hospital",
@@ -1222,13 +1545,19 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84560/taanayel-general-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618545199"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "libano-francais",
@@ -1240,10 +1569,12 @@ module.exports = [
     "longitude": 35.91230999990848,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84556/libano-francais-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84556/libano-francais-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/164"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "Zahle"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "Zahle",
+    "phone": "+9618810212"
   },
   {
     "type": "hospital",
@@ -1262,13 +1593,19 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84552/west-bekaa-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "West Bekaa"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "West Bekaa",
+    "phone": "+9618635740"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "hamed-farhat-hospital",
@@ -1280,10 +1617,12 @@ module.exports = [
     "longitude": 35.80335199970955,
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84554/dr-hamed-farhat-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84554/dr-hamed-farhat-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/75"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "district": "West Bekaa"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "district": "West Bekaa",
+    "phone": "+9618660101"
   },
   {
     "type": "hospital",
@@ -1309,8 +1648,12 @@ module.exports = [
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "beirut-general",
@@ -1324,15 +1667,32 @@ module.exports = [
     "sources": [
       "https://www.cmsm.org.lb/index.php/providers?page=2",
       "https://www.moph.gov.lb/en/HealthFacilities/view/0/55728/84542/beirut-general-hospital?facility_type=8",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84542/beirut-general-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84542/beirut-general-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/96"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "district": "Beirut"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "family-medicine",
+      "internal-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "psychiatry",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "najjar-hospital",
@@ -1346,15 +1706,27 @@ module.exports = [
     "sources": [
       "https://www.cmsm.org.lb/index.php/providers?keywords=Najjar",
       "https://www.moph.gov.lb/fr/HealthFacilities/view/17/85908/84540/najjar-hospital?facility_type=8",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84540/najjar-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84540/najjar-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/71"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "district": "Beirut"
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "neonatology",
+      "obstetrics-gynecology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "dialysis"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "al-najdeh-hospital",
@@ -1368,17 +1740,37 @@ module.exports = [
     "sources": [
       "https://www.cmsm.org.lb/index.php/providers?keywords=Najd",
       "https://beirut.diplo.de/resource/blob/2494926/ad07b020fe965573107e810926c50de7/krankenhaeuserliste-data.pdf",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84622/secours-populaire-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84622/secours-populaire-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/200"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "district": "Nabatieh"
   },
   {
     "type": "hospital",
     "specialties": [
-      "emergency-medicine"
+      "emergency-medicine",
+      "dermatology",
+      "ent",
+      "family-medicine",
+      "neonatology",
+      "nephrology",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "radiology",
+      "surgery"
     ],
-    "services": [],
+    "services": [
+      "cath-lab",
+      "ct",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": true,
     "hoursKnown": false,
     "slug": "clemenceau-medical-center",
@@ -1393,9 +1785,10 @@ module.exports = [
     "sources": [
       "https://www.cmc.com.lb/",
       "https://mapcarta.com/W566103031",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84545/clemenceau-medical-center?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84545/clemenceau-medical-center?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/216"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
     "district": "Beirut"
   },
   {
@@ -1450,17 +1843,23 @@ module.exports = [
     "city": "Beirut",
     "district": "Beirut",
     "governorate": "Beirut",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "Nouairy street - Opposite Bank Lebanon Gulf",
+    "latitude": 33.8819958,
+    "longitude": 35.5042193,
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84536/specialized-hospital-haidar-and-hajjar?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84536/specialized-hospital-haidar-and-hajjar?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/112",
+      "https://www.openstreetmap.org/node/559988394"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611632091",
+    "locationApproximate": true
   },
   {
     "slug": "child-mother-welfare-society",
@@ -1472,15 +1871,25 @@ module.exports = [
     "address": "Hassana Fathallah Daouk Str. West",
     "latitude": 33.878499707632955,
     "longitude": 35.514977546401845,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "obstetrics-gynecology",
+      "ophthalmology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84537/child-mother-welfare-society?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/6107"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/6107",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/56"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611788770"
   },
   {
     "slug": "bekhaazi-hospital",
@@ -1492,15 +1901,18 @@ module.exports = [
     "address": "El Wardieh, Maamari st., Amaret Maktaby bldg., 2nd floor",
     "latitude": 33.89745,
     "longitude": 35.48886,
-    "specialties": [],
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84538/bekhaazi-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/65"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
   },
   {
     "slug": "beirut-eye-specialist-hospital",
@@ -1532,15 +1944,23 @@ module.exports = [
     "address": "المنارة البقاع الغربي",
     "latitude": 33.646810000233884,
     "longitude": 35.878079999637684,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84553/al-manara-doctors-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/16"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/16",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/158"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618563101"
   },
   {
     "slug": "bahmad-el-fakih-hospital",
@@ -1552,15 +1972,21 @@ module.exports = [
     "address": "Daher Al-Ahmar Rachaya",
     "latitude": 33.5308899997952,
     "longitude": 35.83180999998808,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84555/bahmad-el-fakih-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/18"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/18",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/78"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618591108"
   },
   {
     "slug": "al-mayyas-hospital",
@@ -1572,24 +1998,29 @@ module.exports = [
     "address": "Chtaura square",
     "latitude": 33.815216,
     "longitude": 35.853331,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84559/al-mayyas-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/82"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
   },
   {
     "slug": "palestinian-red-crescent-society-nazareth-hospital",
     "name": "Palestinian Red Crescent Society Nazareth Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Bar Elias",
     "district": "Zahle",
     "governorate": "Bekaa",
-    "address": "",
+    "address": "بر الياس المكاوي",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -1599,7 +2030,8 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84564/palestinian-red-crescent-society-nazareth-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618510793"
   },
   {
     "slug": "lebanese-ophthalmic-hospital",
@@ -1611,15 +2043,20 @@ module.exports = [
     "address": "Aley- Piscien St. Edico",
     "latitude": 33.809100000315176,
     "longitude": 35.60246000010876,
-    "specialties": [],
+    "specialties": [
+      "ophthalmology",
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84567/lebanese-ophthalmic-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/28"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/28",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/102"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615557355"
   },
   {
     "slug": "medical-2000-hospital",
@@ -1631,34 +2068,44 @@ module.exports = [
     "address": "الشويفات المعروفية",
     "latitude": 33.80341000009966,
     "longitude": 35.51723000011158,
-    "specialties": [],
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84568/medical-2000-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/29"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/29",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/151"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615432525"
   },
   {
     "slug": "azounieh-hospital",
     "name": "Azounieh Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Azounieh",
     "district": "Aley",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "azounieh main road",
+    "latitude": 33.7720137,
+    "longitude": 35.7064288,
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84569/azounieh-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84569/azounieh-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/147",
+      "https://www.openstreetmap.org/way/1043711498"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615220160",
+    "locationApproximate": true
   },
   {
     "slug": "bahman-hospital",
@@ -1670,15 +2117,22 @@ module.exports = [
     "address": "حارة حريك - شارع دكاش ، قرب مسجد الحسنين - بيروت",
     "latitude": 33.853700000366665,
     "longitude": 35.506440000162414,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84572/bahman-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/31"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/31",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/67"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611545000"
   },
   {
     "slug": "al-rasoul-al-aazam-hospital",
@@ -1690,15 +2144,23 @@ module.exports = [
     "address": "Airport road",
     "latitude": 33.843504,
     "longitude": 35.498457,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84573/al-rasoul-al-aazam-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/44"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611456456"
   },
   {
     "slug": "sahel-general-hospital",
@@ -1710,34 +2172,48 @@ module.exports = [
     "address": "Dergham St.Blg #7, Airport Ave. Haret Hreik. P.O. Box 99/25 Ghobeiry",
     "latitude": 33.8586320002642,
     "longitude": 35.50448199982978,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84574/sahel-general-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/32"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/32",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/126"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611858333"
   },
   {
     "slug": "specialized-medical-rehabilitation-hospital",
     "name": "Specialized Medical Rehabilitation Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Ouzai",
     "district": "Baabda",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "Ouzai Area, Facing Imam Ouzai Mosque",
+    "latitude": 33.850251,
+    "longitude": 35.4853979,
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84575/specialized-medical-rehabilitation-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84575/specialized-medical-rehabilitation-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/210",
+      "https://khaledfoundations.org/ar/about-us/institutions/specialized-medical-rehabilitation-hospital-and-outpatient-clinics"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611838383",
+    "locationApproximate": true
   },
   {
     "slug": "sainte-therese-hospital",
@@ -1749,15 +2225,21 @@ module.exports = [
     "address": "Hadath-Ste Therese Street",
     "latitude": 33.84394851952566,
     "longitude": 35.527253417323145,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84576/sainte-therese-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/34"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/34",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/72"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615466780"
   },
   {
     "slug": "st-georges-hadath-hospital",
@@ -1769,15 +2251,26 @@ module.exports = [
     "address": "Old Saida Street - Hadath",
     "latitude": 33.83745635808423,
     "longitude": 35.53209220427913,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "icu",
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84577/st-georges-hadath-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/35"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/35",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/227"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615463922"
   },
   {
     "slug": "borj-hospital",
@@ -1789,15 +2282,19 @@ module.exports = [
     "address": "Borj Barajneh Osman Street",
     "latitude": 33.84321499986565,
     "longitude": 35.49190699980038,
-    "specialties": [],
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84578/borj-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/36"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/36",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/207"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611474719"
   },
   {
     "slug": "hopital-saint-charles",
@@ -1809,15 +2306,21 @@ module.exports = [
     "address": "Fayadie",
     "latitude": 33.84468200006043,
     "longitude": 35.55031999965929,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84579/hopital-saint-charles?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/37"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/37",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/136"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615451100"
   },
   {
     "slug": "sacre-coeur-hospital",
@@ -1829,15 +2332,40 @@ module.exports = [
     "address": "Brazilia - Baabda, Bp 116 - Hazmieh",
     "latitude": 33.84979999967761,
     "longitude": 35.53910999958556,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "emergency-medicine",
+      "ent",
+      "internal-medicine",
+      "nephrology",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84580/sacre-coeur-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/40"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/40",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/105"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615456293"
   },
   {
     "slug": "al-zahraa-hospital-university-medical-center",
@@ -1849,15 +2377,31 @@ module.exports = [
     "address": "Jnah-Facing Golden Tulip Hotel",
     "latitude": 33.86485999964622,
     "longitude": 35.48660000013849,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "internal-medicine",
+      "obstetrics-gynecology",
+      "oncology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84581/al-zahraa-hospital-university-medical-center?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/4"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/4",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/81"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611851040"
   },
   {
     "slug": "al-hayat-hospital",
@@ -1877,7 +2421,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84583/al-hayat-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/146"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611277805"
   },
   {
     "slug": "clinique-dr-georges-moarbes",
@@ -1897,26 +2442,30 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84584/clinique-dr-georges-moarbes?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/39"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611389292"
   },
   {
     "slug": "hopital-francais-st-lourdes",
     "name": "Hopital Francais - St Lourdes",
     "type": "hospital",
-    "city": "",
+    "city": "Ain El Remmaneh",
     "district": "Baabda",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "Rue St Lourdes, Ain El Remmaneh",
+    "latitude": 33.8699439,
+    "longitude": 35.5177863,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84585/hopital-francais-st-lourdes?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84585/hopital-francais-st-lourdes?facility_type=8",
+      "https://www.openstreetmap.org/node/387287439"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615451100",
+    "locationApproximate": true
   },
   {
     "slug": "alerfan-hospital",
@@ -1928,34 +2477,52 @@ module.exports = [
     "address": "السمقانية",
     "latitude": 33.67526999992841,
     "longitude": 35.5919499996438,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84587/alerfan-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/43"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/43",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/97"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615500877"
   },
   {
     "slug": "osman-hospital",
     "name": "Osman Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Ketermaya",
     "district": "Chouf",
     "governorate": "Mount Lebanon",
-    "address": "",
+    "address": "كترمابا",
     "latitude": null,
     "longitude": null,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "obstetrics-gynecology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "icu",
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84589/osman-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84589/osman-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/225"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617970000"
   },
   {
     "slug": "baakleenhospital",
@@ -1975,7 +2542,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84590/baakleenhospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/152"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615300882"
   },
   {
     "slug": "hopital-maritime-jbeil",
@@ -1987,15 +2555,27 @@ module.exports = [
     "address": "Jbeil Voie 13",
     "latitude": 34.11565000007362,
     "longitude": 35.65222999959872,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "internal-medicine",
+      "obstetrics-gynecology",
+      "oncology",
+      "pediatrics",
+      "surgery"
+    ],
+    "services": [
+      "dialysis",
+      "icu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84591/hopital-maritime-jbeil?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/46"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/46",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/50"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619540017"
   },
   {
     "slug": "hopital-saint-michel-amchit",
@@ -2007,34 +2587,45 @@ module.exports = [
     "address": "Amchit -Saint Michel",
     "latitude": 34.14460114569242,
     "longitude": 35.64579202368907,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "ophthalmology",
+      "radiology"
+    ],
+    "services": [
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84592/hopital-saint-michel-amchit?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/47"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/47",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/58"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619621033"
   },
   {
     "slug": "saint-louis-hospital-s-a-l",
     "name": "Saint Louis Hospital S.A.L",
     "type": "hospital",
-    "city": "",
+    "city": "Jounieh",
     "district": "Keserwan",
     "governorate": "Keserwan-Jbeil",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "jounieh,haret sakher",
+    "latitude": 33.9930746,
+    "longitude": 35.6407617,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84594/saint-louis-hospital-sal?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84594/saint-louis-hospital-sal?facility_type=8",
+      "https://www.openstreetmap.org/way/303946250"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619933334",
+    "locationApproximate": true
   },
   {
     "slug": "st-georges-hospital",
@@ -2046,15 +2637,28 @@ module.exports = [
     "address": "Ajaltoun,George Matta St",
     "latitude": 33.9601200001165,
     "longitude": 35.68734000030163,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "oncology",
+      "ophthalmology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84595/st-georges-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/50"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/50",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/108"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619234201"
   },
   {
     "slug": "hospital-mgr-cortbawi",
@@ -2074,7 +2678,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84596/hospital-mgr-cortbawi?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/51"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619855410"
   },
   {
     "slug": "kesserwan-medical-center",
@@ -2106,34 +2711,50 @@ module.exports = [
     "address": "Jounieh,Rue Gl.Fouad Chehab",
     "latitude": 33.98144000018604,
     "longitude": 35.62775999995545,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84599/notre-dame-de-liban-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/53"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/53",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/140"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619644644"
   },
   {
     "slug": "psychiatric-hospital-of-the-cross",
     "name": "Psychiatric Hospital of the Cross",
     "type": "hospital",
-    "city": "",
+    "city": "Jal El Dib",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "Jall- Eddib- Bkennaya- lebanon",
+    "latitude": 33.9009606,
+    "longitude": 35.5848349,
+    "specialties": [
+      "psychiatry",
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84600/psychiatric-hospital-of-the-cross?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84600/psychiatric-hospital-of-the-cross?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/137",
+      "https://www.openstreetmap.org/way/844266947",
+      "https://sistersofthecross.org.lb/institution/hopital-psychiatrique-de-la-croix-jal-el-dib/"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614710224",
+    "locationApproximate": true
   },
   {
     "slug": "arz-hospital",
@@ -2145,15 +2766,21 @@ module.exports = [
     "address": "Zalka",
     "latitude": 33.89900999970548,
     "longitude": 35.57282000017269,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84601/arz-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/55"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/55",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/87"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611876770"
   },
   {
     "slug": "eye-ear-hospital-international",
@@ -2165,15 +2792,24 @@ module.exports = [
     "address": "Naccache- Dbayeh",
     "latitude": 33.9271600000039,
     "longitude": 35.59191000035914,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "ent",
+      "ophthalmology",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84602/eye-ear-hospital-international?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/56"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/56",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/74"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614521130"
   },
   {
     "slug": "middle-east-institutd-of-health",
@@ -2185,15 +2821,23 @@ module.exports = [
     "address": "Mezher st.",
     "latitude": 33.905756,
     "longitude": 35.593901,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84603/middle-east-institutd-of-health?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=3"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=3",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/217"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614712111"
   },
   {
     "slug": "hopital-abou-jaouke",
@@ -2205,53 +2849,77 @@ module.exports = [
     "address": "Jal El Dib",
     "latitude": 33.90717999981517,
     "longitude": 35.58172999960702,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84604/hopital-abou-jaouke?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/58"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/58",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/106"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614718000"
   },
   {
     "slug": "sach-medical-co-bitar-hospital",
     "name": "SACH Medical Co.Bitar Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Sabtieh",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
+    "address": "Sabtieh Rue Ferdavvs",
     "latitude": null,
     "longitude": null,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84605/sach-medical-cobitar-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84605/sach-medical-cobitar-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/226"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611682300"
   },
   {
     "slug": "lebanise-canadian-hospital",
     "name": "Lebanise--Canadian Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Sin El Fil",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
-    "services": [],
+    "address": "Sin-EL Fil Horch Tabet",
+    "latitude": 33.8722039,
+    "longitude": 35.5350876,
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84606/lebanise-canadian-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84606/lebanise-canadian-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/133",
+      "https://www.openstreetmap.org/way/305423504"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611511487",
+    "locationApproximate": true
   },
   {
     "slug": "serhal-hospital",
@@ -2263,15 +2931,23 @@ module.exports = [
     "address": "Rabieh",
     "latitude": 33.914948378195405,
     "longitude": 35.60861775375204,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84607/serhal-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/61"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/61",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/39"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614405050"
   },
   {
     "slug": "centre-hopital-de-behannss",
@@ -2283,15 +2959,27 @@ module.exports = [
     "address": "Dahr El Savvan- Mathen",
     "latitude": 33.90557000010635,
     "longitude": 35.65653000040348,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "emergency-medicine",
+      "neonatology",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84608/centre-hopital-de-behannss?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/62"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/62",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614984009"
   },
   {
     "slug": "saint-joseph-hospital",
@@ -2303,15 +2991,30 @@ module.exports = [
     "address": "Dora- Lebanon",
     "latitude": 33.89267999997353,
     "longitude": 35.55511000001052,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "obstetrics-gynecology",
+      "oncology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84609/saint-joseph-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/63"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/63",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/63"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611240111"
   },
   {
     "slug": "haroun-hospital",
@@ -2323,34 +3026,49 @@ module.exports = [
     "address": "Amaret Chalhoub- Rue Hopital Haroun",
     "latitude": 33.900440000044185,
     "longitude": 35.571630000119164,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84610/haroun-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/64"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/64",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/132"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611897300"
   },
   {
     "slug": "hopital-dar-al-raheme",
     "name": "Hopital DAR AL Raheme?",
     "type": "hospital",
-    "city": "",
+    "city": "Ain Saadeh",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "AIN Saade?-Mathen",
+    "latitude": 33.8784314,
+    "longitude": 35.6003138,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84612/hopital-dar-al-raheme-?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84612/hopital-dar-al-raheme-?facility_type=8",
+      "https://www.openstreetmap.org/way/1043717503"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614872211",
+    "locationApproximate": true
   },
   {
     "slug": "clinique-du-levant-sm",
@@ -2362,24 +3080,31 @@ module.exports = [
     "address": "Hôpital du Levant, Rue 72, Sinn El Fil, Maten, Mont Liban, LBN",
     "latitude": 33.87270206266782,
     "longitude": 35.555994304271145,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84613/clinique-du-levant-sm?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/150"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/150",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/228"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611501500"
   },
   {
     "slug": "hopital-notre-dame-pour-les-malade-cronique",
     "name": "Hopital Notre dame pour les Malade Cronique",
     "type": "hospital",
-    "city": "",
+    "city": "Antelias",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
+    "address": "Antlias- Leban",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -2389,7 +3114,8 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84614/hopital-notre-dame-pour-les-malade-cronique?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614713100"
   },
   {
     "slug": "hopital-hayek",
@@ -2401,72 +3127,130 @@ module.exports = [
     "address": "Sin El Fil",
     "latitude": 33.870799999710435,
     "longitude": 35.53787000020166,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84615/hopital-hayek?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/69"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/69",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/204"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611499142"
   },
   {
     "slug": "clinique-de-chirugie-estetque-dr-nader-saab",
     "name": "Clinique DE Chirugie Estetque Dr Nader Saab",
     "type": "hospital",
-    "city": "",
+    "city": "Rabieh",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "Beirut Rabieh",
+    "latitude": 33.9182601,
+    "longitude": 35.594129,
+    "specialties": [
+      "surgery"
+    ],
     "services": [],
     "emergency24h": null,
-    "hoursKnown": false,
+    "hoursKnown": true,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84617/clinique-de-chirugie-estetque-dr-nader-saab?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84617/clinique-de-chirugie-estetque-dr-nader-saab?facility_type=8",
+      "https://nadersaab.com/fr/about"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614411111",
+    "locationApproximate": true,
+    "hours": [
+      {
+        "day": 1,
+        "start": 480,
+        "end": 1200
+      },
+      {
+        "day": 2,
+        "start": 480,
+        "end": 1200
+      },
+      {
+        "day": 3,
+        "start": 480,
+        "end": 1200
+      },
+      {
+        "day": 4,
+        "start": 480,
+        "end": 1200
+      },
+      {
+        "day": 5,
+        "start": 480,
+        "end": 1200
+      },
+      {
+        "day": 6,
+        "start": 480,
+        "end": 1200
+      }
+    ]
   },
   {
     "slug": "hopital-dr-toni-nassar-sal",
     "name": "Hopital Dr Toni Nassar Sal",
     "type": "hospital",
-    "city": "",
+    "city": "Sin El Fil",
     "district": "Metn",
     "governorate": "Mount Lebanon",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "Boulevard Pierre Gemayel, Horsh Tabet",
+    "latitude": 33.876375,
+    "longitude": 35.534182,
+    "specialties": [
+      "surgery"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84618/hopital-dr-toni-nassar-sal?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84618/hopital-dr-toni-nassar-sal?facility_type=8",
+      "https://www.drtoninassar.com/en/Contact/GetinTouch",
+      "https://www.drtoninassar.com/en/Practice/DrNassarHospital"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611499222",
+    "locationApproximate": true
   },
   {
     "slug": "alhamid-medical-center-ghandour-hospital",
     "name": "Alhamid Medical Center-Ghandour Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Nabatieh El Fawka",
     "district": "Nabatieh",
     "governorate": "Nabatieh",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
-    "services": [],
+    "address": "nabatiye alfawaka-street marjeioun",
+    "latitude": 33.3651206,
+    "longitude": 35.4931845,
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84619/alhamid-medical-center-ghandour-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84619/alhamid-medical-center-ghandour-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/100",
+      "https://www.openstreetmap.org/way/891216041"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617760455",
+    "locationApproximate": true
   },
   {
     "slug": "kalout-hospital",
@@ -2497,15 +3281,25 @@ module.exports = [
     "address": "El Toul main road",
     "latitude": 33.386249,
     "longitude": 35.440925,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu",
+      "mri",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84621/alcheick-harb-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/220"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617766799"
   },
   {
     "slug": "al-hikme-hospital",
@@ -2514,7 +3308,7 @@ module.exports = [
     "city": "",
     "district": "Nabatieh",
     "governorate": "Nabatieh",
-    "address": "",
+    "address": "nabatiye-khalet alhawa",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -2524,7 +3318,8 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84623/al-hikme-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617765362"
   },
   {
     "slug": "ghossein-hospital",
@@ -2533,7 +3328,7 @@ module.exports = [
     "city": "",
     "district": "Nabatieh",
     "governorate": "Nabatieh",
-    "address": "",
+    "address": "nab-rue soeurs antonines",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -2543,7 +3338,8 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84624/ghossein-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9613224402"
   },
   {
     "slug": "hopital-notre-dame-de-la-paix",
@@ -2555,15 +3351,23 @@ module.exports = [
     "address": "القبيات شويتا",
     "latitude": 34.57045000032269,
     "longitude": 36.25499999990898,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct",
+      "icu",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84626/hopital-notre-dame-de-la-paix?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/82"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/82",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/183"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616351670"
   },
   {
     "slug": "el-youssef-hospital-center",
@@ -2575,34 +3379,53 @@ module.exports = [
     "address": "Halba main road",
     "latitude": 34.542950000159806,
     "longitude": 36.07453999998581,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "emergency-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84627/el-youssef-hospital-center?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/79"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/79",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/177"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
   },
   {
     "slug": "hopital-al-borgi",
     "name": "Hopital Al Borgi",
     "type": "hospital",
-    "city": "",
+    "city": "Amioun",
     "district": "Koura",
     "governorate": "North",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "amion-koura-main road-",
+    "latitude": 34.2988505,
+    "longitude": 35.8218617,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84630/hopital-al-borgi?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84630/hopital-al-borgi?facility_type=8",
+      "https://www.openstreetmap.org/way/1043703184"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616950030",
+    "locationApproximate": true
   },
   {
     "slug": "al-kheir-hospital-miniyeh",
@@ -2622,7 +3445,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84631/al-kheir-hospital-miniyeh?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/85"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616461444"
   },
   {
     "slug": "dar-al-shifa-hospital",
@@ -2642,16 +3466,17 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84633/dar-al-shifa-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/87"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616429595"
   },
   {
     "slug": "social-services-association-dar-al-ajaza-hospice",
     "name": "Social Services Association - Dar Al Ajaza Hospice",
     "type": "hospital",
-    "city": "",
+    "city": "Tripoli",
     "district": "Tripoli",
     "governorate": "North",
-    "address": "",
+    "address": "طرابلس ابي سمراء العجزة",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -2661,45 +3486,60 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84635/social-services-association-dar-al-ajaza-hospice?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616446330"
   },
   {
     "slug": "el-bissar-hospital",
     "name": "El Bissar Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Tripoli",
     "district": "Tripoli",
     "governorate": "North",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "الزهرية مستشفى البيسار",
+    "latitude": 34.4394104,
+    "longitude": 35.8402355,
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84636/el-bissar-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84636/el-bissar-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/174",
+      "https://www.openstreetmap.org/node/4522495797"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616432267",
+    "locationApproximate": true
   },
   {
     "slug": "shahin-hospital",
     "name": "Shahin Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Tripoli",
     "district": "Tripoli",
     "governorate": "North",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
-    "services": [],
+    "address": "الزهرية شارع محمد كرامي",
+    "latitude": 34.4379356,
+    "longitude": 35.8406316,
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84637/shahin-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84637/shahin-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/173",
+      "https://www.openstreetmap.org/node/4923267521"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616625796",
+    "locationApproximate": true
   },
   {
     "slug": "al-mounla-hospital",
@@ -2711,15 +3551,23 @@ module.exports = [
     "address": "Tripoli Monla road",
     "latitude": 34.43790973278787,
     "longitude": 35.82886525151983,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84638/al-mounla-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/92"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/92",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/182"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616207000"
   },
   {
     "slug": "dar-al-zahraa-hospital",
@@ -2739,7 +3587,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84640/dar-al-zahraa-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/94"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616444529"
   },
   {
     "slug": "islamic-hospital",
@@ -2751,15 +3600,30 @@ module.exports = [
     "address": "Azmi street Centre Ville Tripoli",
     "latitude": 34.44219999986197,
     "longitude": 35.83218999992967,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "obstetrics-gynecology",
+      "oncology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84641/islamic-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/95"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/95",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/57"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616210179"
   },
   {
     "slug": "al-hanan-hospital",
@@ -2771,43 +3635,57 @@ module.exports = [
     "address": "TRIPOLI-alsakafa- TAWJIH STREET",
     "latitude": 34.443879999967976,
     "longitude": 35.83415999995787,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "ent",
+      "obstetrics-gynecology",
+      "orthopedics",
+      "pediatrics",
+      "radiology"
+    ],
+    "services": [
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84642/al-hanan-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/96"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/96",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/80"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616200526"
   },
   {
     "slug": "al-rahma-hospital",
     "name": "Al Rahma Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Tripoli",
     "district": "Tripoli",
     "governorate": "North",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "زيتون أبي سمراء - السكة البيضا",
+    "latitude": 34.4138292,
+    "longitude": 35.8458727,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84644/al-rahma-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84644/al-rahma-hospital?facility_type=8",
+      "https://www.openstreetmap.org/way/837101482"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616448324",
+    "locationApproximate": true
   },
   {
     "slug": "al-rahban-hospital",
     "name": "Al Rahban Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Mejdlaya",
     "district": "Zgharta",
     "governorate": "North",
-    "address": "",
+    "address": "mejdalaih rue principale",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -2817,7 +3695,7 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84645/al-rahban-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
   },
   {
     "slug": "hospital-saydet-zgharta",
@@ -2829,15 +3707,39 @@ module.exports = [
     "address": "Zgharta AL ROUAYSS",
     "latitude": 34.399540000002524,
     "longitude": 35.88612999962973,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "ent",
+      "family-medicine",
+      "internal-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "psychiatry",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84646/hospital-saydet-zgharta?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/101"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/101",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/184"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616660575"
   },
   {
     "slug": "centre-hospitalier-du-nord",
@@ -2857,7 +3759,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84647/centre-hospitalier-du-nord?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/102"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616555230"
   },
   {
     "slug": "alaa-el-dine-hospital",
@@ -2869,15 +3772,28 @@ module.exports = [
     "address": "Sarafand Main Road",
     "latitude": 33.45966999992628,
     "longitude": 35.28926000025657,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "obstetrics-gynecology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84650/alaa-el-dine-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/104"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/104",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/107"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617443200"
   },
   {
     "slug": "dalaa-hospital",
@@ -2889,15 +3805,40 @@ module.exports = [
     "address": "Saida.Derkman",
     "latitude": 33.55740000022004,
     "longitude": 35.37748999960359,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "dermatology",
+      "emergency-medicine",
+      "ent",
+      "internal-medicine",
+      "nephrology",
+      "neurology",
+      "obstetrics-gynecology",
+      "oncology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri",
+      "nicu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84652/dalaa-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/106"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/106",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/191"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617724088"
   },
   {
     "slug": "health-medical-center-osseiran-hospital",
@@ -2909,15 +3850,23 @@ module.exports = [
     "address": "Saida-Blv Maarouf Saad",
     "latitude": 33.553289999778286,
     "longitude": 35.36999000033077,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84653/health-medical-center-osseiran-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/107"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/107",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/188"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617726078"
   },
   {
     "slug": "alraai-hospital",
@@ -2929,34 +3878,43 @@ module.exports = [
     "address": "Saida-Saynik Street",
     "latitude": 33.53147999996451,
     "longitude": 35.36210000017229,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84654/alraai-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/108"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/108",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/84"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617222023"
   },
   {
     "slug": "aljanoub-hospital",
     "name": "Aljanoub Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Saida",
     "district": "Saida",
     "governorate": "South",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "sidon,maarouf saad",
+    "latitude": 33.5509866,
+    "longitude": 35.3690069,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84655/aljanoub-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84655/aljanoub-hospital?facility_type=8",
+      "https://www.openstreetmap.org/way/1035419371"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617722555",
+    "locationApproximate": true
   },
   {
     "slug": "kassab-hospital",
@@ -2968,34 +3926,49 @@ module.exports = [
     "address": "Saida El Hlalye",
     "latitude": 33.56882257084871,
     "longitude": 35.39162956212571,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "internal-medicine",
+      "obstetrics-gynecology",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "icu",
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84656/kassab-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/110"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/110",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/113"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617723900"
   },
   {
     "slug": "al-hamshari-hospital",
     "name": "Al Hamshari Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Miyeh ou Miyeh",
     "district": "Saida",
     "governorate": "South",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "saida - el mye w mye",
+    "latitude": 33.5476708,
+    "longitude": 35.3862615,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84657/al-hamshari-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84657/al-hamshari-hospital?facility_type=8",
+      "https://www.openstreetmap.org/node/9367879223"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617724881",
+    "locationApproximate": true
   },
   {
     "slug": "labib-medical-center",
@@ -3007,24 +3980,40 @@ module.exports = [
     "address": "saida, lebanon",
     "latitude": 33.55595371399306,
     "longitude": 35.37374617992718,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "obstetrics-gynecology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "dialysis",
+      "icu",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84658/labib-medical-center?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/148"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/148",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/110"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617723444"
   },
   {
     "slug": "abed-el-rahman-al-nakib-hospital",
     "name": "Abed El Rahman Al Nakib Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Hlaliyeh",
     "district": "Saida",
     "governorate": "South",
-    "address": "",
+    "address": "الهلالية – صيدا،",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -3034,7 +4023,8 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84659/abed-el-rahman-al-nakib-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617721721"
   },
   {
     "slug": "fakih-hospital",
@@ -3054,7 +4044,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84660/fakih-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/151"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617443470"
   },
   {
     "slug": "salman-zainndine",
@@ -3063,7 +4054,7 @@ module.exports = [
     "city": "",
     "district": "Tyre",
     "governorate": "South",
-    "address": "",
+    "address": "Sour",
     "latitude": null,
     "longitude": null,
     "specialties": [],
@@ -3073,7 +4064,8 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84661/salman-zainndine?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617740293"
   },
   {
     "slug": "hiram-hospital",
@@ -3085,34 +4077,21 @@ module.exports = [
     "address": "Sour-Jal El Baher",
     "latitude": 33.28197999984233,
     "longitude": 35.222830000017595,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84662/hiram-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/112"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/112",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/196"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
-  },
-  {
-    "slug": "najem-hospital",
-    "name": "Najem Hospital",
-    "type": "hospital",
-    "city": "",
-    "district": "Tyre",
-    "governorate": "South",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
-    "services": [],
-    "emergency24h": null,
-    "hoursKnown": false,
-    "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84663/najem-hospital?facility_type=8"
-    ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617343700"
   },
   {
     "slug": "rida-mroue-hospital",
@@ -3132,7 +4111,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84664/rida-mroue-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/113"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617740343"
   },
   {
     "slug": "jabal-amel-hospital",
@@ -3144,15 +4124,22 @@ module.exports = [
     "address": "Tyr north entrance, Jal El Baher area",
     "latitude": 33.278615,
     "longitude": 35.217541,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84665/jabal-amel-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=3"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=3",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/90"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617740343"
   },
   {
     "slug": "iben-sinna-hospital",
@@ -3171,26 +4158,33 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84666/iben-sinna-hospital?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618377811"
   },
   {
     "slug": "al-batoul-hospital",
     "name": "Al Batoul Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Hermel",
     "district": "Hermel",
     "governorate": "Baalbek-Hermel",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
-    "specialties": [],
+    "address": "الهرمل محلة العالي",
+    "latitude": 34.389952,
+    "longitude": 36.3940992,
+    "specialties": [
+      "radiology"
+    ],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84667/al-batoul-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84667/al-batoul-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/224",
+      "https://www.openstreetmap.org/way/842714915"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618200118",
+    "locationApproximate": true
   },
   {
     "slug": "al-assi-hospital",
@@ -3210,7 +4204,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84668/al-assi-hospital?facility_type=8",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618200234"
   },
   {
     "slug": "dar-al-amal-hospital",
@@ -3222,15 +4217,21 @@ module.exports = [
     "address": "Douris st.",
     "latitude": 33.984195,
     "longitude": 36.16009,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "radiology"
+    ],
+    "services": [
+      "ct"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84669/dar-al-amal-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=2"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=2",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/88"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618340620"
   },
   {
     "slug": "dar-al-hikma-hospital",
@@ -3242,15 +4243,28 @@ module.exports = [
     "address": "Tal El Abyad, Homs national st.",
     "latitude": 34.038107,
     "longitude": 36.190829,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "obstetrics-gynecology",
+      "oncology",
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu",
+      "maternity",
+      "mri"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84670/dar-al-hikma-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=2"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=2",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/157"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618379136"
   },
   {
     "slug": "al-tatari-hospital",
@@ -3262,15 +4276,28 @@ module.exports = [
     "address": "Bechara El Khoury street",
     "latitude": 34.010584,
     "longitude": 36.205286,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine",
+      "ent",
+      "internal-medicine",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "ct",
+      "icu"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84671/al-tatari-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/73"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618370799"
   },
   {
     "slug": "al-rayan-hospital",
@@ -3282,72 +4309,99 @@ module.exports = [
     "address": "Al Charawneh st.",
     "latitude": 34.026633,
     "longitude": 36.195689,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "cardiology",
+      "ent",
+      "internal-medicine",
+      "neurology",
+      "obstetrics-gynecology",
+      "ophthalmology",
+      "orthopedics",
+      "pediatrics",
+      "radiology",
+      "surgery"
+    ],
+    "services": [
+      "cath-lab",
+      "ct",
+      "icu",
+      "maternity"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84672/al-rayan-hospital?facility_type=8",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/166"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618372182"
   },
   {
     "slug": "mortada-hospital",
     "name": "Mortada Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Baalbek",
     "district": "Baalbek",
     "governorate": "Baalbek-Hermel",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "بعلبك",
+    "latitude": 33.9964128,
+    "longitude": 36.1828802,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8",
+      "https://www.openstreetmap.org/way/1324186477"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618377880",
+    "locationApproximate": true
   },
   {
     "slug": "universal-hospital",
     "name": "Universal Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Ras Baalbek",
     "district": "Baalbek",
     "governorate": "Baalbek-Hermel",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "رأس بعلبك",
+    "latitude": 34.2689347,
+    "longitude": 36.400337,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84674/universal-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84674/universal-hospital?facility_type=8",
+      "https://www.openstreetmap.org/way/1052267856"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618210560",
+    "locationApproximate": true
   },
   {
     "slug": "temnine-general-hospital",
     "name": "Temnine General Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Temnine El Tahta",
     "district": "Baalbek",
     "governorate": "Baalbek-Hermel",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "temnine, Temnîne et Tehta, Lebanon",
+    "latitude": 33.872134,
+    "longitude": 35.9981365,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84675/temnine-general-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84675/temnine-general-hospital?facility_type=8",
+      "https://www.openstreetmap.org/way/886725982"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618912444",
+    "locationApproximate": true
   },
   {
     "slug": "governmental-hospital-of-beirut-quarantine",
@@ -3367,7 +4421,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84361/governmental-hospital-of-beirut-quarantine?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/115"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9611442110"
   },
   {
     "slug": "shahar-gharbi-govermental-hospital",
@@ -3387,7 +4442,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84364/shahar-gharbi-govermental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/118"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9615410712"
   },
   {
     "slug": "kartaba-governmental-hospital",
@@ -3407,7 +4463,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84366/kartaba-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/120"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9619405985"
   },
   {
     "slug": "mays-el-jabal-governmental-hospital",
@@ -3427,7 +4484,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84370/mays-el-jabal-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/284"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617866102"
   },
   {
     "slug": "tannourine-governmental-hospital",
@@ -3447,7 +4505,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616520555"
   },
   {
     "slug": "batroun-governmental-hospital",
@@ -3467,7 +4526,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84374/batroun-governmental-hospital?facility_type=1",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616741970"
   },
   {
     "slug": "sir-denniye-governmental-hospital",
@@ -3487,7 +4547,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84376/sir-denniye-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/129"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616491911"
   },
   {
     "slug": "ehden-governmental-hospital",
@@ -3507,7 +4568,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/131"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616561701"
   },
   {
     "slug": "orange-nassau-governmental-hospital",
@@ -3527,7 +4589,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84381/orange-nassau-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/99"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9616435997"
   },
   {
     "slug": "sour-governmental-hospital",
@@ -3547,7 +4610,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/134"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9617740293"
   },
   {
     "slug": "daher-elbachek-governmental-hospital",
@@ -3567,7 +4631,8 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84389/daher-elbachek-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/121"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9614872148"
   },
   {
     "slug": "machghara-governmental-hospital",
@@ -3587,26 +4652,30 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84392/machghara-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/149"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618651738"
   },
   {
     "slug": "kherbet-kanafar-governmental-hospital",
     "name": "Kherbet Kanafar Governmental Hospital",
     "type": "hospital",
-    "city": "",
+    "city": "Kherbet Kanafar",
     "district": "West Bekaa",
     "governorate": "Bekaa",
-    "address": "",
-    "latitude": null,
-    "longitude": null,
+    "address": "kherbet kanafar, West Bekaa,",
+    "latitude": 33.6392126,
+    "longitude": 35.7265608,
     "specialties": [],
     "services": [],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84393/kherbet-kanafar-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84393/kherbet-kanafar-governmental-hospital?facility_type=1",
+      "https://www.openstreetmap.org/way/779565645"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "phone": "+9618645917",
+    "locationApproximate": true
   },
   {
     "slug": "khalaf-al-habtoor-hospital",
@@ -3629,7 +4698,7 @@ module.exports = [
   },
   {
     "slug": "lebanese-italian-hospital",
-    "name": "Lebanese Italian Hospital",
+    "name": "Lebanese Italian Hospital (Najem)",
     "type": "hospital",
     "city": "Borj El Chemali",
     "district": "Tyre",
@@ -3642,9 +4711,16 @@ module.exports = [
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/155"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/155",
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84663/najem-hospital?facility_type=8",
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/201",
+      "https://www.alkoot.com.qa/English/Services/Documents/AL%20KOOT%20LEBANON%20NETWORK%20LIST.pdf"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "legacySlugs": [
+      "najem-hospital"
+    ],
+    "phone": "+9617741595"
   },
   {
     "slug": "lebanese-american-university-medical-center-saint-john-s-hospital",
@@ -3720,8 +4796,79 @@ module.exports = [
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/44"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/44",
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84588/hospital-almarkazi?facility_type=8"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z"
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
+  },
+  {
+    "slug": "al-jabal-hospital",
+    "name": "Al Jabal Hospital",
+    "type": "hospital",
+    "city": "Kornayel",
+    "district": "Baabda",
+    "governorate": "Mount Lebanon",
+    "address": "Kornayel, main road",
+    "latitude": 33.8468547,
+    "longitude": 35.723855,
+    "locationApproximate": true,
+    "phone": "+9615360555",
+    "specialties": [],
+    "services": [],
+    "emergency24h": null,
+    "hoursKnown": false,
+    "sources": [
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84570/al-jabal-hospital?facility_type=8",
+      "https://www.openstreetmap.org/way/1052987139",
+      "https://pe.ppa.gov.lb/storage/lots/files/u6ne5a1FfMFqNl8VsEpcP3fD4cXmDsYU8bQ1-1760108985.pdf"
+    ],
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
+  },
+  {
+    "slug": "al-koura-hospital",
+    "name": "Hopital Al Koura",
+    "type": "hospital",
+    "city": "Btouratij",
+    "district": "Koura",
+    "governorate": "North",
+    "address": "Btouratij, Koura",
+    "latitude": 34.3491456,
+    "longitude": 35.8378064,
+    "locationApproximate": true,
+    "phone": "+9616930981",
+    "specialties": [
+      "emergency-medicine",
+      "surgery",
+      "ent",
+      "orthopedics",
+      "ophthalmology",
+      "internal-medicine",
+      "nephrology",
+      "neurology",
+      "oncology",
+      "dermatology",
+      "cardiology",
+      "obstetrics-gynecology",
+      "neonatology",
+      "pediatrics",
+      "radiology"
+    ],
+    "services": [
+      "cath-lab",
+      "icu",
+      "maternity",
+      "nicu",
+      "dialysis",
+      "ct"
+    ],
+    "emergency24h": true,
+    "hoursKnown": false,
+    "sources": [
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84629/hopital-al-koura?facility_type=8",
+      "https://www.openstreetmap.org/way/843483047",
+      "https://www.hopital-alkoura.com.lb/fr/dep-detail.php?id=9",
+      "https://www.hopital-alkoura.com.lb/fr/dep-detail.php?id=10"
+    ],
+    "verifiedAt": "2026-10-19T00:00:00+03:00"
   }
 ];
