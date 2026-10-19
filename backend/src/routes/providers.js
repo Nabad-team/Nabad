@@ -30,9 +30,15 @@ router.get("/favorites", requireAuth, asyncRoute(async (req, res) => {
 }));
 const writes = rateLimit({ windowMs: 15 * 60 * 1000, max: 150, keyGenerator: req => req.userId,
   message: { error: "Too many changes. Please try again in a few minutes." } });
+async function canonicalSlug(id) {
+  if (id.length > 100 || !/^[a-z0-9-]+$/.test(id)) return null;
+  const alias = await Provider.findOne({ legacySlugs: id }).select("slug").lean();
+  if (alias) return alias.slug;
+  return await Provider.exists({ slug: id }) ? id : null;
+}
 router.put("/:id/favorite", requireAuth, writes, asyncRoute(async (req, res) => {
-  const id = req.params.id;
-  if (id.length > 100 || !/^[a-z0-9-]+$/.test(id) || !await Provider.exists({ slug: id })) return res.status(404).json({ error: "Provider not found." });
+  const id = await canonicalSlug(req.params.id);
+  if (!id) return res.status(404).json({ error: "Provider not found." });
   // Limit and addition are one atomic update, including simultaneous requests.
   const account = await User.findOneAndUpdate({ _id: req.userId, $or: [{ "favoriteProviders.99": { $exists: false } }, { favoriteProviders: id }] },
     { $addToSet: { favoriteProviders: id } }, { new: true }).select("_id");
@@ -42,7 +48,8 @@ router.put("/:id/favorite", requireAuth, writes, asyncRoute(async (req, res) => 
 router.delete("/:id/favorite", requireAuth, writes, asyncRoute(async (req, res) => {
   const id = req.params.id;
   if (id.length > 100 || !/^[a-z0-9-]+$/.test(id)) return res.status(404).json({ error: "Provider not found." });
-  await User.updateOne({ _id: req.userId }, { $pull: { favoriteProviders: id } });
+  const canonical = await canonicalSlug(id);
+  await User.updateOne({ _id: req.userId }, { $pull: { favoriteProviders: { $in: [...new Set([id, canonical].filter(Boolean))] } } });
   res.status(204).end();
 }));
 module.exports = router;
