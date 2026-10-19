@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const Medication = require("../models/Medication");
+const MedicationAdherence = require("../models/MedicationAdherence");
 const { FORMS, STATUSES, LIMITS } = Medication;
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile, profileView } = require("../middleware/profileAccess");
@@ -19,6 +20,7 @@ const MAX_MEDICATIONS = 200; // per profile
 // Keyed by account (requireAuth runs first). Generous for real use, stops scripted floods.
 const writeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, keyGenerator: (req) => req.userId, message: { error: "Too many changes in a short time. Please wait a few minutes and try again." } });
 const NOT_FOUND = { error: "Medication not found." };
+const ADHERENCE_DATE_ERROR = { error: "Enter a valid date as YYYY-MM-DD." };
 
 const dateString = (date) => (date ? date.toISOString().slice(0, 10) : "");
 router.use(resolveProfile);
@@ -85,6 +87,42 @@ router.get("/", asyncRoute(async (req, res) => {
   return res.json({ medications: medications.map(view) });
 }));
 
+// Today's dashboard check-in: one explicit taken/not-taken confirmation per active medication per day.
+router.get("/adherence", asyncRoute(async (req, res) => {
+  const date = parseDate(req.query.date);
+  if (!date) return res.status(400).json(ADHERENCE_DATE_ERROR);
+  const day = req.query.date;
+  const medications = await Medication.find({ owner: req.userId, profileId: req.profileId, status: "active", startDate: { $lte: date }, $or: [{ endDate: null }, { endDate: { $gte: date } }] }).sort({ name: 1, _id: 1 });
+  const logs = await MedicationAdherence.find({ owner: req.userId, profileId: req.profileId, date: day, medicationId: { $in: medications.map((item) => item._id) } });
+  const takenIds = new Set(logs.map((log) => String(log.medicationId)));
+  return res.json({ date: day, medications: medications.map((medication) => ({
+    id: String(medication._id), name: medication.name, dose: medication.dose, unit: medication.unit,
+    form: medication.form, frequency: medication.frequency, taken: takenIds.has(String(medication._id)),
+  })) });
+}));
+
+router.put("/:id/adherence", writeLimiter, asyncRoute(async (req, res) => {
+  const filter = ownedFilter(req);
+  if (!filter) return res.status(404).json(NOT_FOUND);
+  const date = parseDate(req.body?.date);
+  if (!date) return res.status(400).json(ADHERENCE_DATE_ERROR);
+  if (typeof req.body?.taken !== "boolean") return res.status(400).json({ error: "Confirm whether this medication was taken." });
+  const medication = await Medication.findOne({ ...filter, status: "active", startDate: { $lte: date }, $or: [{ endDate: null }, { endDate: { $gte: date } }] });
+  if (!medication) return res.status(404).json(NOT_FOUND);
+  const logFilter = { owner: req.userId, profileId: req.profileId, medicationId: medication._id, date: req.body.date };
+  if (req.body.taken) {
+    try {
+      await MedicationAdherence.updateOne(logFilter, { $setOnInsert: { takenAt: new Date() } }, { upsert: true });
+    } catch (error) {
+      // A second tab may submit the same check-in at the same time; the unique daily key makes that safe.
+      if (error.code !== 11000) throw error;
+    }
+  } else {
+    await MedicationAdherence.deleteOne(logFilter);
+  }
+  return res.json({ id: String(medication._id), date: req.body.date, taken: req.body.taken });
+}));
+
 router.post("/", writeLimiter, asyncRoute(async (req, res) => {
   const { medication, error } = readMedication(req.body);
   if (error) return res.status(400).json({ error });
@@ -120,6 +158,7 @@ router.delete("/:id", writeLimiter, asyncRoute(async (req, res) => {
   if (!filter) return res.status(404).json(NOT_FOUND);
   const result = await Medication.deleteOne(filter);
   if (result.deletedCount === 0) return res.status(404).json(NOT_FOUND);
+  await MedicationAdherence.deleteMany({ owner: req.userId, profileId: req.profileId, medicationId: req.params.id });
   return res.status(204).end();
 }));
 

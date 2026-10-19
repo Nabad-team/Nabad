@@ -10,6 +10,9 @@ const path = (profileId, id, rest = "") =>
   "/medications" + (id ? "/" + encodeURIComponent(id) + rest : "") + "?profileId=" + encodeURIComponent(profileId);
 
 export const getMedications = (profileId) => request(path(profileId)).then((data) => data.medications);
+export const getMedicationAdherence = (profileId, date) => request(`/medications/adherence?profileId=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`).then((data) => data.medications);
+export const setMedicationTaken = (profileId, id, date, taken) =>
+  request(path(profileId, id, "/adherence"), { method: "PUT", body: JSON.stringify({ date, taken }) });
 export const addMedication = (profileId, fields) =>
   request(path(profileId), { method: "POST", body: JSON.stringify(fields) }).then((data) => data.medication);
 export const updateMedication = (profileId, id, fields) =>

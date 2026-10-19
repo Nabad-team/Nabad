@@ -9,6 +9,8 @@ import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileA
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fakeWellbeing from "../test-utils/fakeWellbeingApi";
 import * as fakeHealth from "../test-utils/fakeHealthProfileApi";
+import * as fakeMedications from "../test-utils/fakeMedicationApi";
+import * as fakeAppointments from "../test-utils/fakeAppointmentApi";
 import { todayString } from "../lib/dates";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
 
@@ -21,6 +23,8 @@ jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
 // So does the My health card.
 jest.mock("../lib/healthProfileApi", () => require("../test-utils/fakeHealthProfileApi"));
+jest.mock("../lib/medicationApi", () => require("../test-utils/fakeMedicationApi"));
+jest.mock("../lib/appointmentApi", () => require("../test-utils/fakeAppointmentApi"));
 // A fixed "today", so a run that crosses midnight can't have the card and the test disagree on the date.
 jest.mock("../lib/dates", () => ({ ...jest.requireActual("../lib/dates"), todayString: () => "2026-10-12" }));
 
@@ -50,6 +54,8 @@ describe("Dashboard Page", () => {
     fakeProfileApi.resetFakeProfiles();
     fakeWellbeing.resetFakeWellbeing();
     fakeHealth.resetFakeHealth();
+    fakeMedications.resetFakeMedications();
+    fakeAppointments.resetFakeAppointments();
     mockStatus = "signedIn";
   });
 
@@ -204,24 +210,27 @@ describe("Dashboard Page", () => {
     expect(within(accountMenu).getByRole("link", { name: "My profile" })).toHaveTextContent("Profile");
   });
 
-  test("combines health profile and today's water and sleep in the progress summary", async () => {
+  test("shows health, water and sleep progress as rings", async () => {
     fakeWellbeing.seedWater("self", todayString(), [250, 500, 500]);
     fakeWellbeing.seedSleep("self", todayString(), 7.5, 4);
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText(/Water: 1.3 L today\. Sleep: 7.5 hours, slept well\./)).toBeInTheDocument();
-    expect(within(card).getByRole("link", { name: "Open water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(await within(card).findByRole("img", { name: /Water today: No daily goal set\. 1\.3 L logged today/ })).toBeInTheDocument();
+    expect(within(card).getByRole("img", { name: /Last night’s sleep: Logged\. Slept well/ })).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Track water" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(within(card).getByRole("link", { name: "Log sleep" })).toHaveAttribute("href", "/water-and-sleep");
     expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
   });
 
-  test("the Water and sleep card shows the goal or limit only when set, in litres, and says when sleep isn't logged", async () => {
+  test("the water ring shows progress against a limit and the sleep ring says when sleep isn't logged", async () => {
     fakeWellbeing.seedWater("self", todayString(), 900);
     fakeWellbeing.seedGoal("self", { type: "atMost", ml: 1500 });
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText(/Water: 0.9 L of the 1.5 L limit\. Sleep: Not logged yet\./)).toBeInTheDocument();
+    expect(await within(card).findByRole("img", { name: "Water today: Within your limit. 0.9 L of your 1.5 L daily limit." })).toBeInTheDocument();
+    expect(within(card).getByRole("img", { name: /Last night’s sleep: Not logged yet/ })).toBeInTheDocument();
   });
 
   test("the My health card counts the basics gently and links to My health", async () => {
@@ -230,7 +239,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("2 of 5 health basics filled in.")).toBeInTheDocument();
+    expect(await within(card).findByRole("img", { name: "My health: In progress. 2 of 5 health basics filled in." })).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
   });
 
@@ -241,7 +250,33 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("1 of 5 health basics filled in for Sami Haddad.")).toBeInTheDocument();
+    expect(await within(card).findByRole("img", { name: "My health: In progress. 1 of 5 health basics filled in for Sami Haddad." })).toBeInTheDocument();
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
+  });
+
+  test("the medication check-in records taken today for each active medication", async () => {
+    fakeMedications.seedMedication("self", { id: "aspirin", name: "Aspirin", dose: "81", unit: "mg" });
+    fakeMedications.seedMedication("self", { id: "vitamin", name: "Vitamin D", taken: true });
+    renderDashboard();
+
+    const card = await screen.findByRole("region", { name: "Your progress" });
+    expect(await within(card).findByRole("img", { name: /Medications today: 1 left to check\. 1 of 2 active medications checked off today/ })).toBeInTheDocument();
+    const aspirin = within(card).getByRole("checkbox", { name: /Aspirin/ });
+    expect(aspirin).not.toBeChecked();
+    await act(async () => { fireEvent.click(aspirin); });
+    expect(aspirin).toBeChecked();
+    expect(fakeMedications.calls).toContainEqual(["setMedicationTaken", "self", "aspirin", "2026-10-12", true]);
+  });
+
+  test("the dashboard reminds me of my next upcoming doctor's appointment", async () => {
+    fakeAppointments.seedAppointment("self", { title: "Annual check-up", hospital: "North Clinic", appointmentDate: "2099-04-15", appointmentTime: "09:30" });
+    fakeAppointments.seedAppointment("self", { title: "Eye exam", hospital: "Eye Center", appointmentDate: "2099-01-12", appointmentTime: "11:00" });
+    renderDashboard();
+
+    const card = await screen.findByRole("region", { name: "Your progress" });
+    expect(await within(card).findByText("Eye exam")).toBeInTheDocument();
+    expect(within(card).getByText(/Eye Center · 12 January 2099 at 11:00/)).toBeInTheDocument();
+    expect(within(card).queryByText("Annual check-up")).not.toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "View appointments" })).toHaveAttribute("href", "/appointments");
   });
 });
