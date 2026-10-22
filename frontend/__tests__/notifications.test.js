@@ -107,6 +107,24 @@ describe("Notifications page", () => {
     expect(screen.queryByRole("button", { name: "Show older notifications" })).not.toBeInTheDocument();
   });
 
+  test("keeps every page at the API's page size, and skips nothing after a delete", async () => {
+    const user = userEvent.setup({ delay: null });
+    for (let index = 1; index <= 70; index += 1) fake.seedNotification({ title: `Item ${index}` });
+    render(<NotificationsPage />);
+    expect(await titles()).toHaveLength(20);
+    await user.click(screen.getByRole("button", { name: 'Delete "Item 70"' }));
+    await user.click(screen.getByRole("button", { name: "Show older notifications" }));
+    await waitFor(async () => expect(await titles()).toHaveLength(40));
+    // Offset paging would have skipped Item 50 here, the first item to move up a page after the delete.
+    expect((await titles()).slice(18, 21)).toEqual(["Item 51", "Item 50", "Item 49"]);
+    await user.click(screen.getByRole("button", { name: "Show older notifications" }));
+    await user.click(await screen.findByRole("button", { name: "Show older notifications" }));
+    await waitFor(async () => expect(await titles()).toHaveLength(69));
+    expect(new Set(await titles()).size).toBe(69);
+    const limits = fake.calls.filter((call) => Array.isArray(call) && call[0] === "getNotifications").map(([, query]) => query.limit);
+    expect(Math.max(...limits)).toBe(20);
+  });
+
   test("explains a failed load and a failed action", async () => {
     const user = userEvent.setup({ delay: null });
     fake.failures.add("getNotifications");

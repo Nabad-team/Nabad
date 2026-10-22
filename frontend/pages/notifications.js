@@ -39,18 +39,23 @@ export default function NotificationsPage() {
 
   const linkedNames = new Map(linkedProfiles.map((profile) => [profile.id, profile.fullName]));
 
-  // Loads pages 1..upTo again for the current filters, so a refresh keeps what was already shown.
+  // Loads pages 1..upTo for the current filters. Refreshing and "Show older" both load from the top, so nothing is
+  // skipped or shown twice after notifications were deleted or arrived in the meantime.
   async function load(upTo = 1) {
     const requested = filterRef.current;
     setLoadError("");
     try {
-      const data = await getNotifications({ page: 1, limit: PAGE_SIZE * upTo, profileId: person || undefined, unread: show === "unread" });
+      const pages = await Promise.all(Array.from({ length: upTo }, (_, index) =>
+        getNotifications({ page: index + 1, limit: PAGE_SIZE, profileId: person || undefined, unread: show === "unread" })));
       if (filterRef.current !== requested) return;
-      setItems(data.notifications);
+      const seen = new Set();
+      setItems(pages.flatMap((data) => data.notifications).filter((item) => !seen.has(item.id) && seen.add(item.id)));
       setPage(upTo);
-      setHasMore(data.hasMore);
+      setHasMore(pages[pages.length - 1].hasMore);
     } catch {
-      if (filterRef.current === requested) setLoadError("We couldn't load your notifications. Please check your connection and try again.");
+      if (filterRef.current !== requested) return;
+      if (upTo > page) setError("We couldn't load more notifications. Please try again.");
+      else setLoadError("We couldn't load your notifications. Please check your connection and try again.");
     }
   }
 
@@ -67,19 +72,10 @@ export default function NotificationsPage() {
   }, [filterKey, page]);
 
   async function loadMore() {
+    setError("");
     setLoadingMore(true);
-    const requested = filterRef.current;
-    try {
-      const data = await getNotifications({ page: page + 1, limit: PAGE_SIZE, profileId: person || undefined, unread: show === "unread" });
-      if (filterRef.current !== requested) return;
-      setItems((current) => [...current, ...data.notifications.filter((item) => !current.some((shown) => shown.id === item.id))]);
-      setPage(page + 1);
-      setHasMore(data.hasMore);
-    } catch {
-      setError("We couldn't load more notifications. Please try again.");
-    } finally {
-      setLoadingMore(false);
-    }
+    await load(page + 1);
+    setLoadingMore(false);
   }
 
   async function act(action, success, failure) {
