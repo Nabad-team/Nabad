@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "./Logo";
 import Avatar from "./Avatar";
 import Button from "./ui/Button";
@@ -7,6 +7,8 @@ import { useSignedIn } from "./SessionTimeout";
 import { signOut } from "../lib/session";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { providerText } from "../lib/providerText";
+import useDisclosure from "./useDisclosure";
+import NotificationBell from "./NotificationBell";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 export const MAIN_LINKS = [
@@ -26,45 +28,6 @@ export const ACCOUNT_LINKS = [
   { href: "/medications", label: "Medications", shortLabel: "Medicines" },
   { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
 ];
-
-// A button that shows and hides a panel (the "disclosure" pattern, which suits navigation links better
-// than an ARIA menu). Opening moves focus to the first link or control in the panel. Escape closes it and
-// puts focus back on the button. Clicking outside, or tabbing out of the panel, closes it too.
-function useDisclosure() {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef(null);
-  const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    panelRef.current?.querySelector("a, button, select")?.focus();
-    const inside = (node) => buttonRef.current?.contains(node) || panelRef.current?.contains(node);
-    function onKeyDown(event) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    }
-    function onPointerDown(event) {
-      if (!inside(event.target)) setOpen(false);
-    }
-    function onFocusIn(event) {
-      if (!inside(event.target)) setOpen(false);
-    }
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown);
-    document.addEventListener("focusin", onFocusIn);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
-      document.removeEventListener("focusin", onFocusIn);
-    };
-  }, [open]);
-
-  return { open, toggle: () => setOpen((value) => !value), buttonRef, panelRef };
-}
 
 // The page we are on, for aria-current. Every link here is a full page load, so reading it once is enough.
 function useCurrentPath() {
@@ -149,9 +112,9 @@ function ProfileSwitcher({ id, showLabel }) {
 }
 
 // The signed-in header.
-//   Desktop: logo and account controls, then a card-based section navigation row.
-//            There is room on the right for more controls later, such as a notifications bell.
-//   Phones (under 40rem / 640px): logo and a "Menu" button that opens a full-width panel with everything.
+//   Desktop: logo, then the notifications bell, profile switcher and account menu on the right.
+//   Phones (under 40rem / 640px): logo, the notifications bell and a "Menu" button that opens a full-width panel
+//            with everything else.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
 export default function AppHeader() {
   const { selfProfile } = useActiveProfile() || {};
@@ -169,56 +132,55 @@ export default function AppHeader() {
         {!signedIn && <nav aria-label="Public"><a href="/providers">{providerText("title")}</a></nav>}
 
         {signedIn && (
-          <div className="app-header__end app-header__desktop">
-            {/* Future controls (for example a notifications bell) go here, before the account menu. */}
-            <ProfileSwitcher id="profile-switcher-desktop" />
-            <div className="account-menu">
-              <button
-                ref={account.buttonRef}
-                type="button"
-                className={`account-menu__button${accountPage ? " account-menu__button--current" : ""}`}
-                aria-expanded={account.open}
-                aria-controls="account-menu"
-                aria-label="Account menu"
-                onClick={account.toggle}
-              >
-                <span aria-hidden="true" className="account-menu__avatar">
-                  <Avatar name={selfProfile?.fullName} size={36} />
-                </span>
-                <svg className="account-menu__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-                  <path d="M2.5 4.5 6 8l3.5-3.5" />
-                </svg>
-              </button>
-              {account.open && (
-                <div id="account-menu" ref={account.panelRef} className="account-menu__panel">
-                  {selfProfile && (
-                    <p className="account-menu__who">
-                      <strong>{selfProfile.fullName}</strong>
-                      {selfProfile.email && <span className="text-muted">{selfProfile.email}</span>}
-                    </p>
-                  )}
-                  <nav aria-label="Account">
-                    <NavLinks links={ACCOUNT_LINKS} path={path} className="account-menu__list" simplified={preferences.simplifiedMode} />
-                  </nav>
-                  <Button variant="secondary" size="small" block onClick={() => signOut()}>Sign out</Button>
-                </div>
-              )}
+          <div className="app-header__end">
+            <NotificationBell />
+            <div className="app-header__account app-header__desktop">
+              <ProfileSwitcher id="profile-switcher-desktop" />
+              <div className="account-menu">
+                <button
+                  ref={account.buttonRef}
+                  type="button"
+                  className={`account-menu__button${accountPage ? " account-menu__button--current" : ""}`}
+                  aria-expanded={account.open}
+                  aria-controls="account-menu"
+                  aria-label="Account menu"
+                  onClick={account.toggle}
+                >
+                  <span aria-hidden="true" className="account-menu__avatar">
+                    <Avatar name={selfProfile?.fullName} size={36} />
+                  </span>
+                  <svg className="account-menu__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                    <path d="M2.5 4.5 6 8l3.5-3.5" />
+                  </svg>
+                </button>
+                {account.open && (
+                  <div id="account-menu" ref={account.panelRef} className="account-menu__panel">
+                    {selfProfile && (
+                      <p className="account-menu__who">
+                        <strong>{selfProfile.fullName}</strong>
+                        {selfProfile.email && <span className="text-muted">{selfProfile.email}</span>}
+                      </p>
+                    )}
+                    <nav aria-label="Account">
+                      <NavLinks links={ACCOUNT_LINKS} path={path} className="account-menu__list" simplified={preferences.simplifiedMode} />
+                    </nav>
+                    <Button variant="secondary" size="small" block onClick={() => signOut()}>Sign out</Button>
+                  </div>
+                )}
+              </div>
             </div>
+            <Button
+              ref={mobile.buttonRef}
+              variant="secondary"
+              size="small"
+              className="app-header__menu-button"
+              aria-expanded={mobile.open}
+              aria-controls="mobile-menu"
+              onClick={mobile.toggle}
+            >
+              Menu
+            </Button>
           </div>
-        )}
-
-        {signedIn && (
-          <Button
-            ref={mobile.buttonRef}
-            variant="secondary"
-            size="small"
-            className="app-header__menu-button"
-            aria-expanded={mobile.open}
-            aria-controls="mobile-menu"
-            onClick={mobile.toggle}
-          >
-            Menu
-          </Button>
         )}
       </div>
 

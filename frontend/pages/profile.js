@@ -24,6 +24,7 @@ import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { TwoHearts } from "../components/illustrations";
 import AccessibilitySettings from "../components/AccessibilitySettings";
+import NotificationPreferences from "../components/NotificationPreferences";
 import { useAccessibility } from "../context/AccessibilityContext";
 
 // Checks the form and returns an object of error messages, e.g. { phone: "..." }.
@@ -325,6 +326,8 @@ export default function ProfilePage() {
           {simplified ? "Open safety settings" : "Open security settings"}
         </a>
       </section>
+
+      <NotificationPreferences />
 
       <AccessibilitySettings />
 
