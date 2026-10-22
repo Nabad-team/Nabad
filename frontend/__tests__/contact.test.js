@@ -11,6 +11,7 @@ describe("Contact page", () => {
 
   test("links the team's email address", () => {
     render(<ContactPage />);
+    expect(CONTACT_EMAIL).toBe("nabad.team.lb@gmail.com");
     expect(screen.getByRole("link", { name: CONTACT_EMAIL })).toHaveAttribute("href", `mailto:${CONTACT_EMAIL}`);
   });
 
