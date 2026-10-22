@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const { contactSchema, normalizePhone, validPhone } = require("./contactSchema");
+const { MUTABLE_TYPES: MUTABLE_NOTIFICATION_TYPES } = require("./Notification");
 
 const userSchema = new mongoose.Schema(
   {
@@ -26,6 +27,8 @@ const userSchema = new mongoose.Schema(
     onboardingCompleted: { type: Boolean, default: false },
     // Account-level directory bookmarks; atomic set operations prevent duplicate saves.
     favoriteProviders: { type: [String], default: [] },
+    // Notification types the user turned off in the app (notifications.js). Safety-critical types can't be listed.
+    mutedNotificationTypes: { type: [{ type: String, enum: MUTABLE_NOTIFICATION_TYPES }], default: [] },
 
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },

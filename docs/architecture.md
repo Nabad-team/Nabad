@@ -99,12 +99,41 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. |
 | Water and sleep | `routes/wellbeing.js`, `models/Wellbeing.js` | Daily water glasses against a target, sleep hours and quality, and history. Days are the user's local calendar date. |
 | My health | `routes/healthProfile.js`, `healthProfile.js`, `models/HealthFact.js` | Health facts per profile (sex, height, weight, blood type, pregnancy, conditions, allergies, smoking), each with a source and a confirmed/suggested status, and the **AI health summary**. |
+| Notifications | `notifications.js`, `routes/notifications.js`, `models/Notification.js`, `appointmentReminders.js` | In-app notifications per profile: history, unread count, mark read, delete, and which types the user gets. Created only through `notify()`; see [Notifications](#notifications). |
 | Triage | `routes/triage.js`, `triage/` | One triage engine: urgency classification with follow-up questions, red-flag detection, emergency routing and self-care (`triage/careGuidance.js`). The Sprint 1 safety check (`policy.js`, `/assess`, `/emergency-route`, the `/triage` page) is retired. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
 | Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
 
 ### The shared ownership check
 
 All health data is stored per profile with two ids: `owner` (the account) and `profileId` (the owner's own profile, stored as the user id, or one of their linked profiles). [middleware/profileAccess.js](../backend/src/middleware/profileAccess.js) `resolveProfile` is the one place that decides whose data a request is about: it reads `?profileId=` (`self` by default), checks that a linked profile belongs to the signed-in user, and sets `req.profileId`. Medications, water and sleep, and My health all use it, and every query filters by both `owner` and `profileId`. Anything that isn't the user's (another user's dependent, a malformed id) answers **404, exactly like something that doesn't exist**, so ids can't be probed.
+
+### Notifications
+
+[notifications.js](../backend/src/notifications.js) `notify(owner, profileId, type, data)` is **the single way to create a notification**. Features call it; nothing else writes to the `Notification` model, and the API (`/api/notifications`) can only read, mark read and delete them.
+
+```js
+await notify(userId, profileId, "caregiver_urgent", {
+  title: "Check on Sami",
+  message: "Sami's symptom check needs attention.",
+  link: "/symptoms",                        // optional, a page inside Nabad
+  dedupeKey: `symptoms:${record._id}:urgent`, // the same event always gives the same key
+});
+```
+
+- **Types:** `appointment_reminder`, `emergency_alert`, `caregiver_urgent`, `document_ready`, `system`.
+- **Profiles:** `profileId` is `"self"`, the owner's id or one of their linked profiles, checked with the shared ownership check (`ownedProfileId` in `middleware/profileAccess.js`). Anything else creates nothing.
+- **Preferences:** users turn types off on the profile page (`PUT /api/notifications/preferences`, stored as `mutedNotificationTypes` on the user). `emergency_alert` and `caregiver_urgent` are safety-critical: they are always on, the API refuses to turn them off and the schema can't store them as muted.
+- **Dedupe:** a unique index on `(owner, dedupeKey)`. Calling `notify` again for the same event, even from two servers at once, creates nothing and returns `null`.
+- **Minimal content:** a title (80 characters) and message (200) that say who and what, never symptom text, appointment titles or notes, or other health details. `link` must be a path inside Nabad.
+- **Retention:** a TTL index deletes notifications 90 days after they are created. Removing a linked profile or the account deletes theirs through the [health-data deletion helper](#the-health-data-deletion-helper).
+
+`notify` returns the new notification, or `null` when the type is turned off, the profile isn't the owner's, the account is gone or the key was already used.
+
+**API** (`/api/notifications`, sign-in required, every query filtered by `owner`): `GET /` (newest first; `page`, `limit` up to 50, `profileId`, `unread=true`), `GET /unread-count`, `POST /:id/read`, `POST /read-all`, `DELETE /:id`, `GET` and `PUT /preferences`. Another user's notification or dependent answers 404. Reads are limited to 300 and writes to 100 per account per 15 minutes; nothing about a notification is logged.
+
+**Appointment reminders.** The appointments page still shows its own browser reminder while it is open. On top of that, [appointmentReminders.js](../backend/src/appointmentReminders.js) runs every minute in the API process and calls `notify` for every appointment whose reminder time has come and that hasn't started (the same window as the page's "Reminder due"). Each save stores the appointment's `startsAt` and `remindAt`, worked out from its local date and time in the browser's time zone (sent with each save; `Asia/Beirut` for appointments saved before). The dedupe key is `appointment:<id>:<startsAt>:<reminderMinutes>`, so a rerun or a second server never repeats a reminder, and rescheduling arms a new one. Older appointments get `startsAt` and `remindAt` when the API starts. The message names only who, the hospital and when: "Sami's appointment at AUBMC is in 1 hour (09:30)."
+
+**Frontend:** the bell in the header ([NotificationBell.js](../frontend/components/NotificationBell.js)) shows the unread count (checked every 60 seconds, when the tab regains focus, and after a change on the page) and a panel with the latest five; [/notifications](../frontend/pages/notifications.js) has the full history; the preferences are on the profile page ([NotificationPreferences.js](../frontend/components/NotificationPreferences.js)).
 
 ### The AI health summary
 
@@ -133,7 +162,7 @@ The model can raise the urgency but never lower it. Self-care steps are only sho
 
 ### The health-data deletion helper
 
-[profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (medications, water, sleep, wellbeing settings, health facts). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind.
+[profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (medications, water, sleep, wellbeing settings, health facts, notifications). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind.
 
 ## Security layers
 

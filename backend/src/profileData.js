@@ -21,6 +21,10 @@ const HealthFact = require(
   "./models/HealthFact"
 );
 
+const Notification = require(
+  "./models/Notification"
+);
+
 const {
   HydrationEntry,
   SleepEntry,
@@ -43,6 +47,7 @@ const PROFILE_MODELS = [
   SleepEntry,
   WellbeingSettings,
   HealthFact,
+  Notification,
 ];
 
 // Deletes the health data of one profile.

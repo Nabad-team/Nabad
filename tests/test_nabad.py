@@ -678,6 +678,56 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait.until(lambda d: "security" in d.title.lower())
         self.visible((By.TAG_NAME, "form"))
 
+    def test_authenticated_notifications(self):
+        # An appointment 5 minutes from now with a 15-minute reminder is due at once: the API's reminder job
+        # (every minute) turns it into a notification. Saved through the API from this browser, in its time zone.
+        error = self.driver.execute_async_script(
+            "const done = arguments[arguments.length - 1];"
+            "const at = new Date(Date.now() + 5 * 60000);"
+            "const pad = (n) => String(n).padStart(2, '0');"
+            "fetch('/api/appointments?profileId=self', { method: 'POST', credentials: 'include',"
+            "  headers: { 'Content-Type': 'application/json' },"
+            "  body: JSON.stringify({ title: 'Selenium check-up', hospital: 'Selenium Clinic', reminderMinutes: 15,"
+            "    appointmentDate: `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`,"
+            "    appointmentTime: `${pad(at.getHours())}:${pad(at.getMinutes())}`,"
+            "    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) })"
+            "  .then((r) => done(r.ok ? null : `status ${r.status}`), (e) => done(String(e)));"
+        )
+        self.assertIsNone(error)
+
+        self.check_page("/notifications", "Notifications · Nabad")
+        # The header bell checks the unread count every minute: wait for the job (up to a minute) and the bell.
+        bell = (By.XPATH, "//header//button[starts-with(@aria-label, 'Notifications')]")
+        try:
+            WebDriverWait(self.driver, 150, poll_frequency=2).until(
+                lambda d: "unread" in (d.find_element(*bell).get_attribute("aria-label") or "")
+            )
+        except TimeoutException:
+            self.fail("The bell showed no unread notification within 150 seconds of the reminder being due")
+        self.open("/notifications")
+        reminder = self.visible((By.XPATH, "//ul[@aria-label='Notifications']/li[contains(., 'Selenium Clinic')]"))
+        self.assertIn("Appointment reminder", reminder.text)
+        self.assertNotIn("Selenium check-up", reminder.text)
+
+        # The bell's panel lists it and can mark everything read.
+        self.click(bell)
+        panel = self.visible((By.ID, "notification-panel"))
+        self.wait.until(lambda d: "Selenium Clinic" in d.find_element(By.ID, "notification-panel").text)
+        self.assertTrue(panel.find_element(By.LINK_TEXT, "See all notifications").is_displayed())
+        self.click((By.XPATH, "//*[@id='notification-panel']//button[normalize-space()='Mark all as read']"))
+        self.wait.until(lambda d: d.find_element(*bell).get_attribute("aria-label") == "Notifications")
+
+        # Preferences: safety-critical types are always on.
+        self.open("/profile")
+        reminders_box = self.visible((By.ID, "notify-appointment_reminder"))
+        self.assertTrue(reminders_box.is_enabled())
+        for type_id in ("notify-emergency_alert", "notify-caregiver_urgent"):
+            box = self.driver.find_element(By.ID, type_id)
+            self.assertTrue(box.is_selected())
+            self.assertEqual(box.get_attribute("aria-disabled"), "true")
+            box.click()
+            self.assertTrue(box.is_selected())
+
 
 class AccountDeletionTest(NabadWebsiteTests):
     """Runs last: deletes the run's account through the UI and checks it can no longer sign in."""

@@ -152,6 +152,11 @@ function createApp() {
   );
 
   app.use(
+    "/api/notifications",
+    require("./routes/notifications")
+  );
+
+  app.use(
     "/api/providers",
     require("./routes/providers")
   );

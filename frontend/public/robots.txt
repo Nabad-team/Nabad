@@ -16,6 +16,7 @@ Disallow: /water-and-sleep
 Disallow: /symptoms
 Disallow: /profile
 Disallow: /security
+Disallow: /notifications
 Disallow: /onboarding
 Disallow: /login
 Disallow: /signup
