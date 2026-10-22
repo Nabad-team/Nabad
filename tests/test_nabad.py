@@ -255,6 +255,11 @@ class NabadWebsiteTests(unittest.TestCase):
         start = time.perf_counter()
         self.open(path)
         elapsed = time.perf_counter() - start
+        # Pages that need sign-in render nothing, not even their <title>, until the session check answers.
+        try:
+            self.wait.until(lambda d: d.title.strip())
+        except TimeoutException:
+            pass
         title = self.driver.title
         self.assertTrue(title.strip(), f"{path} has an empty page title")
         if expected_title:
