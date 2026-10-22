@@ -7,6 +7,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { CallButton } from "../components/NotificationBell";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
   NOTIFICATIONS_CHANGED,
@@ -133,7 +134,7 @@ export default function NotificationsPage() {
       {!loadError && items === null && <HeartbeatLoader label="Loading notifications..." />}
       {items?.length === 0 && (
         <EmptyState title={filtered ? "No notifications match these filters." : "No notifications yet."}>
-          {filtered ? "Try showing all notifications or everyone." : "Appointment reminders and important alerts will appear here."}
+          {filtered ? "Try showing all notifications or everyone." : "Appointment reminders, care circle alerts and other important alerts will appear here."}
         </EmptyState>
       )}
       {items?.length > 0 && (
@@ -153,6 +154,7 @@ export default function NotificationsPage() {
                 {linkedNames.has(item.profileId) && ` · ${linkedNames.get(item.profileId)}`}
               </p>
               <div className="button-row">
+                {item.phone && <CallButton item={item} />}
                 {!item.read && <Button variant="secondary" size="small" onClick={() => markRead(item)} aria-label={`Mark "${item.title}" as read`}>Mark as read</Button>}
                 <Button variant="secondary" size="small" onClick={() => remove(item)} aria-label={`Delete "${item.title}"`}>Delete</Button>
               </div>

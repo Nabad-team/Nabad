@@ -53,6 +53,10 @@ const {
   explainUrgency,
 } = require("../triage/explanation");
 
+const {
+  alertCareCircleInBackground,
+} = require("../careCircle");
+
 
 const router = express.Router();
 
@@ -296,7 +300,7 @@ router.post(
           : [];
 
 
-      return res.json({
+      res.json({
         ...result,
 
         explanation,
@@ -305,6 +309,28 @@ router.post(
 
         disclaimer:
           DISCLAIMER,
+      });
+
+
+      // The one place care circle alerts start (careCircle.js): urgent and emergency results tell
+      // the user's care circle, once per check (checkId is the same for a check and its
+      // follow-up answers). After the response, so the result is never delayed, and only
+      // the level goes in: never the symptoms or answers.
+      return alertCareCircleInBackground({
+        requestId:
+          req.requestId,
+
+        owner:
+          req.userId,
+
+        profileId:
+          req.profileId,
+
+        level:
+          result.level,
+
+        checkId:
+          req.body?.checkId,
       });
     } catch (err) {
       if (

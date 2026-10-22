@@ -4,7 +4,7 @@ import { request } from "./api";
 export const NOTIFICATION_TYPES = [
   { type: "appointment_reminder", label: "Appointment reminders", hint: "Before a doctor's appointment, at the reminder time you chose." },
   { type: "emergency_alert", label: "Emergency alerts", hint: "When something needs urgent care." },
-  { type: "caregiver_urgent", label: "Urgent alerts about people you look after", hint: "When a linked profile's check needs attention." },
+  { type: "caregiver_urgent", label: "Care circle alerts", hint: "When a symptom check of someone whose care circle you're in needs attention." },
   { type: "document_ready", label: "Documents ready", hint: "When a document you asked for is ready." },
   { type: "system", label: "Account and service updates", hint: "Important news about your account or Nabad." },
 ];

@@ -4,6 +4,7 @@ const rateLimit = require("express-rate-limit");
 const User = require("../models/User");
 const LinkedProfile = require("../models/LinkedProfile");
 const { deleteProfileData } = require("../profileData");
+const { deleteCareCircles } = require("../careCircle");
 const { checkUserPassword } = require("../passwordHashing");
 const { MAX_BYTES: MAX_PASSWORD_BYTES } = require("../passwordPolicy");
 const { requireAuth } = require("../middleware/authMiddleware");
@@ -156,6 +157,8 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   // if deleting the user then fails, the account still exists and can be deleted again.
   await deleteProfileData(user._id);
   await LinkedProfile.deleteMany({ owner: user._id });
+  // Both directions: the people this account invited, and its places in other people's care circles.
+  await deleteCareCircles(user._id);
   // The emergency contact and trusted devices are stored inside the user document, so they are deleted with it.
   await User.deleteOne({ _id: user._id });
   res.clearCookie(TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions());

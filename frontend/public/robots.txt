@@ -17,6 +17,7 @@ Disallow: /symptoms
 Disallow: /profile
 Disallow: /security
 Disallow: /notifications
+Disallow: /care-circle
 Disallow: /onboarding
 Disallow: /login
 Disallow: /signup

@@ -25,6 +25,7 @@ jest.mock("../lib/symptomApi", () => ({
 jest.mock("../lib/triageApi", () => ({
   assessUrgency: jest.fn(),
   assessUrgencyWithAnswers: jest.fn(),
+  newCheckId: () => "check-test",
 }));
 
 jest.mock("../lib/api", () => ({
@@ -215,7 +216,7 @@ describe("Symptoms Page", () => {
     );
 
     await waitFor(() => {
-      expect(assessUrgency).toHaveBeenCalledWith("Fever and headache", "profile-1");
+      expect(assessUrgency).toHaveBeenCalledWith("Fever and headache", "profile-1", expect.any(String));
 
       expect(addSymptomRecord).toHaveBeenCalledWith(
         "profile-1",
@@ -404,7 +405,7 @@ describe("Symptoms Page", () => {
 
     await submitSymptoms("Fever and headache");
 
-    expect(assessUrgency).toHaveBeenCalledWith("Fever and headache", "profile-1");
+    expect(assessUrgency).toHaveBeenCalledWith("Fever and headache", "profile-1", expect.any(String));
 
     expect(
       await screen.findByRole("heading", {
@@ -563,7 +564,7 @@ describe("Symptoms Page", () => {
       screen.getByRole("button", { name: "Submit symptoms" })
     );
 
-    expect(assessUrgency).toHaveBeenCalledWith("Cough", "profile-1");
+    expect(assessUrgency).toHaveBeenCalledWith("Cough", "profile-1", expect.any(String));
 
     expect(
       await screen.findByText(
@@ -625,7 +626,8 @@ describe("Symptoms Page", () => {
       {
         "fever-temperature": "39.5-plus",
       },
-      "profile-1"
+      "profile-1",
+      "check-test"
     );
 
     expect(

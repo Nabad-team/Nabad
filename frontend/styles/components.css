@@ -979,11 +979,11 @@ select.input {
 }
 
 /* Unread: a teal dot as well as bold text, so it never relies on color alone. */
-.notification-panel__item--unread {
+.notification-panel__entry--unread {
   position: relative;
 }
 
-.notification-panel__item--unread::before {
+.notification-panel__entry--unread::before {
   content: "";
   position: absolute;
   top: 1.1rem;
@@ -994,8 +994,17 @@ select.input {
   background: var(--color-primary);
 }
 
-.notification-panel__item:not(.notification-panel__item--unread) strong {
+.notification-panel__entry:not(.notification-panel__entry--unread) strong {
   font-weight: var(--weight-medium);
+}
+
+/* A care circle alert's Call button, under its text (a link can't hold another link). */
+.notification-panel__entry .notification-call {
+  margin: 0 var(--space-2) var(--space-3) var(--space-5);
+}
+
+.notification-call {
+  overflow-wrap: anywhere;
 }
 
 .notification-panel__all {
@@ -3015,4 +3024,9 @@ select.input {
     color: #000;
     break-inside: avoid;
   }
+}
+
+/* Care circle (pages/care-circle). */
+.care-circle__invite {
+  max-width: 32rem;
 }

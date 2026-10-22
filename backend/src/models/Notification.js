@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { normalizePhone, validPhone } = require("./contactSchema");
 
 // In-app notifications (see notifications.js: notify() is the only way to create one). Per profile like health data:
 // owner is the account, profileId whose notification it is (the owner's own profile, stored as the user id, or one
@@ -18,6 +19,8 @@ const notificationSchema = new mongoose.Schema({
   message: { type: String, required: true, trim: true, maxlength: LIMITS.message },
   // A page inside Nabad, such as "/appointments". Never an outside address.
   link: { type: String, default: "", maxlength: LIMITS.link, match: /^(\/(?!\/)[\w\-./?=&#%]*)?$/ },
+  // A number to call straight from the notification (care circle alerts: the person's own saved phone).
+  phone: { type: String, default: "", set: normalizePhone, validate: { validator: (value) => value === "" || validPhone(value), message: "Invalid phone." } },
   readAt: { type: Date, default: null },
   // The same event always gives the same key, so it can never be notified twice (unique per account).
   dedupeKey: { type: String, required: true, maxlength: LIMITS.dedupeKey },

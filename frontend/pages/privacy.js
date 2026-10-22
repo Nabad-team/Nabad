@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> October 18, 2026
+        <strong>Last updated:</strong> October 22, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -31,6 +31,7 @@ export default function PrivacyPolicy() {
         <li>Account and profile information</li>
         <li>Emergency contact information</li>
         <li>Linked profile information</li>
+        <li>Your care circle: the email addresses you invite and the people who join</li>
         <li>Symptoms entered into the application</li>
         <li>Saved symptom-check conversations and follow-up answers</li>
         <li>Health assistant conversations and report explanations you choose to save</li>
@@ -126,6 +127,31 @@ export default function PrivacyPolicy() {
         Linked profiles can only be accessed by the account that owns them.
       </p>
 
+      <h2 id="care-circle">Your care circle</h2>
+
+      <p>
+        You can invite people you trust to your care circle. When one of your
+        symptom checks, or a check for one of your linked profiles, comes out
+        urgent or an emergency, Nabad tells them in the app and by email.
+      </p>
+
+      <p>People in your care circle can see:</p>
+
+      <ul>
+        <li>Your name, and the name of the linked profile the check was for</li>
+        <li>How urgent the check was (urgent or emergency) and when it happened</li>
+        <li>Your phone number, if you saved one on your profile, so they can call you</li>
+      </ul>
+
+      <p>
+        They can never see your symptoms, your follow-up answers, the advice
+        Nabad gave, or any other health information, and they can't open your
+        account or your linked profiles. You can remove someone from your care
+        circle, and anyone can leave a care circle, at any time. Invitations
+        expire after 7 days, and Nabad never tells you whether an invited email
+        address has a Nabad account.
+      </p>
+
       <h2>Services Nabad uses</h2>
 
       <p>Nabad currently uses the following services:</p>
@@ -141,7 +167,8 @@ export default function PrivacyPolicy() {
           <strong>MongoDB Atlas</strong> to store application data.
         </li>
         <li>
-          <strong>Brevo</strong> to send account-related emails.
+          <strong>Brevo</strong> to send account-related emails, care circle
+          invitations and care circle alerts.
         </li>
         <li>
           <strong>Google</strong> for Google sign-in when that option is used.
@@ -193,7 +220,8 @@ export default function PrivacyPolicy() {
       <p>
         You can also delete your account from the profile page. Account deletion
         removes the account and its associated stored data, including data for
-        linked profiles.
+        linked profiles, your care circle and your place in other people's
+        care circles.
       </p>
 
       <h2>Prototype notice</h2>

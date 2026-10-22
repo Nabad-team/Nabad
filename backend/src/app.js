@@ -157,6 +157,11 @@ function createApp() {
   );
 
   app.use(
+    "/api/care-circle",
+    require("./routes/careCircle")
+  );
+
+  app.use(
     "/api/providers",
     require("./routes/providers")
   );

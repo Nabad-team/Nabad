@@ -107,7 +107,8 @@ export default function LoginPage() {
             <Button variant="secondary" href={googleLoginUrl()} block>Continue with Google</Button>
           </div>
           <p><a href="/forgot-password">Forgot password?</a></p>
-          <p>Don't have an account? <a href="/signup">Sign up</a></p>
+          {/* A page that asked for sign-in (such as a care circle invitation) also works after signing up. */}
+          <p>Don't have an account? <a href={typeof query.next === "string" ? `/signup?next=${encodeURIComponent(safeNextPath(query.next))}` : "/signup"}>Sign up</a></p>
         </div>
       )}
     </PageLayout>
