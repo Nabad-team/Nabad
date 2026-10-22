@@ -20,6 +20,11 @@ async function start() {
   await require("./providers/seed").seedProviders().catch(error => {
     logEvent("provider_seed_failed", { errorType: error.name });
   });
+  // Appointments saved before server-side reminders get their reminder time, then the reminder job checks every minute.
+  const reminders = require("./appointmentReminders");
+  await reminders.backfillReminderSchedules()
+    .catch((error) => logEvent("reminder_backfill_failed", { errorType: error.name }));
+  reminders.startReminderJob();
   return app.listen(process.env.PORT || 5000, () => logEvent("server_started", {
     environment: process.env.APP_ENV || process.env.NODE_ENV || "development",
   }));

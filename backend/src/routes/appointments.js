@@ -5,6 +5,7 @@ const Appointment = require("../models/Appointment");
 const { REMINDER_MINUTES, LIMITS } = Appointment;
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile, profileView } = require("../middleware/profileAccess");
+const { reminderSchedule, validTimeZone } = require("../appointmentReminders");
 
 const router = express.Router();
 router.use(requireAuth, resolveProfile);
@@ -43,8 +44,10 @@ function readAppointment(body) {
   if (typeof appointmentTime !== "string" || !timePattern.test(appointmentTime) || Number(appointmentTime.slice(0, 2)) > 23 || Number(appointmentTime.slice(3)) > 59) errors.push("Enter a valid appointment time.");
   const reminderMinutes = body.reminderMinutes === undefined ? 60 : Number(body.reminderMinutes);
   if (!REMINDER_MINUTES.includes(reminderMinutes)) errors.push("Choose a valid reminder time.");
+  // The browser's IANA time zone (for example "Asia/Beirut"), so the server-side reminder fires at the right moment.
+  if (body.timeZone !== undefined && !validTimeZone(body.timeZone)) errors.push("Choose a valid time zone.");
   if (errors.length) return { error: errors[0] };
-  return { appointment: { title, hospital, location, appointmentDate, appointmentTime, reminderMinutes, notes } };
+  return { appointment: { title, hospital, location, appointmentDate, appointmentTime, reminderMinutes, notes }, timeZone: body.timeZone };
 }
 const view = (appointment) => ({
   id: String(appointment._id), profileId: profileView(appointment),
@@ -61,17 +64,19 @@ router.get("/", asyncRoute(async (req, res) => {
   res.json({ appointments: appointments.map(view) });
 }));
 router.post("/", writeLimiter, asyncRoute(async (req, res) => {
-  const { appointment, error } = readAppointment(req.body);
+  const { appointment, timeZone, error } = readAppointment(req.body);
   if (error) return res.status(400).json({ error });
-  const created = await Appointment.create({ ...appointment, owner: req.userId, profileId: req.profileId });
+  const created = await Appointment.create({ ...appointment, ...reminderSchedule({ ...appointment, timeZone }), owner: req.userId, profileId: req.profileId });
   return res.status(201).json({ appointment: view(created) });
 }));
 router.put("/:id", writeLimiter, asyncRoute(async (req, res) => {
   const filter = ownedFilter(req);
   if (!filter) return res.status(404).json(NOT_FOUND);
-  const { appointment, error } = readAppointment(req.body);
+  const { appointment, timeZone, error } = readAppointment(req.body);
   if (error) return res.status(400).json({ error });
-  const updated = await Appointment.findOneAndUpdate(filter, { $set: appointment }, { new: true, runValidators: true });
+  // Without a time zone in the request, the one saved with the appointment is kept.
+  const zone = timeZone ?? (await Appointment.findOne(filter).select("timeZone"))?.timeZone;
+  const updated = await Appointment.findOneAndUpdate(filter, { $set: { ...appointment, ...reminderSchedule({ ...appointment, timeZone: zone }) } }, { new: true, runValidators: true });
   if (!updated) return res.status(404).json(NOT_FOUND);
   return res.json({ appointment: view(updated) });
 }));
