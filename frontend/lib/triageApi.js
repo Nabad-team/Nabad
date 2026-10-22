@@ -14,9 +14,16 @@ export const refineUrgency = (symptoms, answers) =>
 // unavailable, so this is never less safe than /classify. Same response shape, plus an explanation.
 const profilePath = (profileId) => `/triage/ai-assess?profileId=${encodeURIComponent(profileId || "self")}`;
 
-export const assessUrgency = (symptoms, profileId) =>
-  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms }) });
+// checkId: one id per symptom check, sent again with its follow-up answers, so the user's care circle is alerted
+// at most once for the check (backend careCircle.js).
+export function newCheckId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `check-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+export const assessUrgency = (symptoms, profileId, checkId) =>
+  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, checkId }) });
 
 // SCRUM-125: the same assessment again with the follow-up answers ({ questionId: optionValue }).
-export const assessUrgencyWithAnswers = (symptoms, answers, profileId) =>
-  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, answers }) });
+export const assessUrgencyWithAnswers = (symptoms, answers, profileId, checkId) =>
+  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, answers, checkId }) });

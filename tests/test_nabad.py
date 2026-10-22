@@ -39,6 +39,9 @@ PRODUCTION_HOSTS = {"nabad-psi.vercel.app"}
 TRUSTED_DEVICE_COOKIE = "trustedDevice"
 
 VERIFY_SUBJECT = "Verify your Nabad email"
+INVITE_SUBJECT = "invited you to their Nabad care circle"
+CARE_ALERT_SUBJECT = "Care circle alert from"
+CIRCLES_HEADING = "Circles I'm in"
 CODE_SUBJECT = "Your Nabad verification code"
 
 
@@ -727,6 +730,86 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.assertEqual(box.get_attribute("aria-disabled"), "true")
             box.click()
             self.assertTrue(box.is_selected())
+
+    def fetch_json(self, method, path, body=None):
+        """Calls the API from this browser (with its cookies) and returns the status."""
+        return self.driver.execute_async_script(
+            "const [method, path, body, done] = arguments;"
+            "fetch(path, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' },"
+            "  body: body === null ? undefined : JSON.stringify(body) })"
+            "  .then((r) => done(r.status), (e) => done(String(e)));",
+            method, path, body,
+        )
+
+    def test_authenticated_care_circle_alert(self):
+        # User A (this run's account) invites user B, B accepts from the Mailpit email by signing up, A runs an
+        # emergency symptom check, and B's bell shows the alert: A's name and the level, never the symptoms.
+        caregiver_email = f"selenium-care-{int(time.time())}-{secrets.token_hex(3)}@example.test"
+        caregiver_password = f"{secrets.token_urlsafe(18)} caregiver test"
+        phone = "+96170123456"
+        self.assertEqual(self.fetch_json("PATCH", "/api/profile/me", {"phone": phone}), 200)
+
+        self.check_page("/care-circle", "Care circle · Nabad")
+        self.wait_for_text("They never see your symptoms.")
+        self.type_into("care-circle-email", caregiver_email)
+        self.click(self.button("Send invitation"))
+        self.wait_for_message(f"Invitation sent to {caregiver_email}")
+        self.visible((By.XPATH, f"//section[.//h2[normalize-space()='Waiting to accept']]//li[contains(., {xpath_string(caregiver_email)})]"))
+
+        invitation = Mailpit.wait_for_text(self.driver, caregiver_email, INVITE_SUBJECT)
+        link = re.search(r"/care-circle/accept\?token=([a-f0-9]{64})", invitation)
+        self.assertIsNotNone(link, "The invitation email has no accept link")
+        self.assertIn("never see symptoms or health details", invitation)
+        accept_path = f"/care-circle/accept?token={link.group(1)}"
+
+        # B is signed out: the accept page sends them to sign up with the invited email, and back.
+        self.sign_out_of_browser()
+        try:
+            self.open(accept_path)
+            self.wait_for_text(f"{RunAccount.name} invited you to their care circle.")
+            self.click((By.LINK_TEXT, "Create an account"))
+            self.wait.until(EC.url_contains("/signup"))
+            self.assertEqual(self.visible((By.ID, "email")).get_attribute("value"), caregiver_email)
+            self.type_into("name", "Selenium Caregiver")
+            self.type_into("password", caregiver_password)
+            self.click((By.CSS_SELECTOR, "button[type='submit']"))
+            self.wait.until(EC.url_contains("/care-circle/accept"))
+            self.click(self.button(f"Join {RunAccount.name}'s care circle"))
+            self.wait_for_message(f"You're now in {RunAccount.name}'s care circle.")
+            self.open("/api/auth/me")
+            caregiver_cookies = self.driver.get_cookies()
+
+            # A runs an emergency symptom check.
+            self.ensure_signed_in()
+            self.submit_symptoms("SELENIUM-PRIVATE-WORDS I can't breathe")
+            self.wait_for_text("Emergency", (By.ID, "urgency-heading"))
+
+            # B sees the alert in the bell, with a Call button, and gets the email.
+            self.sign_out_of_browser()
+            for cookie in caregiver_cookies:
+                self.driver.add_cookie({key: cookie[key] for key in ("name", "value", "path", "secure", "httpOnly", "sameSite") if key in cookie})
+            alert_email = Mailpit.wait_for_text(self.driver, caregiver_email, CARE_ALERT_SUBJECT)
+            self.assertIn(f"{RunAccount.name}'s symptom check needs attention (emergency).", alert_email)
+            self.assertNotIn("SELENIUM-PRIVATE-WORDS", alert_email)
+            self.open("/dashboard")
+            bell = (By.XPATH, "//header//button[starts-with(@aria-label, 'Notifications')]")
+            self.wait.until(lambda d: "unread" in (d.find_element(*bell).get_attribute("aria-label") or ""))
+            self.click(bell)
+            self.wait.until(lambda d: "Care circle alert" in d.find_element(By.ID, "notification-panel").text)
+            panel = self.driver.find_element(By.ID, "notification-panel")
+            self.assertIn(f"{RunAccount.name}'s symptom check needs attention (emergency).", panel.text)
+            self.assertNotIn("SELENIUM-PRIVATE-WORDS", panel.text)
+            call = panel.find_element(By.CSS_SELECTOR, f"a[href='tel:{phone}']")
+            self.assertIn("Call", call.text)
+            self.open("/care-circle")
+            self.visible((By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(CIRCLES_HEADING)}]]//li[contains(., {xpath_string(RunAccount.name)})]"))
+        finally:
+            # B's account is removed (which also takes B out of A's care circle), and A signs back in.
+            self.open("/api/health")
+            if self.fetch_json("DELETE", "/api/profile/me", {"confirm": "DELETE", "password": caregiver_password}) not in (204, 401):
+                print(f"\nCould not delete the caregiver account {caregiver_email}", file=sys.stderr)
+            self.sign_out_of_browser()
+            self.ensure_signed_in()
 
 
 class AccountDeletionTest(NabadWebsiteTests):

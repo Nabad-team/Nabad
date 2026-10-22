@@ -17,6 +17,7 @@ import {
 import {
   assessUrgency,
   assessUrgencyWithAnswers,
+  newCheckId,
 } from "../lib/triageApi";
 
 import {
@@ -90,6 +91,11 @@ export default function SymptomsPage() {
     lastDescription,
     setLastDescription,
   ] = useState("");
+
+  // One id per check, sent again with its follow-up answers, so the
+  // user's care circle is alerted at most once for it.
+  const checkIdRef =
+    useRef("");
 
   const [
     followUps,
@@ -364,10 +370,14 @@ export default function SymptomsPage() {
     try {
       // First ask Aref's triage engine
       // to assess the symptoms.
+      checkIdRef.current =
+        newCheckId();
+
       const result =
         await assessUrgency(
           description,
-          activeProfile.id
+          activeProfile.id,
+          checkIdRef.current
         );
 
 
@@ -463,7 +473,8 @@ export default function SymptomsPage() {
         await assessUrgencyWithAnswers(
           lastDescription,
           answers,
-          activeProfile.id
+          activeProfile.id,
+          checkIdRef.current
         );
 
       setUrgency(

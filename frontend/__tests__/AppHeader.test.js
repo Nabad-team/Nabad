@@ -100,6 +100,7 @@ describe("Account menu", () => {
     expect(within(panel).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
       ["My profile", "/profile"],
       ["Security", "/security"],
+      ["Care circle", "/care-circle"],
       ["Safety check", "/symptoms"],
       ["Medications", "/medications"],
       ["Privacy Policy", "/privacy"],
@@ -136,6 +137,8 @@ describe("Account menu", () => {
     expect(screen.getByRole("link", { name: "My profile" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Security" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Care circle" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Safety check" })).toHaveFocus();
     await user.tab();
@@ -195,6 +198,7 @@ describe("Phone menu", () => {
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([
       "My profile",
       "Security",
+      "Care circle",
       "Safety check",
       "Medications",
       "Privacy Policy",

@@ -47,6 +47,15 @@ describe("Notifications page", () => {
     expect(within(older).queryByRole("button", { name: /Mark .* as read/ })).not.toBeInTheDocument();
   });
 
+  test("a care circle alert can be called from the list", async () => {
+    fake.seedNotification({ type: "caregiver_urgent", title: "Care circle alert", message: "Rana's symptom check needs attention (urgent).", link: "/notifications", phone: "+96170123456" });
+    fake.seedNotification({ title: "No phone here" });
+    render(<NotificationsPage />);
+    const [noPhone, alert] = within(await list()).getAllByRole("listitem");
+    expect(within(alert).getByRole("link", { name: /^Call \+96170123456/ })).toHaveAttribute("href", "tel:+96170123456");
+    expect(within(noPhone).queryByRole("link", { name: /^Call/ })).not.toBeInTheDocument();
+  });
+
   test("filters by unread and by person, with an empty state for no matches", async () => {
     const user = userEvent.setup({ delay: null });
     fake.seedNotification({ title: "Mine read", read: true });
@@ -150,7 +159,7 @@ describe("Notification preferences", () => {
     const reminders = await screen.findByRole("checkbox", { name: "Appointment reminders" });
     expect(reminders).toBeChecked();
     expect(reminders).toBeEnabled();
-    for (const name of [/^Emergency alerts/, /^Urgent alerts about people you look after/]) {
+    for (const name of [/^Emergency alerts/, /^Care circle alerts/]) {
       const box = screen.getByRole("checkbox", { name });
       expect(box).toBeChecked();
       expect(box).toHaveAttribute("aria-disabled", "true");

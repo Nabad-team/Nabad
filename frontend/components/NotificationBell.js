@@ -53,6 +53,15 @@ function useUnreadCount() {
   return { count, announcement };
 }
 
+// Care circle alerts carry the person's phone number, so the caregiver can call straight away.
+export function CallButton({ item }) {
+  return (
+    <a href={`tel:${item.phone}`} className="button button--secondary button--small notification-call" aria-label={`Call ${item.phone} about "${item.message}"`}>
+      Call {item.phone}
+    </a>
+  );
+}
+
 function BellIcon() {
   return (
     <svg className="notification-bell__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -128,17 +137,14 @@ export default function NotificationBell() {
           {latest?.length > 0 && (
             <ul className="notification-panel__list" aria-label="Latest notifications">
               {latest.map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={item.link || "/notifications"}
-                    className={`notification-panel__item${item.read ? "" : " notification-panel__item--unread"}`}
-                    onClick={() => open(item)}
-                  >
+                <li key={item.id} className={`notification-panel__entry${item.read ? "" : " notification-panel__entry--unread"}`}>
+                  <a href={item.link || "/notifications"} className="notification-panel__item" onClick={() => open(item)}>
                     {!item.read && <span className="visually-hidden">Unread: </span>}
                     <strong>{item.title}</strong>
                     <span>{item.message}</span>
                     <span className="text-muted text-sm">{timeAgo(item.createdAt)}</span>
                   </a>
+                  {item.phone && <CallButton item={item} />}
                 </li>
               ))}
             </ul>

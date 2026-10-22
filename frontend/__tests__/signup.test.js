@@ -4,7 +4,8 @@ import SignupPage from "../pages/signup";
 const push = jest.fn();
 const signup = jest.fn();
 
-jest.mock("next/router", () => ({ useRouter: () => ({ push }) }));
+let mockQuery;
+jest.mock("next/router", () => ({ useRouter: () => ({ push, query: mockQuery }) }));
 jest.mock("../lib/api", () => ({ signup: (...args) => signup(...args), googleLoginUrl: () => "/api/auth/google" }));
 
 const passwordInput = () => screen.getByLabelText("Password");
@@ -20,6 +21,7 @@ const checklistItem = (text) => within(screen.getByRole("list", { name: "Passwor
 describe("Signup password", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockQuery = undefined;
   });
 
   test("shows the plain help text, with no mention of a maximum", () => {
@@ -122,6 +124,32 @@ describe("Signup password", () => {
 });
 
 describe("Signup links", () => {
+  test("after signing up from an invitation, fills in the invited email and goes back to it", async () => {
+    const next = "/care-circle/accept?token=" + "a".repeat(64);
+    mockQuery = { email: "karim@example.test", next };
+    signup.mockResolvedValue({});
+    render(<SignupPage />);
+    expect(screen.getByLabelText("Email")).toHaveValue("karim@example.test");
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", `/login?next=${encodeURIComponent(next)}`);
+    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "Karim" } });
+    type("a long and quiet river walk");
+    submit();
+    await screen.findByRole("button", { name: "Sign up" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(signup).toHaveBeenCalledWith("Karim", "karim@example.test", "a long and quiet river walk");
+    expect(push).toHaveBeenCalledWith(next);
+  });
+
+  test("never follows a next link to another site", async () => {
+    mockQuery = { next: "https://evil.example/" };
+    signup.mockResolvedValue({});
+    render(<SignupPage />);
+    fillIn({ password: "a long and quiet river walk" });
+    submit();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(push).toHaveBeenCalledWith("/onboarding");
+  });
+
   test("links to the login page for people who already have an account", () => {
     render(<SignupPage />);
     expect(screen.getByText(/Already have an account\?/)).toBeInTheDocument();

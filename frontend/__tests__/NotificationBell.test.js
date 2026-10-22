@@ -117,6 +117,22 @@ describe("Notification bell", () => {
     await waitFor(() => expect(fake.storedNotifications().find((item) => item.id === id).read).toBe(true));
   });
 
+  test("a care circle alert has a Call button for the person's phone, outside the notification's own link", async () => {
+    const user = userEvent.setup({ delay: null });
+    fake.seedNotification({ type: "system", title: "Care circle", message: "Karim joined your care circle.", link: "/care-circle" });
+    fake.seedNotification({ type: "caregiver_urgent", title: "Care circle alert", message: "Rana's symptom check needs attention (emergency).", link: "/notifications", phone: "+96170123456" });
+    render(<NotificationBell />);
+    await user.click(await screen.findByRole("button", { name: /^Notifications, 2 unread/ }));
+    const items = within(await screen.findByRole("list", { name: "Latest notifications" })).getAllByRole("listitem");
+    const call = within(items[0]).getByRole("link", { name: /^Call \+96170123456/ });
+    expect(call).toHaveAttribute("href", "tel:+96170123456");
+    expect(call).toHaveTextContent("Call +96170123456");
+    expect(call.closest(".notification-panel__item")).toBeNull();
+    expect(within(items[1]).queryByRole("link", { name: /^Call/ })).not.toBeInTheDocument();
+    await user.click(call);
+    expect(followed).toBe("tel:+96170123456");
+  });
+
   test("works with the keyboard: Enter opens, focus moves in, Escape closes and returns focus", async () => {
     const user = userEvent.setup({ delay: null });
     fake.seedNotification();

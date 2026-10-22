@@ -13,11 +13,12 @@ const rules = (directive) =>
     .filter((line) => line.startsWith(`${directive}:`))
     .map((line) => line.slice(directive.length + 1).trim());
 
-// pages/medications.js -> /medications, pages/index.js -> /. Next.js's own files (_app, 404...) are skipped.
+// pages/medications.js -> /medications, pages/index.js -> /, pages/care-circle/ -> /care-circle (which covers the
+// pages inside it). Next.js's own files (_app, 404...) are skipped.
 const allPages = fs
-  .readdirSync(path.join(__dirname, "../pages"))
-  .filter((file) => /^[a-z][\w-]*\.js$/.test(file))
-  .map((file) => (file === "index.js" ? "/" : `/${file.replace(/\.js$/, "")}`));
+  .readdirSync(path.join(__dirname, "../pages"), { withFileTypes: true })
+  .filter((entry) => (entry.isDirectory() ? /^[a-z][\w-]*$/.test(entry.name) && entry.name !== "api" : /^[a-z][\w-]*\.js$/.test(entry.name)))
+  .map(({ name }) => (name === "index.js" ? "/" : `/${name.replace(/\.js$/, "")}`));
 
 describe("robots.txt", () => {
   test("allows exactly the public pages", () => {

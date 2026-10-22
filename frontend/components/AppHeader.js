@@ -24,6 +24,7 @@ export const MAIN_LINKS = [
 export const ACCOUNT_LINKS = [
   { href: "/profile", label: "My profile", shortLabel: "Profile" },
   { href: "/security", label: "Security", shortLabel: "Security" },
+  { href: "/care-circle", label: "Care circle", shortLabel: "Care circle" },
   { href: "/symptoms", label: "Safety check", shortLabel: "Safety" },
   { href: "/medications", label: "Medications", shortLabel: "Medicines" },
   { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
