@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const validator = require("validator");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const User = require("../models/User");
 const { checkNewPassword, findPasswordProblem, MAX_BYTES: MAX_PASSWORD_BYTES } = require("../passwordPolicy");
 const { hashPassword, checkUserPassword } = require("../passwordHashing");
@@ -14,6 +13,7 @@ const { sessionConfig } = require("../sessionConfig");
 const { cookieOptions, twoFactorOnSignup, TRUSTED_DEVICE_COOKIE, trustedDeviceCookieOptions } = require("../config");
 const { logEvent, logError } = require("../logger");
 const { UserError, sendError } = require("../userError");
+const { mailer, logEmailFailure, sendInBackground } = require("../email");
 const { hashCode, codeMatches, isLocked, lockedError, recordWrongCode, reserveCodeSend, lockoutAlert } = require("../twoFactorProtection");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
@@ -27,7 +27,6 @@ const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const VERIFY_RESEND_MS = 60 * 1000;
 const GOOGLE_2FA_MESSAGE = "Google accounts are protected by Google sign-in and do not use email codes.";
-const SMTP_TIMEOUT_MS = 10 * 1000;
 const TRUSTED_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_TRUSTED_DEVICES = 10;
 
@@ -39,23 +38,6 @@ const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { 
 const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
 function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
-function mailer() {
-  const from = process.env.MAIL_FROM || process.env.EMAIL_FROM;
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new UserError("Sending email is temporarily unavailable. Please try again later.", 503);
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", requireTLS: cookieOptions().secure,
-    connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  });
-}
-// Email is never awaited by a request: a slow or blocked SMTP server must not hold the response.
-// Only the error name and code are logged; SMTP error messages can echo server responses.
-function logEmailFailure(req, error) {
-  logEvent("email_failed", { requestId: req?.requestId, errorType: error?.name || "Error", errorCode: error?.code });
-}
-function sendInBackground(req, transport, message) {
-  transport.sendMail(message).catch((error) => logEmailFailure(req, error));
-}
 function generateTwoFactorCode() { return crypto.randomInt(0, 1000000).toString().padStart(6, "0"); }
 async function issueTwoFactorCode(req, user) {
   const now = Date.now();

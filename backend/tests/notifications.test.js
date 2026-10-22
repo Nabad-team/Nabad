@@ -157,7 +157,7 @@ test("lists newest first with paging and filters by profile and unread", async (
   assert.deepEqual(second.body.notifications.map((item) => item.title), ["Mine 1", "Mine 0"]);
   assert.equal(second.body.hasMore, false);
   const item = first.body.notifications[0];
-  assert.deepEqual(Object.keys(item).sort(), ["createdAt", "id", "link", "message", "profileId", "read", "readAt", "title", "type"]);
+  assert.deepEqual(Object.keys(item).sort(), ["createdAt", "id", "link", "message", "phone", "profileId", "read", "readAt", "title", "type"]);
   assert.equal(item.profileId, sami);
 
   const forSami = await request("GET", `/notifications?profileId=${sami}`, { cookie });

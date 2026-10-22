@@ -21,6 +21,7 @@ const PAGE_SIZE = { default: 20, max: 50 };
 const view = (notification) => ({
   id: String(notification._id), profileId: profileView(notification), type: notification.type,
   title: notification.title, message: notification.message, link: notification.link || "",
+  phone: notification.phone || "",
   read: Boolean(notification.readAt), readAt: notification.readAt, createdAt: notification.createdAt,
 });
 const ownedFilter = (req) => (mongoose.isValidObjectId(req.params.id) ? { _id: req.params.id, owner: req.userId } : null);

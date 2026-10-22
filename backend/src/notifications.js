@@ -9,8 +9,9 @@ const { TYPES, SAFETY_TYPES, MUTABLE_TYPES } = Notification;
 //   profileId: whose notification it is: "self", the owner's id, or one of the owner's linked profiles
 //              (checked with the shared ownership check).
 //   type:      one of Notification.TYPES.
-//   data:      { title, message, link?, dedupeKey }. Keep title and message minimal: who and what, never symptom
-//              text or other health details ("Sami's symptom check needs attention"). link is a page in Nabad.
+//   data:      { title, message, link?, phone?, dedupeKey }. Keep title and message minimal: who and what, never symptom
+//              text or other health details ("Sami's symptom check needs attention"). link is a page in Nabad,
+//              phone a number the bell offers to call.
 //              The same event must always give the same dedupeKey (for example "appointment:<id>:<start>").
 // Returns the new notification, or null when none was created: the user turned the type off (safety types can't
 // be), the profile isn't the owner's, the account no longer exists, or the dedupeKey was already used.
@@ -27,7 +28,7 @@ async function notify(owner, profileId, type, data = {}) {
 
   const notification = new Notification({
     owner, profileId: storedProfileId, type,
-    title: data.title, message: data.message, link: data.link || "", dedupeKey: data.dedupeKey, createdAt: new Date(),
+    title: data.title, message: data.message, link: data.link || "", phone: data.phone || "", dedupeKey: data.dedupeKey, createdAt: new Date(),
   });
   await notification.validate();
   try {
