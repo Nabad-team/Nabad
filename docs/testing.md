@@ -61,6 +61,7 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 - **My health and water:** a height is saved and still there after a reload; a glass of water is added and a daily goal is set.
 - **Profile and security pages** open for the signed-in user.
 - **Notifications:** an appointment due in 5 minutes with a 15-minute reminder is saved; within about a minute the API's reminder job notifies it, the header bell shows it as unread, `/notifications` lists it (without the appointment's title), the bell's panel marks everything read, and the profile page shows emergency and urgent caregiver alerts as always on.
+- **Care circle:** user A invites user B by email; B opens the link from the email in Mailpit, signs in and accepts; A runs an emergency symptom check; B's bell shows the care circle alert (with A's name and the level, not the symptoms) and a Call button for A's phone.
 
 ### Never against production
 

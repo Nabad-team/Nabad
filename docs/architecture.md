@@ -94,12 +94,13 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Area | Code | What it does |
 | --- | --- | --- |
 | Health checks | `routes/health.js` | `/api/health` (alive) and `/api/health/ready` (database reachable), used by Render and the Docker health checks. |
-| Authentication | `routes/auth.js`, `session.js`, `sessionConfig.js`, `twoFactorProtection.js`, `passwordHashing.js`, `passwordPolicy.js` | Signup with email verification, sign-in, email 2FA with trusted devices, password reset, Google sign-in, sign-out. |
+| Authentication | `routes/auth.js`, `email.js`, `session.js`, `sessionConfig.js`, `twoFactorProtection.js`, `passwordHashing.js`, `passwordPolicy.js` | Signup with email verification, sign-in, email 2FA with trusted devices, password reset, Google sign-in, sign-out. |
 | Profiles and linked profiles | `routes/profile.js`, `routes/emergencyContact.js`, `middleware/profileAccess.js` | The user's own profile (details, picture, emergency contact), up to 10 linked profiles for people they look after (child, parent, spouse...), and account deletion. |
 | Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. |
 | Water and sleep | `routes/wellbeing.js`, `models/Wellbeing.js` | Daily water glasses against a target, sleep hours and quality, and history. Days are the user's local calendar date. |
 | My health | `routes/healthProfile.js`, `healthProfile.js`, `models/HealthFact.js` | Health facts per profile (sex, height, weight, blood type, pregnancy, conditions, allergies, smoking), each with a source and a confirmed/suggested status, and the **AI health summary**. |
 | Notifications | `notifications.js`, `routes/notifications.js`, `models/Notification.js`, `appointmentReminders.js` | In-app notifications per profile: history, unread count, mark read, delete, and which types the user gets. Created only through `notify()`; see [Notifications](#notifications). |
+| Care circle | `careCircle.js`, `routes/careCircle.js`, `models/CareCircle.js`, `email.js` | People a user invites by email to be alerted when one of their symptom checks needs attention. Invitations, membership, and the alerts; see [Care circle](#care-circle). |
 | Triage | `routes/triage.js`, `triage/` | One triage engine: urgency classification with follow-up questions, red-flag detection, emergency routing and self-care (`triage/careGuidance.js`). The Sprint 1 safety check (`policy.js`, `/assess`, `/emergency-route`, the `/triage` page) is retired. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
 | Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
 
@@ -112,11 +113,12 @@ All health data is stored per profile with two ids: `owner` (the account) and `p
 [notifications.js](../backend/src/notifications.js) `notify(owner, profileId, type, data)` is **the single way to create a notification**. Features call it; nothing else writes to the `Notification` model, and the API (`/api/notifications`) can only read, mark read and delete them.
 
 ```js
-await notify(userId, profileId, "caregiver_urgent", {
-  title: "Check on Sami",
-  message: "Sami's symptom check needs attention.",
-  link: "/symptoms",                        // optional, a page inside Nabad
-  dedupeKey: `symptoms:${record._id}:urgent`, // the same event always gives the same key
+await notify(caregiverId, "self", "caregiver_urgent", {
+  title: "Care circle alert",
+  message: "Rana's symptom check needs attention (emergency).",
+  link: "/notifications",                   // optional, a page inside Nabad
+  phone: "+96170123456",                    // optional, the bell shows a Call button
+  dedupeKey: `care:${ranaId}:${profileId}:${checkHash}`, // the same event always gives the same key
 });
 ```
 
@@ -124,7 +126,7 @@ await notify(userId, profileId, "caregiver_urgent", {
 - **Profiles:** `profileId` is `"self"`, the owner's id or one of their linked profiles, checked with the shared ownership check (`ownedProfileId` in `middleware/profileAccess.js`). Anything else creates nothing.
 - **Preferences:** users turn types off on the profile page (`PUT /api/notifications/preferences`, stored as `mutedNotificationTypes` on the user). `emergency_alert` and `caregiver_urgent` are safety-critical: they are always on, the API refuses to turn them off and the schema can't store them as muted.
 - **Dedupe:** a unique index on `(owner, dedupeKey)`. Calling `notify` again for the same event, even from two servers at once, creates nothing and returns `null`.
-- **Minimal content:** a title (80 characters) and message (200) that say who and what, never symptom text, appointment titles or notes, or other health details. `link` must be a path inside Nabad.
+- **Minimal content:** a title (80 characters), message (200) and optional phone number that say who and what, never symptom text, appointment titles or notes, or other health details. `link` must be a path inside Nabad.
 - **Retention:** a TTL index deletes notifications 90 days after they are created. Removing a linked profile or the account deletes theirs through the [health-data deletion helper](#the-health-data-deletion-helper).
 
 `notify` returns the new notification, or `null` when the type is turned off, the profile isn't the owner's, the account is gone or the key was already used.
@@ -134,6 +136,37 @@ await notify(userId, profileId, "caregiver_urgent", {
 **Appointment reminders.** The appointments page still shows its own browser reminder while it is open. On top of that, [appointmentReminders.js](../backend/src/appointmentReminders.js) runs every minute in the API process and calls `notify` for every appointment whose reminder time has come and that hasn't started (the same window as the page's "Reminder due"). Each save stores the appointment's `startsAt` and `remindAt`, worked out from its local date and time in the browser's time zone (sent with each save; `Asia/Beirut` for appointments saved before). The dedupe key is `appointment:<id>:<startsAt>:<reminderMinutes>`, so a rerun or a second server never repeats a reminder, and rescheduling arms a new one. Older appointments get `startsAt` and `remindAt` when the API starts. The message names only who, the hospital and when: "Sami's appointment at AUBMC is in 1 hour (09:30)."
 
 **Frontend:** the bell in the header ([NotificationBell.js](../frontend/components/NotificationBell.js)) shows the unread count (checked every 60 seconds, when the tab regains focus, and after a change on the page) and a panel with the latest five; [/notifications](../frontend/pages/notifications.js) has the full history; the preferences are on the profile page ([NotificationPreferences.js](../frontend/components/NotificationPreferences.js)).
+
+### Care circle
+
+Any user can invite up to 5 people to their **care circle**. Members are told when one of the inviter's symptom checks (their own, or one of their linked profiles') comes out **urgent or emergency**. They never see symptoms, answers, advice or any other health detail: only the person's name, the level, and the inviter's phone number if they saved one on their profile.
+
+**Model** ([models/CareCircle.js](../backend/src/models/CareCircle.js)): one document per person in a circle, `inviter` (the account being looked after), `member` (the caregiver's account, once accepted), `status` (`pending` or `active`), `inviteEmail`, `inviteTokenHash` (SHA-256 of the one-time token; the token itself is only in the email), `expiresAt` (7 days; a TTL index removes expired invitations) and the created and accepted dates. Relationships work in any direction and a person can be in several circles. Unique indexes stop the same address being invited twice at once or the same person joining a circle twice.
+
+**API** (`/api/care-circle`, [routes/careCircle.js](../backend/src/routes/careCircle.js); every query filtered by `inviter` or `member` = the signed-in user):
+
+| Route | Who | What |
+| --- | --- | --- |
+| `GET /` | anyone signed in | `members`, `pending` invitations, `circles` the user is in (the inviter's name only), `maxMembers`. |
+| `POST /invites` `{ email }` | inviter | Emails a link to `/care-circle/accept?token=…` through the email service ([email.js](../backend/src/email.js)). Inviting the same address again replaces the link. **Never looks the address up**, so the answer (202) is the same whether or not it has a Nabad account. 10 invitations per account per hour. |
+| `POST /invites/lookup` `{ token }` | no sign-in | Who sent the invitation and to which email, for the accept page. |
+| `POST /invites/accept` `{ token }` | the invited email | Only an account signed in with the invited email can accept (403 otherwise); the token is checked and removed in one atomic update, so a link works once. Expired or used links answer 400. The inviter gets a `system` notification. |
+| `DELETE /invites/:id`, `DELETE /members/:id` | inviter | Cancel an invitation, remove a member. |
+| `DELETE /circles/:id` | member | Leave a circle. |
+
+Anything that isn't the user's answers 404. Deleting either account removes its relationships in both directions (`deleteCareCircles` in [careCircle.js](../backend/src/careCircle.js), called by account deletion).
+
+**The alert flow:**
+
+1. The symptoms page sends a `checkId` (a random id per check) to `POST /api/triage/ai-assess`, and the same id again with the follow-up answers.
+2. After the result is final and the response has been sent, the triage route makes **one call**, `alertCareCircleInBackground({ owner, profileId, level, checkId })`. Only the level goes in, never the symptoms or answers, and a failure is logged without failing the check.
+3. For `urgent` and `emergency` only, every **active** member (never a pending invitee) gets `notify(member, "self", "caregiver_urgent", …)`, always on whatever their preferences say, and a short email. The message is "Rana's symptom check needs attention (emergency)." (for a linked profile: "Sami's symptom check needs attention (urgent), from Rana's account."), with a link to Nabad and Rana's phone number if saved.
+4. **One alert per check:** the dedupe key is `care:<inviter>:<profileId>:<sha256(checkId)>`, so a retry or the follow-up answers never alert twice; the email is only sent when `notify` created the notification. Without a `checkId`, one alert per profile per 10 minutes.
+5. Logs say only `care_circle_alerted` with how many members were told: no names, levels, emails or phone numbers.
+
+The first urgent or emergency result of a check alerts, even if follow-up questions are still offered: the user may skip them, and then that result is the final one.
+
+**Frontend:** [/care-circle](../frontend/pages/care-circle/index.js) (in the account menu) to invite, see pending invitations, remove members and leave circles; [/care-circle/accept](../frontend/pages/care-circle/accept.js) from the email, which sends signed-out visitors to log in or sign up with the invited email (`?next=` brings them back); alerts appear in the bell and on `/notifications` with a **Call** button when there is a phone number.
 
 ### The AI health summary
 
