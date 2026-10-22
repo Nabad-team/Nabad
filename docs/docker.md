@@ -53,7 +53,7 @@ Google sign-in is off locally unless you add your own OAuth client (see Configur
 | --- | --- | --- |
 | `frontend` | built from [frontend/Dockerfile](../frontend/Dockerfile) | Next.js app on port 3000. Its `/api/*` rewrite forwards to `http://backend:5000`, set at build time through the `BACKEND_URL` build argument. |
 | `backend` | built from [backend/Dockerfile](../backend/Dockerfile) | Node/Express API on port 5000, in `APP_ENV=development`. Starts after MongoDB is healthy and the model pull job succeeds. |
-| `mongo` | `mongo:8.0` | Database `nabad_development`, stored in the `mongo-data` volume. |
+| `mongo` | `mongo:7.0` | Database `nabad_development`, stored in the `mongo7-data` volume. MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)), which GitHub's runners use, so the stack uses 7.0. 7.0 can't read data written by 8.0, so it starts with a new, empty volume; the old `mongo-data` volume can be removed with `docker volume rm nabad_mongo-data`. |
 | `mailpit` | `axllent/mailpit` | Catches all email (SMTP on 1025, inside the network only) and shows it at port 8025. |
 | `ollama` + `ollama-model-pull` | Optional: `docker-compose.ai.yml` | Runs the self-hosted Qwen model and pulls it into the `ollama-models` volume. The inference port is private to Compose. |
 
@@ -84,7 +84,7 @@ docker compose down -v
 docker compose up
 ```
 
-`-v` removes the `mongo-data` volume. To empty only the Mailpit inbox, use "Delete all" in the Mailpit web page (it is also emptied whenever the `mailpit` container is recreated).
+`-v` removes the `mongo7-data` volume. To empty only the Mailpit inbox, use "Delete all" in the Mailpit web page (it is also emptied whenever the `mailpit` container is recreated).
 
 ## Troubleshooting
 

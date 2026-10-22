@@ -12,10 +12,13 @@ name: nabad
 
 services:
   mongo:
-    image: mongo:8.0
+    # 7.0, not 8.0: MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer, which GitHub's runners now use
+    # (https://jira.mongodb.org/browse/SERVER-121912). Production uses MongoDB Atlas and is not affected.
+    # 7.0 works on every kernel. Its data lives in the mongo7-data volume.
+    image: mongo:7.0
     restart: unless-stopped
     volumes:
-      - mongo-data:/data/db
+      - mongo7-data:/data/db
     networks: [nabad]
     # 27018 on the host, so it doesn't clash with a MongoDB you may already run on 27017.
     ports:
@@ -89,4 +92,5 @@ networks:
   nabad:
 
 volumes:
-  mongo-data:
+  # A new volume for 7.0: it can't open data files written by MongoDB 8.0 (the old mongo-data volume).
+  mongo7-data:
