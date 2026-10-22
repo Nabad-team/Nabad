@@ -810,6 +810,8 @@ class SignedInWorkflowTests(NabadWebsiteTests):
                 print(f"\nCould not delete the caregiver account {caregiver_email}", file=sys.stderr)
             self.sign_out_of_browser()
             self.ensure_signed_in()
+            # A was told that B joined: leave A's bell with nothing unread, as the other tests expect.
+            self.fetch_json("POST", "/api/notifications/read-all")
 
 
 class AccountDeletionTest(NabadWebsiteTests):
