@@ -745,7 +745,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         # User A (this run's account) invites user B, B accepts from the Mailpit email by signing up, A runs an
         # emergency symptom check, and B's bell shows the alert: A's name and the level, never the symptoms.
         caregiver_email = f"selenium-care-{int(time.time())}-{secrets.token_hex(3)}@example.test"
-        caregiver_password = f"{secrets.token_urlsafe(18)} caregiver test"
+        caregiver_password = f"{secrets.token_urlsafe(18)} quiet harbor lamp"
         phone = "+96170123456"
         self.assertEqual(self.fetch_json("PATCH", "/api/profile/me", {"phone": phone}), 200)
 
