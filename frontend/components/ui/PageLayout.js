@@ -7,8 +7,8 @@ export const SITE_DESCRIPTION =
   "Tell Nabad how you feel. It helps you understand how urgent it is and find a hospital that can treat you.";
 // Social sites need a full URL for the preview image, so it points at the official site.
 export const SITE_URL = "https://nabad-psi.vercel.app";
-// Where people reach the team (the Contact page). A placeholder until the team picks a shared inbox.
-export const CONTACT_EMAIL = "nabad.team3@example.com";
+// Where people reach the team (the Contact page).
+export const CONTACT_EMAIL = "nabad.team.lb@gmail.com";
 
 // "Log in" -> "Log in · Nabad". Without a title (the landing page) the tab shows the site title.
 export function pageTitle(title) {
