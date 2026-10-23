@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { captureServerError } = require("./errorTracking");
 // Greedy up to the last "@" so unescaped "@" or "/" in a password is still covered.
 const redactCredentials = (text) => String(text).replace(/\/\/\S*@/g, "//***@");
 // Allowlisted fields only: exclude credentials, contact details, query strings and DB messages.
@@ -47,15 +48,32 @@ function requestLogger(req, res, next) {
   next();
 }
 const INVALID_DETAILS = "Some of the details aren't valid. Please check them and try again.";
+// The route pattern (/api/profile/linked/:id), never the URL with its ids and query string. Express has reset
+// req.baseUrl by the time an error reaches this handler, so the router's mount path is taken from the start of the
+// URL: every mount path is a fixed string, and every route pattern has one segment per URL segment (no wildcards or
+// optional parameters), so the URL's last segments are exactly the ones the pattern replaces.
+function routePattern(req) {
+  if (typeof req.route?.path !== "string") return "unmatched";
+  const segments = String(req.originalUrl || "").split("?")[0].split("/").filter(Boolean);
+  const routeSegments = req.route.path.split("/").filter(Boolean);
+  return `/${[...segments.slice(0, Math.max(0, segments.length - routeSegments.length)), ...routeSegments].join("/")}`;
+}
+// Every 5xx goes to error tracking (errorTracking.js: only when SENTRY_DSN is set, and scrubbed), with the requestId
+// so the report can be matched to these logs.
+const reportServerError = (req, error, status) => captureServerError(error, { requestId: req.requestId, route: routePattern(req), status });
 function errorHandler(error, req, res, next) {
   logError(req, error);
-  if (res.headersSent) return next(error);
+  if (res.headersSent) {
+    reportServerError(req, error, res.statusCode >= 500 ? res.statusCode : 500);
+    return next(error);
+  }
   // A Mongoose validation or cast error that got this far comes from a value in the request: answer 400 in plain
   // words, never with Mongoose's own message (it repeats the value).
   if (error.name === "ValidationError" || error.name === "CastError") {
     return res.status(400).json({ error: INVALID_DETAILS, requestId: req.requestId });
   }
   const status = error.type === "entity.too.large" ? 413 : error.type === "entity.parse.failed" ? 400 : 500;
+  if (status >= 500) reportServerError(req, error, status);
   res.status(status).json({ error: status === 500 ? "An internal error occurred." : "Invalid request body.", requestId: req.requestId });
 }
 module.exports = { logEvent, logError, errorDetails, requestLogger, errorHandler, INVALID_DETAILS };

@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { initErrorTracking, captureFatalError } = require("./errorTracking");
 const { createApp } = require("./app");
 const connectDB = require("./db");
 const { logEvent } = require("./logger");
@@ -43,6 +44,12 @@ async function start() {
   })));
 }
 if (require.main === module) {
-  start().catch((error) => { logEvent("startup_failed", { errorType: error.name, errorMessage: error.message }); process.exitCode = 1; });
+  // Before start(), so errors during startup are reported too (only when SENTRY_DSN is set).
+  initErrorTracking();
+  start().catch(async (error) => {
+    logEvent("startup_failed", { errorType: error.name, errorMessage: error.message });
+    process.exitCode = 1;
+    await captureFatalError(error).catch(() => {});
+  });
 }
 module.exports = { start, applyServerTimeouts, SERVER_TIMEOUTS };
