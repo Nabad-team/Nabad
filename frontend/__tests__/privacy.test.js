@@ -78,6 +78,16 @@ describe("Privacy Policy Page", () => {
     expect(screen.getByText("Brevo")).toBeInTheDocument();
     expect(screen.getByText("Google")).toBeInTheDocument();
     expect(screen.getByText("OpenStreetMap")).toBeInTheDocument();
+    expect(screen.getByText("Sentry")).toBeInTheDocument();
+  });
+
+  test("explains that error reports carry no personal or health information", () => {
+    const { container } = render(<PrivacyPolicy />);
+
+    expect(screen.getByRole("heading", { name: "Error reports" })).toHaveAttribute("id", "error-reports");
+    expect(container).toHaveTextContent("Error reports never contain personal or health information.");
+    expect(container).toHaveTextContent("It never includes your symptoms or other health information");
+    expect(container).toHaveTextContent("Nabad does not record your screen or your clicks and typing for error reports.");
   });
 
   test("has a link back to the dashboard", () => {

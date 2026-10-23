@@ -79,3 +79,7 @@ services:
       # Enable for the multimodal model; image uploads must be photos of written reports.
       - key: LLM_VISION_ENABLED
         value: "true"
+      # Error tracking with Sentry (optional: without it nothing is sent). Reports carry only the error type, stack
+      # trace, route, status, requestId and environment, never health or personal data (docs/architecture.md).
+      - key: SENTRY_DSN
+        sync: false

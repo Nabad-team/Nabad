@@ -180,6 +180,10 @@ export default function PrivacyPolicy() {
           <strong>Google Gemini</strong> AI service for the symptom check, the
           health assistant and report review.
         </li>
+        <li>
+          <strong>Sentry</strong> to receive error reports when something goes
+          wrong in Nabad, so the team can fix it.
+        </li>
       </ul>
 
       <h2>Logs and health information</h2>
@@ -188,6 +192,31 @@ export default function PrivacyPolicy() {
         Nabad is designed so that symptom descriptions and other health data are
         not written to application logs.
       </p>
+
+      <h2 id="error-reports">Error reports</h2>
+
+      <p>
+        When something breaks in Nabad, an error report is sent to Sentry so the
+        team is alerted and can fix it. Error reports never contain personal or
+        health information.
+      </p>
+
+      <ul>
+        <li>
+          A report only says what kind of error happened, where in Nabad&apos;s
+          code and on which page, the error code, and a reference number that
+          matches Nabad&apos;s own logs.
+        </li>
+        <li>
+          It never includes your symptoms or other health information, what you
+          typed, your name, email address, IP address, cookies or sign-in
+          details, or the full web address of the page.
+        </li>
+        <li>
+          Nabad does not record your screen or your clicks and typing for error
+          reports.
+        </li>
+      </ul>
 
       <h2>Account security</h2>
 

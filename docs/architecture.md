@@ -30,6 +30,7 @@ flowchart LR
     brevo["Brevo<br/>(SMTP relay, port 2525)"]
     google["Google sign-in<br/>(OAuth 2.0 / OpenID Connect)"]
     hibp["Have I Been Pwned<br/>(password range API)"]
+    sentry["Sentry<br/>(error reports, scrubbed)"]
 
     subgraph github["GitHub"]
         repo["Nabad repository<br/>(main branch)"]
@@ -45,6 +46,8 @@ flowchart LR
     user -. "consent screen" .-> google
     api -- "code exchange, ID token check" --> google
     api -- "first 5 hash characters only" --> hibp
+    api -. "5xx and crashes: type, stack, route, requestId" .-> sentry
+    user -. "page errors: type, stack, route" .-> sentry
 
     repo -- "pull request" --> ci
     repo -- "auto-deploy on merge to main" --> next
@@ -57,6 +60,7 @@ flowchart LR
 - **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`.
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
+- **Sentry** receives error reports from the API, the web app's server and the browser, when `SENTRY_DSN` (Render) and `NEXT_PUBLIC_SENTRY_DSN` (Vercel) are set. They never contain health or personal data; see [Error tracking](#error-tracking-sentry).
 - **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` triggers the Vercel and Render deploys.
 
 ## Local development (Docker Compose)
@@ -104,6 +108,7 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Download my data | `dataExport.js`, `routes/account.js` | One JSON file of everything stored about the account (`GET /api/account/export`), after the user confirms it's them; see [Download my data](#download-my-data). |
 | Triage | `routes/triage.js`, `triage/` | One triage engine: urgency classification with follow-up questions, red-flag detection, emergency routing and self-care (`triage/careGuidance.js`). The Sprint 1 safety check (`policy.js`, `/assess`, `/emergency-route`, the `/triage` page) is retired. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
 | Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
+| Error tracking | `errorTracking.js`, `logger.js` (central error handler) | Sends crashes and 5xx errors to Sentry, scrubbed, when `SENTRY_DSN` is set; see [Error tracking](#error-tracking-sentry). |
 
 ### The shared ownership check
 
@@ -202,6 +207,43 @@ The model can raise the urgency but never lower it. Self-care steps are only sho
 - **Limits, email and logs.** At most 3 downloads an hour per account. After each one the user is emailed "A copy of your Nabad data was downloaded. If this wasn't you, change your password." Logs record only `data_exported` and the file's size in `bytes`.
 - **The registry.** [dataExport.js](../backend/src/dataExport.js) lists every exported model, and for each one which database fields go into the file (with readable names) and which never do, with the reason (password and token hashes, 2FA data, trusted devices, internal keys). Models that hold nothing about an account (the provider directory) are in `EXCLUDED_MODELS` with a reason. [dataExport.test.js](../backend/tests/dataExport.test.js) fails when a model or a field is in neither, so a new feature has to decide what its data looks like in the export. Every query filters by the signed-in account, so nothing of another user's can be in the file.
 
+### Error tracking (Sentry)
+
+Production errors are reported to [Sentry](https://sentry.io), which alerts the team. Nothing is set up or sent unless the DSN is set, so local runs, tests, Docker and CI never send anything.
+
+| Where | Code | Turned on by | What is reported |
+| --- | --- | --- | --- |
+| API | [errorTracking.js](../backend/src/errorTracking.js), the central error handler in [logger.js](../backend/src/logger.js), [server.js](../backend/src/server.js) | `SENTRY_DSN` (Render) | Every 5xx answered by the central error handler, uncaught exceptions and unhandled rejections (the process still exits, as without Sentry), and a failed startup |
+| Web app, browser | [instrumentation-client.js](../frontend/instrumentation-client.js), [lib/sentry.js](../frontend/lib/sentry.js) | `NEXT_PUBLIC_SENTRY_DSN` (Vercel, fixed at build) | Unhandled errors and promise rejections on a page, and pages that crash in the browser ([_error.js](../frontend/pages/_error.js), which looks like the 500 page) |
+| Web app, server | [instrumentation.js](../frontend/instrumentation.js) | `NEXT_PUBLIC_SENTRY_DSN` | Pages that fail on the server, the cases where visitors see the 500 page (`onRequestError`) |
+
+**Matching a report to the logs:** API reports are tagged with the `requestId`, which is the `X-Request-ID` response header and the `requestId` in every log line for that request.
+
+**Scrubbing rules.** Health and personal data never leave Nabad in an error report. Both SDKs (`@sentry/node` and `@sentry/nextjs`, version pinned) use the same rules:
+
+1. **Allowlist, not blocklist.** `beforeSend` (`scrubEvent`) builds a new event from these fields only:
+   - the error **type** (`TypeError`), without its message, which can repeat a value;
+   - the **stack trace**: file (without any query string), function, line and column per frame;
+   - the tags **`route`** (the route pattern, such as `/api/profile/linked/:id` or `/care-circle/accept`, never the URL with ids or a query string), **`status`** and **`requestId`**;
+   - the **environment**.
+
+   Everything else is dropped: the message, request body, cookies, headers (including `Authorization` and `Cookie`), URL and query string, user, email, IP address, extra data, contexts, breadcrumbs, release and server name.
+2. **Nothing collected in the first place.** Only the integrations that catch errors are used, with no default integrations. There are no breadcrumbs (clicks, inputs, console, URLs), no request data, no local variable values or source lines, and no tracing.
+   - `sendDefaultPii` is `false`. Sentry v11 no longer reads that option, so every `dataCollection` category is off as well (`COLLECT_NOTHING`). This includes `userInfo`, so the SDK tells Sentry not to infer the visitor's IP address (`infer_ip: "never"`).
+3. **No recording.** Session replay, user feedback, profiling and every other feature that records screens or inputs are off: they are never added.
+4. **Browser.** The Content-Security-Policy's `connect-src` allows the DSN's ingest host (for example `https://o123.ingest.de.sentry.io`) and nothing else of Sentry's. Without a DSN it is unchanged, and the SDK isn't even downloaded.
+
+The tests send real events through each SDK and check what would go out ([errorTracking.test.js](../backend/tests/errorTracking.test.js) with a fake Sentry server, [sentry.test.js](../frontend/__tests__/sentry.test.js) with a recording transport). They use a symptom text, an email, a cookie, an `Authorization` header, a query string and an IP address, including data deliberately attached to the user, extra and request fields, and check that none of it is sent.
+
+**Setup**
+
+1. Create two Sentry projects, Node.js (API) and Next.js (web app), preferably in Sentry's EU region.
+   - In each project's **Security & Privacy** settings, turn on **Prevent Storing of IP Addresses** and keep the server-side **Data Scrubber** on, as a second line of defense.
+2. On Render, set `SENTRY_DSN` to the Node.js project's DSN (it's in [render.yaml](../render.yaml) as a secret).
+3. On Vercel, set `NEXT_PUBLIC_SENTRY_DSN` to the Next.js project's DSN, then redeploy (it is fixed at build time). Optionally set `NEXT_PUBLIC_SENTRY_ENVIRONMENT`; otherwise Vercel's environment name is used.
+   - For readable browser stack traces, also set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`: source maps are then uploaded at build and deleted from the deployment.
+4. In Sentry, add alert rules, for example "a new issue is created" and "an issue happens more than 10 times in an hour", sent to the team by email.
+
 ### The health-data deletion helper
 
 [profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (medications, water, sleep, wellbeing settings, health facts, notifications). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind, and to the export registry ([Download my data](#download-my-data)); a test checks both.
@@ -218,6 +260,7 @@ The model can raise the urgency but never lower it. Self-care steps are only sho
 | Origin check | Every state-changing request (not GET/HEAD/OPTIONS) must carry an `Origin` equal to `CLIENT_ORIGIN`, otherwise 403. CORS allows only that origin. |
 | HTTP headers and errors | `nosniff`, `X-Frame-Options: DENY`, `no-referrer`, `no-store`. Users only ever see fixed, safe messages, never library or database errors. |
 | Logging | Allowlisted fields only: no passwords, codes, tokens, email addresses or health values; connection strings are redacted. |
+| Error tracking | Sentry reports are built from an allowlist: error type, stack trace, route pattern, status, requestId and environment. No message, request data, cookies, headers, user, IP address or breadcrumbs; no session replay. See [Error tracking](#error-tracking-sentry). |
 | Configuration | With `APP_ENV=production` the API refuses to start if any required secret is missing, a secret is too short, `CLIENT_ORIGIN` isn't HTTPS, or the database name doesn't match the environment. |
 | Database user | The API connects to Atlas with a dedicated, least-privilege user: read and write on its own environment's database only, no admin or cluster roles. Each environment has its own user and database. |
 

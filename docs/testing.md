@@ -4,7 +4,7 @@ Nabad has three layers of automated tests. All three run on every pull request t
 
 | Layer | Where | Runs with | What it checks |
 | --- | --- | --- | --- |
-| Backend | [backend/tests](../backend/tests) | Node's built-in test runner (`node --test`), against a temporary in-memory MongoDB | The API: sign-up and sign-in, 2FA, sessions, profiles, medications, health data, triage rules, rate limits and error messages |
+| Backend | [backend/tests](../backend/tests) | Node's built-in test runner (`node --test`), against a temporary in-memory MongoDB | The API: sign-up and sign-in, 2FA, sessions, profiles, medications, health data, triage rules, rate limits, error messages, and what error reports send to Sentry (to a fake Sentry server) |
 | Frontend | [frontend/\_\_tests\_\_](../frontend/__tests__) | Jest and React Testing Library, in jsdom | Pages and components on their own, with the API mocked |
 | End-to-end | [tests/test_nabad.py](../tests/test_nabad.py) | Python `unittest` and Selenium, in Chrome | The whole app as a user sees it: the real frontend, API, database and email, started with Docker Compose |
 
