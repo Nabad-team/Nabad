@@ -1,3 +1,5 @@
+const { logEvent, errorDetails } = require("../logger");
+
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const MAX_PDF_PAGES = 25;
 const MAX_REPORT_TEXT = 30000;
@@ -114,7 +116,10 @@ async function extractPdfText(buffer) {
   let pdfjs;
   try {
     pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  } catch {
+  } catch (error) {
+    // Usually pdfjs-dist missing from node_modules (ERR_MODULE_NOT_FOUND: an install older than package.json).
+    // Logged so the 503 below doesn't hide why; only the error's type and code.
+    logEvent("pdf_reader_unavailable", errorDetails(error));
     throw new ReportInputError("PDF reading is not configured on this server. Please try a clear photo of the written report.", 503);
   }
   let loadingTask;

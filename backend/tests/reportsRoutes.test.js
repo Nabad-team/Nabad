@@ -86,6 +86,14 @@ describe("POST /api/reports routes", () => {
     return { status: response.status, body: await response.json() };
   }
 
+  // Without it, PDF analysis answers 503 "not configured" and the test below fails without saying why.
+  test("the PDF reader (pdfjs-dist) is installed and loads", async () => {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs").catch((error) => {
+      assert.fail(`pdfjs-dist could not be loaded (${error.code || error.name}). node_modules is probably older than package.json: run npm ci in backend/.`);
+    });
+    assert.equal(typeof pdfjs.getDocument, "function");
+  });
+
   test("analyzes a sample PDF with lab values and a reference range", async () => {
     provider.content = JSON.stringify({
       documentType: "written_report", urgency: "routine", summary: "The report includes blood count results.",
