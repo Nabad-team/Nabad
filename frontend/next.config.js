@@ -12,6 +12,19 @@ if (process.env.VERCEL && !process.env.BACKEND_URL) {
 }
 const backendUrl = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
+// Error tracking (lib/sentry.js) is on only when NEXT_PUBLIC_SENTRY_DSN is set. The browser then sends error reports
+// to the DSN's ingest host, e.g. https://o123.ingest.de.sentry.io, and the Content-Security-Policy allows that one
+// origin and nothing else of Sentry's.
+const sentryDsn = (process.env.NEXT_PUBLIC_SENTRY_DSN || "").trim();
+function sentryIngestOrigin(dsn) {
+  if (!dsn) return null;
+  let url;
+  try { url = new URL(dsn); } catch { throw new Error("NEXT_PUBLIC_SENTRY_DSN is not a valid Sentry DSN (https://<key>@<host>/<project>)."); }
+  if (url.protocol !== "https:" && process.env.VERCEL) throw new Error("NEXT_PUBLIC_SENTRY_DSN must use https.");
+  return url.origin;
+}
+const sentryIngest = sentryIngestOrigin(sentryDsn);
+
 // Security headers on every response. The Content-Security-Policy only allows what the app really loads:
 // its own scripts, styles, fonts (next/font serves them from this site) and API, profile pictures (data: URLs)
 // and the OpenStreetMap tiles of the provider map. Next.js and styled-jsx add small inline scripts and
@@ -24,7 +37,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://tile.openstreetmap.org",
   "font-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self'${sentryIngest ? ` ${sentryIngest}` : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -43,7 +56,7 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: permissionsPolicy("()") },
 ];
 
-module.exports = {
+const nextConfig = {
   poweredByHeader: false,
   async headers() {
     return [
@@ -58,3 +71,15 @@ module.exports = {
     return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
   },
 };
+
+// Only with a DSN: Sentry's build step then prepares the built files so the SDK can read stack traces. Its own
+// telemetry is off, it adds no instrumentation (lib/sentry.js only catches errors), and source maps are uploaded
+// only when SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT are set (readable stack traces); otherwise none are.
+module.exports = sentryDsn
+  ? require("@sentry/nextjs/config").withSentryConfig(nextConfig, {
+    telemetry: false,
+    silent: !process.env.CI,
+    buildTimeInstrumentation: false,
+    sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN, deleteSourcemapsAfterUpload: true },
+  })
+  : nextConfig;
