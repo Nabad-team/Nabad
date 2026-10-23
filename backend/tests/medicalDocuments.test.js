@@ -71,16 +71,19 @@ test("uploads and stores a valid medical document with profile metadata", async 
   assert.deepEqual(Buffer.from(stored.data), Buffer.from(PDF, "base64"));
 });
 
-test("rejects unsupported types, mismatched content, malformed data and oversize uploads", async () => {
+test("accepts arbitrary document formats, falls back to a safe MIME type, and rejects malformed or oversize uploads", async () => {
   const cookie = token(await user());
-  const cases = [
-    { filename: "file.exe", mimeType: "application/octet-stream", data: PDF },
-    { filename: "photo.jpg", mimeType: "image/jpeg", data: PDF },
-    { filename: "lab.pdf", mimeType: "application/pdf", data: "%%not-base64%%" },
-    { filename: "large.pdf", mimeType: "application/pdf", data: Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(10 * 1024 * 1024)]).toString("base64") },
-  ];
-  for (const [index, file] of cases.entries()) assert.equal((await upload(cookie, file)).status, index === 3 ? 413 : 400);
-  assert.equal(await MedicalDocument.countDocuments(), 0);
+  const dcm = Buffer.from("medical image data").toString("base64");
+  const accepted = await upload(cookie, { filename: "scan.dcm", mimeType: "application/dicom", data: dcm });
+  assert.equal(accepted.status, 201);
+  assert.equal(accepted.body.document.mimeType, "application/dicom");
+  const fallback = await upload(cookie, { filename: "referral.unknown", mimeType: "not a mime type", data: dcm });
+  assert.equal(fallback.status, 201);
+  assert.equal(fallback.body.document.mimeType, "application/octet-stream");
+  assert.equal((await upload(cookie, { filename: "lab.pdf", mimeType: "application/pdf", data: "%%not-base64%%" })).status, 400);
+  const large = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(10 * 1024 * 1024)]).toString("base64");
+  assert.equal((await upload(cookie, { filename: "large.pdf", mimeType: "application/pdf", data: large })).status, 413);
+  assert.equal(await MedicalDocument.countDocuments(), 2);
 });
 
 test("lists and downloads documents only for the selected profile and owner", async () => {

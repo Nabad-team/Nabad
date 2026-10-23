@@ -36,7 +36,7 @@ describe("Medical documents page", () => {
     expect(await screen.findByText(/No documents added yet/)).toBeInTheDocument();
     expect(getMedicalDocuments).toHaveBeenCalledWith("self");
     expect(screen.getByRole("button", { name: "Add medical documents" })).toBeInTheDocument();
-    expect(screen.getByText(/PDF, JPG, PNG and WebP files up to 10 MB each/)).toBeInTheDocument();
+    expect(screen.getByText(/Any file type up to 10 MB each/)).toBeInTheDocument();
   });
 
   test("uploads a selected PDF and displays the returned document", async () => {
@@ -51,13 +51,14 @@ describe("Medical documents page", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Document uploaded.");
   });
 
-  test("rejects unsupported files before calling the upload API", async () => {
+  test("uploads a DICOM X-ray file even when the browser does not identify its MIME type", async () => {
+    uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-dcm", filename: "scan.dcm", size: 12, uploadedAt: "2026-10-12T10:00:00.000Z" } });
     renderPage();
     await screen.findByText(/No documents added yet/);
-    const file = new File(["not an image"], "scan.dcm", { type: "application/octet-stream" });
+    const file = new File(["dicom data"], "scan.dcm", { type: "" });
     fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [file] } });
-    expect(await screen.findByRole("alert")).toHaveTextContent(/isn't a supported file/);
-    expect(uploadMedicalDocument).not.toHaveBeenCalled();
+    expect(await screen.findByText("scan.dcm")).toBeInTheDocument();
+    expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "scan.dcm", mimeType: "application/octet-stream" }));
   });
 
   test("loads the linked profile's documents when that profile is active", async () => {
