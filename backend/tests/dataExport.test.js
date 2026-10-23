@@ -21,6 +21,7 @@ const SymptomRecord = require("../src/models/SymptomRecord");
 const Appointment = require("../src/models/Appointment");
 const ReportConversation = require("../src/models/ReportConversation");
 const Notification = require("../src/models/Notification");
+const MedicalDocument = require("../src/models/MedicalDocument");
 const { HydrationEntry, SleepEntry, WellbeingSettings } = require("../src/models/Wellbeing");
 const { PROFILE_MODELS } = require("../src/profileData");
 const { EXPORTED, PROFILE_COLLECTIONS, EXCLUDED_MODELS, COMMON_OMIT, FORMAT_VERSION } = require("../src/dataExport");
@@ -110,6 +111,7 @@ async function fillProfile(owner, profileId, label) {
   await Appointment.create({ ...ids, title: `${label} appointment`, hospital: "AUBMC", appointmentDate: "2026-11-01", appointmentTime: "09:30" });
   await ReportConversation.create({ ...ids, title: `${label} chat`, messages: [{ role: "user", content: `${label} question` }] });
   await Notification.create({ ...ids, type: "system", title: `${label} notice`, message: "Hello", dedupeKey: `dedupe-${label}-${crypto.randomUUID()}` });
+  await MedicalDocument.create({ ...ids, filename: `${label.toLowerCase()}-lab.pdf`, mimeType: "application/pdf", size: 4, data: Buffer.from("PDF!") });
 }
 
 // --- The registry ---
@@ -197,6 +199,8 @@ test("the file has every registered collection for the user's own and linked pro
     assert.equal(entry.appointments[0].date, "2026-11-01");
     assert.equal(entry.healthAssistantConversations[0].messages[0].content, `${label} question`);
     assert.equal(entry.notifications[0].title, `${label} notice`);
+    assert.equal(entry.medicalDocuments[0].filename, `${label.toLowerCase()}-lab.pdf`);
+    assert.equal(entry.medicalDocuments[0].dataBase64, Buffer.from("PDF!").toString("base64"));
   }
 });
 

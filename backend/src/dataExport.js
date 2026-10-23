@@ -9,6 +9,7 @@ const SymptomRecord = require("./models/SymptomRecord");
 const Appointment = require("./models/Appointment");
 const ReportConversation = require("./models/ReportConversation");
 const Notification = require("./models/Notification");
+const MedicalDocument = require("./models/MedicalDocument");
 const { HydrationEntry, SleepEntry, WellbeingSettings } = require("./models/Wellbeing");
 const { preferencesView } = require("./notifications");
 
@@ -21,6 +22,11 @@ const { preferencesView } = require("./notifications");
 const FORMAT_VERSION = 1;
 
 const id = (value) => String(value);
+const base64Data = (value) => {
+  if (Buffer.isBuffer(value) || value instanceof Uint8Array) return Buffer.from(value).toString("base64");
+  if (value?.buffer && Number.isInteger(value.position)) return Buffer.from(value.buffer).subarray(0, value.position).toString("base64");
+  return "";
+};
 // Calendar dates stored as UTC midnight (date of birth, water and sleep days): "YYYY-MM-DD".
 const day = (value) => (value ? new Date(value).toISOString().slice(0, 10) : null);
 
@@ -98,6 +104,12 @@ const PROFILE_COLLECTIONS = [
     model: Notification,
     fields: { _id: ["id", id], type: "type", title: "title", message: "message", link: "link", phone: "phone", readAt: "readAt", createdAt: "createdAt" },
     omit: { dedupeKey: "An internal key that stops the same event being notified twice." },
+  },
+  {
+    key: "medicalDocuments",
+    model: MedicalDocument,
+    select: "+data",
+    fields: { _id: ["id", id], filename: "filename", mimeType: "mimeType", size: "size", data: ["dataBase64", base64Data], ...TIMESTAMPS },
   },
 ];
 
@@ -195,7 +207,7 @@ async function buildExport(userId, now = new Date()) {
     LinkedProfile.find({ owner: user._id }).sort(SORT).lean(),
     CareCircle.find({ inviter: user._id }).sort(SORT).populate("member", "name email").lean(),
     CareCircle.find({ member: user._id, status: "active" }).sort({ acceptedAt: 1, _id: 1 }).populate("inviter", "name").lean(),
-    ...PROFILE_COLLECTIONS.map(({ model, sort = SORT }) => model.find({ owner: user._id }).sort(sort).lean()),
+    ...PROFILE_COLLECTIONS.map(({ model, sort = SORT, select }) => model.find({ owner: user._id }).sort(sort).select(select || "").lean()),
   ]);
 
   const { emergencyContact, favoriteProviders: favorites, notificationPreferences, ...account } = pick(user, ACCOUNT);
