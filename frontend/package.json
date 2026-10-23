@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sentry/nextjs": "11.6.0",
     "leaflet": "1.9.4",
     "next": "^16.3.6",
     "react": "^19.3.0",
