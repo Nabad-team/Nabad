@@ -62,15 +62,15 @@ All JMeter users come from one IP, so the real per-IP limits (for example 20 log
 - The override also turns off the Have I Been Pwned check (as k6 does) and caps the container logs at 2 × 10 MB.
 - **2FA** stays on for new local signups (`TWO_FACTOR_ON_SIGNUP` is unchanged). Only the seeded `loadtest-NNN@loadtest.nabad.local` accounts have it off, set by [`seed-users.js`](seed-users.js). `.local` addresses can't receive real email.
 
-## Results (2026-10-18)
+## Results (2026-10-18, load-500-users rerun 2026-10-23)
 
-From `node loadtest/jmeter/summarize.js`. Requests/s and times are over all requests of the run, including ramp-up. Each run name links to its HTML dashboard.
+From `node loadtest/jmeter/summarize.js`. Requests/s and times are over all requests of the run, including ramp-up. Each run name links to its HTML dashboard. The 500-user load run was repeated on 2026-10-23 after the backend's keep-alive fix ([below](#the-proxy-500s-and-the-keep-alive-fix)); every other row is from 2026-10-18.
 
 | Run | Users (browsing + signed-in) | Requests/s | Average | Median | p90 | p95 | p99 | Errors |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
 | [load-50-users](reports/load-50-users/index.html) | 25 + 25 | 58.7 | 50 ms | 12 ms | 120 ms | 340 ms | 468 ms | 0.00% |
 | [load-200-users](reports/load-200-users/index.html) | 100 + 100 | 207.5 | 124 ms | 12 ms | 40 ms | 98 ms | 4021 ms | 0.00% |
-| [load-500-users](reports/load-500-users/index.html) | 250 + 250 | 351.2 | 452 ms | 14 ms | 47 ms | 81 ms | 19.4 s | 0.01% |
+| [load-500-users](reports/load-500-users/index.html) (2026-10-23) | 250 + 250 | 373.0 | 387 ms | 18 ms | 151 ms | 273 ms | 17.4 s | 0.00% |
 | [stress-browse-1000-users](reports/stress-browse-1000-users/index.html) | 1000 + 0 | 344.2 | 152 ms | 76 ms | 231 ms | 295 ms | 406 ms | 0.06% |
 | [stress-browse-2000-users](reports/stress-browse-2000-users/index.html) | 2000 + 0 | 640.9 | 295 ms | 190 ms | 492 ms | 548 ms | 3551 ms | 0.38% |
 | [stress-browse-4000-users](reports/stress-browse-4000-users/index.html) (stopped after 30 s) | 4000 + 0 | 361.2 | 1133 ms | 150 ms | 2762 ms | 5377 ms | 14.7 s | 94.81% |
@@ -84,7 +84,7 @@ From `node loadtest/jmeter/summarize.js`. Requests/s and times are over all requ
 
 ### Load: what the numbers mean
 
-**Everything except logging in is fast at every load level.** At 500 users, browsing pages and API calls such as the medication list, adding a medication or My health have a median of 13–24 ms and a p95 of 160–235 ms. There were 5 errors in 65,866 requests.
+**Everything except logging in is fast at every load level.** At 500 users, browsing pages and API calls such as the medication list, adding a medication or My health have a median of 11–26 ms and a p95 of 124–202 ms. There were 3 errors in 69,461 requests, all `503`s from the readiness check and none of them `500`s (see below).
 
 **Logging in is the one thing that slows down, and it explains the high p99 and averages:**
 
@@ -92,12 +92,20 @@ From `node loadtest/jmeter/summarize.js`. Requests/s and times are over all requ
 |---|---:|---:|---:|
 | 50 (25 signed in) | 2.8 | 412 ms | 525 ms |
 | 200 (100 signed in) | 8.7 | 2.6 s | 4.8 s |
-| 500 (250 signed in) | 9.3 | 15.5 s | 24.4 s |
+| 500 (250 signed in) | 10.9 | 12.0 s | 18.2 s |
 
-Logins are only about 1 in 40 requests, so they barely move the median and p95 but make up the p99 and the average. Between 200 and 500 users the login rate hardly rises (8.7 → 9.3 per second): the backend has reached its ceiling of about **10 logins per second**, and extra logins queue.
+Logins are only about 1 in 40 requests, so they barely move the median and p95 but make up the p99 and the average. Between 200 and 500 users the login rate hardly rises (8.7 → 10.9 per second): the backend has reached its ceiling of about **10 logins per second**, and extra logins queue.
 
 - **Why:** a login is deliberately expensive. It runs an Argon2id check plus a bcrypt timing dummy (LOADTEST.md explains both), in native code on Node's thread pool of 4 threads. `docker stats` shows the backend at **~400% CPU**, four cores busy hashing, as soon as logins pile up. Every other request is a quick signature check plus a small MongoDB query.
-- **The 5 errors at 500 users** (4 on `/api/health/ready`, 1 on adding a medication) are `500`s from the frontend's `/api` proxy. Its log shows `Failed to proxy … ECONNRESET`: the backend closed an idle kept-alive connection just as the proxy reused it. This is rare (fewer than 1 in 10,000 requests) but real. Setting the backend's `server.keepAliveTimeout` above the proxy's idle timeout would most likely remove it.
+- **The 3 errors at 500 users** were `503`s from `/api/health/ready`, each after exactly 1.5 s: the readiness check's database ping has a 1.5 s limit and answered "unavailable" while the backend's CPU was busy hashing logins (as in the spike test). That is the check doing its job, not a failure of the app.
+
+#### The proxy 500s and the keep-alive fix
+
+The first 500-user run (2026-10-18) had 5 errors in 65,866 requests: 4 on `/api/health/ready` and 1 on adding a medication, all `500`s from the frontend's `/api` proxy. Its log showed `Failed to proxy … ECONNRESET`.
+
+- **Cause:** the backend closed an idle kept-alive connection at the moment the proxy reused it. Next.js proxies `/api` through Node's global HTTP agent, which keeps idle connections for 5 s, and Node's server closes idle connections after 5 s too (`keepAliveTimeout`). With equal timers, either side can close first, and under load a request sometimes went out on a connection the backend was closing.
+- **Fix ([`backend/src/server.js`](../../backend/src/server.js)):** the backend now keeps idle connections for 65 s (`keepAliveTimeout`, above the agent's 5 s and the 60 s idle timeout usual for load balancers), with `headersTimeout` at 66 s, so the proxy is always the side that closes an idle connection. [`serverTimeouts.test.js`](../../backend/tests/serverTimeouts.test.js) checks the settings on the server that `start()` returns, and that a connection idle for 6.5 s can still be reused (a server with Node's defaults closes it).
+- **Rerun (2026-10-23), same settings:** 69,461 requests with **no `500`s** and no `Failed to proxy` or `ECONNRESET` in the frontend log. At the old rate (5 in 65,866) about 5 would have been expected. The soak test's 4 one-off `500`s (below) were most likely the same race; the soak test was not rerun.
 
 ![Throughput over time, 500 users](charts/load-500-users-throughput-over-time.png)
 
@@ -144,7 +152,7 @@ Browsing at 2,000 users: [response times over time](charts/stress-browse-2000-us
 | 7–10 | 264–272 | 10–11 ms | 55–85 ms | 2.1–2.8 s |
 | 11–14 | 263–272 | 10–11 ms | 50–139 ms | 1.8–2.6 s |
 
-- **Response times stayed stable**, with no upward trend: minutes 11–14 look like minutes 1–3. 231,896 requests and 4 errors, all one-off `500`s on ordinary API calls, most likely the same proxy connection reuse as above. Each signed-in user added a medication every round (about 100 each by the end), and the list and My health stayed just as fast.
+- **Response times stayed stable**, with no upward trend: minutes 11–14 look like minutes 1–3. 231,896 requests and 4 errors, all one-off `500`s on ordinary API calls, most likely the same proxy connection race, fixed since ([above](#the-proxy-500s-and-the-keep-alive-fix)); this run was not repeated. Each signed-in user added a medication every round (about 100 each by the end), and the list and My health stayed just as fast.
 - **Backend memory (`docker stats`):** 172 MiB at the start, 335 MiB after 2 minutes under load, then a slow rise to about 400 MiB, and **383.5 MiB at the end**. A few minutes later, idle, it was **166 MiB**, below where it started. Memory that is given back when the load stops is not a leak: the growth is Node's heap expanding to fit the work (Argon2id alone uses 19 MiB per hash in progress, four at a time). MongoDB went from 245 to 247 MiB.
 
 ![Soak: response times over time](charts/soak-200-users-15-min-response-times-over-time.png)
@@ -162,9 +170,9 @@ Browsing at 2,000 users: [response times over time](charts/stress-browse-2000-us
 | | k6 (backend only, no Docker) | JMeter (whole app in Docker) |
 |---|---|---|
 | Path of a request | k6 → backend on `localhost:5100` | JMeter → Docker port forwarding → Next.js `/api` proxy → backend → MongoDB |
-| Login ceiling | ~12 logins/s | ~9–11 logins/s (load-500: 9.3, soak: 11.0) |
-| Signed-in API at 500 users | `/me` p95 47 ms (500 users only on `/me`) | p95 180–235 ms (250 signed in, next to 250 browsing users and logins using the CPU) |
-| Health / public at 500 users | p95 2–4 ms | `/ready` p95 158 ms, pages ~210 ms |
+| Login ceiling | ~12 logins/s | ~9–11 logins/s (load-500: 10.9, soak: 11.0) |
+| Signed-in API at 500 users | `/me` p95 47 ms (500 users only on `/me`) | p95 124–202 ms (250 signed in, next to 250 browsing users and logins using the CPU) |
+| Health / public at 500 users | p95 2–4 ms | `/ready` p95 129 ms, pages ~150 ms |
 
 - **Both tools find the same limit for the same reason:** password hashing on four threads caps logins at roughly 10 per second on this laptop, and everything else stays fast. The JMeter ceiling is a little lower because the backend shares the CPU with the frontend, MongoDB, Docker and JMeter itself.
 - **JMeter's other times are higher by design.** It measures the whole path a browser uses: the extra proxy hop, Docker networking, and a database query for every signed-in call. k6 measured the backend alone.
