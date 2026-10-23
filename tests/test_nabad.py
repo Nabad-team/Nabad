@@ -16,6 +16,7 @@ import os
 import re
 import secrets
 import sys
+import tempfile
 import time
 import unittest
 from pathlib import Path
@@ -43,6 +44,9 @@ INVITE_SUBJECT = "invited you to their Nabad care circle"
 CARE_ALERT_SUBJECT = "Care circle alert from"
 CIRCLES_HEADING = "Circles I'm in"
 CODE_SUBJECT = "Your Nabad verification code"
+EXPORT_SUBJECT = "A copy of your Nabad data was downloaded"
+# Where Chrome saves downloads (the data export). A new empty folder for each run.
+DOWNLOAD_DIR = Path(tempfile.mkdtemp(prefix="nabad-downloads-"))
 
 
 def is_production():
@@ -129,6 +133,10 @@ def setUpModule():
     options.add_argument("--window-size=1440,1200")
     options.add_argument("--disable-notifications")
     options.add_argument("--lang=en-US")
+    options.add_experimental_option("prefs", {
+        "download.default_directory": str(DOWNLOAD_DIR),
+        "download.prompt_for_download": False,
+    })
     if os.getenv("CI"):
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
@@ -735,6 +743,33 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.assertEqual(box.get_attribute("aria-disabled"), "true")
             box.click()
             self.assertTrue(box.is_selected())
+
+    def test_authenticated_data_export(self):
+        # "Download my data" on the profile page: confirm with the password, and the browser saves
+        # nabad-data-YYYY-MM-DD.json, a valid JSON copy of this account. The account is emailed about it.
+        self.check_page("/profile", "My profile · Nabad")
+        self.click(self.button("Download my data"))
+        self.type_into("dataExportCredential", RunAccount.password)
+        self.click(self.button("Confirm and download"))
+        message = self.wait_for_message("Your data was downloaded as nabad-data-").text
+        file_name = re.search(r"nabad-data-\d{4}-\d{2}-\d{2}\.json", message).group(0)
+
+        path = DOWNLOAD_DIR / file_name
+        try:
+            WebDriverWait(self.driver, WAIT_SECONDS, poll_frequency=0.5).until(
+                lambda _: path.exists() and not list(DOWNLOAD_DIR.glob("*.crdownload"))
+            )
+        except TimeoutException:
+            self.fail(f"{file_name} was not downloaded (found: {[p.name for p in DOWNLOAD_DIR.iterdir()]})")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(data["formatVersion"], 1)
+        self.assertEqual(data["account"]["email"], RunAccount.email)
+        self.assertEqual(data["profiles"][0]["profile"]["id"], "self")
+        self.assertNotIn("passwordHash", path.read_text(encoding="utf-8"))
+        path.unlink()
+
+        text = Mailpit.wait_for_text(self.driver, RunAccount.email, EXPORT_SUBJECT)
+        self.assertIn("If this wasn't you, change your password.", text)
 
     def fetch_json(self, method, path, body=None):
         """Calls the API from this browser (with its cookies) and returns the status."""

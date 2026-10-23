@@ -396,4 +396,23 @@ describe("Profile Page", () => {
       expect(fakeProfileApi.accountDeleted).toBe(true);
     });
   });
+  describe("Download my data", () => {
+    test("sits just before the danger zone", async () => {
+      renderProfilePage();
+      await screen.findByText("Demo User");
+      const exportHeading = screen.getByRole("heading", { name: "Download my data" });
+      const dangerHeading = screen.getByRole("heading", { name: "Danger zone" });
+      expect(exportHeading.compareDocumentPosition(dangerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    test("a Google-only account confirms with its email", async () => {
+      fakeProfileApi.resetFakeProfiles({ authProvider: "google" });
+      const user = userEvent.setup({ delay: null });
+      renderProfilePage();
+      await screen.findByText("Demo User");
+      await user.click(screen.getByRole("button", { name: "Download my data" }));
+      expect(screen.getByLabelText("Email")).toHaveAttribute("type", "email");
+      expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+    });
+  });
 });

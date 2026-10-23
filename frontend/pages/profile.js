@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import Dialog from "../components/Dialog";
 import EmergencyContact from "../components/EmergencyContact";
+import DataExport from "../components/DataExport";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
   getMyProfile,
@@ -415,6 +416,8 @@ export default function ProfilePage() {
       </section>
 
       <EmergencyContact />
+
+      <DataExport isGoogleAccount={isGoogleAccount} />
 
       <Card tone="danger" aria-labelledby="danger-heading" className="section">
         <h2 id="danger-heading">Danger zone</h2>
