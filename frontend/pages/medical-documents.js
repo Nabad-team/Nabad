@@ -10,7 +10,6 @@ import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getMedicalDocuments, medicalDocumentDownloadUrl, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 const prettySize = (size) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const prettyDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
 
@@ -18,7 +17,7 @@ function fileToPayload(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error(`Couldn't read ${file.name}. Please choose it again.`));
-    reader.onload = () => resolve({ filename: file.name, mimeType: file.type, data: String(reader.result).split(",")[1] });
+    reader.onload = () => resolve({ filename: file.name, mimeType: file.type || "application/octet-stream", data: String(reader.result).split(",")[1] });
     reader.readAsDataURL(file);
   });
 }
@@ -50,7 +49,6 @@ export default function MedicalDocumentsPage() {
     if (!files.length) return;
     if (files.length > 10) { setError("Choose up to 10 files at a time."); return; }
     for (const file of files) {
-      if (!ALLOWED_TYPES.has(file.type)) { setError(`${file.name} isn't a supported file. Choose a PDF, JPG, PNG or WebP.`); return; }
       if (file.size > MAX_SIZE) { setError(`${file.name} is larger than 10 MB.`); return; }
     }
     setBusy(true); setError(""); setNotice("");
@@ -73,12 +71,12 @@ export default function MedicalDocumentsPage() {
         <div className="medical-documents__header">
           <div>
             <h2 id="documents-heading">{activeProfile?.isSelf ? "Your documents" : `${activeProfile?.fullName || "Profile"}'s documents`}</h2>
-            <p className="text-muted">Store X-rays, lab results and letters for this profile. PDF, JPG, PNG and WebP files up to 10 MB each.</p>
+            <p className="text-muted">Store X-rays, lab results and letters for this profile. Any file type up to 10 MB each.</p>
           </div>
           <Button type="button" onClick={() => inputRef.current?.click()} disabled={busy || !profileId} aria-label="Add medical documents">
             <span className="medical-documents__plus" aria-hidden="true">+</span> Add documents
           </Button>
-          <input ref={inputRef} className="visually-hidden" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={handleFiles} aria-label="Choose medical documents" />
+          <input ref={inputRef} className="visually-hidden" type="file" multiple onChange={handleFiles} aria-label="Choose medical documents" />
         </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
