@@ -3,6 +3,19 @@ const { createApp } = require("./app");
 const connectDB = require("./db");
 const { logEvent } = require("./logger");
 const { missingGoogleCredentials } = require("./config");
+// Idle kept-alive connections. The frontend's /api proxy (Next.js, through Node's global agent) and Render's load
+// balancer reuse idle connections to the backend. If the backend closes one at the same moment a proxy reuses it,
+// that request fails with ECONNRESET and the visitor gets a 500. Node's defaults are 5 s on both sides, so the two
+// timers race (found by the JMeter load tests, loadtest/jmeter/README.md). The backend keeps an idle connection open
+// longer than any proxy in front of it, so the proxy always closes it first: 65 s is above Node's agent (5 s) and
+// the 60 s idle timeout common to load balancers. headersTimeout must be longer than keepAliveTimeout, or a request
+// arriving on a reused connection just before the keep-alive timer could be cut off.
+const SERVER_TIMEOUTS = Object.freeze({ keepAliveTimeout: 65 * 1000, headersTimeout: 66 * 1000 });
+function applyServerTimeouts(server) {
+  server.keepAliveTimeout = SERVER_TIMEOUTS.keepAliveTimeout;
+  server.headersTimeout = SERVER_TIMEOUTS.headersTimeout;
+  return server;
+}
 async function start() {
   const app = createApp();
   // Made now rather than during the first sign-in (passwordHashing.js); a failure is retried on first use.
@@ -25,11 +38,11 @@ async function start() {
   await reminders.backfillReminderSchedules()
     .catch((error) => logEvent("reminder_backfill_failed", { errorType: error.name }));
   reminders.startReminderJob();
-  return app.listen(process.env.PORT || 5000, () => logEvent("server_started", {
+  return applyServerTimeouts(app.listen(process.env.PORT || 5000, () => logEvent("server_started", {
     environment: process.env.APP_ENV || process.env.NODE_ENV || "development",
-  }));
+  })));
 }
 if (require.main === module) {
   start().catch((error) => { logEvent("startup_failed", { errorType: error.name, errorMessage: error.message }); process.exitCode = 1; });
 }
-module.exports = { start };
+module.exports = { start, applyServerTimeouts, SERVER_TIMEOUTS };

@@ -11,11 +11,11 @@
   "rampup": 60,
   "duration": 180,
   "target": "http://localhost",
-  "date": "2026-10-18T10:36:33.309Z",
+  "date": "2026-10-23T13:26:24.589Z",
   "stoppedEarly": null,
   "backendMemory": {
-    "start": "274.5MiB",
-    "end": "287.7MiB",
-    "peak": "322.4MiB"
+    "start": "144.1MiB",
+    "end": "380MiB",
+    "peak": "395.6MiB"
   }
 }
