@@ -147,6 +147,11 @@ function createApp() {
   );
 
   app.use(
+    "/api/medical-documents",
+    require("./routes/medicalDocuments")
+  );
+
+  app.use(
     "/api/triage",
     require("./routes/triage")
   );

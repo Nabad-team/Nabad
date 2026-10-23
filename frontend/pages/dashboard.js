@@ -121,6 +121,14 @@ export default function DashboardPage() {
 
       {activeProfile && <ProgressSummary />}
 
+      <section className="medical-documents-card section" aria-labelledby="medical-documents-heading">
+        <div className="medical-documents-card__copy">
+          <h2 id="medical-documents-heading">Medical documents</h2>
+          <p>Keep X-rays, lab results and letters together for {activeProfile && !activeProfile.isSelf ? activeProfile.fullName : "your profile"}.</p>
+        </div>
+        <Button variant="secondary" href="/medical-documents">Open medical documents</Button>
+      </section>
+
       <WellbeingCorner />
     </PageLayout>
   );
