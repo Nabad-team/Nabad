@@ -91,6 +91,26 @@ const failingRequest = (pathname) => fetch(`${base}${pathname}?email=${encodeURI
   body: JSON.stringify({ description: SYMPTOM, email: EMAIL }),
 });
 
+// The frontend's tests import backend modules (passwordPolicy.js, which logs) without the backend's packages
+// installed, and nothing should load the SDK while error tracking is off.
+test("logging and the shared password policy work without the Sentry SDK", async () => {
+  const script = `
+    const Module = require("module");
+    const resolve = Module._resolveFilename;
+    Module._resolveFilename = function (request, ...rest) {
+      if (request.startsWith("@sentry/")) throw Object.assign(new Error("Cannot find module " + request), { code: "MODULE_NOT_FOUND" });
+      return resolve.call(this, request, ...rest);
+    };
+    require(${JSON.stringify(path.join(__dirname, "../src/passwordPolicy"))});
+    const { initErrorTracking, captureServerError } = require(${JSON.stringify(path.join(__dirname, "../src/errorTracking"))});
+    if (initErrorTracking({}) !== false) process.exit(2);
+    captureServerError(new Error("x"), { requestId: "r", route: "/r", status: 500 });`;
+  const child = spawn(process.execPath, ["-e", script], { stdio: ["ignore", "ignore", "pipe"] });
+  let stderr = "";
+  child.stderr.on("data", (chunk) => { stderr += chunk; });
+  assert.equal(await new Promise((resolve) => child.on("exit", resolve)), 0, stderr);
+});
+
 // Runs first: until SENTRY_DSN is set, nothing is initialized or sent.
 test("without SENTRY_DSN, error tracking stays off and nothing is sent", async () => {
   assert.equal(initErrorTracking({}), false);

@@ -1,5 +1,3 @@
-const Sentry = require("@sentry/node");
-
 // Error tracking with Sentry (story #89). On only when SENTRY_DSN is set, so local runs, tests and Docker never send
 // anything. Health and personal data must never leave the server in an error report, so:
 // - Only the integrations that catch errors are used. The defaults would add request data, console and HTTP
@@ -23,7 +21,9 @@ const COLLECT_NOTHING = Object.freeze({
   databaseQueryData: false, queues: false, stackFrameVariables: false, frameContextLines: 0,
 });
 
-let enabled = false;
+// The SDK is loaded only when error tracking is turned on. logger.js (and so every module that logs, including
+// passwordPolicy.js, which the frontend's tests import) must not need it.
+let Sentry = null;
 
 const pick = (source, keys) => Object.fromEntries(keys.filter((key) => source?.[key] !== undefined).map((key) => [key, source[key]]));
 
@@ -44,6 +44,7 @@ function scrubEvent(event) {
 
 function initErrorTracking(env = process.env, options = {}) {
   if (!env.SENTRY_DSN) return false;
+  Sentry = require("@sentry/node");
   Sentry.initWithoutDefaultIntegrations({
     dsn: env.SENTRY_DSN,
     environment: env.APP_ENV || env.NODE_ENV || "development",
@@ -66,14 +67,13 @@ function initErrorTracking(env = process.env, options = {}) {
     traceLifecycle: "static",
     ...options,
   });
-  enabled = true;
   return true;
 }
 
 // A 5xx answered by the central error handler (logger.js). route is the route pattern (/api/profile/linked/:id),
 // never the URL with its ids and query string.
 function captureServerError(error, { requestId, route, status }) {
-  if (!enabled) return;
+  if (!Sentry) return;
   Sentry.withScope((scope) => {
     scope.setTags(pick({ requestId, route, status: status === undefined ? undefined : String(status) }, TAGS));
     Sentry.captureException(error);
@@ -82,7 +82,7 @@ function captureServerError(error, { requestId, route, status }) {
 
 // For a fatal startup error: report it and wait (briefly) for it to be sent before the process exits.
 async function captureFatalError(error) {
-  if (!enabled) return;
+  if (!Sentry) return;
   Sentry.captureException(error);
   await Sentry.flush(2000);
 }
