@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> October 22, 2026
+        <strong>Last updated:</strong> October 23, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -223,6 +223,33 @@ export default function PrivacyPolicy() {
         linked profiles, your care circle and your place in other people's
         care circles.
       </p>
+
+      <h2 id="download-your-data">Your right to a copy of your data</h2>
+
+      <p>
+        You have the right to download a copy of the data Nabad stores about
+        you. Choose &quot;Download my data&quot; on your profile page to get one
+        file (in JSON format) with your account details, emergency contact,
+        linked profiles, health records for you and each linked profile,
+        notifications, favorite providers and your care circle.
+      </p>
+
+      <ul>
+        <li>
+          For your security, you confirm it&apos;s you first (with your
+          password, or your email for Google sign-in accounts), and Nabad
+          emails you after every download.
+        </li>
+        <li>
+          The file never includes your password, sign-in security details or
+          anyone else&apos;s health information. For care circles you belong
+          to, it only names the person who invited you.
+        </li>
+        <li>
+          Nabad only records that a download happened and the size of the file,
+          never what was in it.
+        </li>
+      </ul>
 
       <h2>Prototype notice</h2>
 
