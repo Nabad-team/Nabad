@@ -112,6 +112,11 @@ function createApp() {
   );
 
   app.use(
+    "/api/account",
+    require("./routes/account")
+  );
+
+  app.use(
     "/api/profile/emergency-contact",
     require("./routes/emergencyContact")
   );
