@@ -9,6 +9,7 @@ Allow: /contact
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /my-health
+Disallow: /medical-documents
 Disallow: /test-results
 Disallow: /medications
 Disallow: /appointments

@@ -67,6 +67,13 @@ describe("Dashboard Page", () => {
     ).toBeInTheDocument();
   });
 
+  test("offers a medical documents box from the dashboard", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo");
+    expect(screen.getByRole("heading", { name: "Medical documents" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open medical documents" })).toHaveAttribute("href", "/medical-documents");
+  });
+
   test("welcomes the user by their saved name", async () => {
     const profile = await getMyProfile();
     await updateMyProfile({ ...profile, fullName: "Layla Haddad" });
