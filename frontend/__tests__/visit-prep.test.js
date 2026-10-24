@@ -34,6 +34,10 @@ describe("Visit preparation page", () => {
         { id: "allergy-1", category: "allergy", value: { type: "medication", name: "Penicillin", reaction: "Hives" } },
         { id: "condition-1", category: "condition", value: { code: "asthma" } },
       ],
+      medications: [
+        { id: "med-1", name: "IroDef", dose: "25", unit: "mg", form: "tablet", frequency: "Every morning" },
+        { id: "med-2", name: "Rescue inhaler", form: "inhaler", frequency: "As needed" },
+      ],
       suggestions: [{ id: "suggested-1", category: "condition", value: { code: "diabetes" }, status: "suggested" }],
     });
     getSymptomsForProfile.mockResolvedValue([{
@@ -57,6 +61,10 @@ describe("Visit preparation page", () => {
     expect(getSymptomsForProfile).toHaveBeenCalledWith("self");
     expect(screen.getByText("Asthma")).toBeInTheDocument();
     expect(screen.queryByText("Diabetes")).not.toBeInTheDocument();
+    const medicationList = screen.getByRole("list", { name: "Current medications" });
+    expect(within(medicationList).getByText("IroDef")).toBeInTheDocument();
+    expect(within(medicationList).getByText(/25 mg · Tablet · Every morning/)).toBeInTheDocument();
+    expect(within(medicationList).getByText(/Inhaler · As needed/)).toBeInTheDocument();
     const symptomList = await screen.findByRole("list", { name: "Recent symptom checks" });
     expect(within(symptomList).getByText("Headache since yesterday")).toBeInTheDocument();
     expect(within(symptomList).getByText("Pain level: moderate")).toBeInTheDocument();
@@ -67,6 +75,7 @@ describe("Visit preparation page", () => {
     renderPage();
 
     expect(await screen.findByText(/No confirmed conditions, allergies or other background information recorded/)).toBeInTheDocument();
+    expect(screen.getByText("No active medications recorded.")).toBeInTheDocument();
     expect(screen.getByText("No saved symptom checks yet.")).toBeInTheDocument();
   });
 

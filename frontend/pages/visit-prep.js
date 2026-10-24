@@ -18,11 +18,18 @@ const CATEGORY_LABELS = {
 };
 const SUMMARY_LIMIT = 20;
 const ALLERGY_TYPES = { medication: "Medication", food: "Food", other: "Other" };
+const MEDICATION_FORMS = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
 
 function summaryFactText(fact) {
   if (fact.category !== "allergy") return factText(fact);
   const { type, name, reaction } = fact.value;
   return `${name} (${ALLERGY_TYPES[type] || type}${reaction ? `; reaction: ${reaction}` : ""})`;
+}
+
+function medicationDetails(medication) {
+  const dose = [medication.dose, medication.unit].filter(Boolean).join(" ");
+  const form = medication.form && medication.form !== "other" ? MEDICATION_FORMS[medication.form] || medication.form : "";
+  return [dose, form, medication.frequency].filter(Boolean).join(" · ");
 }
 
 export default function VisitPrepPage() {
@@ -46,6 +53,7 @@ export default function VisitPrepPage() {
   const facts = data?.health.facts || [];
   const background = facts.filter((fact) => ["condition", "allergy", "pregnancy", "smoking", "bloodType"].includes(fact.category));
   const basics = facts.filter((fact) => ["sex", "height", "weight"].includes(fact.category));
+  const medications = data?.health.medications || [];
   const symptomRecords = (data?.symptoms || []).slice(0, SUMMARY_LIMIT);
 
   return (
@@ -70,6 +78,18 @@ export default function VisitPrepPage() {
               <h3>Other recorded details</h3>
               <ul>{basics.map((fact) => <li key={fact.id}><strong>{CATEGORY_LABELS[fact.category]}:</strong> {factText(fact)}</li>)}</ul>
             </>}
+          </Card>
+
+          <Card className="section" aria-labelledby="visit-prep-medications-heading">
+            <h2 id="visit-prep-medications-heading">Current medications</h2>
+            {medications.length ? <ul aria-label="Current medications">
+              {medications.map((medication) => (
+                <li key={medication.id}>
+                  <strong>{medication.name}</strong>
+                  {medicationDetails(medication) && ` · ${medicationDetails(medication)}`}
+                </li>
+              ))}
+            </ul> : <p className="text-muted">No active medications recorded.</p>}
           </Card>
 
           <Card className="section" aria-labelledby="visit-prep-symptoms-heading">
