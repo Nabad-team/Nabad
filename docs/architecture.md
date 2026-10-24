@@ -264,20 +264,37 @@ The tests send real events through each SDK and check what would go out ([errorT
 | Configuration | With `APP_ENV=production` the API refuses to start if any required secret is missing, a secret is too short, `CLIENT_ORIGIN` isn't HTTPS, or the database name doesn't match the environment. |
 | Database user | The API connects to Atlas with a dedicated, least-privilege user: read and write on its own environment's database only, no admin or cluster roles. Each environment has its own user and database. |
 
-## Planned: AI triage service
+## AI triage design
 
-Triage will move from today's rules to an AI model, run as a **separate service** (its own container) next to the API rather than inside it:
+AI triage runs **inside the API**, not as a separate service. The API calls **Google Gemini** through its **OpenAI-compatible endpoint**; a **self-hosted Ollama** server is an optional future path that needs only a configuration change.
 
 ```mermaid
 flowchart LR
-    next["Next.js web app"] -- "/api/triage/*" --> api["Node/Express API"]
-    api -- "symptoms + AI health summary<br/>(private network, service credential)" --> ai["AI triage service<br/>(future container)"]
-    ai -- "urgency level + follow-up questions" --> api
+    next["Next.js web app"] -- "/api/triage/ai-assess" --> api
+
+    subgraph api["Node/Express API"]
+        rules["Red-flag rules<br/>(safety floor)"]
+        guard["Guardrails<br/>(prompt, reply checks)"]
+        client["llmClient.js"]
+        rules --> guard --> client
+    end
+
+    client -- "HTTPS + API key<br/>(today)" --> gemini["Google Gemini<br/>(OpenAI-compatible endpoint)"]
+    client -. "private network<br/>(optional, future)" .-> ollama["Self-hosted Ollama"]
     api --> db[("MongoDB")]
 ```
 
-- The browser never calls it directly: the API checks the session and the profile with `resolveProfile`, then sends only the symptoms and that profile's health summary.
-- The API keeps the final say on safety: red-flag rules and emergency routing still run on the API, and the API falls back to the rules if the service is slow or unavailable.
-- `triage/urgency.js` is a pure function behind the triage routes, so the routes and the UI don't change when the model replaces it.
-- The first step is in place: [AI triage](#ai-triage) runs inside the API today. Moving it into its own container means moving `llmClient.js` behind a service endpoint; the guardrails and the rules floor stay on the API.
-- Locally it becomes a fifth service in `docker-compose.yml`, reachable only on the Compose network.
+- **The browser never calls the model.** The API checks the session and the profile with `resolveProfile`, then sends the symptoms, the rules' minimum level, any follow-up answers and the profile's last three checks. Never the user's name, email or profile, and the My health summary is not sent today.
+- **The rules keep the final say.** Red-flag rules run first. An emergency answers at once without the model (with the 140 emergency route), and the final level is the more serious of the rules and the model: the AI can raise urgency, never lower it. If the model is off, slow, unreachable or its reply fails the guardrails, the rules answer alone. See [AI triage](#ai-triage).
+- **Provider by configuration.** `LLM_PROVIDER`, `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` on Render choose the model. Moving to Ollama means setting `LLM_PROVIDER=ollama` and its URL; the rules, guardrails, routes and UI don't change. Locally, [docker-compose.ai.yml](../docker-compose.ai.yml) already runs Ollama; see [self-hosted AI](./self-hosted-ai.md).
+- **Monitoring.** Errors in the triage route reach [Sentry](#error-tracking-sentry), scrubbed of health data. Uptime is watched from outside through the health checks: `/api/health` (the API is alive) and `/api/health/ready` (the database is reachable), which Render also uses before sending traffic to a new deploy.
+
+## Diagrams
+
+Sequence and activity diagrams of the main flows, accurate to the current code, with PNG copies for slides in [diagrams/png/](./diagrams/png):
+
+- [AI symptom check](./diagrams/ai-symptom-check.md): rules, Gemini, the safety floor, the emergency path, saving the record and the care circle alert.
+- [Sign-in with password and 2FA](./diagrams/login-2fa.md): remember this device and both lockouts.
+- [Care circle](./diagrams/care-circle.md): invite by email, accept, and an emergency alert that shares no health details.
+- [Activity diagram: symptom triage and care navigation](./diagrams/triage-activity.md), with swimlanes for the user, Nabad AI, Nabad System, the caregiver and the healthcare provider.
+- The diagrams on this page: [production](./diagrams/png/architecture-production.png), [local development](./diagrams/png/architecture-local.png) and [AI triage design](./diagrams/png/architecture-ai-triage.png).
