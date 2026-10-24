@@ -192,7 +192,7 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Health assistant", "Medications", "Appointments", "Water and sleep", "Find care"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Visit preparation", "Health assistant", "Medications", "Appointments", "Water and sleep", "Find care"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([
