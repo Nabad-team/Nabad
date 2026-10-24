@@ -9,7 +9,7 @@ const { logEvent } = require("./logger");
 
 // Appointments saved before browsers sent their time zone are read as Lebanon time, like the provider hours.
 const DEFAULT_TIME_ZONE = "Asia/Beirut";
-const INTERVAL_MS = 60 * 1000;
+const DEFAULT_INTERVAL_MS = 60 * 1000;
 const BATCH = 200;
 
 function validTimeZone(value) {
@@ -107,9 +107,15 @@ async function backfillReminderSchedules() {
   return updated;
 }
 
-// Runs sendDueReminders every minute. A run that is still going is never overlapped, and a failure is logged
-// (error type only) and retried at the next tick.
-function startReminderJob({ intervalMs = INTERVAL_MS } = {}) {
+// Runs sendDueReminders at the configured interval (one minute by default). A run that is still going is never
+// overlapped, and a failure is logged (error type only) and retried at the next tick.
+function reminderIntervalMs(value = process.env.APPOINTMENT_REMINDER_INTERVAL_MS) {
+  if (value === undefined || value === "") return DEFAULT_INTERVAL_MS;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 1000 ? parsed : DEFAULT_INTERVAL_MS;
+}
+
+function startReminderJob({ intervalMs = reminderIntervalMs() } = {}) {
   let running = false;
   const tick = async () => {
     if (running) return;
@@ -122,4 +128,4 @@ function startReminderJob({ intervalMs = INTERVAL_MS } = {}) {
   return () => clearInterval(timer);
 }
 
-module.exports = { DEFAULT_TIME_ZONE, validTimeZone, localTime, reminderSchedule, reminderMessage, sendDueReminders, backfillReminderSchedules, startReminderJob };
+module.exports = { DEFAULT_TIME_ZONE, validTimeZone, localTime, reminderSchedule, reminderMessage, sendDueReminders, backfillReminderSchedules, reminderIntervalMs, startReminderJob };

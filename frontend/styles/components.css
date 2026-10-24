@@ -3052,12 +3052,40 @@ select.input {
   max-width: 32rem;
 }
 
+.visit-prep__document-options {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.visit-prep__document-options label {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-3);
+}
+
+.visit-prep__document-options label > span,
+.visit-prep__document-options .text-muted {
+  display: block;
+}
+
+.visit-prep__edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 @media print {
   body:has(.visit-prep) .skip-link,
   body:has(.visit-prep) .site-header,
   body:has(.visit-prep) .profile-strip,
   body:has(.visit-prep) .page-main > :not(.page-title):not(:has(.visit-prep)),
   .visit-prep__actions,
+  .visit-prep__editor,
+  .visit-prep__notice,
+  .visit-prep__document-picker,
   .visit-prep__back {
     display: none !important;
   }

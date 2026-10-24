@@ -19,12 +19,37 @@ jobs:
       NABAD_MAILPIT_API: http://localhost:8025/api
       NABAD_HEADLESS: "1"
       NABAD_ARTIFACTS_DIR: ${{ github.workspace }}/e2e-artifacts
+      APPOINTMENT_REMINDER_INTERVAL_MS: "2000"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: nabad-backend:e2e
+          cache-from: type=gha,scope=nabad-backend
+          cache-to: type=gha,scope=nabad-backend,mode=max
+
+      - name: Build frontend image with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: nabad-frontend:e2e
+          build-args: BACKEND_URL=http://backend:5000
+          cache-from: type=gha,scope=nabad-frontend
+          cache-to: type=gha,scope=nabad-frontend,mode=max
+
       - name: Start the app with Docker Compose
-        run: docker compose up -d --build
+        run: docker compose up -d
 
       - name: Wait for the frontend and API
         run: |

@@ -4,10 +4,15 @@ import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import { getHealthProfile } from "../lib/healthProfileApi";
 import { getSymptomsForProfile } from "../lib/symptomApi";
+import { getMedicalDocuments } from "../lib/medicalDocumentApi";
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/healthProfileApi", () => ({ getHealthProfile: jest.fn() }));
 jest.mock("../lib/symptomApi", () => ({ getSymptomsForProfile: jest.fn() }));
+jest.mock("../lib/medicalDocumentApi", () => ({
+  getMedicalDocuments: jest.fn(),
+  medicalDocumentDownloadUrl: (profileId, id) => `/api/medical-documents/${id}/download?profileId=${profileId}`,
+}));
 jest.mock("../components/SessionTimeout", () => ({
   ...jest.requireActual("../components/SessionTimeout"),
   useSessionStatus: () => "signedIn",
@@ -24,6 +29,7 @@ describe("Visit preparation page", () => {
     fakeProfileApi.resetFakeProfiles();
     getHealthProfile.mockReset().mockResolvedValue({ dateOfBirth: "1990-04-12", age: { years: 36, text: "36 years" }, facts: [] });
     getSymptomsForProfile.mockReset().mockResolvedValue([]);
+    getMedicalDocuments.mockReset().mockResolvedValue({ documents: [] });
   });
 
   test("loads the active profile's history and includes allergy type and reaction", async () => {
@@ -90,6 +96,44 @@ describe("Visit preparation page", () => {
     expect(await screen.findByText("No saved symptom checks yet.")).toBeInTheDocument();
     expect(getHealthProfile).toHaveBeenCalledWith(child.id);
     expect(getSymptomsForProfile).toHaveBeenCalledWith(child.id);
+    expect(getMedicalDocuments).toHaveBeenCalledWith(child.id);
+  });
+
+  test("attaches selected uploaded documents with profile-scoped download links", async () => {
+    getMedicalDocuments.mockResolvedValue({ documents: [
+      { id: "xray-1", filename: "chest-xray.pdf", documentType: "imaging", documentDate: "2026-10-20" },
+      { id: "lab-1", filename: "blood-count.pdf", documentType: "lab", documentDate: "2026-10-12" },
+    ] });
+
+    renderPage();
+
+    const xray = await screen.findByRole("checkbox", { name: /chest-xray\.pdf/ });
+    fireEvent.click(xray);
+
+    const attached = await screen.findByRole("heading", { name: "Documents attached to this visit" });
+    const attachmentCard = attached.closest("section");
+    expect(within(attachmentCard).getByText("chest-xray.pdf")).toBeInTheDocument();
+    expect(within(attachmentCard).getByRole("link", { name: "Download" })).toHaveAttribute("href", "/api/medical-documents/xray-1/download?profileId=self");
+    expect(within(attachmentCard).queryByText("blood-count.pdf")).not.toBeInTheDocument();
+  });
+
+  test("lets the user review and add notes, and cancel discards an uncommitted draft", async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    const notes = screen.getByRole("textbox", { name: "Notes for your clinician" });
+    fireEvent.change(notes, { target: { value: "Ask about headaches after exercise." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByRole("heading", { name: "Notes for your clinician" })).toBeInTheDocument();
+    expect(screen.getByText("Ask about headaches after exercise.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("included in this visit sheet and its printout");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Notes for your clinician" }), { target: { value: "Discard this draft." } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText("Discard this draft.")).not.toBeInTheDocument();
+    expect(screen.getByText("Ask about headaches after exercise.")).toBeInTheDocument();
   });
 
   test("prints the prepared summary so it can be printed or saved as a PDF", async () => {

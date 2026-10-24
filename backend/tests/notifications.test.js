@@ -65,6 +65,13 @@ test("every notification route requires sign-in and writes require our Origin", 
   assert.equal((await request("POST", "/notifications/read-all", { cookie, origin: "https://evil.example" })).status, 403);
 });
 
+test("appointment reminder interval accepts a safe test override and falls back for invalid values", () => {
+  assert.equal(reminders.reminderIntervalMs("2000"), 2000);
+  assert.equal(reminders.reminderIntervalMs("999"), 60 * 1000);
+  assert.equal(reminders.reminderIntervalMs("not-a-number"), 60 * 1000);
+  assert.equal(reminders.reminderIntervalMs(""), 60 * 1000);
+});
+
 test("the model keeps 90 days of notifications (TTL index) and one per dedupe key per account", async () => {
   const indexes = await Notification.collection.indexes();
   const ttl = indexes.find((index) => index.expireAfterSeconds !== undefined);
