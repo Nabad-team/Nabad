@@ -67,11 +67,11 @@ describe("Dashboard Page", () => {
     ).toBeInTheDocument();
   });
 
-  test("offers a medical documents box from the dashboard", async () => {
+  test("offers medical documents alongside the dashboard section tiles", async () => {
     renderDashboard();
     await screen.findByText("Welcome, Demo");
-    expect(screen.getByRole("heading", { name: "Medical documents" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open medical documents" })).toHaveAttribute("href", "/medical-documents");
+    const sections = screen.getByRole("region", { name: "Dashboard sections" });
+    expect(within(sections).getByRole("link", { name: "Medical documents" })).toHaveAttribute("href", "/medical-documents");
   });
 
   test("welcomes the user by their saved name", async () => {

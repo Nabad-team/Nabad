@@ -44,7 +44,8 @@ function NavIcon({ name }) {
     results: <><path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 13h8M8 17h5" /><circle cx="17.5" cy="17.5" r="3.5" /><path d="m20 20 2 2" /></>,
     medications: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5M14 15l3 3" /></>,
     calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" /></>,
-    wellbeing: <><path d="M6 4v10M4 4v5a2 2 0 0 0 4 0V4M6 14v6" /><path d="M16 4v16M16 4c2.2 0 4 1.8 4 4v2h-4" /></>,
+    wellbeing: <><path d="M3.5 5.5h9v5a4.5 4.5 0 0 1-9 0v-5Z" /><path d="M12.5 7h1a2.5 2.5 0 0 1 0 5h-1M5 18h7" /><path d="M20.2 5.2a5.2 5.2 0 1 0 0 10.4 5.6 5.6 0 0 1 0-10.4Z" /></>,
+    documents: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h8" /></>,
     care: <><circle cx="10.5" cy="10" r="3.5" /><path d="M4 20c.7-3.1 2.8-4.5 6.5-4.5S16.3 16.9 17 20M17 4v6M14 7h6" /></>,
   };
   return <svg className="app-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
@@ -70,7 +71,7 @@ function NavLinks({ links, path, className, simplified = false, cards = false })
   );
 }
 
-export function MainNavigation({ className = "app-nav__list" }) {
+export function MainNavigation({ className = "app-nav__list", includeMedicalDocuments = false }) {
   const { preferences } = useAccessibility();
   const signedIn = useSignedIn();
   const path = useCurrentPath();
@@ -80,7 +81,9 @@ export function MainNavigation({ className = "app-nav__list" }) {
   return (
     <nav aria-label="Main">
       <NavLinks
-        links={MAIN_LINKS}
+        links={includeMedicalDocuments
+          ? [...MAIN_LINKS.slice(0, -1), { href: "/medical-documents", label: "Medical documents", shortLabel: "Documents", icon: "documents" }, MAIN_LINKS[MAIN_LINKS.length - 1]]
+          : MAIN_LINKS}
         path={path}
         className={className}
         simplified={preferences.simplifiedMode}

@@ -6,7 +6,6 @@ import ProgressSummary from "../components/ProgressSummary";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
@@ -73,16 +72,8 @@ export default function DashboardPage() {
       )}
 
       <section className="dashboard-navigation" aria-label="Dashboard sections">
-        <MainNavigation />
+        <MainNavigation includeMedicalDocuments />
       </section>
-
-      <Card className="medical-documents-card section" aria-labelledby="medical-documents-heading">
-        <div className="medical-documents-card__copy">
-          <h2 id="medical-documents-heading">Medical documents</h2>
-          <p>Keep X-rays, lab results and letters together for {activeProfile && !activeProfile.isSelf ? activeProfile.fullName : "your profile"}.</p>
-        </div>
-        <Button variant="secondary" href="/medical-documents">Open medical documents</Button>
-      </Card>
 
       {error && (
         <Alert tone="danger" as="p" role="alert">
