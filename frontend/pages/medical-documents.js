@@ -7,7 +7,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const DOCUMENT_TYPES = [["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab result"], ["letter", "Letter"], ["other", "Other"]];
@@ -67,6 +67,7 @@ export default function MedicalDocumentsPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
+  const [deletingId, setDeletingId] = useState("");
   const [documentType, setDocumentType] = useState("other");
   const [documentDate, setDocumentDate] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -121,6 +122,21 @@ export default function MedicalDocumentsPage() {
   });
   const handleMetadataSaved = (updated) => setDocuments((current) => current?.map((document) => document.id === updated.id ? updated : document) || []);
 
+  async function handleDelete(document) {
+    if (!window.confirm(`Delete ${document.filename}? This cannot be undone.`)) return;
+    const targetProfileId = profileId;
+    setDeletingId(document.id); setError(""); setNotice("");
+    try {
+      await deleteMedicalDocument(targetProfileId, document.id);
+      if (profileRef.current === targetProfileId) {
+        setDocuments((current) => current?.filter((item) => item.id !== document.id) || []);
+        setNotice(`${document.filename} deleted.`);
+      }
+    } catch (deleteError) {
+      if (profileRef.current === targetProfileId) setError(deleteError.message || "We couldn't delete this document. Please try again.");
+    } finally { setDeletingId(""); }
+  }
+
   return (
     <PageLayout title="Medical documents" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Medical documents</PageTitle>
@@ -162,6 +178,7 @@ export default function MedicalDocumentsPage() {
               <div><strong>{document.filename}</strong><p className="text-muted">Uploaded {prettyDate(document.uploadedAt)} · {prettySize(document.size)}</p></div>
               <p>{DOCUMENT_TYPES.find(([value]) => value === (document.documentType || "other"))?.[1] || "Other"} · {dateLabel(document.documentDate)}</p>
               <a href={medicalDocumentDownloadUrl(profileId, document.id)} className="button button--secondary">Download</a>
+              <Button type="button" variant="secondary" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />
             </li>
           ))}</ul> : <p className="medical-documents__empty">No documents match these filters. Clear the type and date filters to see all documents.</p>}

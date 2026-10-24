@@ -165,26 +165,7 @@ export default function ProgressSummary() {
           actionDisabled={!medications?.length || !!savingMedication}
         />
       </ul>
-      <section className="progress-summary__medications" aria-labelledby="medication-checkin-heading">
-        <h3 id="medication-checkin-heading">Medication check-in</h3>
-        <p className="text-muted">{medications?.length
-          ? "Tap the medication ring to check off the next medicine you took as prescribed, or use the list below. This is one daily check-in, not a dose-by-dose record."
-          : medicationsFailed ? "Medication reminders are unavailable right now."
-            : medications ? "No active medications on your list. Add one to get a daily check-in here."
-              : "Loading your active medication list."}</p>
-        {medicationError && <p className="text-muted" role="alert">{medicationError}</p>}
-        {medications?.length > 0 && <ul className="progress-summary__medication-list">
-          {medications.map((medication) => (
-            <li key={medication.id}>
-              <label>
-                <input type="checkbox" checked={medication.taken} disabled={savingMedication === medication.id} onChange={() => toggleMedication(medication)} />
-                <span><strong>{medication.name}</strong>{medication.dose && ` · ${medication.dose}${medication.unit ? ` ${medication.unit}` : ""}`}{medication.frequency && <span className="text-muted"> · {medication.frequency}</span>}</span>
-              </label>
-            </li>
-          ))}
-        </ul>}
-        {medicationsFailed && <p className="text-muted">We couldn't load your medications. <a href="/medications">Open medications</a></p>}
-      </section>
+      {medicationError && <p className="text-muted" role="alert">{medicationError}</p>}
       <section className="progress-summary__appointments" aria-labelledby="upcoming-appointment-heading">
         <div>
           <h3 id="upcoming-appointment-heading">Upcoming doctor’s appointment</h3>

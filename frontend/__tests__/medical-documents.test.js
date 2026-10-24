@@ -3,11 +3,12 @@ import MedicalDocumentsPage from "../pages/medical-documents";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, addLinkedProfile } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
-import { getMedicalDocuments, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { deleteMedicalDocument, getMedicalDocuments, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/medicalDocumentApi", () => ({
   getMedicalDocuments: jest.fn(),
+  deleteMedicalDocument: jest.fn(),
   uploadMedicalDocument: jest.fn(),
   updateMedicalDocumentMetadata: jest.fn(),
   medicalDocumentDownloadUrl: (profileId, id) => `/api/medical-documents/${id}/download?profileId=${profileId}`,
@@ -28,6 +29,7 @@ describe("Medical documents page", () => {
     localStorage.clear();
     fakeProfileApi.resetFakeProfiles();
     getMedicalDocuments.mockReset().mockResolvedValue({ documents: [] });
+    deleteMedicalDocument.mockReset();
     uploadMedicalDocument.mockReset();
     updateMedicalDocumentMetadata.mockReset();
     mockStatus = "signedIn";
@@ -102,5 +104,24 @@ describe("Medical documents page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save details" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Document details saved.");
     expect(updateMedicalDocumentMetadata).toHaveBeenCalledWith("self", "old-doc", { documentType: "imaging", documentDate: "2026-09-01" });
+  });
+
+  test("asks for confirmation and removes the document after deletion succeeds", async () => {
+    const savedDocument = { id: "doc-delete", filename: "mistaken-upload.pdf", documentType: "other", documentDate: "", size: 500, uploadedAt: "2026-10-12T10:00:00.000Z" };
+    getMedicalDocuments.mockResolvedValue({ documents: [savedDocument] });
+    deleteMedicalDocument.mockResolvedValue(undefined);
+    const confirm = jest.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    renderPage();
+    expect(await screen.findByText("mistaken-upload.pdf")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(deleteMedicalDocument).not.toHaveBeenCalled();
+    expect(screen.getByText("mistaken-upload.pdf")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("mistaken-upload.pdf deleted.");
+    expect(deleteMedicalDocument).toHaveBeenCalledWith("self", "doc-delete");
+    expect(screen.queryByText("mistaken-upload.pdf")).not.toBeInTheDocument();
+    confirm.mockRestore();
   });
 });

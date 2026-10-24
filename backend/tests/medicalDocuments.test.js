@@ -98,6 +98,21 @@ test("updates categorization only for the owner and selected profile", async () 
   assert.equal((await request("PATCH", `/medical-documents/${uploaded.body.document.id}?profileId=${childId}`, { cookie: ownerCookie, body: metadata })).status, 404);
 });
 
+test("deletes documents only for the owner and selected profile", async () => {
+  const ownerCookie = token(await user());
+  const otherCookie = token(await user("other@example.test"));
+  const childId = await dependent(ownerCookie);
+  const selfDocument = await upload(ownerCookie);
+  const childDocument = await upload(ownerCookie, undefined, childId);
+  const selfId = selfDocument.body.document.id;
+  assert.equal((await request("DELETE", `/medical-documents/${selfId}?profileId=self`, { cookie: otherCookie })).status, 404);
+  assert.equal((await request("DELETE", `/medical-documents/${selfId}?profileId=${childId}`, { cookie: ownerCookie })).status, 404);
+  assert.equal((await request("DELETE", "/medical-documents/not-an-id?profileId=self", { cookie: ownerCookie })).status, 404);
+  assert.equal((await request("DELETE", `/medical-documents/${selfId}?profileId=self`, { cookie: ownerCookie })).status, 204);
+  assert.equal(await MedicalDocument.exists({ _id: selfId }), null);
+  assert.ok(await MedicalDocument.exists({ _id: childDocument.body.document.id }));
+});
+
 test("accepts arbitrary document formats, falls back to a safe MIME type, and rejects malformed or oversize uploads", async () => {
   const cookie = token(await user());
   const dcm = Buffer.from("medical image data").toString("base64");

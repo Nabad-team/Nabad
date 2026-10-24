@@ -261,16 +261,17 @@ describe("Dashboard Page", () => {
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 
-  test("the medication check-in records taken today for each active medication", async () => {
+  test("the medication ring records taken today without a checklist below the rings", async () => {
     fakeMedications.seedMedication("self", { id: "aspirin", name: "Aspirin", dose: "81", unit: "mg" });
     fakeMedications.seedMedication("self", { id: "vitamin", name: "Vitamin D", taken: true });
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
     expect(await within(card).findByRole("button", { name: "Mark taken: Aspirin" })).toBeInTheDocument();
+    expect(within(card).queryByRole("heading", { name: "Medication check-in" })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("checkbox")).not.toBeInTheDocument();
     await act(async () => { fireEvent.click(within(card).getByRole("button", { name: "Mark taken: Aspirin" })); });
-    const aspirin = within(card).getByRole("checkbox", { name: /Aspirin/ });
-    expect(aspirin).toBeChecked();
+    expect(await within(card).findByRole("button", { name: "Undo taken: Aspirin" })).toBeInTheDocument();
     expect(fakeMedications.calls).toContainEqual(["setMedicationTaken", "self", "aspirin", "2026-10-12", true]);
   });
 
