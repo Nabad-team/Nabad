@@ -687,6 +687,37 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text("Stay under 1.5 L a day", summary)
         self.visible(self.button("Print or save as PDF"))
 
+    def test_authenticated_visit_prep_document_attachment_and_editing(self):
+        filename = f"Selenium visit prep X-ray {secrets.token_hex(3)}.pdf"
+        uploaded = self.driver.execute_async_script(
+            "const done = arguments[arguments.length - 1];"
+            "const filename = arguments[0];"
+            "fetch('/api/medical-documents/?profileId=self', { method: 'POST', credentials: 'include',"
+            "  headers: { 'Content-Type': 'application/json' },"
+            "  body: JSON.stringify({ file: { filename, mimeType: 'application/pdf', data: 'c2VsZW5pdW0gZml4dHVyZQ==' },"
+            "    documentType: 'imaging', documentDate: '2026-01-12' }) })"
+            "  .then(async (r) => { const body = await r.json(); done(r.ok ? { id: body.document.id } : { error: body.error || `status ${r.status}` }); },"
+            "    (e) => done({ error: String(e) }));",
+            filename,
+        )
+        self.assertNotIn("error", uploaded, uploaded.get("error"))
+
+        self.open("/visit-prep")
+        checkbox = (By.XPATH, f"//label[contains(., {xpath_string(filename)})]//input[@type='checkbox']")
+        self.click(checkbox)
+        attached = (By.CSS_SELECTOR, "section[aria-labelledby='visit-prep-attached-heading']")
+        self.wait_for_text(filename, attached)
+        download = self.visible((By.CSS_SELECTOR, f"section[aria-labelledby='visit-prep-attached-heading'] a[href*='{uploaded['id']}']"))
+        self.assertIn("/api/medical-documents/", download.get_attribute("href"))
+
+        self.click(self.button("Edit visit sheet"))
+        note = "Ask the clinician to review this X-ray."
+        self.type_into("visit-prep-notes", note)
+        self.click(self.button("Save changes"))
+        notes = (By.CSS_SELECTOR, "section[aria-labelledby='visit-prep-notes-heading']")
+        self.wait_for_text(note, notes)
+        self.visible(self.button("Print or save as PDF"))
+
     def test_authenticated_profile_and_security_pages(self):
         self.open("/profile")
         self.assertTrue(self.visible((By.CSS_SELECTOR, "h1")).text.strip())
@@ -712,14 +743,29 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.assertIsNone(error)
 
         self.check_page("/notifications", "Notifications · Nabad")
-        # The header bell checks the unread count every minute: wait for the job (up to a minute) and the bell.
+        # Wait for the real scheduled notification through the API, then ask the bell to refresh on focus instead
+        # of waiting for its normal one-minute background poll.
         bell = (By.XPATH, "//header//button[starts-with(@aria-label, 'Notifications')]")
+        reminder_created = self.driver.execute_async_script(
+            "const done = arguments[arguments.length - 1];"
+            "const deadline = Date.now() + 15000;"
+            "const poll = () => fetch('/api/notifications?limit=50', { credentials: 'include' })"
+            "  .then((r) => r.json())"
+            "  .then((data) => {"
+            "    if ((data.notifications || []).some((item) => item.message.includes('Selenium Clinic'))) return done(true);"
+            "    if (Date.now() >= deadline) return done(false);"
+            "    setTimeout(poll, 250);"
+            "  }).catch(() => { if (Date.now() >= deadline) done(false); else setTimeout(poll, 250); });"
+            "poll();"
+        )
+        self.assertTrue(reminder_created, "The reminder job did not create the Selenium Clinic notification within 15 seconds")
+        self.driver.execute_script("window.dispatchEvent(new Event('focus'))")
         try:
-            WebDriverWait(self.driver, 150, poll_frequency=2).until(
+            WebDriverWait(self.driver, 10, poll_frequency=0.25).until(
                 lambda d: "unread" in (d.find_element(*bell).get_attribute("aria-label") or "")
             )
         except TimeoutException:
-            self.fail("The bell showed no unread notification within 150 seconds of the reminder being due")
+            self.fail("The notification bell did not refresh after the window regained focus")
         self.open("/notifications")
         reminder = self.visible((By.XPATH, "//ul[@aria-label='Notifications']/li[contains(., 'Selenium Clinic')]"))
         self.assertIn("Appointment reminder", reminder.text)

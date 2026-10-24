@@ -47,6 +47,8 @@ Wait until http://localhost:3000 opens before starting the tests (the first buil
 | `NABAD_WAIT_SECONDS` | `20` | How long each explicit wait lasts before a test fails |
 | `NABAD_ARTIFACTS_DIR` | `tests/artifacts` | Where failure screenshots and page URLs are saved (git-ignored) |
 
+The E2E workflow sets `APPOINTMENT_REMINDER_INTERVAL_MS=2000` in its disposable Docker app so the reminder test does not wait for the normal one-minute scheduler tick. The app defaults to 60,000 ms when this setting is absent or invalid.
+
 ### How a run works
 
 1. **Setup.** A new account (`selenium-<time>-<random>@example.test`) is signed up through the sign-up page. The suite opens the verification link from the email in Mailpit, signs out through the account menu, and signs in again with the 6-digit code from the second email, ticking "Remember this device". If any of this fails, the whole run fails: nothing is skipped.
@@ -66,7 +68,8 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 - **Family members:** add a linked profile (a child), switch to it in the header, add a medication for them, switch back, and check it is not in the user's own list.
 - **My health and water:** a height is saved and still there after a reload; a glass of water is added and a daily goal is set.
 - **Profile and security pages** open for the signed-in user.
-- **Notifications:** an appointment due in 5 minutes with a 15-minute reminder is saved; within about a minute the API's reminder job notifies it, the header bell shows it as unread, `/notifications` lists it (without the appointment's title), the bell's panel marks everything read, and the profile page shows emergency and urgent caregiver alerts as always on.
+- **Notifications:** an appointment due in 5 minutes with a 15-minute reminder is saved; with the E2E scheduler interval, the API's reminder job notifies it within 30 seconds, the header bell shows it as unread, `/notifications` lists it (without the appointment's title), the bell's panel marks everything read, and the profile page shows emergency and urgent caregiver alerts as always on.
+- **Visit preparation:** an uploaded imaging document can be selected and downloaded from the visit sheet, and added clinician notes appear on the sheet before printing.
 - **Care circle:** user A invites user B by email; B opens the link from the email in Mailpit, signs in and accepts; A runs an emergency symptom check; B's bell shows the care circle alert (with A's name and the level, not the symptoms) and a Call button for A's phone.
 - **Download my data:** on the profile page, confirm with the password; the browser saves `nabad-data-YYYY-MM-DD.json`, which must be valid JSON for this account (and not contain a password hash), and the account gets the "A copy of your Nabad data was downloaded" email.
 
