@@ -79,6 +79,54 @@ const EVERYDAY_WORDING = [
   { means: "overdose", patterns: [
     /\b(?:took|swallowed|taken) (?:too many|a lot of|lots of|a whole (?:bottle|pack|box) of) (?:pills|tablets|medicine|meds)\b/,
   ] },
+  // SCRUM-281: everyday wording for the warning signs added to urgency.js.
+  { means: "black stool", patterns: [
+    // "my poop is black", "stool was black and sticky", "my stools have been jet black"
+    /\b(?:stool|stools|poo|poop|bowel movements?|feces|faeces)(?: is| are| was| were| looks?| looked| has been| have been| turned| seems?| came out)(?: (?:very|really|all|completely|jet|pitch|kind of|like))? (?:black|tarry|tar like|maroon|dark red)\b/,
+    // "maroon coloured stool", "black looking poop"
+    /\b(?:black|tarry|maroon|dark red)(?: colou?red| looking| and sticky)? (?:stool|stools|poo|poop|bowel movements?)\b/,
+    /\b(?:pooping|passing|pooped|passed) (?:black|tar|maroon)\b/,
+  ] },
+  { means: "coffee grounds", patterns: [
+    /\bcoffee ground(?: like)? (?:vomit|sick)\b/,
+  ] },
+  { means: "suddenly confused", patterns: [
+    // "is confused", "seems very confused", but not "confused about the dose" or "not confused".
+    /\b(?:is|am|i'm|he's|she's|seems?|seemed|became|become|becoming|got|getting|looks?|looked|went) (?:suddenly |very |really |so |all |completely )?confused\b(?! (?:about|by|with|on|why|how|what|whether|if|over))/,
+    /\b(?:talking|speaking) nonsense\b/,
+  ] },
+  { means: "disoriented", patterns: [
+    /\b(?:doesn't|does not|didn't|did not|don't|do not) (?:know|recognise|recognize) where (?:he|she|they|i) (?:is|are|am|was|were)\b/,
+  ] },
+  { means: "lost vision", patterns: [
+    /\b(?:lost|losing|suddenly lost) (?:all |the |my |his |her )?(?:vision|sight)\b/,
+    /\b(?:can't|cannot) see (?:anything )?(?:out of|from|with) (?:my|his|her|one) (?:left |right )?eye\b/,
+  ] },
+  { means: "mottled", patterns: [
+    /\bskin (?:is |looks |looking |has gone |went |turned )?(?:mottled|grey|gray|ashen)\b/,
+  ] },
+  { means: "can't feel my legs", patterns: [
+    new RegExp(`\\b(?:can't|cannot) (?:feel|move) ${PERSON} (?:legs|arms|body)\\b`),
+  ] },
+  { means: "fell from a height", patterns: [
+    /\b(?:fell|fallen|falling) (?:off|from|down) (?:a |the )?(?:roof|ladder|balcony|building|height|scaffolding|tree|second floor|third floor)\b/,
+  ] },
+  { means: "car accident", patterns: [
+    /\b(?:car|road|traffic|motorbike|motorcycle) (?:accident|crash|collision)\b/,
+    /\bhit by (?:a |an )?(?:car|truck|bus|van|motorbike|motorcycle|vehicle)\b/,
+  ] },
+  { means: "severe burn", patterns: [
+    /\b(?:badly|seriously|severely) burn(?:ed|t)\b/,
+    /\b(?:big|large|deep) burns?\b/,
+  ] },
+  { means: "swallowed a battery", patterns: [
+    /\b(?:swallowed|ate|eaten) (?:a |an |some |the |two |2 )?(?:button |coin |watch |small )?(?:battery|batteries|magnet|magnets)\b/,
+  ] },
+  { means: "baby stopped moving", patterns: [
+    /\bbaby (?:hasn't|has not|isn't|is not|stopped|has stopped)(?: been)? (?:moved|moving|kicking|kicked)\b/,
+    /\b(?:haven't|have not|not) felt (?:the |my )?baby (?:move|moving|kick|kicking)\b/,
+    /\bbaby (?:is )?(?:moving|kicking) (?:a lot |much )?less\b/,
+  ] },
 
   // ---------- Urgent ----------
   { means: "high fever", patterns: [
@@ -105,6 +153,33 @@ const EVERYDAY_WORDING = [
     new RegExp(`\\b(?:banged|bumped|hit|knocked|smashed|cracked) ${PERSON} head\\b`),
     new RegExp(`\\b(?:fell|landed) on ${PERSON} head\\b`),
   ] },
+  // SCRUM-281
+  { means: "blood in stool", patterns: [
+    /\bblood (?:in|on|with) (?:my |the |his |her )?(?:stool|stools|poo|poop|bowel movements?|toilet paper|feces|faeces)\b/,
+    /\b(?:blood|bleeding) when (?:i|he|she) (?:poop|poo|go to the toilet|have a bowel movement|wipe)\b/,
+    /\b(?:pooping|passing|pooped|passed) (?:some |bright red |red )?blood\b/,
+  ] },
+  { means: "newborn with a fever", patterns: [
+    // "my 2 month old has a fever", "a newborn baby with a temperature", "our 6 week old girl is running a fever"
+    /\b(?:newborn|new born|(?:\d|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve) (?:day|days|week|weeks) old|(?:1|2|one|two) months? old)(?: baby| son| daughter| boy| girl)? (?:has|with|got|is running|running|developed|had)(?: got)? (?:a |an )?(?:high |slight |little |bit of a )?(?:fever|temperature)\b/,
+    /\b(?:fever|temperature) in (?:my |our |a |the )?(?:newborn|new born|(?:\d|1[0-2]|one|two|three|four) weeks? old|(?:1|2|one|two) months? old)\b/,
+  ] },
+  { means: "can't pee", patterns: [
+    /\b(?:can't|cannot|haven't been able to|have not been able to|hasn't been able to|has not been able to|not able to|unable to) (?:pee|wee|urinate|pass urine|pass water)\b/,
+  ] },
+  { means: "severe eye pain", patterns: [
+    /\b(?:eye|eyes) (?:hurts?|is hurting|are hurting|pain) (?:so much|so bad|really bad|really badly|a lot|badly)\b/,
+  ] },
+  { means: "chemical in my eye", patterns: [
+    new RegExp(`\\b(?:got|splashed|sprayed) (?:some )?(?:bleach|chemicals?|acid|cleaner|cleaning product) (?:in|into) ${PERSON} eyes?\\b`),
+  ] },
+  { means: "testicle pain", patterns: [
+    /\b(?:testicle|testicles|testis) (?:hurts?|is hurting|are hurting|aches?|is swollen|are swollen|is painful|are painful)\b/,
+    /\bmy balls (?:hurt|are hurting|are swollen|ache)\b/,
+  ] },
+  { means: "sudden testicle pain", patterns: [
+    /\bsudden(?:ly)? (?:severe |sharp |bad |really bad )?(?:pain|ache) in (?:my|his|one) (?:testicle|testicles|balls)\b/,
+  ] },
 
   // ---------- See a doctor soon ----------
   { means: "fever", patterns: [
@@ -112,6 +187,11 @@ const EVERYDAY_WORDING = [
   ] },
   { means: "vomiting", patterns: [
     /\b(?:threw up|puked|puking|been sick|being sick|keep being sick|vomited)\b/,
+  ] },
+  // SCRUM-281
+  { means: "blood in urine", patterns: [
+    /\bblood (?:in|with) (?:my |the |his |her )?(?:urine|pee|wee)\b/,
+    /\b(?:urine|pee|wee) (?:is|looks|was|has been|turned) (?:red|pink|bloody)\b/,
   ] },
   { means: "ear pain", patterns: [
     new RegExp(`\\b(?:${PERSON} )?ears? (?:hurts?|is hurting|are hurting|aches?|is aching|is killing me)\\b`),

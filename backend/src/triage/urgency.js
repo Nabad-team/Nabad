@@ -62,7 +62,7 @@ const RULES = [
   { id: "bleeding", level: "emergency", reason: "Heavy bleeding that will not stop is an emergency.",
     any: ["heavy bleeding", "bleeding heavily", "won't stop bleeding", "bleeding won't stop", "bleeding that won't stop", "coughing up blood", "vomiting blood", "throwing up blood"] },
   { id: "anaphylaxis", level: "emergency", reason: "Swelling of the face, lips or throat can be a severe allergic reaction.",
-    any: ["throat swelling", "swollen throat", "throat is closing", "tongue swelling", "swollen tongue", "lips swelling", "swollen lips", "anaphylaxis"] },
+    any: ["throat swelling", "swollen throat", "throat is closing", "tongue swelling", "swollen tongue", "lips swelling", "swollen lips", "anaphylaxis", "severe allergic reaction", "anaphylactic"] },
   { id: "worst-headache", level: "emergency", reason: "A sudden, extremely severe headache can signal bleeding in the brain.",
     any: ["worst headache", "thunderclap headache", "sudden severe headache"] },
   { id: "meningitis", level: "emergency", reason: "Fever with a stiff neck can be a sign of meningitis.",
@@ -71,6 +71,25 @@ const RULES = [
     any: ["suicidal", "suicide", "kill myself", "end my life", "want to die"] },
   { id: "poisoning", level: "emergency", reason: "Overdose or poisoning needs emergency care.",
     any: ["overdose", "poisoned", "swallowed poison", "swallowed bleach"] },
+  // SCRUM-281: emergency warning signs the rules were missing. Found by auditing the rules against
+  // the emergencies the AI is expected to catch (tests/redFlagAudit.test.js). Before this, every one
+  // of these was classified "routine" when the AI was off, unreachable or rejected by the guardrails.
+  { id: "gi-bleeding", level: "emergency", reason: "Black or tar-like stools, dark red or maroon blood in the stool, or vomit that looks like coffee grounds can be signs of bleeding in the stomach or gut.",
+    any: ["black stool", "black stools", "tarry stool", "tarry stools", "black tarry", "black poo", "black poop", "dark red blood", "maroon stool", "maroon stools", "coffee grounds"] },
+  { id: "confusion", level: "emergency", reason: "Sudden confusion can be a sign of a stroke, a serious infection or very low blood sugar.",
+    any: ["sudden confusion", "suddenly confused", "very confused", "disoriented", "disorientated"] },
+  { id: "vision-loss", level: "emergency", reason: "Sudden loss of vision can be a sign of a stroke or another eye emergency.",
+    any: ["sudden loss of vision", "lost my vision", "lost vision", "lost my sight", "lost sight", "went blind", "gone blind", "sudden blindness", "suddenly blind", "suddenly can't see"] },
+  { id: "sepsis", level: "emergency", reason: "Mottled, blue or very pale skin while feeling very unwell can be a sign of sepsis, a life-threatening reaction to an infection.",
+    any: ["sepsis", "septic", "mottled"] },
+  { id: "major-injury", level: "emergency", reason: "A serious injury, such as a fall from a height, a road accident, a stab or gunshot wound, an electric shock or a severe burn, needs emergency care.",
+    any: ["fell from a height", "fall from a height", "fell off a roof", "fell from the roof", "can't feel my legs", "cannot feel my legs", "can't move my legs", "cannot move my legs", "car accident", "car crash", "hit by a car", "motorcycle accident", "stabbed", "stab wound", "gunshot", "been shot", "was shot", "electric shock", "electrocuted", "severe burn", "serious burn", "chemical burn"] },
+  { id: "testicle-sudden", level: "emergency", reason: "Sudden, severe pain in a testicle can mean it has twisted, which needs treatment within hours.",
+    any: ["sudden testicle pain", "sudden testicular pain", "sudden pain in my testicle", "sudden severe pain in my testicle", "twisted testicle", "testicle is twisted"] },
+  { id: "swallowed-object", level: "emergency", reason: "A swallowed button battery or magnets can cause serious damage inside the body within hours.",
+    any: ["swallowed a battery", "swallowed a button battery", "swallowed batteries", "swallowed a magnet", "swallowed magnets"] },
+  { id: "baby-not-moving", level: "emergency", reason: "A baby who has stopped moving or is moving much less than usual, during pregnancy or after birth, needs to be checked straight away.",
+    any: ["baby stopped moving", "baby has stopped moving", "baby isn't moving", "baby is not moving", "baby is moving less", "baby moving less", "reduced fetal movements", "reduced foetal movements"] },
 
   // ---- Urgent ----
   { id: "high-fever", level: "urgent", reason: "A very high fever needs to be checked today.",
@@ -83,6 +102,21 @@ const RULES = [
     any: ["broken bone", "bone is sticking out", "deep cut", "head injury", "hit my head", "can't move my", "cannot put weight"] },
   { id: "pregnancy", level: "urgent", reason: "Bleeding or pain during pregnancy should be checked today.",
     all: ["pregnant", "bleeding"] },
+  // SCRUM-281: urgent warning signs the rules were missing.
+  // Bloody stools are "urgent" (seen today), black or maroon stools are "emergency" (gi-bleeding
+  // above): bright red blood is often from a small tear, dark blood can mean bleeding higher up.
+  // A lot of blood is an emergency either way, through the "bleeding" rule.
+  { id: "blood-in-stool", level: "urgent", reason: "Blood in the stool or bleeding from the bottom should be checked today.",
+    any: ["blood in my stool", "blood in my stools", "blood in stool", "blood in the stool", "bloody stool", "bloody stools", "bloody poo", "bloody poop", "blood in my poo", "blood in my poop", "rectal bleeding", "bleeding from my bottom", "bleeding from the bottom", "bloody diarrhea", "bloody diarrhoea"] },
+  // The many ways of saying "a baby under 3 months has a fever" are in everydayWording.js.
+  { id: "young-infant-fever", level: "urgent", reason: "A fever in a baby younger than 3 months should be checked by a doctor today.",
+    any: ["newborn with a fever", "newborn has a fever", "fever in a newborn", "fever in my newborn"] },
+  { id: "urinary-retention", level: "urgent", reason: "Not being able to pee at all should be checked today.",
+    any: ["can't pee", "cannot pee", "unable to pee", "can't urinate", "cannot urinate", "unable to urinate"] },
+  { id: "eye-urgent", level: "urgent", reason: "Severe eye pain, an eye injury or a chemical in the eye should be checked today.",
+    any: ["severe eye pain", "severe pain in my eye", "eye injury", "injured my eye", "chemical in my eye", "chemicals in my eye"] },
+  { id: "testicle-pain", level: "urgent", reason: "Pain or swelling in a testicle should be checked today.",
+    any: ["testicle pain", "testicular pain", "pain in my testicle", "pain in my testicles", "swollen testicle", "swollen testicles"] },
 
   // ---- Soon ----
   { id: "fever", level: "soon", reason: "A fever should be checked by a doctor if it lasts or gets worse.",
@@ -95,6 +129,8 @@ const RULES = [
     any: ["vomiting", "throwing up", "diarrhea", "diarrhoea"] },
   { id: "rash", level: "soon", reason: "A new rash should be looked at by a doctor.",
     any: ["rash"] },
+  { id: "blood-in-urine", level: "soon", reason: "Blood in the urine should be checked by a doctor.",
+    any: ["blood in my urine", "blood in urine", "blood in my pee", "peeing blood", "bloody urine", "red urine"] },
 
   // ---- Routine ----
   { id: "mild", level: "routine", reason: "Mild, common symptoms like these can usually be managed at home.",
@@ -187,9 +223,15 @@ function containsCurrentEmergency(text, phrase) {
     const nextClause = text.indexOf(".", index + phrase.length);
     const before = text.slice(previousClause + 1, index);
     const after = text.slice(index + phrase.length, nextClause === -1 ? undefined : nextClause);
-    const historical = /\b(had|years ago|last year|in the past|previously|history of|recovered from)\b/.test(`${before} ${after}`);
+    const around = `${before} ${after}`;
+    // SCRUM-281: "just had" is happening now, and "died of" is family history.
+    const historical = /\b((?<!just )had|years ago|last year|in the past|previously|history of|recovered from|died of|died from|passed away)\b/.test(around);
     const otherPerson = /\b(my|his|her|their)\s+(father|mother|dad|mom|mum|parent|grandfather|grandmother|brother|sister|friend|uncle|aunt|child|son|daughter)\b/.test(before);
-    if (!isNegatedAt(text, index) && !historical && !otherPerson) return true;
+    // SCRUM-281 audit fix: a family member's name used to cancel the red flag every time, so a
+    // caregiver writing "I think my mother is having a stroke" was told "routine". A family member
+    // now only cancels it when nothing says it is happening now (family history is caught above).
+    const happeningNow = /\b(is|are|am|having|just had|might be|may be|could be|seems to be|right now|now|currently)\b/.test(around);
+    if (!isNegatedAt(text, index) && !historical && (!otherPerson || happeningNow)) return true;
     from = index + phrase.length;
   }
 }

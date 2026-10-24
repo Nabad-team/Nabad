@@ -440,8 +440,11 @@ describe("AI triage service", () => {
   });
 
   test("the model can raise a case to emergency, which adds the emergency number and removes follow-up questions", async () => {
-    const model = fakeModel(reply({ level: "emergency", reasons: ["Sudden confusion can be a sign of a stroke."], careType: "Emergency department" }));
-    const result = await assessWithAi("my grandmother is suddenly confused and dizzy", { client: model, location: { country: "LB" } });
+    // SCRUM-281: "suddenly confused" is now a rule, so this uses wording the rules still miss;
+    // otherwise the rules would answer alone and the model would never be asked.
+    const model = fakeModel(reply({ level: "emergency", reasons: ["Being very drowsy can be a sign of a serious illness."], careType: "Emergency department" }));
+    const result = await assessWithAi("my grandmother is very drowsy and dizzy", { client: model, location: { country: "LB" } });
+    assert.equal(model.calls.length, 1);
     assert.equal(result.level, "emergency");
     assert.equal(result.emergency.contactNumber, "140");
     assert.deepEqual(result.followUpQuestions, []);
