@@ -96,7 +96,10 @@ describe("Visit preparation page", () => {
     expect(await screen.findByText("No saved symptom checks yet.")).toBeInTheDocument();
     expect(getHealthProfile).toHaveBeenCalledWith(child.id);
     expect(getSymptomsForProfile).toHaveBeenCalledWith(child.id);
+    expect(getMedicalDocuments).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Choose uploaded documents" }));
     expect(getMedicalDocuments).toHaveBeenCalledWith(child.id);
+    expect(await screen.findByText(/No uploaded documents for this profile/)).toBeInTheDocument();
   });
 
   test("attaches selected uploaded documents with profile-scoped download links", async () => {
@@ -107,6 +110,8 @@ describe("Visit preparation page", () => {
 
     renderPage();
 
+    expect(getMedicalDocuments).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole("button", { name: "Choose uploaded documents" }));
     const xray = await screen.findByRole("checkbox", { name: /chest-xray\.pdf/ });
     fireEvent.click(xray);
 

@@ -3081,7 +3081,7 @@ select.input {
   body:has(.visit-prep) .skip-link,
   body:has(.visit-prep) .site-header,
   body:has(.visit-prep) .profile-strip,
-  body:has(.visit-prep) .page-main > :not(.page-title):not(:has(.visit-prep)),
+  body:has(.visit-prep) .page-main > :not(.page-title):not(.visit-prep),
   .visit-prep__actions,
   .visit-prep__editor,
   .visit-prep__notice,
@@ -3111,6 +3111,17 @@ select.input {
     break-inside: avoid;
     border-color: #777;
     box-shadow: none;
+  }
+
+  .visit-prep__symptoms,
+  .visit-prep__symptoms > li {
+    break-inside: auto;
+  }
+
+  .visit-prep h2,
+  .visit-prep h3 {
+    break-after: avoid;
+    color: #000;
   }
 
   .visit-prep .text-muted {
