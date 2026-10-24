@@ -18,6 +18,7 @@
 //     The model can raise the urgency, never lower it, so it can never hide a red flag.
 
 const { LEVELS } = require("../urgency");
+const { isCareTypeId } = require("../careTypes");
 
 class GuardrailError extends Error {
   constructor(code) {
@@ -111,7 +112,7 @@ function extractJson(raw) {
 }
 
 // Turns the model's raw reply into a checked result, or throws GuardrailError.
-// Returns { level, reasons, careType, selfCare, removed } where removed lists the dropped sentences' reasons.
+// Returns { level, reasons, careType, careTypeId, selfCare, removed } where removed lists the dropped sentences' reasons.
 function parseModelReply(raw) {
   const value = extractJson(raw);
   const level = typeof value.level === "string" ? value.level.trim().toLowerCase() : "";
@@ -123,8 +124,13 @@ function parseModelReply(raw) {
   const careTypeResult = value.careType === undefined || value.careType === null ? { text: null, removed: null } : filterText(value.careType, MAX_CARE_TYPE_CHARS);
   if (careTypeResult.removed) removed.push(careTypeResult.removed);
   const selfCare = filterList(value.selfCare, MAX_SELF_CARE, MAX_SELF_CARE_CHARS, removed);
+  // SCRUM-278: the model may suggest one of the fixed care-type ids. Anything not on the list is
+  // dropped (the server then picks one itself); it never rejects the whole reply.
+  const careTypeIdText = typeof value.careTypeId === "string" ? value.careTypeId.trim().toLowerCase() : null;
+  const careTypeId = isCareTypeId(careTypeIdText) ? careTypeIdText : null;
+  if (value.careTypeId !== undefined && value.careTypeId !== null && !careTypeId) removed.push("unknown_care_type_id");
 
-  return { level, reasons, careType: careTypeResult.text, selfCare, removed };
+  return { level, reasons, careType: careTypeResult.text, careTypeId, selfCare, removed };
 }
 
 // ---------- Combining with the rules ----------

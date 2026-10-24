@@ -1,6 +1,7 @@
 import Button from "./ui/Button";
 
 import {
+  triageProviderLabel,
   triageProviderUrl,
 } from "../lib/providerFilters";
 
@@ -311,6 +312,7 @@ export default function UrgencyResult({
       </p>
 
 
+      {/* SCRUM-278: opens the directory filtered by the recommended kind of care (careTypeId). */}
       <p>
         <Button
           variant="secondary"
@@ -320,9 +322,9 @@ export default function UrgencyResult({
             )
           }
         >
-          {isEmergency
-            ? "Browse published 24/7 ER facilities in Lebanon"
-            : "Browse hospitals and clinics in Lebanon"}
+          {triageProviderLabel(
+            result
+          )}
         </Button>
       </p>
     </section>

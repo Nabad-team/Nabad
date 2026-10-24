@@ -1,4 +1,8 @@
 // Stable link contract for triage and the provider directory. Never serialize GPS.
+import providerText from "../locales/en/providers.json";
+
+const SPECIALTY_NAMES = providerText.specialties;
+
 export function readProviderFilters(query = {}) {
   const filters = {};
   for (const key of ["q", "specialty", "city", "district", "governorate", "service"]) {
@@ -17,10 +21,48 @@ export function providerUrl(filters = {}) {
   }
   return `/providers${query.size ? `?${query}` : ""}`;
 }
-// Triage returns urgency, not a specialty. careType is localized prose, not an ID.
-// Keep emergency browsing broad; do not infer a specialty from symptoms or rule IDs.
+// SCRUM-278: triage now returns careTypeId, a fixed id chosen by the server
+// (backend/src/triage/careTypes.js). This allow-list is the only place an id becomes directory
+// filters. careType stays localized prose and is still never parsed, and no specialty is ever
+// inferred here from symptoms or rule ids. An unknown or missing id opens the unfiltered directory.
+// Specialist ids are the directory's own specialty slugs; general practice opens family medicine.
+const CARE_TYPE_FILTERS = {
+  "emergency-department": { emergency24h: true },
+  "urgent-care": { emergency24h: true },
+  "general-practitioner": { specialty: "family-medicine" },
+  "self-care": { specialty: "family-medicine" }, // if it does not improve, a family doctor is the next step
+  cardiology: { specialty: "cardiology" },
+  dermatology: { specialty: "dermatology" },
+  ent: { specialty: "ent" },
+  neurology: { specialty: "neurology" },
+  "obstetrics-gynecology": { specialty: "obstetrics-gynecology" },
+  ophthalmology: { specialty: "ophthalmology" },
+  orthopedics: { specialty: "orthopedics" },
+  pediatrics: { specialty: "pediatrics" },
+  psychiatry: { specialty: "psychiatry" },
+  surgery: { specialty: "surgery" },
+};
+export const TRIAGE_CARE_TYPE_IDS = Object.keys(CARE_TYPE_FILTERS);
+
+export function triageProviderFilters(result) {
+  // Keep emergency browsing broad: every published 24/7 ER, whatever the specialty.
+  if (result?.level === "emergency") return { emergency24h: true };
+  const id = result?.careTypeId;
+  if (typeof id !== "string" || !Object.hasOwn(CARE_TYPE_FILTERS, id)) return {};
+  const filters = { ...CARE_TYPE_FILTERS[id] };
+  // Urgent means "seen today", so a specialty is shown among the 24/7 emergency facilities.
+  if (result.level === "urgent" && filters.specialty) filters.emergency24h = true;
+  return filters;
+}
 export function triageProviderUrl(result) {
-  const filters = {};
-  if (result?.level === "emergency") filters.emergency24h = true;
-  return providerUrl(filters);
+  return providerUrl(triageProviderFilters(result));
+}
+// The words on the "Find care" button, so the user knows what the directory will show.
+export function triageProviderLabel(result) {
+  const { specialty, emergency24h } = triageProviderFilters(result);
+  const name = specialty ? SPECIALTY_NAMES[specialty]?.toLowerCase() : null;
+  if (name && emergency24h) return `Browse 24/7 ER facilities with ${name} in Lebanon`;
+  if (name) return `Find ${name} providers in Lebanon`;
+  if (emergency24h) return "Browse published 24/7 ER facilities in Lebanon";
+  return "Browse hospitals and clinics in Lebanon";
 }

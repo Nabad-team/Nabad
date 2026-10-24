@@ -144,6 +144,14 @@ describe("POST /api/triage/classify", () => {
     assert.match(res.body.disclaimer, /not a diagnosis/);
   });
 
+  test("SCRUM-278: the result has a care-type id for the Find care link", async () => {
+    const account = await User.create({ name: "Layla", email: "layla-caretype@example.test", passwordHash: "x" });
+    const cookie = cookieFor(account);
+    assert.equal((await call({ cookie, body: { symptoms: "chest pain and sweating" } })).body.careTypeId, "emergency-department");
+    assert.equal((await call({ cookie, body: { symptoms: "a rash on my arm" } })).body.careTypeId, "dermatology");
+    assert.equal((await call({ cookie, body: { symptoms: "runny nose" } })).body.careTypeId, "self-care");
+  });
+
   test("rejects requests without a session", async () => {
     const res = await call({ body: { symptoms: "chest pain" } });
     assert.equal(res.status, 401);

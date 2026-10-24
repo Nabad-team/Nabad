@@ -5,6 +5,9 @@
 //
 // POST /api/triage/ai-assess { symptoms, answers?, location? } -> AI triage (SCRUM-180)
 //
+// Every result has "careTypeId" (SCRUM-278): a fixed id for the kind of care, which the
+// "Find care" link turns into provider-directory filters. See triage/careTypes.js.
+//
 // The Sprint 1 safety check (POST /assess and /emergency-route, with its own rules in policy.js)
 // is retired: it could give the same symptoms a different level. Its emergency routing and
 // self-care now live in triage/careGuidance.js and come with the /ai-assess result.
@@ -40,6 +43,10 @@ const {
 const {
   routineSelfCare,
 } = require("../triage/careGuidance");
+
+const {
+  chooseCareTypeId,
+} = require("../triage/careTypes");
 
 const {
   getLlmClient,
@@ -129,6 +136,13 @@ router.post(
     return res.json({
       ...result,
 
+      // SCRUM-278: which kind of care, as a fixed id for the "Find care" link.
+      careTypeId:
+        chooseCareTypeId({
+          level: result.level,
+          symptoms,
+        }),
+
       followUpQuestions:
         getFollowUpQuestions(
           symptoms,
@@ -177,6 +191,13 @@ router.post(
 
       return res.json({
         ...result,
+
+        // SCRUM-278: chosen for the level after the answers.
+        careTypeId:
+          chooseCareTypeId({
+            level: result.level,
+            symptoms,
+          }),
 
         explanation:
           explainUrgency({

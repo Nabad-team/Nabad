@@ -97,13 +97,14 @@ describe("POST /api/triage/ai-assess", () => {
   });
 
   test("calls the provider with the key, the model and the symptoms, and returns the combined result", async () => {
-    modelSays({ level: "urgent", reasons: ["A sore throat with trouble swallowing saliva should be checked today."], careType: "Urgent care clinic" });
+    modelSays({ level: "urgent", reasons: ["A sore throat with trouble swallowing saliva should be checked today."], careType: "Urgent care clinic", careTypeId: "ent" });
     const res = await call({ cookie: await signedIn(), body: { symptoms: "sore throat and I can barely swallow my saliva" } });
     assert.equal(res.status, 200);
     assert.equal(res.body.level, "urgent");
     assert.equal(res.body.ruleLevel, "routine");
     assert.deepEqual(res.body.ai, { used: true, level: "urgent", guardrails: ["model_raised"] });
     assert.equal(res.body.careType, "Urgent care clinic");
+    assert.equal(res.body.careTypeId, "ent"); // SCRUM-278
     assert.match(res.body.disclaimer, /not a diagnosis/);
 
     const [request] = provider.requests;
