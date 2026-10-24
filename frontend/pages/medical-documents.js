@@ -7,11 +7,15 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { getMedicalDocuments, medicalDocumentDownloadUrl, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
+const DOCUMENT_TYPES = [
+  ["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab result"], ["letter", "Letter"], ["other", "Other"],
+];
 const prettySize = (size) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const prettyDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+const dateLabel = (value) => value ? prettyDate(`${value}T00:00:00`) : "Date not provided";
 
 function fileToPayload(file) {
   return new Promise((resolve, reject) => {
@@ -20,6 +24,43 @@ function fileToPayload(file) {
     reader.onload = () => resolve({ filename: file.name, mimeType: file.type || "application/octet-stream", data: String(reader.result).split(",")[1] });
     reader.readAsDataURL(file);
   });
+}
+
+function DocumentMetadataEditor({ profileId, document, onSaved }) {
+  const [type, setType] = useState(document.documentType || "other");
+  const [date, setDate] = useState(document.documentDate || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function save(event) {
+    event.preventDefault();
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const updated = await updateMedicalDocumentMetadata(profileId, document.id, { documentType: type, documentDate: date });
+      onSaved(updated);
+      setNotice("Document details saved.");
+    } catch (saveError) {
+      setError(saveError.message || "We couldn't save these document details.");
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <details className="medical-documents__edit">
+      <summary>Edit type or date</summary>
+      <form onSubmit={save} className="form">
+        <label className="field__label" htmlFor={`edit-document-type-${document.id}`}>Document type</label>
+        <select id={`edit-document-type-${document.id}`} className="input" value={type} onChange={(event) => setType(event.target.value)} disabled={busy}>
+          {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+        <label className="field__label" htmlFor={`edit-document-date-${document.id}`}>Document date</label>
+        <input id={`edit-document-date-${document.id}`} className="input" type="date" min="1900-01-01" max="2100-12-31" value={date} onChange={(event) => setDate(event.target.value)} disabled={busy} />
+        <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save details"}</Button>
+        {error && <Alert tone="danger" role="alert">{error}</Alert>}
+        {notice && <p role="status">{notice}</p>}
+      </form>
+    </details>
+  );
 }
 
 export default function MedicalDocumentsPage() {
@@ -31,6 +72,11 @@ export default function MedicalDocumentsPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
+  const [documentType, setDocumentType] = useState("other");
+  const [documentDate, setDocumentDate] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const profileRef = useRef(profileId);
   profileRef.current = profileId;
 
@@ -60,7 +106,7 @@ export default function MedicalDocumentsPage() {
     try {
       for (const file of files) {
         const payload = await fileToPayload(file);
-        const result = await uploadMedicalDocument(targetProfileId, payload);
+        const result = await uploadMedicalDocument(targetProfileId, payload, { documentType, documentDate });
         uploaded += 1;
         if (profileRef.current === targetProfileId) {
           setDocuments((current) => [result.document, ...(current || [])]);
@@ -79,6 +125,16 @@ export default function MedicalDocumentsPage() {
     } finally { setBusy(false); setUploadProgress(""); }
   }
 
+  const visibleDocuments = (documents || []).filter((document) => {
+    const type = document.documentType || "other";
+    const date = document.documentDate || "";
+    return (!filterType || type === filterType) && (!dateFrom || (date && date >= dateFrom)) && (!dateTo || (date && date <= dateTo));
+  });
+
+  function handleMetadataSaved(updated) {
+    setDocuments((current) => current?.map((document) => document.id === updated.id ? updated : document) || []);
+  }
+
   return (
     <PageLayout title="Medical documents" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Medical documents</PageTitle>
@@ -88,6 +144,15 @@ export default function MedicalDocumentsPage() {
             <h2 id="documents-heading">{activeProfile?.isSelf ? "Your documents" : `${activeProfile?.fullName || "Profile"}'s documents`}</h2>
             <p className="text-muted">Store X-rays, lab results and letters for this profile. Any file type up to 10 MB each.</p>
           </div>
+          <div className="medical-documents__metadata">
+            <label className="field__label" htmlFor="medical-document-type">Document type</label>
+            <select id="medical-document-type" className="input" value={documentType} onChange={(event) => setDocumentType(event.target.value)} disabled={busy}>
+              {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <label className="field__label" htmlFor="medical-document-date">Document date (if known)</label>
+            <input id="medical-document-date" className="input" type="date" min="1900-01-01" max="2100-12-31" value={documentDate} onChange={(event) => setDocumentDate(event.target.value)} disabled={busy} />
+            <p className="text-muted">These details will be used for every file in this upload.</p>
+          </div>
           <Button type="button" onClick={() => inputRef.current?.click()} disabled={busy || !profileId} aria-label="Add medical documents">
             <span className="medical-documents__plus" aria-hidden="true">+</span> Add documents
           </Button>
@@ -96,16 +161,29 @@ export default function MedicalDocumentsPage() {
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
         {busy && <HeartbeatLoader label={uploadProgress ? `Uploading documents: ${uploadProgress}...` : "Uploading documents..."} />}
-        {documents === null ? <HeartbeatLoader label="Loading documents..." /> : documents.length ? (
-          <ul className="medical-documents__list">
-            {documents.map((document) => (
+        {documents === null ? <HeartbeatLoader label="Loading documents..." /> : documents.length ? (<>
+          <div className="medical-documents__filters" aria-label="Filter documents">
+            <label className="field__label" htmlFor="filter-document-type">Filter by type</label>
+            <select id="filter-document-type" className="input" value={filterType} onChange={(event) => setFilterType(event.target.value)}>
+              <option value="">All types</option>
+              {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <label className="field__label" htmlFor="filter-document-date-from">Document date from</label>
+            <input id="filter-document-date-from" className="input" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+            <label className="field__label" htmlFor="filter-document-date-to">Document date to</label>
+            <input id="filter-document-date-to" className="input" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+          </div>
+          {visibleDocuments.length ? <ul className="medical-documents__list">
+            {visibleDocuments.map((document) => (
               <li key={document.id}>
                 <div><strong>{document.filename}</strong><p className="text-muted">{prettyDate(document.uploadedAt)} · {prettySize(document.size)}</p></div>
                 <a href={medicalDocumentDownloadUrl(profileId, document.id)} className="button button--secondary">Download</a>
+                <p>{DOCUMENT_TYPES.find(([value]) => value === (document.documentType || "other"))?.[1] || "Other"} · {dateLabel(document.documentDate)}</p>
+                <DocumentMetadataEditor key={document.id} profileId={profileId} document={document} onSaved={handleMetadataSaved} />
               </li>
             ))}
-          </ul>
-        ) : <p className="medical-documents__empty">No documents added yet. Use <strong>Add documents</strong> to upload medical files for this profile.</p>}
+          </ul> : <p className="medical-documents__empty">No documents match these filters. Clear the type and date filters to see all documents.</p>}
+        </>) : <p className="medical-documents__empty">No documents added yet. Use <strong>Add documents</strong> to upload medical files for this profile.</p>}
       </Card>
       <p className="section"><a href="/dashboard">Back to dashboard</a></p>
     </PageLayout>

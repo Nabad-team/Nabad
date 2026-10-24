@@ -8,8 +8,11 @@ async function request(path, options = {}) {
 }
 
 export const getMedicalDocuments = (profileId) => request(`/?profileId=${encodeURIComponent(profileId || "self")}`);
-export const uploadMedicalDocument = (profileId, file) => request(`/?profileId=${encodeURIComponent(profileId || "self")}`, {
-  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ file }),
+export const uploadMedicalDocument = (profileId, file, metadata = {}) => request(`/?profileId=${encodeURIComponent(profileId || "self")}`, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ file, ...metadata }),
 });
+export const updateMedicalDocumentMetadata = (profileId, id, metadata) => request(`/${encodeURIComponent(id)}?profileId=${encodeURIComponent(profileId || "self")}`, {
+  method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(metadata),
+}).then((data) => data.document);
 export const medicalDocumentDownloadUrl = (profileId, id) => `${API_BASE}/${encodeURIComponent(id)}/download?profileId=${encodeURIComponent(profileId || "self")}`;
 

@@ -65,18 +65,32 @@
 .medical-documents__header h2,
 .medical-documents__header p,
 .medical-documents__list p { margin: 0; }
-.medical-documents__header { align-items: flex-start; }
+.medical-documents__header { align-items: flex-start; flex-wrap: wrap; }
 .medical-documents__header > div { max-width: 38rem; }
+.medical-documents__metadata { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 1.3fr); align-items: center; gap: var(--space-2) var(--space-3); flex: 1 1 28rem; }
+.medical-documents__metadata p { grid-column: 1 / -1; }
+.medical-documents__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; gap: var(--space-2) var(--space-3); margin-top: var(--space-5); }
+.medical-documents__list li > p { flex: 0 0 auto; }
 .medical-documents__plus { font-size: 1.5em; line-height: 0.8; }
 .medical-documents__list { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
 .medical-documents__list li { border-top: 1px solid var(--color-border); padding-block: var(--space-4); }
 .medical-documents__list li > div { min-width: 0; overflow-wrap: anywhere; }
-.medical-documents__list .button { flex: 0 0 auto; }
+.medical-documents__list li > div:first-child { order: 1; flex: 1 1 14rem; }
+.medical-documents__list li > p { order: 2; flex: 0 0 auto; }
+.medical-documents__list .button { order: 3; flex: 0 0 auto; }
+.medical-documents__edit { order: 4; flex: 1 1 100%; }
+.medical-documents__edit .form { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto minmax(10rem, 1fr) auto; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-3); }
 .medical-documents__empty { margin: var(--space-5) 0 0; padding: var(--space-5); border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); }
 
 @media (max-width: 38rem) {
   .medical-documents__header { flex-direction: column; }
+  .medical-documents__metadata { width: 100%; grid-template-columns: 1fr; }
+  .medical-documents__metadata p { grid-column: auto; }
   .medical-documents__header .button { width: 100%; }
+  .medical-documents__filters,
+  .medical-documents__edit .form { grid-template-columns: 1fr; }
+  .medical-documents__list li { flex-direction: column; align-items: stretch; }
+  .medical-documents__list .button { width: 100%; }
 }
 
 /* ---------- Page layout ---------- */

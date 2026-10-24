@@ -5,6 +5,8 @@ const medicalDocumentSchema = new mongoose.Schema({
   profileId: { type: mongoose.Schema.Types.ObjectId, required: true },
   filename: { type: String, required: true, maxlength: 255 },
   mimeType: { type: String, required: true, maxlength: 100 },
+  documentType: { type: String, enum: ["imaging", "lab", "letter", "other"], default: "other", required: true },
+  documentDate: { type: Date, default: null },
   size: { type: Number, required: true },
   data: { type: Buffer, required: true, select: false },
 }, { timestamps: true });
