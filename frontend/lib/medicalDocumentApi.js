@@ -14,5 +14,6 @@ export const uploadMedicalDocument = (profileId, file, metadata = {}) => request
 export const updateMedicalDocumentMetadata = (profileId, id, metadata) => request(`/${encodeURIComponent(id)}?profileId=${encodeURIComponent(profileId || "self")}`, {
   method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(metadata),
 }).then((data) => data.document);
+export const deleteMedicalDocument = (profileId, id) => request(`/${encodeURIComponent(id)}?profileId=${encodeURIComponent(profileId || "self")}`, { method: "DELETE" });
 export const medicalDocumentDownloadUrl = (profileId, id) => `${API_BASE}/${encodeURIComponent(id)}/download?profileId=${encodeURIComponent(profileId || "self")}`;
 

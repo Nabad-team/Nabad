@@ -2930,31 +2930,13 @@ select.input {
   .progress-summary__item { grid-template-columns: 5.5rem minmax(0, 1fr); }
 }
 
-.progress-summary__medications,
 .progress-summary__appointments {
   border-top: 1px solid var(--color-border);
   margin-top: var(--space-5);
   padding-top: var(--space-4);
 }
-.progress-summary__medications h3,
 .progress-summary__appointments h3,
-.progress-summary__medications p,
 .progress-summary__appointments p { margin: 0; }
-.progress-summary__medications > p { margin-top: var(--space-1); }
-.progress-summary__medication-list {
-  display: grid;
-  gap: var(--space-2);
-  list-style: none;
-  margin: var(--space-3) 0 0;
-  padding: 0;
-}
-.progress-summary__medication-list label {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  cursor: pointer;
-}
-.progress-summary__medication-list input { margin-top: 0.35rem; }
 .progress-summary__appointments {
   display: flex;
   align-items: center;

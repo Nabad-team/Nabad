@@ -66,6 +66,13 @@ router.patch("/:id", metadataLimiter, express.json({ limit: "10kb" }), resolvePr
   return res.json({ document: view(document) });
 }));
 
+router.delete("/:id", metadataLimiter, resolveProfile, asyncRoute(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Document not found." });
+  const result = await MedicalDocument.deleteOne({ _id: req.params.id, owner: req.userId, profileId: req.profileId });
+  if (!result.deletedCount) return res.status(404).json({ error: "Document not found." });
+  return res.status(204).end();
+}));
+
 router.get("/:id/download", resolveProfile, asyncRoute(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Document not found." });
   const document = await MedicalDocument.findOne({ _id: req.params.id, owner: req.userId, profileId: req.profileId }).select("+data");
