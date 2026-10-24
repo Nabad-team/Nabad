@@ -44,7 +44,7 @@ function NavIcon({ name }) {
     results: <><path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 13h8M8 17h5" /><circle cx="17.5" cy="17.5" r="3.5" /><path d="m20 20 2 2" /></>,
     medications: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5M14 15l3 3" /></>,
     calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" /></>,
-    wellbeing: <><path d="M3.5 5.5h9v5a4.5 4.5 0 0 1-9 0v-5Z" /><path d="M12.5 7h1a2.5 2.5 0 0 1 0 5h-1M5 18h7" /><path d="M20.2 5.2a5.2 5.2 0 1 0 0 10.4 5.6 5.6 0 0 1 0-10.4Z" /></>,
+    wellbeing: <><path d="M3.5 7h8l-1 13h-6l-1-13Z" /><path d="M11.5 9h1.7a2.3 2.3 0 0 1 0 4.6h-2M5 11h5.5" /><path d="M19.5 3.5a7.5 7.5 0 1 0 1.2 14.9A6.2 6.2 0 0 1 19.5 3.5Z" /></>,
     documents: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h8" /></>,
     care: <><circle cx="10.5" cy="10" r="3.5" /><path d="M4 20c.7-3.1 2.8-4.5 6.5-4.5S16.3 16.9 17 20M17 4v6M14 7h6" /></>,
   };

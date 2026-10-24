@@ -94,6 +94,9 @@ function createApp() {
   // Route-local parsing keeps report uploads larger than ordinary API JSON while parsing only
   // after the report router has authenticated the caller.
   app.use("/api/reports", require("./routes/reports"));
+  // Medical documents are sent as base64 JSON and need the same route-local body parsing
+  // so the ordinary 100 KB API limit below does not reject uploads before their route runs.
+  app.use("/api/medical-documents", require("./routes/medicalDocuments"));
 
   app.use(
     express.json({
@@ -149,11 +152,6 @@ function createApp() {
   app.use(
     "/api/health-profile",
     require("./routes/healthProfile")
-  );
-
-  app.use(
-    "/api/medical-documents",
-    require("./routes/medicalDocuments")
   );
 
   app.use(
