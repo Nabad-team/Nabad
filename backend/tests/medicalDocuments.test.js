@@ -42,7 +42,7 @@ async function request(method, path, { body, cookie, origin = process.env.CLIENT
   return { status: response.status, body: parsed, headers: response.headers };
 }
 const PDF = Buffer.from("%PDF-1.4\nmedical test\n%%EOF").toString("base64");
-const upload = (cookie, file = { filename: "lab-result.pdf", mimeType: "application/pdf", data: PDF }, profileId = "self") => request("POST", `/medical-documents?profileId=${profileId}`, { cookie, body: { file } });
+const upload = (cookie, file = { filename: "lab-result.pdf", mimeType: "application/pdf", data: PDF }, profileId = "self", metadata = {}) => request("POST", `/medical-documents?profileId=${profileId}`, { cookie, body: { file, ...metadata } });
 async function dependent(cookie, fullName = "Child") {
   const result = await request("POST", "/profile/linked", { cookie, body: { fullName, dateOfBirth: "2015-06-01", relationship: "child" } });
   assert.equal(result.status, 201);
@@ -69,6 +69,33 @@ test("uploads and stores a valid medical document with profile metadata", async 
   assert.equal(String(stored.owner), String(account._id));
   assert.equal(String(stored.profileId), String(account._id));
   assert.deepEqual(Buffer.from(stored.data), Buffer.from(PDF, "base64"));
+});
+
+test("stores and validates document type and clinical date", async () => {
+  const cookie = token(await user());
+  const response = await upload(cookie, undefined, "self", { documentType: "imaging", documentDate: "2026-09-18" });
+  assert.equal(response.status, 201);
+  assert.equal(response.body.document.documentType, "imaging");
+  assert.equal(response.body.document.documentDate, "2026-09-18");
+  const stored = await MedicalDocument.findById(response.body.document.id);
+  assert.equal(stored.documentType, "imaging");
+  assert.equal(stored.documentDate.toISOString().slice(0, 10), "2026-09-18");
+  assert.equal((await upload(cookie, undefined, "self", { documentType: "unknown" })).status, 400);
+  assert.equal((await upload(cookie, undefined, "self", { documentDate: "2026-02-30" })).status, 400);
+});
+
+test("updates categorization only for the owner and selected profile", async () => {
+  const ownerCookie = token(await user());
+  const otherCookie = token(await user("other@example.test"));
+  const childId = await dependent(ownerCookie);
+  const uploaded = await upload(ownerCookie);
+  const metadata = { documentType: "letter", documentDate: "2025-11-03" };
+  const updated = await request("PATCH", `/medical-documents/${uploaded.body.document.id}?profileId=self`, { cookie: ownerCookie, body: metadata });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.document.documentType, "letter");
+  assert.equal(updated.body.document.documentDate, "2025-11-03");
+  assert.equal((await request("PATCH", `/medical-documents/${uploaded.body.document.id}?profileId=self`, { cookie: otherCookie, body: metadata })).status, 404);
+  assert.equal((await request("PATCH", `/medical-documents/${uploaded.body.document.id}?profileId=${childId}`, { cookie: ownerCookie, body: metadata })).status, 404);
 });
 
 test("accepts arbitrary document formats, falls back to a safe MIME type, and rejects malformed or oversize uploads", async () => {

@@ -109,7 +109,10 @@ const PROFILE_COLLECTIONS = [
     key: "medicalDocuments",
     model: MedicalDocument,
     select: "+data",
-    fields: { _id: ["id", id], filename: "filename", mimeType: "mimeType", size: "size", data: ["dataBase64", base64Data], ...TIMESTAMPS },
+    fields: {
+      _id: ["id", id], filename: "filename", mimeType: "mimeType", documentType: "documentType",
+      documentDate: ["documentDate", day], size: "size", data: ["dataBase64", base64Data], ...TIMESTAMPS,
+    },
   },
 ];
 
