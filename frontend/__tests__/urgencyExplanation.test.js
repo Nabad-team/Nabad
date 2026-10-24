@@ -69,6 +69,17 @@ test("non-emergency directory browsing does not guess a specialty", () => {
   expect(screen.getByRole("link", { name: "Browse hospitals and clinics in Lebanon" })).toHaveAttribute("href", "/providers");
 });
 
+// SCRUM-278
+test("Find care opens the directory filtered by the specialty triage recommended", () => {
+  render(<UrgencyResult result={{ ...URGENT_RESULT, level: "soon", label: "See a doctor soon", careTypeId: "dermatology" }} />);
+  expect(screen.getByRole("link", { name: "Find dermatology providers in Lebanon" })).toHaveAttribute("href", "/providers?specialty=dermatology");
+});
+
+test("an emergency with a specialist care type still opens every 24/7 ER", () => {
+  render(<UrgencyResult result={{ ...EMERGENCY_RESULT, careTypeId: "cardiology" }} />);
+  expect(screen.getByRole("link", { name: "Browse published 24/7 ER facilities in Lebanon" })).toHaveAttribute("href", "/providers?emergency24h=true");
+});
+
 describe("UrgencyResult explanation", () => {
   test("offers to print the result or save it as a PDF", () => {
     const print = jest.fn();

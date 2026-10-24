@@ -14,6 +14,7 @@
 const { classifyUrgency, LEVELS } = require("../urgency");
 const { getFollowUpQuestions, refineUrgency, SPECIFIC, GENERAL } = require("../followUps");
 const { emergencyRoute } = require("../careGuidance");
+const { chooseCareTypeId } = require("../careTypes");
 const { buildMessages } = require("./prompt");
 const { LlmError } = require("./llmClient");
 const { GuardrailError, cleanSymptoms, detectPromptInjection, parseModelReply, applySafetyFloor } = require("./guardrails");
@@ -43,7 +44,7 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
   // The safety floor. refineUrgency validates the answers and throws AnswerError if they are wrong.
   const floor = hasAnswers ? refineUrgency(symptoms, answers) : classifyUrgency(symptoms);
 
-  const result = (level, { reasons, careType, selfCare = [], ai }) => {
+  const result = (level, { reasons, careType, careTypeId, selfCare = [], ai }) => {
     const { label, timeframe, action } = LEVELS[level];
     return {
       level,
@@ -52,6 +53,8 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
       action,
       reasons,
       careType: careType || DEFAULT_CARE_TYPE[level],
+      // SCRUM-278: a fixed id the "Find care" button turns into directory filters (careTypes.js).
+      careTypeId: chooseCareTypeId({ level, symptoms, modelCareTypeId: careTypeId }),
       // Self-care is only offered when home care is the advice; for anything more serious it could delay care.
       selfCare: level === "routine" ? selfCare : [],
       confidence: ai.used ? "ai+rules" : floor.confidence,
@@ -96,6 +99,8 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
   return result(level, {
     reasons: [...new Set([...reply.reasons, ...ruleReasons])],
     careType: reply.careType,
+    // Only offered when the model's assessment is used; chooseCareTypeId still checks it fits the level.
+    careTypeId: reply.careTypeId,
     selfCare: reply.selfCare,
     ai,
   });
