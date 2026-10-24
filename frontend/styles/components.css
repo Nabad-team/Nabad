@@ -3051,3 +3051,45 @@ select.input {
 .care-circle__invite {
   max-width: 32rem;
 }
+
+@media print {
+  body:has(.visit-prep) .skip-link,
+  body:has(.visit-prep) .site-header,
+  body:has(.visit-prep) .profile-strip,
+  body:has(.visit-prep) .page-main > :not(.page-title):not(:has(.visit-prep)),
+  .visit-prep__actions,
+  .visit-prep__back {
+    display: none !important;
+  }
+
+  body:has(.visit-prep),
+  body:has(.visit-prep) .page-main {
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    background: #fff;
+    color: #000;
+  }
+
+  .visit-prep {
+    color: #000;
+  }
+
+  body:has(.visit-prep) .page-title {
+    margin-top: 0;
+  }
+
+  .visit-prep .card {
+    break-inside: avoid;
+    border-color: #777;
+    box-shadow: none;
+  }
+
+  .visit-prep .text-muted {
+    color: #333;
+  }
+
+  @page {
+    margin: 15mm;
+  }
+}
