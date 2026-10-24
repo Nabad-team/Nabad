@@ -17,6 +17,12 @@ cd frontend && npm ci && npm test
 
 The backend tests download a MongoDB binary the first time (mongodb-memory-server). Nothing else needs to be running. `npm test` runs at most 4 test files at a time (`--test-concurrency=4`). Each file starts its own MongoDB, and starting one per CPU core at once makes them time out on Windows. Four is still as fast as Node's default on GitHub's 4-core runners.
 
+### Red-flag rule audit
+
+The triage rules in [backend/src/triage/urgency.js](../backend/src/triage/urgency.js) are the safety net: when the AI is off, unreachable or its reply is rejected, they answer alone. [backend/tests/redFlagAudit.test.js](../backend/tests/redFlagAudit.test.js) checks that every emergency and urgent warning sign the AI is expected to flag is also caught by the rules on their own, that every warning-sign rule has audit sentences, and that every phrase of every rule works and is cancelled by "no". It needs no database: `node --test tests/redFlagAudit.test.js`.
+
+When the AI finds an emergency the rules missed, the `triage_ai` log line has `"ruleGap": true` (only that flag, never the symptoms). Each one is a possible missing rule. To close a gap: add the phrase to a rule in `urgency.js` (and everyday wording to `everydayWording.js` if people say it differently), then add a sentence to `AUDIT` in the audit test. Rules use commonly published red flags and must be reviewed by the team's clinical/product owner before release.
+
 ## End-to-end (Selenium)
 
 The suite was written by Leen El Baba. It drives a real Chrome against a throwaway copy of the app from [docker-compose.yml](../docker-compose.yml), never production.

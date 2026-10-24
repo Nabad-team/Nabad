@@ -81,6 +81,10 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
 
   const { level, applied } = applySafetyFloor(floor.level, reply.level);
   const ai = { used: true, level: reply.level, guardrails: [applied, ...new Set(reply.removed)] };
+  // SCRUM-281: the model found an emergency that the rules did not. The rules are the safety net
+  // when the model is off or fails, so each of these is a possible missing rule. The route logs
+  // this flag (never the symptoms), so the team can audit the rules against the AI's findings.
+  if (level === "emergency" && floor.level !== "emergency") ai.ruleGap = true;
 
   // The model said less serious than the rules: its explanation describes a milder situation and
   // would contradict the level shown, so the rules' reasons are used instead.

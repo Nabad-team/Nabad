@@ -274,6 +274,11 @@ router.post(
               ? `used:${result.ai.guardrails[0]}`
               : result.ai.reason,
 
+          // SCRUM-281: true when the AI found an emergency the rules missed (a possible
+          // missing rule). Only this yes/no is logged, never what the user wrote.
+          ruleGap:
+            result.ai.ruleGap || undefined,
+
           durationMs:
             Math.round(
               performance.now() -
