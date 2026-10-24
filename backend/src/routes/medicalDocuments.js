@@ -30,7 +30,8 @@ router.post("/", uploadLimiter, express.json({ limit: "14mb" }), resolveProfile,
   if (file.data.length > 4 * Math.ceil(MAX_FILE_SIZE / 3)) return res.status(413).json({ error: "Each document must be 10 MB or smaller." });
   if (file.data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(file.data)) return res.status(400).json({ error: "This file could not be read. Please choose it again." });
   const decodedSize = file.data.length * 3 / 4 - (file.data.endsWith("==") ? 2 : file.data.endsWith("=") ? 1 : 0);
-  if (!decodedSize || decodedSize > MAX_FILE_SIZE) return res.status(413).json({ error: "Each document must be 10 MB or smaller." });
+  if (!decodedSize) return res.status(400).json({ error: "This file is empty. Choose a document with content." });
+  if (decodedSize > MAX_FILE_SIZE) return res.status(413).json({ error: "Each document must be 10 MB or smaller." });
   const data = Buffer.from(file.data, "base64");
   if (!data.length || data.toString("base64") !== file.data) return res.status(400).json({ error: "This file could not be read. Please choose it again." });
   if (await MedicalDocument.countDocuments({ owner: req.userId, profileId: req.profileId }) >= 500) return res.status(400).json({ error: "This profile has reached its 500 document limit." });

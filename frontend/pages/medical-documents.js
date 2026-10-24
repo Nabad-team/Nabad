@@ -30,6 +30,7 @@ export default function MedicalDocumentsPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [uploadProgress, setUploadProgress] = useState("");
   const profileRef = useRef(profileId);
   profileRef.current = profileId;
 
@@ -47,21 +48,35 @@ export default function MedicalDocumentsPage() {
     const files = Array.from(event.target.files || []);
     event.target.value = "";
     if (!files.length) return;
+    const targetProfileId = profileId;
+    if (!targetProfileId) return;
     if (files.length > 10) { setError("Choose up to 10 files at a time."); return; }
     for (const file of files) {
+      if (!file.size) { setError(`${file.name} is empty.`); return; }
       if (file.size > MAX_SIZE) { setError(`${file.name} is larger than 10 MB.`); return; }
     }
-    setBusy(true); setError(""); setNotice("");
+    setBusy(true); setError(""); setNotice(""); setUploadProgress("");
+    let uploaded = 0;
     try {
       for (const file of files) {
         const payload = await fileToPayload(file);
-        const result = await uploadMedicalDocument(profileId, payload);
-        setDocuments((current) => [result.document, ...(current || [])]);
+        const result = await uploadMedicalDocument(targetProfileId, payload);
+        uploaded += 1;
+        if (profileRef.current === targetProfileId) {
+          setDocuments((current) => [result.document, ...(current || [])]);
+          setUploadProgress(`${uploaded} of ${files.length} uploaded`);
+        }
       }
-      setNotice(files.length === 1 ? "Document uploaded." : `${files.length} documents uploaded.`);
+      if (profileRef.current === targetProfileId) {
+        setNotice(files.length === 1 ? "Document uploaded." : `${files.length} documents uploaded.`);
+        setUploadProgress("");
+      }
     } catch (uploadError) {
-      setError(uploadError.message || "We couldn't upload the selected documents. Please try again.");
-    } finally { setBusy(false); }
+      if (profileRef.current === targetProfileId) {
+        setError(uploadError.message || "We couldn't upload the selected documents. Please try again.");
+        if (uploaded) setNotice(`${uploaded} of ${files.length} documents uploaded before the upload stopped.`);
+      }
+    } finally { setBusy(false); setUploadProgress(""); }
   }
 
   return (
@@ -80,7 +95,7 @@ export default function MedicalDocumentsPage() {
         </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
-        {busy && <HeartbeatLoader label="Uploading documents..." />}
+        {busy && <HeartbeatLoader label={uploadProgress ? `Uploading documents: ${uploadProgress}...` : "Uploading documents..."} />}
         {documents === null ? <HeartbeatLoader label="Loading documents..." /> : documents.length ? (
           <ul className="medical-documents__list">
             {documents.map((document) => (
