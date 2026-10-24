@@ -703,6 +703,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.assertNotIn("error", uploaded, uploaded.get("error"))
 
         self.open("/visit-prep")
+        self.click(self.button("Choose uploaded documents"))
         checkbox = (By.XPATH, f"//label[contains(., {xpath_string(filename)})]//input[@type='checkbox']")
         self.click(checkbox)
         attached = (By.CSS_SELECTOR, "section[aria-labelledby='visit-prep-attached-heading']")
