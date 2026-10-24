@@ -718,6 +718,23 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text(note, notes)
         self.visible(self.button("Print or save as PDF"))
 
+        # Emulate the browser's print stylesheet and verify it leaves the actual summary visible.
+        self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "print"})
+        try:
+            visible_summary = self.driver.execute_script(
+                "const summary = document.querySelector('.visit-prep');"
+                "const title = document.querySelector('.page-title');"
+                "return Boolean(summary && title && getComputedStyle(summary).display !== 'none' "
+                "  && summary.getBoundingClientRect().height > 0 && getComputedStyle(title).display !== 'none');"
+            )
+            self.assertTrue(visible_summary, "The print stylesheet hid the visit summary")
+            printed_text = self.driver.execute_script("return document.querySelector('.visit-prep').innerText")
+            self.assertIn(filename, printed_text)
+            self.assertIn(note, printed_text)
+            self.assertEqual(self.driver.execute_script("return getComputedStyle(document.querySelector('.visit-prep__actions')).display"), "none")
+        finally:
+            self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "screen"})
+
     def test_authenticated_profile_and_security_pages(self):
         self.open("/profile")
         self.assertTrue(self.visible((By.CSS_SELECTOR, "h1")).text.strip())

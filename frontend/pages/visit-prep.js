@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -37,9 +37,12 @@ function medicationDetails(medication) {
 export default function VisitPrepPage() {
   const { activeProfile } = useActiveProfile();
   const profileId = activeProfile?.id;
+  const profileRef = useRef(profileId);
+  profileRef.current = profileId;
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [documents, setDocuments] = useState(null);
+  const [documentsRequested, setDocumentsRequested] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
   const [visitNotes, setVisitNotes] = useState("");
@@ -53,6 +56,7 @@ export default function VisitPrepPage() {
     setData(null);
     setError("");
     setDocuments(null);
+    setDocumentsRequested(false);
     setDocumentsError("");
     setSelectedDocumentIds([]);
     setVisitNotes("");
@@ -62,9 +66,6 @@ export default function VisitPrepPage() {
     Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId)])
       .then(([health, symptoms]) => { if (current) setData({ health, symptoms }); })
       .catch(() => { if (current) setError("We couldn't prepare this summary. Please check your connection and try again."); });
-    getMedicalDocuments(profileId)
-      .then((result) => { if (current) setDocuments(result.documents || []); })
-      .catch(() => { if (current) { setDocuments([]); setDocumentsError("Uploaded documents couldn't be loaded. You can retry from Medical documents."); } });
     return () => { current = false; };
   }, [profileId]);
 
@@ -78,6 +79,22 @@ export default function VisitPrepPage() {
 
   function toggleDocument(id) {
     setSelectedDocumentIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function loadDocuments() {
+    if (!profileId) return;
+    const requestedProfile = profileId;
+    setDocumentsRequested(true);
+    setDocuments(null);
+    setDocumentsError("");
+    getMedicalDocuments(requestedProfile)
+      .then((result) => { if (profileRef.current === requestedProfile) setDocuments(result.documents || []); })
+      .catch(() => {
+        if (profileRef.current === requestedProfile) {
+          setDocuments([]);
+          setDocumentsError("Uploaded documents couldn't be loaded. Try again or open Medical documents.");
+        }
+      });
   }
 
   function startEditing() {
@@ -146,8 +163,9 @@ export default function VisitPrepPage() {
           <Card className="section visit-prep__document-picker" aria-labelledby="visit-prep-documents-heading">
             <h2 id="visit-prep-documents-heading">Documents for this visit</h2>
             <p className="text-muted">Select relevant uploaded records to include as references on this sheet.</p>
-            {documentsError && <Alert tone="danger" role="alert">{documentsError} <a href="/medical-documents">Open medical documents</a></Alert>}
-            {documentsError ? null : documents === null ? <HeartbeatLoader label="Loading uploaded documents..." /> : documents.length ? <ul className="visit-prep__document-options">
+            {!documentsRequested ? <Button variant="secondary" onClick={loadDocuments}>Choose uploaded documents</Button> : <>
+              {documentsError && <Alert tone="danger" role="alert">{documentsError} <a href="/medical-documents">Open medical documents</a></Alert>}
+              {documents === null ? <HeartbeatLoader label="Loading uploaded documents..." /> : documentsError ? <Button variant="secondary" onClick={loadDocuments}>Retry loading documents</Button> : documents.length ? <ul className="visit-prep__document-options">
               {documents.map((document) => (
                 <li key={document.id}>
                   <label>
@@ -156,7 +174,8 @@ export default function VisitPrepPage() {
                   </label>
                 </li>
               ))}
-            </ul> : <p className="text-muted">No uploaded documents for this profile. <a href="/medical-documents">Upload a medical document</a>.</p>}
+              </ul> : <p className="text-muted">No uploaded documents for this profile. <a href="/medical-documents">Upload a medical document</a>.</p>}
+            </>}
           </Card>
 
           {selectedDocuments.length > 0 && <Card className="section visit-prep__attached" aria-labelledby="visit-prep-attached-heading">
