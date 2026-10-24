@@ -3,6 +3,7 @@ import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
@@ -53,6 +54,10 @@ export default function VisitPrepPage() {
       {error && <Alert tone="danger" role="alert">{error}</Alert>}
       {!data && !error && <HeartbeatLoader label="Preparing your summary..." />}
       {data && (
+        <>
+        <div className="visit-prep__actions">
+          <Button variant="secondary" onClick={() => window.print()}>Print or save as PDF</Button>
+        </div>
         <div className="stack visit-prep">
           <Card className="section" aria-labelledby="visit-prep-person-heading">
             <h2 id="visit-prep-person-heading">Patient and health background</h2>
@@ -81,8 +86,9 @@ export default function VisitPrepPage() {
             {data.symptoms.length > SUMMARY_LIMIT && <p className="text-muted">Showing the {SUMMARY_LIMIT} most recent checks.</p>}
           </Card>
           <p className="text-muted">Based on information saved in Nabad. Please review it with your clinician; it may not include everything you want to discuss.</p>
-          <p><a href="/dashboard">Back to dashboard</a></p>
+          <p className="visit-prep__back"><a href="/dashboard">Back to dashboard</a></p>
         </div>
+        </>
       )}
     </PageLayout>
   );

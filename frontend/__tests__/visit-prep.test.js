@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import VisitPrepPage from "../pages/visit-prep";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
@@ -81,5 +81,21 @@ describe("Visit preparation page", () => {
     expect(await screen.findByText("No saved symptom checks yet.")).toBeInTheDocument();
     expect(getHealthProfile).toHaveBeenCalledWith(child.id);
     expect(getSymptomsForProfile).toHaveBeenCalledWith(child.id);
+  });
+
+  test("prints the prepared summary so it can be printed or saved as a PDF", async () => {
+    const print = jest.fn();
+    window.print = print;
+
+    renderPage();
+
+    const button = await screen.findByRole("button", { name: "Print or save as PDF" });
+    expect(screen.getByRole("heading", { name: "Patient and health background" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Recent symptom checks" })).toBeInTheDocument();
+
+    fireEvent.click(button);
+
+    expect(print).toHaveBeenCalledTimes(1);
+    delete window.print;
   });
 });
