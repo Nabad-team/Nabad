@@ -3175,14 +3175,19 @@ select.input {
   body:has(.report-result) .skip-link,
   body:has(.report-result) .site-header,
   body:has(.report-result) .profile-strip,
-  body:has(.report-result) .page-main > :not(:has(.report-result)),
-  body:has(.report-result) .page-main > :has(.report-result) > :not(.report-result),
+  body:has(.report-result) .site-footer,
+  body:has(.report-result) .page-note,
+  body:has(.report-result) .page-main > :not(.report-result):not(:has(.report-result)),
+  body:has(.report-result) .page-main :has(.report-result) > :not(.report-result):not(:has(.report-result)),
   .report-result__print {
     display: none !important;
   }
 
   body:has(.report-result),
+  body:has(.report-result) .page-shell,
   body:has(.report-result) .page-main {
+    display: block;
+    min-height: 0;
     margin: 0;
     padding: 0;
     max-width: none;
@@ -3190,12 +3195,31 @@ select.input {
     color: #000;
   }
 
-  .report-result {
+  /* The report is nested inside the chat layout. Keep every ancestor visible
+     and remove screen sizing/overflow so long explanations can span pages. */
+  body:has(.report-result) .assistant-chat,
+  body:has(.report-result) .assistant-chat__main,
+  body:has(.report-result) .report-result {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    overflow: visible;
     margin: 0;
+    padding: 0;
     border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
     color: #000;
-    break-inside: avoid;
+    break-inside: auto;
   }
+
+  .report-result > * + * { margin-top: 12pt; }
+  .report-result h2,
+  .report-result h3,
+  .report-result h4 { color: #000; break-after: avoid; }
+  .report-finding { break-inside: avoid; }
 
   body:has(.urgency) .skip-link,
   body:has(.urgency) .site-header,
