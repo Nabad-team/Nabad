@@ -317,6 +317,7 @@ export default function WaterAndSleepPage() {
   const [doctorOpen, setDoctorOpen] = useState(false);
   // The profile the latest load was for, so a slow answer for a previous profile is never shown.
   const profileRef = useRef(profileId);
+  const pendingChange = useRef(null);
   profileRef.current = profileId;
 
   async function load() {
@@ -334,29 +335,44 @@ export default function WaterAndSleepPage() {
   useEffect(() => {
     if (!profileId) return;
     setToday(null); setHistory(null); setError(""); setDoctorOpen(false);
+    pendingChange.current = null; setBusy(false);
     load();
   }, [profileId]);
 
-  // Runs a change, then reloads today and the week so everything on the page agrees.
-  async function change(action) {
-    setBusy(true); setError("");
-    try {
-      await action();
-      await load();
-    } catch (err) {
-      setError(err.message || "That didn't work. Please try again.");
-    } finally {
-      setBusy(false);
-    }
+  // Update today and the chart from the save response; no extra round trips.
+  function applyPatch(patch, day) {
+    setToday((current) => ({ ...current, ...patch }));
+    setHistory((current) => current && ({
+      ...current,
+      ...(patch.water ? { goal: patch.water.goal } : {}),
+      days: current.days.map((entry) => entry.date !== day ? entry : ({
+        ...entry,
+        ...(patch.water ? { totalMl: patch.water.entries.length ? patch.water.totalMl : null } : {}),
+        ...("sleep" in patch ? { sleep: patch.sleep } : {}),
+      })),
+    }));
   }
-  // For forms that show the error next to their own fields.
-  async function changeOrThrow(action) {
+
+  async function change(action, { optimistic, rethrow = false } = {}) {
+    if (pendingChange.current) return;
+    const operation = {};
+    const requested = profileId;
+    const previousToday = today;
+    const previousHistory = history;
+    pendingChange.current = operation;
     setBusy(true); setError("");
+    if (optimistic) applyPatch(optimistic, today.date);
     try {
-      await action();
-      await load();
+      const patch = await action();
+      if (profileRef.current === requested && pendingChange.current === operation) applyPatch(patch, previousToday.date);
+    } catch (err) {
+      if (profileRef.current === requested && pendingChange.current === operation) {
+        if (optimistic) { setToday(previousToday); setHistory(previousHistory); }
+        if (!rethrow) setError(err.message || "That didn't work. Please try again.");
+      }
+      if (rethrow) throw err;
     } finally {
-      setBusy(false);
+      if (pendingChange.current === operation) { pendingChange.current = null; setBusy(false); }
     }
   }
 
@@ -388,15 +404,20 @@ export default function WaterAndSleepPage() {
         <div key={profileId}>
           <WaterToday
             water={today.water} who={who} busy={busy}
-            onAdd={(ml, { rethrow } = {}) => (rethrow ? changeOrThrow : change)(() => addDrink(profileId, date, ml))}
-            onUndo={() => change(() => undoLastDrink(profileId, date))}
-            onSetGoal={(value) => changeOrThrow(() => setWaterGoal(profileId, value))}
-            onClearGoal={() => change(() => clearWaterGoal(profileId))}
+            onAdd={(ml, { rethrow } = {}) => change(() => addDrink(profileId, date, ml).then((water) => ({ water })), {
+              rethrow,
+              optimistic: { water: { ...today.water, totalMl: today.water.totalMl + ml, entries: [...today.water.entries, { ml, at: new Date().toISOString() }] } },
+            })}
+            onUndo={() => change(() => undoLastDrink(profileId, date).then((water) => ({ water })), {
+              optimistic: { water: { ...today.water, totalMl: Math.max(0, today.water.totalMl - (today.water.entries.at(-1)?.ml || 0)), entries: today.water.entries.slice(0, -1) } },
+            })}
+            onSetGoal={(value) => change(() => setWaterGoal(profileId, value).then((goal) => ({ water: { ...today.water, goal } })), { rethrow: true })}
+            onClearGoal={() => change(() => clearWaterGoal(profileId).then(() => ({ water: { ...today.water, goal: null } })))}
           />
           <SleepToday
             sleep={today.sleep} who={who} busy={busy}
-            onSave={(entry) => changeOrThrow(() => saveSleep(profileId, date, entry))}
-            onDelete={() => change(() => deleteSleep(profileId, date))}
+            onSave={(entry) => change(() => saveSleep(profileId, date, entry).then((sleep) => ({ sleep })), { rethrow: true })}
+            onDelete={() => change(() => deleteSleep(profileId, date).then(() => ({ sleep: null })))}
           />
 
           <section className="section" aria-labelledby="week-heading">

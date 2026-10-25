@@ -134,6 +134,45 @@ describe("POST /api/reports routes", () => {
     assert.equal(provider.requests.length, 1);
   });
 
+  test("unsafe generated advice is rejected and never stored as a conversation", async () => {
+    for (const answer of ["You have anemia.", "You should take 40 mg of ExampleDrug daily.", "تناول ٤٠ ملغ يوميا."]) {
+      provider.content = JSON.stringify({ answer, evidence: [] });
+      const result = await call("chat", { consent: true, question: "Please explain my symptoms." });
+      assert.equal(result.status, 502);
+      assert.ok(!JSON.stringify(result.body).includes(answer));
+      assert.equal(await ReportConversation.countDocuments(), 0);
+    }
+  });
+
+  test("recognized emergency gets guidance without a configured model or waiting for an upload", async () => {
+    delete process.env.LLM_API_URL;
+    const result = await call("chat", { consent: true, question: "I have crushing chest pain and I cannot breathe.", file: { data: "unreadable" } });
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    assert.equal(result.body.responseSource, "safety_rules");
+    assert.match(result.body.answer, /^Seek emergency medical help now/);
+    assert.equal(provider.requests.length, 0);
+    const stored = await ReportConversation.findById(result.body.conversationId).lean();
+    assert.match(stored.messages[1].disclaimer, /Automated safety guidance/);
+  });
+
+  test("emergency shortcut still enforces consent, valid history and conversation ownership", async () => {
+    const question = "I have crushing chest pain and I cannot breathe.";
+    assert.equal((await call("chat", { question, consent: false })).status, 400);
+    assert.equal((await call("chat", { question, consent: true, history: "invalid" })).status, 400);
+    const other = await ReportConversation.create({ owner: new mongoose.Types.ObjectId(), profileId: new mongoose.Types.ObjectId(), title: "Other", messages: [] });
+    assert.equal((await call("chat", { question, consent: true, conversationId: String(other._id) })).status, 404);
+    assert.equal(provider.requests.length, 0);
+  });
+
+  test("a verified report-unit conversion reaches the user and is saved", async () => {
+    const text = "SYNTHETIC CRP REPORT: Initial CRP 20 mg/L. Later CRP 1.8 mg/dL. Reference range not provided.";
+    provider.content = JSON.stringify({ answer: "The later 1.8 mg/dL equals 18 mg/L, which is lower than 20 mg/L. Ask the ordering clinician whether the tests are comparable.", evidence: ["Later CRP 1.8 mg/dL"] });
+    const result = await call("chat", { consent: true, question: "Did this result increase or decrease?", file: { mimeType: "text/plain", extension: "txt", data: Buffer.from(text).toString("base64") } });
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    assert.match(result.body.answer, /equals 18 mg\/L/);
+    assert.equal(await ReportConversation.countDocuments(), 1);
+  });
+
   test("saves chat turns, uses saved history on follow-up, and allows deletion", async () => {
     provider.content = JSON.stringify({ answer: "Hemoglobin carries oxygen in the blood.", evidence: [] });
     const first = await call("chat", { consent: true, question: "What does hemoglobin do?" });
@@ -142,7 +181,7 @@ describe("POST /api/reports routes", () => {
     provider.content = JSON.stringify({ answer: "Your earlier question was about hemoglobin.", evidence: [] });
     const second = await call("chat", { consent: true, question: "Can you explain my earlier question?", conversationId: first.body.conversationId });
     assert.equal(second.status, 200);
-    assert.match(provider.requests[1].messages[1].content[0].text, /What does hemoglobin do/);
+    assert.match(provider.requests[1].messages.at(-1).content[0].text, /What does hemoglobin do/);
 
     const saved = await fetch(`${base}/conversations?profileId=self`, { headers: { Cookie: `accessToken=${token}` } });
     const history = await saved.json();

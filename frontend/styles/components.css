@@ -311,7 +311,14 @@
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  touch-action: manipulation;
+  transition: background-color 100ms ease-out, border-color 100ms ease-out, color 100ms ease-out, transform 80ms ease-out;
+}
+
+.button:active:not(:disabled) { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  .button { transition: none; }
+  .button:active:not(:disabled) { transform: none; }
 }
 
 .button:hover {
@@ -2393,6 +2400,11 @@ select.input {
 .fluid-progress__bar {
   height: 100%;
   background: var(--color-primary);
+  transition: width 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluid-progress__bar { transition: none; }
 }
 
 .fluid-progress__bar--limit {

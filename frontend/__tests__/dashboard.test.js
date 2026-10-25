@@ -225,7 +225,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByRole("img", { name: /Water today: No daily goal set\. 1\.3 L logged today/ })).toBeInTheDocument();
+    expect(await within(card).findByRole("img", { name: /Water today: No daily goal set\. 1\.25 L logged today/ })).toBeInTheDocument();
     expect(within(card).getByRole("img", { name: /Last night’s sleep: Logged\. Slept well/ })).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Track water" })).toHaveAttribute("href", "/water-and-sleep");
     expect(within(card).getByRole("link", { name: "Log sleep" })).toHaveAttribute("href", "/water-and-sleep");
