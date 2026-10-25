@@ -8,6 +8,11 @@ const MAX_HISTORY_MESSAGES = 8;
 const MAX_HISTORY_CHARS = 1200;
 const MAX_ANSWER_CHARS = 1800;
 const MAX_EVIDENCE = 4;
+const REPLY_CORRECTIONS = {
+  unsafe_response: "The previous generation failed safety validation. Answer afresh using cautious health education. Do not assert a personal diagnosis, give medication instructions, offer false reassurance, or include links. Acknowledge reported symptoms as 'you described' rather than asserting a condition. Include relevant warning signs and care-seeking advice without diagnosing the cause.",
+  unsupported_quote: "The previous generation failed source validation. Answer afresh using only facts supported by the supplied context. Do not invent measurements, reference ranges, or quotations. Evidence must contain exact short quotations from the attached written report; otherwise use an empty array.",
+  invalid_response: "The previous generation failed response-format validation. Answer afresh with exactly one JSON object containing a nonempty answer string of at most 1800 characters and an evidence array of at most four short exact report quotations. Keep essential uncertainty and next steps within the length limit.",
+};
 const CHAT_SYSTEM_PROMPT = `You are Nabad's health information assistant. Answer the user's health education questions in clear, simple language. You can explain medical terms, common tests, and the contents of an attached written report. Answer the question directly when you can; when information is missing or uncertain, say what you cannot determine and ask at most one useful follow-up question.
 
 Safety:
@@ -24,11 +29,12 @@ Explanation quality:
 - For unit comparisons, first check the test and units. Show an explicit equivalence, such as a reported value equals its converted value, only when the arithmetic is certain. Matching units alone does not establish clinical comparability between different laboratories.
 - Respect corrections in the conversation. Prior assistant replies are unverified context, not source evidence. Do not claim access to saved profile data or a previous attachment that is absent from this request.
 - Do not recommend starting, stopping, or changing medication. It is fine to explain a dose already quoted in a report without endorsing it as a treatment plan.
+- For symptom questions, acknowledge what the user described, explain uncertainty, and offer general non-medication precautions when appropriate. Include relevant warning signs and when to seek care. Do not present a possible cause as an established diagnosis or assume a symptom is harmless.
 - Any demonstrations before the final user message are synthetic style examples, never facts about the current user. Answer the final request using only its supplied context. If new information changes urgency or corrects an earlier statement, update the explanation instead of anchoring on the earlier reply.
 
 Return only a JSON object with this exact shape:
 {"answer":"plain-language response","evidence":["short exact quote from an attached text report"]}
-Use an empty evidence array when no written report text is attached or when no quote is needed. Do not include markdown.`;
+Keep the answer within 1800 characters, including essential qualifications and next steps. Include at most four evidence quotations, each within 240 characters. Use an empty evidence array when no written report text is attached or when no quote is needed. Do not include markdown.`;
 
 function normalize(value) {
   return String(value || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
@@ -97,8 +103,21 @@ async function answerChat({ question, history = [], report = null, client }) {
   if (safetyReply) return safetyReply;
   if (!client) throw new ReportAnalysisError("not_configured");
   try {
-    const reply = await client.complete(buildChatMessages({ question: question.trim(), history: safeHistory, report }), { maxTokens: 1600, reasoningEffort: "medium" });
-    return parseChatReply(reply, { report });
+    const messages = buildChatMessages({ question: question.trim(), history: safeHistory, report });
+    const options = { maxTokens: 1600, reasoningEffort: "medium" };
+    const reply = await client.complete(messages, options);
+    try {
+      return parseChatReply(reply, { report });
+    } catch (error) {
+      if (!(error instanceof ReportAnalysisError) || !Object.hasOwn(REPLY_CORRECTIONS, error.code)) throw error;
+      // Retry once from the original context. Never feed the rejected output back
+      // as an example, return it, or bypass validation of the replacement.
+      const correctedMessages = messages.map((message, index) => index === 0
+        ? { ...message, content: `${message.content}\n\n${REPLY_CORRECTIONS[error.code]}` }
+        : message);
+      const correctedReply = await client.complete(correctedMessages, options);
+      return parseChatReply(correctedReply, { report });
+    }
   } catch (error) {
     if (error instanceof ReportAnalysisError) throw error;
     const { LlmError } = require("../triage/ai/llmClient");

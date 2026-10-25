@@ -402,6 +402,7 @@ export default function WaterAndSleepPage() {
       {today && history && (
         // key: a fresh form for each profile, so nothing typed for one person shows up for another.
         <div key={profileId}>
+          <div className="wellbeing-overview">
           <WaterToday
             water={today.water} who={who} busy={busy}
             onAdd={(ml, { rethrow } = {}) => change(() => addDrink(profileId, date, ml).then((water) => ({ water })), {
@@ -419,6 +420,7 @@ export default function WaterAndSleepPage() {
             onSave={(entry) => change(() => saveSleep(profileId, date, entry).then((sleep) => ({ sleep })), { rethrow: true })}
             onDelete={() => change(() => deleteSleep(profileId, date).then(() => ({ sleep: null })))}
           />
+          </div>
 
           <section className="section" aria-labelledby="week-heading">
             <h2 id="week-heading">This week</h2>

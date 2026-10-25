@@ -27,7 +27,7 @@ export default function VerifyEmailPage() {
   }, [router.isReady, router.query.token]);
 
   return (
-    <PageLayout title="Verify your email">
+    <PageLayout title="Verify your email" variant="auth">
       <PageTitle>Verify your email</PageTitle>
       {state === "checking" && <HeartbeatLoader label="Checking your link..." />}
       {state === "verified" && (

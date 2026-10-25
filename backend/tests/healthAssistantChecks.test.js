@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { parseChatReply, answerChat, CHAT_SYSTEM_PROMPT } = require("../src/reports/chat");
 const { parseReportReply } = require("../src/reports/analyze");
 const { numbersAreGrounded } = require("../src/reports/responseChecks");
+const { LlmError } = require("../src/triage/ai/llmClient");
 
 const report = { kind: "text", text: "SYNTHETIC CRP REPORT: Initial 20 mg/L. Later 1.8 mg/dL. No reference range supplied." };
 const chat = (answer, options = {}) => parseChatReply(JSON.stringify({ answer, evidence: [], ...options }), { report });
@@ -85,4 +86,57 @@ test("the chat requests a supported higher reasoning effort and explicitly bound
   assert.match(result.answer, /oxygen/);
   assert.equal(settings.reasoningEffort, "medium");
   assert.match(CHAT_SYSTEM_PROMPT, /Prior assistant replies are unverified/);
+});
+
+for (const [reason, rejectedReply] of [
+  ["unsafe_response", JSON.stringify({ answer: "You have dehydration. Take 40 mg of ExampleDrug daily.", evidence: [] })],
+  ["unsupported_quote", JSON.stringify({ answer: "The report describes a measurement.", evidence: ["Invented report quotation"] })],
+  ["invalid_response", "not a JSON response"],
+]) test(`chat regenerates once after ${reason} and validates the replacement`, async () => {
+  const calls = [];
+  const answer = "Dizziness has several possible explanations; I cannot determine the cause here. Avoid driving while dizzy. Seek urgent care for severe or worsening symptoms. How long has it lasted?";
+  const result = await answerChat({
+    question: "im feeling a little dizzy today, what can i do?",
+    history: [{ role: "user", content: "I am asking about dizziness." }],
+    report,
+    client: { complete: async (messages, options) => {
+      calls.push({ messages, options });
+      return calls.length === 1 ? rejectedReply : JSON.stringify({ answer, evidence: [] });
+    } },
+  });
+  assert.equal(result.answer, answer);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].options, calls[0].options);
+  assert.deepEqual(calls[1].messages.slice(1), calls[0].messages.slice(1));
+  assert.match(calls[1].messages[0].content, /previous generation failed/);
+  assert.doesNotMatch(calls[0].messages[0].content, /previous generation failed/);
+  assert.ok(!JSON.stringify(calls[1].messages).includes(rejectedReply));
+});
+
+test("a second unsafe answer stays blocked and does not trigger more requests", async () => {
+  let calls = 0;
+  await assert.rejects(answerChat({ question: "What could explain my symptoms?", client: { complete: async () => {
+    calls += 1;
+    return JSON.stringify({ answer: "You have anemia.", evidence: [] });
+  } } }), (error) => error.code === "unsafe_response");
+  assert.equal(calls, 2);
+});
+
+test("an ungrounded replacement stays blocked", async () => {
+  let calls = 0;
+  await assert.rejects(answerChat({ question: "Explain this report.", report, client: { complete: async () => {
+    calls += 1;
+    return calls === 1 ? "invalid JSON" : JSON.stringify({ answer: "The result is 999 mg/L.", evidence: [] });
+  } } }), (error) => error.code === "unsupported_quote");
+  assert.equal(calls, 2);
+});
+
+for (const failureAt of [1, 2]) test(`provider errors on request ${failureAt} are not retried or hidden`, async () => {
+  let calls = 0;
+  await assert.rejects(answerChat({ question: "Explain dizziness.", client: { complete: async () => {
+    calls += 1;
+    if (calls === failureAt) throw new LlmError("http_error", 429);
+    return "invalid JSON";
+  } } }), (error) => error.code === "provider_unavailable" && error.providerFailure.status === 429);
+  assert.equal(calls, failureAt);
 });
