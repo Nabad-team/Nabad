@@ -12,6 +12,7 @@ import * as fakeHealth from "../test-utils/fakeHealthProfileApi";
 import * as fakeMedications from "../test-utils/fakeMedicationApi";
 import * as fakeAppointments from "../test-utils/fakeAppointmentApi";
 import { todayString } from "../lib/dates";
+import { setMedicationTaken } from "../lib/medicationApi";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
 
 // Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
@@ -23,7 +24,7 @@ jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
 // So does the My health card.
 jest.mock("../lib/healthProfileApi", () => require("../test-utils/fakeHealthProfileApi"));
-jest.mock("../lib/medicationApi", () => require("../test-utils/fakeMedicationApi"));
+jest.mock("../lib/medicationApi", () => ({ ...require("../test-utils/fakeMedicationApi"), setMedicationTaken: jest.fn() }));
 jest.mock("../lib/appointmentApi", () => require("../test-utils/fakeAppointmentApi"));
 // A fixed "today", so a run that crosses midnight can't have the card and the test disagree on the date.
 jest.mock("../lib/dates", () => ({ ...jest.requireActual("../lib/dates"), todayString: () => "2026-10-12" }));
@@ -55,6 +56,7 @@ describe("Dashboard Page", () => {
     fakeWellbeing.resetFakeWellbeing();
     fakeHealth.resetFakeHealth();
     fakeMedications.resetFakeMedications();
+    setMedicationTaken.mockReset().mockImplementation(fakeMedications.setMedicationTaken);
     fakeAppointments.resetFakeAppointments();
     mockStatus = "signedIn";
   });
@@ -285,5 +287,21 @@ describe("Dashboard Page", () => {
     expect(within(card).getByText(/Eye Center · 12 January 2099 at 11:00/)).toBeInTheDocument();
     expect(within(card).queryByText("Annual check-up")).not.toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "View appointments" })).toHaveAttribute("href", "/appointments");
+  });
+
+  test("the medication ring updates before saving finishes and rolls back on failure", async () => {
+    fakeMedications.seedMedication("self", { id: "aspirin", name: "Aspirin" });
+    let rejectSave;
+    setMedicationTaken.mockImplementation(() => new Promise((resolve, reject) => { rejectSave = reject; }));
+    renderDashboard();
+    const button = await screen.findByRole("button", { name: "Mark taken: Aspirin" });
+    fireEvent.click(button);
+    expect(screen.getByRole("button", { name: "Undo taken: Aspirin" })).toBeDisabled();
+    expect(screen.getByText("All checked off")).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(setMedicationTaken).toHaveBeenCalledTimes(1);
+    await act(async () => { rejectSave(new Error("Offline")); });
+    expect(screen.getByRole("button", { name: "Mark taken: Aspirin" })).toBeEnabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("couldn't update today's medication check-in");
   });
 });
