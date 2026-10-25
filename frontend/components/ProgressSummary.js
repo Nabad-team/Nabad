@@ -60,12 +60,14 @@ export default function ProgressSummary() {
   const [savingMedication, setSavingMedication] = useState(null);
   const [medicationError, setMedicationError] = useState("");
   const profileRef = useRef(profileId);
+  const pendingMedication = useRef(null);
   profileRef.current = profileId;
 
   useEffect(() => {
     if (!profileId) return;
     const requested = profileId;
     setHealth(null); setWellbeing(null); setMedications(null); setAppointments(null);
+    pendingMedication.current = null; setSavingMedication(null); setMedicationError("");
     setHealthFailed(false); setWellbeingFailed(false); setMedicationsFailed(false); setAppointmentsFailed(false);
     getHealthProfile(requested)
       .then((data) => { if (profileRef.current === requested) setHealth(data); })
@@ -82,16 +84,22 @@ export default function ProgressSummary() {
   }, [profileId]);
 
   async function toggleMedication(medication) {
+    if (pendingMedication.current || !medication) return;
+    const requested = profileId;
+    const operation = {};
+    pendingMedication.current = operation;
     const taken = !medication.taken;
     setSavingMedication(medication.id);
     setMedicationError("");
+    setMedications((current) => current?.map((item) => item.id === medication.id ? { ...item, taken } : item) || current);
     try {
-      await setMedicationTaken(profileId, medication.id, todayString(), taken);
-      setMedications((current) => current?.map((item) => item.id === medication.id ? { ...item, taken } : item) || current);
+      await setMedicationTaken(requested, medication.id, todayString(), taken);
     } catch {
+      if (profileRef.current !== requested || pendingMedication.current !== operation) return;
+      setMedications((current) => current?.map((item) => item.id === medication.id ? { ...item, taken: medication.taken } : item) || current);
       setMedicationError("We couldn't update today's medication check-in. Please try again.");
     } finally {
-      setSavingMedication(null);
+      if (pendingMedication.current === operation) { pendingMedication.current = null; setSavingMedication(null); }
     }
   }
 

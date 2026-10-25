@@ -2893,7 +2893,7 @@ select.input {
 .progress-summary__ring-value {
   stroke: var(--color-primary);
   stroke-linecap: round;
-  transition: stroke-dashoffset 350ms ease;
+  transition: stroke-dashoffset 180ms ease-out, stroke 180ms ease-out;
 }
 .progress-summary__item--complete .progress-summary__ring-value { stroke: var(--color-success); }
 .progress-summary__ring-label {
@@ -2917,10 +2917,17 @@ select.input {
   border: 0;
   border-radius: 50%;
   cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 100ms ease-out, background-color 100ms ease-out;
 }
 .progress-summary__ring-action:hover .progress-summary__ring-label { color: var(--color-primary); }
+.progress-summary__ring-action:active:not(:disabled) { transform: scale(0.96); }
 .progress-summary__ring-action:focus-visible { outline: 0.1875rem solid var(--color-primary); outline-offset: 0.2rem; }
 .progress-summary__ring-action:disabled { cursor: wait; }
+@media (prefers-reduced-motion: reduce) {
+  .progress-summary__ring-value, .progress-summary__ring-action { transition: none; }
+  .progress-summary__ring-action:active:not(:disabled) { transform: none; }
+}
 .progress-summary__copy { min-width: 0; }
 .progress-summary__copy h3,
 .progress-summary__copy p {
