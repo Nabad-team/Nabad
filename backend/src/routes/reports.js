@@ -9,6 +9,7 @@ const { extractReport, ReportInputError } = require("../reports/extract");
 const { analyzeReport, ReportAnalysisError } = require("../reports/analyze");
 const { answerChat } = require("../reports/chat");
 const { getChatSafetyReply } = require("../reports/chatSafety");
+const { providerFailureDetails } = require("../reports/providerFailure");
 const { logEvent, errorDetails } = require("../logger");
 
 const router = express.Router();
@@ -98,7 +99,8 @@ router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
         not_report: "This appears to be a scan image or not a written report. Nabad cannot interpret raw MRI, CT, X-ray, or ultrasound images. Upload the radiologist's written report instead.",
         unsafe_response: "The AI response did not pass safety checks. No result was shown; please contact your clinician.",
       };
-      return res.status(status).json({ error: messages[error.code] || "The report could not be safely analyzed. No result was shown; please contact your clinician.", requestId });
+      const providerIssue = providerFailureDetails(error, "report");
+      return res.status(status).json({ error: providerIssue?.message || messages[error.code] || "The report could not be safely analyzed. No result was shown; please contact your clinician.", requestId, ...(providerIssue ? { serviceIssue: providerIssue.serviceIssue } : {}) });
     }
     // Never log the document, extracted text, the question or a provider's raw error message.
     logEvent("report_analysis", { requestId, reason: "unavailable:internal_error", ...errorDetails(error), durationMs: Math.round(performance.now() - started) });
@@ -112,7 +114,8 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
   try {
     if (req.body?.consent !== true) return res.status(400).json({ error: "Confirm that you agree to send your question and any attachment to the configured AI provider." });
     let savedConversation = null;
-    if (req.body?.conversationId !== undefined) {
+    // New-chat clients may send null. Only a supplied, non-null ID resumes a chat.
+    if (req.body?.conversationId !== undefined && req.body.conversationId !== null) {
       if (!mongoose.isValidObjectId(req.body.conversationId)) return res.status(404).json({ error: "Conversation not found." });
       savedConversation = await ReportConversation.findOne({ _id: req.body.conversationId, owner: req.userId, profileId: req.profileId });
       if (!savedConversation) return res.status(404).json({ error: "Conversation not found." });
@@ -158,7 +161,8 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
         unsupported_quote: "The AI could not reliably ground that answer in the report. No answer was shown; try a clearer report or ask your clinician.",
         unsafe_response: "The AI response did not pass safety checks. No answer was shown; please contact a clinician for personal medical advice.",
       };
-      return res.status(status).json({ error: messages[error.code] || "The health assistant could not safely answer. Please contact a clinician for personal medical advice.", requestId });
+      const providerIssue = providerFailureDetails(error, "chat");
+      return res.status(status).json({ error: providerIssue?.message || messages[error.code] || "The health assistant could not safely answer. Please contact a clinician for personal medical advice.", requestId, ...(providerIssue ? { serviceIssue: providerIssue.serviceIssue } : {}) });
     }
     logEvent("health_assistant_chat", { requestId, reason: "unavailable:internal_error", ...errorDetails(error), durationMs: Math.round(performance.now() - started) });
     return res.status(500).json({ error: "The health assistant could not respond safely. Please try again later.", requestId });

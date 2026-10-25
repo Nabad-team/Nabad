@@ -1,0 +1,9 @@
+SYNTHETIC REPORT - FOR SOFTWARE TESTING ONLY
+This is fictional information and does not belong to a patient.
+
+Test: Hemoglobin
+Reported result: 13.5 g/dL
+Laboratory reference interval supplied for this fictional report: 12.0-16.0 g/dL
+
+No symptoms, patient history, age, medication list or other results are provided.
+Explain the reported measurement without diagnosing or recommending treatment.

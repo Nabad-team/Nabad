@@ -129,7 +129,7 @@ export default function TestResultsPage() {
       } else {
         const answer = await request(`/reports/chat?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
-          body: JSON.stringify({ file: upload, question: currentQuestion, history: previousMessages, conversationId, consent: true }),
+          body: JSON.stringify({ file: upload, question: currentQuestion, history: previousMessages, ...(conversationId ? { conversationId } : {}), consent: true }),
         });
         if (profileRef.current !== requestedProfileId) return;
         setConversationId(answer.conversationId);
@@ -138,6 +138,16 @@ export default function TestResultsPage() {
       }
       setQuestion("");
     } catch (err) {
+      if (profileRef.current !== requestedProfileId) return;
+      if (err.status === 404 && conversationId) {
+        setConversationId(null);
+        setConversations((items) => items.filter((item) => item.id !== conversationId));
+        setMessages([]);
+        setResult(null);
+        setFile(null);
+        setError("That saved conversation is no longer available. Your message is still here. Send it again to start a new chat.");
+        return;
+      }
       const message = err.message || "The report could not be safely analyzed. Please try again or ask your clinician.";
       setError(err.requestId ? `${message} (Reference: ${err.requestId})` : message);
     } finally {
@@ -202,7 +212,7 @@ export default function TestResultsPage() {
           {historyError && conversations.length === 0 && <p className="text-muted" role="status">{historyError}</p>}
           {conversations.length > 0 ? <ul>{conversations.map((conversation) => (
             <li key={conversation.id}>
-              <button type="button" className={`assistant-chat__history-link${conversationId === conversation.id ? " is-current" : ""}`} onClick={() => openConversation(conversation)} aria-label={conversation.title} aria-current={conversationId === conversation.id ? "page" : undefined}>
+              <button type="button" className={`assistant-chat__history-link${conversationId === conversation.id ? " is-current" : ""}`} onClick={() => openConversation(conversation)} aria-label={conversation.title} aria-current={conversationId === conversation.id ? "page" : undefined} disabled={busy}>
                 <span>{conversation.title}</span>
                 <small>{new Date(conversation.updatedAt).toLocaleDateString()}</small>
               </button>
