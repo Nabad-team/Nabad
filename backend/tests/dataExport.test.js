@@ -112,6 +112,7 @@ async function fillProfile(owner, profileId, label) {
   await ReportConversation.create({ ...ids, title: `${label} chat`, messages: [{ role: "user", content: `${label} question` }] });
   await Notification.create({ ...ids, type: "system", title: `${label} notice`, message: "Hello", dedupeKey: `dedupe-${label}-${crypto.randomUUID()}` });
   await MedicalDocument.create({ ...ids, filename: `${label.toLowerCase()}-lab.pdf`, mimeType: "application/pdf", size: 4, data: Buffer.from("PDF!") });
+  await require("../src/models/VisitPrep").create({ ...ids, overrides: { background: `${label} history` }, notes: `${label} visit notes`, documentIds: [] });
 }
 
 // --- The registry ---

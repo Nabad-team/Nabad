@@ -1,10 +1,16 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import VisitPrepPage from "../pages/visit-prep";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import { getHealthProfile } from "../lib/healthProfileApi";
 import { getSymptomsForProfile } from "../lib/symptomApi";
 import { getMedicalDocuments } from "../lib/medicalDocumentApi";
+import * as visitPrepExport from "../lib/visitPrepExport";
+jest.mock("../lib/visitPrepExport", () => ({ exportVisitPrep: jest.fn() }));
+import { getVisitPrep, saveVisitPrep } from "../lib/visitPrepApi";
+import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
+jest.mock("../lib/visitPrepApi", () => ({ getVisitPrep: jest.fn(), saveVisitPrep: jest.fn() }));
+jest.mock("../lib/visitPrepPdf", () => ({ exportVisitPrepPdf: jest.fn() }));
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/healthProfileApi", () => ({ getHealthProfile: jest.fn() }));
@@ -30,6 +36,9 @@ describe("Visit preparation page", () => {
     getHealthProfile.mockReset().mockResolvedValue({ dateOfBirth: "1990-04-12", age: { years: 36, text: "36 years" }, facts: [] });
     getSymptomsForProfile.mockReset().mockResolvedValue([]);
     getMedicalDocuments.mockReset().mockResolvedValue({ documents: [] });
+    getVisitPrep.mockReset().mockResolvedValue({ overrides: {}, notes: "", documentIds: [] });
+    saveVisitPrep.mockReset().mockResolvedValue({});
+    exportVisitPrepPdf.mockReset().mockResolvedValue(undefined);
   });
 
   test("loads the active profile's history and includes allergy type and reaction", async () => {
@@ -142,8 +151,6 @@ describe("Visit preparation page", () => {
   });
 
   test("prints the prepared summary so it can be printed or saved as a PDF", async () => {
-    const print = jest.fn();
-    window.print = print;
 
     renderPage();
 
@@ -153,7 +160,78 @@ describe("Visit preparation page", () => {
 
     fireEvent.click(button);
 
-    expect(print).toHaveBeenCalledTimes(1);
-    delete window.print;
+    await waitFor(() => expect(exportVisitPrepPdf).toHaveBeenCalledTimes(1));
+  });
+
+  test("edits generated background, medications and symptoms before sharing", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    expect(screen.getByRole("button", { name: "Export sheet with attachments" })).toBeDisabled();
+    for (const [label, value] of [["Patient and health background", "Corrected history"], ["Current medications", "Updated medication dose"], ["Recent symptom checks", "Symptoms started on Monday"]]) {
+      fireEvent.change(screen.getByRole("textbox", { name: label }), { target: { value } });
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Patient and health background" })).not.toBeInTheDocument());
+    expect(screen.getByText("Corrected history")).toBeInTheDocument();
+    expect(screen.getByText("Updated medication dose")).toBeInTheDocument();
+    expect(screen.getByText("Symptoms started on Monday")).toBeInTheDocument();
+    expect(screen.queryByText("No active medications recorded.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit visit sheet" }));
+    expect(screen.getByRole("textbox", { name: "Current medications" })).toHaveValue("Updated medication dose");
+    fireEvent.change(screen.getByRole("textbox", { name: "Current medications" }), { target: { value: "Discard" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("Updated medication dose")).toBeInTheDocument();
+  });
+
+  test("exports saved edits with only selected attachments and reports export failures", async () => {
+    const exporter = visitPrepExport.exportVisitPrep.mockResolvedValue(undefined);
+    getMedicalDocuments.mockResolvedValue({ documents: [
+      { id: "xray", filename: "scan.pdf", documentType: "imaging" },
+      { id: "lab", filename: "lab.pdf", documentType: "lab" },
+    ] });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Current medications" }), { target: { value: "Corrected dose" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("Corrected dose");
+    fireEvent.click(screen.getByRole("button", { name: "Choose uploaded documents" }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /scan.pdf/ }));
+    await screen.findByRole("heading", { name: "Documents attached to this visit" });
+    fireEvent.click(screen.getByRole("button", { name: "Export sheet with attachments" }));
+    expect(exporter).toHaveBeenCalledWith(expect.objectContaining({
+      sections: expect.arrayContaining([["Current medications", "Corrected dose"]]),
+      documents: [expect.objectContaining({ id: "xray" })],
+    }));
+    expect(await screen.findByRole("button", { name: "Export sheet with attachments" })).toBeEnabled();
+    exporter.mockRejectedValue(new Error("Could not attach scan.pdf"));
+    fireEvent.click(screen.getByRole("button", { name: "Export sheet with attachments" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not attach scan.pdf");
+    exporter.mockReset();
+  });
+
+  test("restores saved sections, notes and document choices after remounting", async () => {
+    let saved = { overrides: {}, notes: "", documentIds: [] };
+    getVisitPrep.mockImplementation(async () => saved);
+    saveVisitPrep.mockImplementation(async (id, sheet) => { saved = sheet; return sheet; });
+    const view = renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Notes for your clinician" }), { target: { value: "Keep this note" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Current medications" }), { target: { value: "Saved dose" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("Keep this note");
+    view.unmount(); renderPage();
+    expect(await screen.findByText("Keep this note")).toBeInTheDocument();
+    expect(screen.getByText("Saved dose")).toBeInTheDocument();
+    expect(saveVisitPrep).toHaveBeenCalledWith("self", expect.objectContaining({ notes: "Keep this note" }));
+  });
+
+  test("keeps the edit draft open if saving fails", async () => {
+    saveVisitPrep.mockRejectedValue(new Error("Connection lost"));
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Notes for your clinician" }), { target: { value: "Unsaved note" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Connection lost");
+    expect(screen.getByRole("textbox", { name: "Notes for your clinician" })).toHaveValue("Unsaved note");
   });
 });

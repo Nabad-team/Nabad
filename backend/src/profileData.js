@@ -42,6 +42,7 @@ const {
 // leave its health data behind.
 
 const PROFILE_MODELS = [
+  require("./models/VisitPrep"),
   Medication,
   MedicationAdherence,
   SymptomRecord,
