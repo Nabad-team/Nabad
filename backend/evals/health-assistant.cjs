@@ -9,6 +9,7 @@ const { readLlmConfig, getLlmClient } = require("../src/triage/ai/llmClient");
 const { answerChat, parseChatReply } = require("../src/reports/chat");
 const { selectCases } = require("./caseSelection.cjs");
 const advancedCases = require("./advanced-cases.json");
+const { readHealthBench, adaptEnglishCases, makeEnglishDetector } = require("./healthbenchData.cjs");
 
 function pipelineChecks() {
   const report = { kind: "text", text: "SYNTHETIC REPORT: CRP 20 mg/L initially and 1.8 mg/dL later. Reference range not provided." };
@@ -62,9 +63,23 @@ async function main() {
     if (results.some((entry) => !entry.matchedExpectation)) process.exitCode = 1;
     return;
   }
-  const selected = selectCases(cases, process.argv.slice(2));
+  let availableCases = cases;
+  let dataset = null;
+  const suiteIndex = process.argv.indexOf("--suite");
+  if ((suiteIndex >= 0 && process.argv[suiteIndex + 1] === "healthbench") || process.argv.some((arg) => arg.startsWith("healthbench-"))) {
+    const { rows, manifest } = await readHealthBench();
+    const adapted = adaptEnglishCases(rows, { detectEnglish: await makeEnglishDetector() });
+    availableCases = [...cases, ...adapted.cases];
+    dataset = { ...manifest, ...adapted.summary, heldOutEvaluationOnly: true };
+    console.log(JSON.stringify({ dataset }));
+  }
+  // HealthBench's --run has a safe default of ten cases. Full runs require an
+  // explicit limit; --list can inspect aggregate coverage without paid calls.
+  const args = process.argv.slice(2);
+  if (dataset && args.includes("--run") && !args.includes("--limit") && !args.includes("--case")) args.push("--limit", "10");
+  const selected = selectCases(availableCases, args);
   if (process.argv.includes("--list")) {
-    console.log(JSON.stringify(selected.map(({ id, suite, category, language, critical, rubric }) => ({ id, suite, category, language, critical, rubric })), null, 2));
+    console.log(JSON.stringify(selected.map(({ id, suite, category, language, critical, rubric }) => ({ id, suite, category, language, critical, ...(suite === "healthbench" ? {} : { rubric }) })), null, 2));
     return;
   }
   if (!process.argv.includes("--run")) return;
@@ -82,9 +97,9 @@ async function main() {
     const start = performance.now();
     let result = null;
     let error = null;
-    try { result = await answerChat({ ...entry, history: entry.history || [], client }); }
+    try { result = await answerChat({ question: entry.question, history: entry.history || [], report: entry.report || null, client }); }
     catch (failure) { error = { code: failure.code || failure.name, providerFailure: failure.providerFailure }; }
-    results.push({ ...entry, result, error, rawReply, providerCalled: providerMs !== null, providerMs, totalMs: Math.round(performance.now() - start), review: { reviewer: null, accuracy: null, grounding: null, uncertainty: null, actionability: null, language: null, criticalSafetyFailure: null, notes: "" } });
+    results.push({ ...entry, result, error, rawReply, providerCalled: providerMs !== null, providerMs, totalMs: Math.round(performance.now() - start), review: { reviewer: null, accuracy: null, grounding: null, uncertainty: null, actionability: null, language: null, criticalSafetyFailure: null, notes: "", ...(entry.sourceRubrics ? { rubricGrades: entry.sourceRubrics.map((item, index) => ({ index, criteriaMet: null, explanation: "" })) } : {}) } });
     console.log(JSON.stringify({ case: entry.id, delivered: !!result, error, ms: results.at(-1).totalMs }));
     // Repeated provider outages are not reasoning results. Avoid needless paid calls.
     if (results.length >= 2 && results.slice(-2).every((item) => item.error && ["provider_unavailable", "timeout"].includes(item.error.code))) break;
@@ -92,7 +107,7 @@ async function main() {
   const outputDirectory = path.join(__dirname, "results");
   await fs.mkdir(outputDirectory, { recursive: true });
   const output = path.join(outputDirectory, `health-assistant-${Date.now()}.json`);
-  await fs.writeFile(output, JSON.stringify({ createdAt: new Date().toISOString(), ...metadata, syntheticOnly: true, clinicallyValidated: false, plannedCases: selected.length, results }, null, 2));
-  console.log(`Synthetic evaluation saved: ${output}`);
+  await fs.writeFile(output, JSON.stringify({ createdAt: new Date().toISOString(), ...metadata, dataset, syntheticOnly: !dataset, clinicallyValidated: false, plannedCases: selected.length, results }, null, 2));
+  console.log(`Evaluation saved: ${output}`);
 }
 main().catch((error) => { console.error(error.message); process.exitCode = 1; });
