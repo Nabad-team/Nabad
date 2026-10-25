@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const Provider = require("../src/models/Provider");
 const User = require("../src/models/User");
 const seedData = require("../data/providers");
@@ -10,7 +10,7 @@ const { seedProviders } = require("../src/providers/seed");
 let mongo, server, base;
 before(async () => {
   Object.assign(process.env, { NODE_ENV: "test", APP_ENV: "test", CLIENT_ORIGIN: "http://localhost:3000", JWT_SECRET: require("node:crypto").randomBytes(32).toString("hex") });
-  mongo = await MongoMemoryServer.create();
+  mongo = await createTestMongo();
   process.env.MONGO_URI = mongo.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   server = require("../src/app").createApp().listen(0, "127.0.0.1");

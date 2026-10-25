@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -19,7 +19,7 @@ before(async () => {
   process.env.APP_ENV = "test";
   process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
   process.env.CLIENT_ORIGIN = "http://localhost:3000";
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await Promise.all([User.init(), LinkedProfile.init(), Notification.init(), Appointment.init()]);

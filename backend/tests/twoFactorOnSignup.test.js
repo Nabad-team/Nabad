@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
@@ -18,7 +18,7 @@ before(async () => {
   process.env.CLIENT_ORIGIN = "http://localhost:3000";
   for (const key of ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"]) process.env[key] = "test";
   mock.method(nodemailer, "createTransport", () => ({ sendMail: async (message) => { sent.push(message); } }));
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();

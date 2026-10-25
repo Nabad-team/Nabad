@@ -2,7 +2,7 @@ const { test, describe, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("http");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../src/models/User");
@@ -51,7 +51,7 @@ describe("POST /api/reports routes", () => {
     process.env.APP_ENV = "test";
     process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
     process.env.CLIENT_ORIGIN = "http://localhost:3000";
-    mongod = await MongoMemoryServer.create();
+    mongod = await createTestMongo();
     process.env.MONGO_URI = mongod.getUri();
     await mongoose.connect(process.env.MONGO_URI);
     await Promise.all([User.init(), ReportConversation.init()]);

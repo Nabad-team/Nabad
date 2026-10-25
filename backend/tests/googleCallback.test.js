@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../src/models/User");
@@ -27,7 +27,7 @@ before(async () => {
   process.env.GOOGLE_CLIENT_ID = "client-id";
   process.env.GOOGLE_CLIENT_SECRET = "client-secret";
   process.env.GOOGLE_REDIRECT_URI = "http://localhost:5000/api/auth/google/callback";
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();

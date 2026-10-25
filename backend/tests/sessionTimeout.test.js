@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const User = require("../src/models/User");
 
 const MINUTE = 60 * 1000;
@@ -22,7 +22,7 @@ before(async () => {
   delete process.env.SESSION_IDLE_TIMEOUT;
   delete process.env.SESSION_ABSOLUTE_TIMEOUT;
   delete process.env.SESSION_WARNING_BEFORE;
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();

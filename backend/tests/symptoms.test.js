@@ -10,8 +10,8 @@ const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
 
 const {
-  MongoMemoryServer,
-} = require("mongodb-memory-server");
+  createTestMongo,
+} = require("./helpers/testMongo");
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -55,7 +55,7 @@ before(
       "http://localhost:3000";
 
     mongod =
-      await MongoMemoryServer.create();
+      await createTestMongo();
 
     process.env.MONGO_URI =
       mongod.getUri();

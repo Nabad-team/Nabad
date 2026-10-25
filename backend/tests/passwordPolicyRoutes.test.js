@@ -3,7 +3,7 @@
 const { test, before, after, beforeEach, mock } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../src/models/User");
@@ -13,7 +13,7 @@ let mongod, server, base, ip = 0;
 const goodPassword = "my cat sleeps on the sofa";
 before(async () => {
   Object.assign(process.env, { NODE_ENV: "test", APP_ENV: "test", JWT_SECRET: crypto.randomBytes(32).toString("hex"), CLIENT_ORIGIN: "http://localhost:3000", TRUST_PROXY: "1" });
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();
