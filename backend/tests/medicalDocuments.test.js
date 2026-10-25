@@ -1,13 +1,14 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
 const MedicalDocument = require("../src/models/MedicalDocument");
+const VisitPrep = require("../src/models/VisitPrep");
 
 let mongod, server, base, passwordHash;
 before(async () => {
@@ -15,10 +16,10 @@ before(async () => {
   process.env.APP_ENV = "test";
   process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
   process.env.CLIENT_ORIGIN = "http://localhost:3000";
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User.init(), LinkedProfile.init(), MedicalDocument.init()]);
+  await Promise.all([User.init(), LinkedProfile.init(), MedicalDocument.init(), VisitPrep.init()]);
   passwordHash = await bcrypt.hash("Medical documents test password 123!", 12);
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
@@ -30,7 +31,7 @@ after(async () => {
   await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
-beforeEach(async () => { await Promise.all([User, LinkedProfile, MedicalDocument].map((Model) => Model.deleteMany({}))); });
+beforeEach(async () => { await Promise.all([User, LinkedProfile, MedicalDocument, VisitPrep].map((Model) => Model.deleteMany({}))); });
 
 async function user(email = "owner@example.test") { return User.create({ name: "Owner", email, passwordHash }); }
 function token(account) { return jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" }); }
@@ -43,6 +44,29 @@ async function request(method, path, { body, cookie, origin = process.env.CLIENT
 }
 const PDF = Buffer.from("%PDF-1.4\nmedical test\n%%EOF").toString("base64");
 const upload = (cookie, file = { filename: "lab-result.pdf", mimeType: "application/pdf", data: PDF }, profileId = "self", metadata = {}) => request("POST", `/medical-documents?profileId=${profileId}`, { cookie, body: { file, ...metadata } });
+
+test("visit sheets persist edits and selections, isolate profiles and clean up deleted documents", async () => {
+  const cookie = token(await user());
+  const other = token(await user("second@example.test"));
+  const childId = await dependent(cookie);
+  const doc = (await upload(cookie)).body.document;
+  const sheet = { overrides: { background: "Corrected history", medications: "", symptoms: "Headache" }, notes: "Ask doctor", documentIds: [doc.id] };
+  assert.equal((await request("GET", "/visit-prep")).status, 401);
+  assert.equal((await request("PUT", "/visit-prep", { cookie, body: sheet, origin: "https://evil.test" })).status, 403);
+  assert.equal((await request("PUT", "/visit-prep?profileId=self", { cookie, body: sheet })).status, 200);
+  assert.deepEqual((await request("GET", "/visit-prep?profileId=self", { cookie })).body, sheet);
+  for (const [auth, profile] of [[other, "self"], [cookie, childId]]) {
+    assert.deepEqual((await request("GET", `/visit-prep?profileId=${profile}`, { cookie: auth })).body.documentIds, []);
+    assert.equal((await request("PUT", `/visit-prep?profileId=${profile}`, { cookie: auth, body: sheet })).status, 400);
+  }
+  assert.equal((await request("PUT", "/visit-prep", { cookie, body: { ...sheet, notes: "x".repeat(5001) } })).status, 400);
+  assert.equal((await request("DELETE", `/medical-documents/${doc.id}`, { cookie })).status, 204);
+  assert.deepEqual((await request("GET", "/visit-prep", { cookie })).body.documentIds, []);
+  await request("PUT", `/visit-prep?profileId=${childId}`, { cookie, body: { ...sheet, documentIds: [] } });
+  await request("DELETE", `/profile/linked/${childId}`, { cookie });
+  assert.equal(await VisitPrep.countDocuments({ profileId: childId }), 0);
+  assert.equal(await VisitPrep.countDocuments(), 1);
+});
 async function dependent(cookie, fullName = "Child") {
   const result = await request("POST", "/profile/linked", { cookie, body: { fullName, dateOfBirth: "2015-06-01", relationship: "child" } });
   assert.equal(result.status, 201);

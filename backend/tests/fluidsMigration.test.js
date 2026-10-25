@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const { HydrationEntry, WellbeingSettings } = require("../src/models/Wellbeing");
 const { migrateFluidsToMl } = require("../src/migrations/fluidsInMl");
 
@@ -9,7 +9,7 @@ const { migrateFluidsToMl } = require("../src/migrations/fluidsInMl");
 // "Drink at least" in millilitres. The old documents are written straight to the collections, as they are in production.
 let mongod;
 before(async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   await mongoose.connect(mongod.getUri());
   await Promise.all([HydrationEntry.init(), WellbeingSettings.init()]);
 }, { timeout: 240000 });

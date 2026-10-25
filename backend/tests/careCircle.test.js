@@ -2,7 +2,7 @@
 const { test, before, after, beforeEach, mock } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -24,7 +24,7 @@ before(async () => {
   Object.assign(process.env, { SMTP_HOST: "smtp.example.test", SMTP_USER: "nabad", SMTP_PASS: "smtp-password", EMAIL_FROM: "nabad@example.test" });
   for (const key of ["LLM_API_URL", "LLM_API_KEY", "LLM_MODEL"]) delete process.env[key];
   mock.method(nodemailer, "createTransport", () => ({ sendMail: async (message) => { sent.push(message); } }));
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await Promise.all([User.init(), LinkedProfile.init(), Notification.init(), CareCircle.init()]);

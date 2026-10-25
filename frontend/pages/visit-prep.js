@@ -12,6 +12,9 @@ import { factText } from "../lib/healthProfile";
 import { getSymptomsForProfile } from "../lib/symptomApi";
 import { getMedicalDocuments, medicalDocumentDownloadUrl } from "../lib/medicalDocumentApi";
 import { formatDate } from "../lib/dates";
+import { exportVisitPrep } from "../lib/visitPrepExport";
+import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
+import { getVisitPrep, saveVisitPrep } from "../lib/visitPrepApi";
 
 const CATEGORY_LABELS = {
   sex: "Sex assigned at birth", height: "Height", weight: "Weight", bloodType: "Blood type",
@@ -49,6 +52,11 @@ export default function VisitPrepPage() {
   const [notesDraft, setNotesDraft] = useState("");
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState("");
+  const [overrides, setOverrides] = useState({});
+  const [sectionDrafts, setSectionDrafts] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const sheetRef = useRef(null);
 
   useEffect(() => {
     if (!profileId) return undefined;
@@ -63,8 +71,20 @@ export default function VisitPrepPage() {
     setNotesDraft("");
     setEditing(false);
     setNotice("");
-    Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId)])
-      .then(([health, symptoms]) => { if (current) setData({ health, symptoms }); })
+    setOverrides({});
+    setSectionDrafts({});
+    Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId), getVisitPrep(profileId)])
+      .then(async ([health, symptoms, sheet]) => {
+        let savedDocuments = null;
+        if (sheet.documentIds.length) savedDocuments = await getMedicalDocuments(profileId);
+        if (current) {
+          setOverrides(sheet.overrides || {});
+          setVisitNotes(sheet.notes || "");
+          setSelectedDocumentIds(sheet.documentIds || []);
+          if (savedDocuments) { setDocuments(savedDocuments.documents); setDocumentsRequested(true); }
+          setData({ health, symptoms });
+        }
+      })
       .catch(() => { if (current) setError("We couldn't prepare this summary. Please check your connection and try again."); });
     return () => { current = false; };
   }, [profileId]);
@@ -76,9 +96,46 @@ export default function VisitPrepPage() {
   const medications = data?.health.medications || [];
   const symptomRecords = (data?.symptoms || []).slice(0, SUMMARY_LIMIT);
   const selectedDocuments = (documents || []).filter((document) => selectedDocumentIds.includes(document.id));
+  const editableSections = [
+    ["background", "Patient and health background"],
+    ["medications", "Current medications"],
+    ["symptoms", "Recent symptom checks"],
+  ];
 
-  function toggleDocument(id) {
-    setSelectedDocumentIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  function sectionText(key) {
+    const section = sheetRef.current?.querySelector(`[data-summary-section="${key}"]`)?.cloneNode(true);
+    if (!section) return "";
+    section.querySelectorAll("p, li, h3").forEach((element) => element.append("\n"));
+    return section.textContent.trim();
+  }
+
+  async function exportSheet() {
+    setExporting(true);
+    setError("");
+    try {
+      await exportVisitPrep({ name, sections: [...editableSections.map(([key, title]) => [title, sectionText(key)]), ...(visitNotes ? [["Notes for your clinician", visitNotes]] : [])], documents: selectedDocuments, downloadUrl: (id) => medicalDocumentDownloadUrl(profileId, id) });
+    } catch (exportError) {
+      setError(exportError.message || "We couldn't export this visit sheet. Please try again.");
+    } finally { setExporting(false); }
+  }
+
+  async function printSheet() {
+    setExporting(true); setError("");
+    try {
+      await exportVisitPrepPdf({ name, sections: [...editableSections.map(([key, title]) => [title, sectionText(key)]), ...(visitNotes ? [["Notes for your clinician", visitNotes]] : [])], documents: selectedDocuments, downloadUrl: (id) => medicalDocumentDownloadUrl(profileId, id) });
+      if (profileRef.current === profileId) setNotice("PDF downloaded with the selected documents. Open it to print or share.");
+    } catch (failure) { if (profileRef.current === profileId) setError(failure.message || "Could not create the PDF."); }
+    finally { setExporting(false); }
+  }
+
+  async function toggleDocument(id) {
+    const ids = selectedDocumentIds.includes(id) ? selectedDocumentIds.filter((item) => item !== id) : [...selectedDocumentIds, id];
+    setSaving(true); setError("");
+    try {
+      await saveVisitPrep(profileId, { overrides, notes: visitNotes, documentIds: ids });
+      if (profileRef.current === profileId) setSelectedDocumentIds(ids);
+    } catch (failure) { if (profileRef.current === profileId) setError(failure.message); }
+    finally { setSaving(false); }
   }
 
   function loadDocuments() {
@@ -99,15 +156,25 @@ export default function VisitPrepPage() {
 
   function startEditing() {
     setNotesDraft(visitNotes);
+    setSectionDrafts(Object.fromEntries(editableSections.map(([key]) => [key, sectionText(key)])));
     setEditing(true);
     setNotice("");
   }
 
-  function saveEdits(event) {
+  async function saveEdits(event) {
     event.preventDefault();
-    setVisitNotes(notesDraft.trim());
-    setEditing(false);
-    setNotice("Your changes are included in this visit sheet and its printout.");
+    setSaving(true); setError("");
+    const changes = { ...overrides };
+    for (const [key, value] of Object.entries(sectionDrafts)) {
+      if (value !== sectionText(key)) changes[key] = value;
+    }
+    try {
+      await saveVisitPrep(profileId, { overrides: changes, notes: notesDraft.trim(), documentIds: selectedDocumentIds });
+      if (profileRef.current !== profileId) return;
+      setVisitNotes(notesDraft.trim()); setOverrides(changes); setEditing(false);
+      setNotice("Your changes are saved and included in this visit sheet and its printout.");
+    } catch (failure) { if (profileRef.current === profileId) setError(failure.message); }
+    finally { setSaving(false); }
   }
 
   return (
@@ -118,25 +185,32 @@ export default function VisitPrepPage() {
       {data && (
         <>
         <div className="visit-prep__actions">
-          {!editing && <Button variant="secondary" onClick={startEditing}>Edit visit sheet</Button>}
-          <Button variant="secondary" disabled={editing} onClick={() => window.print()}>Print or save as PDF</Button>
+          {!editing && <Button variant="secondary" disabled={exporting || saving} onClick={startEditing}>Edit visit sheet</Button>}
+          <Button variant="secondary" disabled={editing || exporting || saving} onClick={printSheet}>Print or save as PDF</Button>
+          <Button variant="secondary" disabled={editing || exporting || saving} onClick={exportSheet}>{exporting ? "Exporting..." : "Export sheet with attachments"}</Button>
         </div>
         {notice && <p className="visit-prep__notice" role="status">{notice}</p>}
         {editing && <Card className="section visit-prep__editor" aria-labelledby="visit-prep-editor-heading">
           <h2 id="visit-prep-editor-heading">Review and edit your visit sheet</h2>
-          <p className="text-muted">Add or correct anything you want your clinician to know. Your changes stay on this page and are included when you print; reloading clears them.</p>
-          <form className="form" onSubmit={saveEdits}>
+          <p className="text-muted">Add or correct anything you want your clinician to know. Saved changes and document selections are kept for this profile when you return.</p>
+          <form className="form" onSubmit={saveEdits}><fieldset disabled={saving} style={{ border: 0, padding: 0, minWidth: 0 }}>
+            {editableSections.map(([key, title]) => <div key={key}>
+              <label className="field__label" htmlFor={`visit-prep-edit-${key}`}>{title}</label>
+              <textarea id={`visit-prep-edit-${key}`} className="input" rows="6" maxLength="20000" value={sectionDrafts[key] || ""} onChange={(event) => setSectionDrafts((current) => ({ ...current, [key]: event.target.value }))} />
+            </div>)}
             <label className="field__label" htmlFor="visit-prep-notes">Notes for your clinician</label>
             <textarea id="visit-prep-notes" className="input" rows="6" maxLength="5000" value={notesDraft} onChange={(event) => setNotesDraft(event.target.value)} placeholder="What would you like to discuss? Is anything missing or incorrect?" />
             <div className="visit-prep__edit-actions">
               <Button type="submit">Save changes</Button>
               <Button type="button" variant="secondary" onClick={() => { setEditing(false); setNotesDraft(visitNotes); }}>Cancel</Button>
             </div>
-          </form>
+          </fieldset></form>
         </Card>}
-        <div className="stack visit-prep">
+        <div className="stack visit-prep" ref={sheetRef}>
           <Card className="section" aria-labelledby="visit-prep-person-heading">
             <h2 id="visit-prep-person-heading">Patient and health background</h2>
+            <div data-summary-section="background" className="visit-prep__summary-text">
+            {overrides.background !== undefined ? <p>{overrides.background}</p> : <>
             <p><strong>Name:</strong> {name}</p>
             {data.health.age && <p><strong>Age:</strong> {data.health.age.text}</p>}
             {data.health.dateOfBirth && <p><strong>Date of birth:</strong> {formatDate(data.health.dateOfBirth)}</p>}
@@ -146,10 +220,14 @@ export default function VisitPrepPage() {
               <h3>Other recorded details</h3>
               <ul>{basics.map((fact) => <li key={fact.id}><strong>{CATEGORY_LABELS[fact.category]}:</strong> {factText(fact)}</li>)}</ul>
             </>}
+            </>}
+            </div>
           </Card>
 
           <Card className="section" aria-labelledby="visit-prep-medications-heading">
             <h2 id="visit-prep-medications-heading">Current medications</h2>
+            <div data-summary-section="medications" className="visit-prep__summary-text">
+            {overrides.medications !== undefined ? <p>{overrides.medications}</p> : <>
             {medications.length ? <ul aria-label="Current medications">
               {medications.map((medication) => (
                 <li key={medication.id}>
@@ -158,18 +236,20 @@ export default function VisitPrepPage() {
                 </li>
               ))}
             </ul> : <p className="text-muted">No active medications recorded.</p>}
+            </>}
+            </div>
           </Card>
 
           <Card className="section visit-prep__document-picker" aria-labelledby="visit-prep-documents-heading">
             <h2 id="visit-prep-documents-heading">Documents for this visit</h2>
-            <p className="text-muted">Select relevant uploaded records to include as references on this sheet.</p>
+            <p className="text-muted">Select relevant uploaded records to include with this sheet. Selections are saved automatically.</p>
             {!documentsRequested ? <Button variant="secondary" onClick={loadDocuments}>Choose uploaded documents</Button> : <>
               {documentsError && <Alert tone="danger" role="alert">{documentsError} <a href="/medical-documents">Open medical documents</a></Alert>}
               {documents === null ? <HeartbeatLoader label="Loading uploaded documents..." /> : documentsError ? <Button variant="secondary" onClick={loadDocuments}>Retry loading documents</Button> : documents.length ? <ul className="visit-prep__document-options">
               {documents.map((document) => (
                 <li key={document.id}>
                   <label>
-                    <input type="checkbox" checked={selectedDocumentIds.includes(document.id)} onChange={() => toggleDocument(document.id)} />
+                    <input type="checkbox" disabled={saving || exporting || editing} checked={selectedDocumentIds.includes(document.id)} onChange={() => toggleDocument(document.id)} />
                     <span><strong>{document.filename}</strong><span className="text-muted">{DOCUMENT_TYPES[document.documentType] || "Other"}{document.documentDate ? ` · ${formatDate(document.documentDate)}` : " · Date not provided"}</span></span>
                   </label>
                 </li>
@@ -184,7 +264,7 @@ export default function VisitPrepPage() {
               <strong>{document.filename}</strong> · {DOCUMENT_TYPES[document.documentType] || "Other"}{document.documentDate ? ` · ${formatDate(document.documentDate)}` : " · Date not provided"} {" "}
               <a href={medicalDocumentDownloadUrl(profileId, document.id)}>Download</a>
             </li>)}</ul>
-            <p className="text-muted">Download these files separately to share the original documents with your clinician.</p>
+            <p className="text-muted">Print or save as PDF downloads one PDF with selected PDF pages and images appended. Open the downloaded file to print. For other file formats, use Export sheet with attachments to include the original files.</p>
           </Card>}
 
           {visitNotes && <Card className="section visit-prep__notes" aria-labelledby="visit-prep-notes-heading">
@@ -194,6 +274,8 @@ export default function VisitPrepPage() {
 
           <Card className="section" aria-labelledby="visit-prep-symptoms-heading">
             <h2 id="visit-prep-symptoms-heading">Recent symptom checks</h2>
+            <div data-summary-section="symptoms" className="visit-prep__summary-text">
+            {overrides.symptoms !== undefined ? <p>{overrides.symptoms}</p> : <>
             {symptomRecords.length ? <ol className="visit-prep__symptoms" aria-label="Recent symptom checks">
               {symptomRecords.map((record) => (
                 <li key={record.id}>
@@ -204,6 +286,8 @@ export default function VisitPrepPage() {
               ))}
             </ol> : <p className="text-muted">No saved symptom checks yet.</p>}
             {data.symptoms.length > SUMMARY_LIMIT && <p className="text-muted">Showing the {SUMMARY_LIMIT} most recent checks.</p>}
+            </>}
+            </div>
           </Card>
           <p className="text-muted">Based on information saved in Nabad. Please review it with your clinician; it may not include everything you want to discuss.</p>
           <p className="visit-prep__back"><a href="/dashboard">Back to dashboard</a></p>

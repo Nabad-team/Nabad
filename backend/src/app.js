@@ -97,6 +97,7 @@ function createApp() {
   // Medical documents are sent as base64 JSON and need the same route-local body parsing
   // so the ordinary 100 KB API limit below does not reject uploads before their route runs.
   app.use("/api/medical-documents", require("./routes/medicalDocuments"));
+  app.use("/api/visit-prep", require("./routes/visitPrep"));
 
   app.use(
     express.json({

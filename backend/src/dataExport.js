@@ -42,6 +42,10 @@ const TIMESTAMPS = { createdAt: "createdAt", updatedAt: "updatedAt" };
 // Health data kept per profile (the account owner's own, or a linked family profile's).
 const PROFILE_COLLECTIONS = [
   {
+    key: "visitPreparation", model: require("./models/VisitPrep"), single: true,
+    fields: { _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => values.map(String)], ...TIMESTAMPS },
+  },
+  {
     key: "medications",
     model: Medication,
     fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", ...TIMESTAMPS },

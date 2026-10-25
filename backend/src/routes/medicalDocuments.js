@@ -70,6 +70,7 @@ router.delete("/:id", metadataLimiter, resolveProfile, asyncRoute(async (req, re
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Document not found." });
   const result = await MedicalDocument.deleteOne({ _id: req.params.id, owner: req.userId, profileId: req.profileId });
   if (!result.deletedCount) return res.status(404).json({ error: "Document not found." });
+  await require("../models/VisitPrep").updateMany({ owner: req.userId, profileId: req.profileId }, { $pull: { documentIds: req.params.id } });
   return res.status(204).end();
 }));
 

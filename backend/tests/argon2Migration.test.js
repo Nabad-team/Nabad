@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const bcryptjs = require("bcryptjs");
 const argon2 = require("@node-rs/argon2");
 const nativeBcrypt = require("@node-rs/bcrypt");
@@ -22,7 +22,7 @@ before(async () => {
   process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
   process.env.CLIENT_ORIGIN = "http://localhost:3000";
   process.env.PWNED_PASSWORDS_CHECK = "off";
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();

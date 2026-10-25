@@ -3077,6 +3077,12 @@ select.input {
   gap: var(--space-3);
 }
 
+.visit-prep__summary-text p,
+.visit-prep__notes p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @media print {
   body:has(.visit-prep) .skip-link,
   body:has(.visit-prep) .site-header,

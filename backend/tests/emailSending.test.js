@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
@@ -14,7 +14,7 @@ before(async () => {
     SMTP_HOST: "smtp.example.test", SMTP_USER: "smtp-user", SMTP_PASS: smtpPassword, EMAIL_FROM: "Nabad <no-reply@example.test>",
     // Each test uses its own client IP so the shared reset rate limit (5 per hour) is not exhausted.
     TRUST_PROXY: "1" });
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();

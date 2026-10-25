@@ -1,7 +1,7 @@
 const { test, before, after, beforeEach, mock } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
@@ -24,7 +24,7 @@ before(async () => {
   process.env.TRUST_PROXY = "1";
   for (const key of ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"]) process.env[key] = "test";
   mock.method(nodemailer, "createTransport", () => ({ sendMail: async (message) => { sent.push(message); } }));
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();

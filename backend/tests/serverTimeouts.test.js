@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const http = require("http");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const { start, applyServerTimeouts, SERVER_TIMEOUTS } = require("../src/server");
 
 // Node's agent (used by the Next.js /api proxy) closes idle sockets after this long.
@@ -20,7 +20,7 @@ before(async () => {
   process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
   process.env.CLIENT_ORIGIN = "http://localhost:3000";
   process.env.PORT = "0";
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   server = await start();
   if (!server.listening) await new Promise((resolve) => server.once("listening", resolve));

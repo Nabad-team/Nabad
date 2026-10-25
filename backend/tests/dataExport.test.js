@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -43,7 +43,7 @@ before(async () => {
     if (typeof chunk === "string" && chunk.startsWith("{\"time\"")) { logs.push(chunk); return true; }
     return write(chunk, ...rest);
   });
-  mongod = await MongoMemoryServer.create();
+  mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
   passwordHash = await bcrypt.hash(password, 12);
@@ -112,6 +112,7 @@ async function fillProfile(owner, profileId, label) {
   await ReportConversation.create({ ...ids, title: `${label} chat`, messages: [{ role: "user", content: `${label} question` }] });
   await Notification.create({ ...ids, type: "system", title: `${label} notice`, message: "Hello", dedupeKey: `dedupe-${label}-${crypto.randomUUID()}` });
   await MedicalDocument.create({ ...ids, filename: `${label.toLowerCase()}-lab.pdf`, mimeType: "application/pdf", size: 4, data: Buffer.from("PDF!") });
+  await require("../src/models/VisitPrep").create({ ...ids, overrides: { background: `${label} history` }, notes: `${label} visit notes`, documentIds: [] });
 }
 
 // --- The registry ---

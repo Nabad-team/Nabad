@@ -5,7 +5,7 @@
 const { test, describe, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { createTestMongo } = require("./helpers/testMongo");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../src/models/User");
@@ -168,7 +168,7 @@ describe("POST /api/triage/ai-assess with everyday wording (AI off)", () => {
     process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
     process.env.CLIENT_ORIGIN = "http://localhost:3000";
     delete process.env.LLM_API_URL;
-    mongod = await MongoMemoryServer.create();
+    mongod = await createTestMongo();
     process.env.MONGO_URI = mongod.getUri();
     await mongoose.connect(process.env.MONGO_URI);
     await User.init();
