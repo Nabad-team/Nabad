@@ -8,14 +8,14 @@ const crypto = require("crypto");
 const User = require("../src/models/User");
 const ReportConversation = require("../src/models/ReportConversation");
 
-const provider = { content: "", requests: [] };
+const provider = { content: "", requests: [], status: 200 };
 function startFakeProvider() {
   const server = http.createServer((req, res) => {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
     req.on("end", () => {
       provider.requests.push(JSON.parse(body || "{}"));
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(provider.status, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: provider.content } }] }));
     });
   });
@@ -75,12 +75,13 @@ describe("POST /api/reports routes", () => {
     process.env.LLM_API_KEY = "fake-provider-key";
     process.env.LLM_MODEL = "fake-model";
     provider.requests = [];
+    provider.status = 200;
     await ReportConversation.deleteMany({});
   });
-  async function call(path, body) {
+  async function call(path, body, accessToken = token) {
     const response = await fetch(`${base}/${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${token}` },
+      headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${accessToken}` },
       body: JSON.stringify(body),
     });
     return { status: response.status, body: await response.json() };
@@ -132,6 +133,50 @@ describe("POST /api/reports routes", () => {
     assert.deepEqual(res.body.evidence, ["Hemoglobin 13.5 g/dL, reference range 12.0-15.5 g/dL"]);
     assert.ok(res.body.conversationId);
     assert.equal(provider.requests.length, 1);
+  });
+
+  test("new browser chat payload accepts null or omitted ID, then resumes only a valid owned conversation", async () => {
+    const account = await User.create({ name: "New chat", email: "new-chat@example.test", passwordHash: "x" });
+    const accessToken = jwt.sign({ sub: String(account._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    provider.content = JSON.stringify({ answer: "Dizziness has several possible explanations. A clinician can assess the cause in context.", evidence: [] });
+    const body = { consent: true, question: "if im feeling dizzy what could this mean?", history: [], file: null };
+    const first = await call("chat", { ...body, conversationId: null }, accessToken);
+    assert.equal(first.status, 200, JSON.stringify(first.body));
+    assert.ok(first.body.conversationId);
+    const second = await call("chat", body, accessToken);
+    assert.equal(second.status, 200, JSON.stringify(second.body));
+    assert.notEqual(second.body.conversationId, first.body.conversationId);
+    const followUp = await call("chat", { ...body, conversationId: first.body.conversationId }, accessToken);
+    assert.equal(followUp.status, 200);
+    assert.equal(followUp.body.conversationId, first.body.conversationId);
+    assert.equal((await ReportConversation.findById(first.body.conversationId)).messages.length, 4);
+    for (const id of ["", "invalid", String(new mongoose.Types.ObjectId())]) {
+      assert.equal((await call("chat", { ...body, conversationId: id }, accessToken)).status, 404);
+    }
+    assert.equal((await call("chat", { ...body, conversationId: first.body.conversationId })).status, 404);
+  });
+
+  test("report quota failure explains the usage limit and preserves the support reference", async () => {
+    provider.status = 429;
+    provider.content = "Private provider text must never appear in the response.";
+    const result = await call("analyze", { consent: true, question: "Explain the report.", file: { mimeType: "application/pdf", extension: "pdf", data: makeSamplePdf() } });
+    assert.equal(result.status, 502);
+    assert.equal(result.body.serviceIssue, "usage_limit");
+    assert.match(result.body.error, /usage limit/);
+    assert.ok(result.body.requestId);
+    assert.doesNotMatch(JSON.stringify(result.body), /Private provider/);
+    assert.equal(await ReportConversation.countDocuments(), 0);
+  });
+
+  test("chat distinguishes access, rejected requests and temporary outages without server-log access", async () => {
+    for (const [status, issue] of [[401, "access"], [400, "request_rejected"], [503, "unavailable"]]) {
+      provider.status = status;
+      const result = await call("chat", { consent: true, question: "What does hemoglobin do?" });
+      assert.equal(result.status, 502);
+      assert.equal(result.body.serviceIssue, issue);
+      assert.ok(result.body.requestId);
+      assert.equal(await ReportConversation.countDocuments(), 0);
+    }
   });
 
   test("unsafe generated advice is rejected and never stored as a conversation", async () => {

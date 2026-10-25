@@ -67,3 +67,39 @@ test("sends a follow-up in the selected saved conversation and displays its answ
     body: expect.stringContaining(`"conversationId":"${savedConversation.id}"`),
   }));
 });
+
+test("a new chat omits the conversation ID and uses the saved ID only for its follow-up", async () => {
+  request.mockResolvedValueOnce({ answer: "A new answer.", evidence: [], conversationId: "new-conversation" })
+    .mockResolvedValueOnce({ answer: "A follow-up answer.", evidence: [], conversationId: "new-conversation" });
+  render(<TestResultsPage />);
+  await screen.findByRole("button", { name: savedConversation.title });
+  fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "What could dizziness mean?" } });
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+  expect(await screen.findByText("A new answer.")).toBeInTheDocument();
+  const first = JSON.parse(request.mock.calls[0][1].body);
+  expect(first).not.toHaveProperty("conversationId");
+  expect(first.history).toEqual([]);
+  fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Can you explain further?" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+  expect(await screen.findByText("A follow-up answer.")).toBeInTheDocument();
+  expect(JSON.parse(request.mock.calls[1][1].body).conversationId).toBe("new-conversation");
+});
+
+test("a missing saved conversation preserves the unsent question and lets the user retry as a new chat", async () => {
+  request.mockRejectedValueOnce(Object.assign(new Error("Conversation not found."), { status: 404 }))
+    .mockResolvedValueOnce({ answer: "Fresh chat answer.", evidence: [], conversationId: "replacement" });
+  render(<TestResultsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
+  fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Keep this unsent question." } });
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Your message is still here");
+  expect(screen.getByLabelText("Your message")).toHaveValue("Keep this unsent question.");
+  expect(request).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+  expect(await screen.findByText("Fresh chat answer.")).toBeInTheDocument();
+  const retried = JSON.parse(request.mock.calls[1][1].body);
+  expect(retried).not.toHaveProperty("conversationId");
+  expect(retried.history).toEqual([]);
+});
