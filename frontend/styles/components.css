@@ -72,11 +72,16 @@
 .medical-documents__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; gap: var(--space-2) var(--space-3); margin-top: var(--space-5); }
 .medical-documents__plus { font-size: 1.5em; line-height: 0.8; }
 .medical-documents__list { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
-.medical-documents__list li { border-top: 1px solid var(--color-border); padding-block: var(--space-4); }
+.medical-documents__list li { flex-wrap: wrap; border-top: 1px solid var(--color-border); padding-block: var(--space-4); }
 .medical-documents__list li > div { min-width: 0; overflow-wrap: anywhere; }
+.medical-documents__list li > div:first-child { flex: 1 1 16rem; }
 .medical-documents__list .button { flex: 0 0 auto; }
 .medical-documents__edit { flex: 1 1 100%; }
-.medical-documents__edit .form { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto minmax(10rem, 1fr) auto; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-3); }
+.medical-documents__edit .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); align-items: end; gap: var(--space-3); margin-top: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.medical-documents__edit-field { display: grid; min-width: 0; gap: var(--space-2); }
+.medical-documents__edit-field .input { width: 100%; min-width: 0; }
+.medical-documents__edit-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.medical-documents__edit .form > [role="alert"] { grid-column: 1 / -1; }
 .medical-documents__empty { margin: var(--space-5) 0 0; padding: var(--space-5); border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); }
 
 @media (max-width: 38rem) {
