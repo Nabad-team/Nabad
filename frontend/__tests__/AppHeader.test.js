@@ -40,17 +40,22 @@ describe("Header navigation", () => {
     jest.clearAllMocks();
   });
 
-  test("keeps the desktop header focused on account controls", async () => {
+  test("provides every workspace section from the desktop header", async () => {
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
-    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    const navigation = screen.getByRole("navigation", { name: "Workspace" });
+    expect(within(navigation).getAllByRole("link")).toHaveLength(9);
+    expect(within(navigation).getByRole("link", { name: "Documents" })).toHaveAttribute("href", "/medical-documents");
+    expect(within(navigation).getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
   });
 
-  test("does not render desktop section navigation on the current page", async () => {
+  test("marks the current workspace section on other pages", async () => {
     renderHeader("/medications");
     await screen.findByRole("option", { name: "Demo User (you)" });
-    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    const navigation = screen.getByRole("navigation", { name: "Workspace" });
+    expect(within(navigation).getByRole("link", { name: "Medicines" })).toHaveAttribute("aria-current", "page");
+    expect(within(navigation).getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
   });
 
   test("on an account page, the account button and the link inside the menu show it", async () => {
@@ -68,6 +73,7 @@ describe("Header navigation", () => {
     mockSignedIn = false;
     renderHeader();
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Workspace" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Menu" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/");
@@ -192,7 +198,7 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Visit preparation", "Health assistant", "Medications", "Appointments", "Water and sleep", "Find care"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Visit preparation", "Health assistant", "Medications", "Appointments", "Water and sleep", "Medical documents", "Find care"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([

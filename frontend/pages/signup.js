@@ -59,7 +59,7 @@ export default function SignupPage() {
   }
 
   return (
-    <PageLayout title="Sign up">
+    <PageLayout title="Sign up" variant="auth">
       <PageTitle lead="It takes about a minute. You can add family members later.">
         Create your Nabad account
       </PageTitle>

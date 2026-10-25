@@ -5,7 +5,7 @@ import Alert from "../components/ui/Alert";
 // The Terms of Use, with the medical disclaimer first. Public: linked from the footer and from sign-up.
 export default function TermsOfUse() {
   return (
-    <PageLayout title="Terms of Use">
+    <PageLayout title="Terms of Use" variant="prose">
       <PageTitle lead="The rules for using Nabad, and what it can and cannot do for your health.">
         Terms of Use
       </PageTitle>

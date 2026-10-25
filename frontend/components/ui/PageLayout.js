@@ -19,13 +19,14 @@ export function pageTitle(title) {
 // that grow on bigger screens. The text inside stays left-aligned.
 //   title:  the browser tab title, e.g. "Log in" (shown as "Log in · Nabad"). Leave it out only on the landing page.
 //   header: what goes in the top bar. Defaults to the logo alone; signed-in pages pass <ProfileHeader />.
-//   width:  "content" (46rem, most pages) or "wide" (68rem, the landing page).
+//   width:  "content" (62rem, most pages) or "wide" (74rem, the landing page).
+//   variant: "auth" centers a compact form panel; "dashboard" arranges the check-in actions.
 //   footer: optional page-specific note, shown above the site footer that every page gets.
-export default function PageLayout({ title, header, width = "content", footer, children }) {
+export default function PageLayout({ title, header, width = "content", variant, footer, children }) {
   const container = width === "wide" ? "container container--wide" : "container";
   const fullTitle = pageTitle(title);
   return (
-    <div className="page-shell">
+    <div className={["page-shell", variant && `page-shell--${variant}`].filter(Boolean).join(" ")}>
       {/* The key props stop Next.js from repeating a tag when a page adds its own. */}
       <Head>
         <title>{fullTitle}</title>

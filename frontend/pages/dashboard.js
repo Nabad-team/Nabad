@@ -61,19 +61,16 @@ export default function DashboardPage() {
   return (
     <PageLayout
       title="Dashboard"
+      variant="dashboard"
       header={<ProfileHeader showPicture={false} />}
     >
       <EmailVerificationBanner />
 
       {activeProfile && (
-        <PageTitle>
+        <PageTitle lead="Your health, your records, and your next steps, together.">
           Welcome, {firstName(activeProfile.fullName)}
         </PageTitle>
       )}
-
-      <section className="dashboard-navigation" aria-label="Dashboard sections">
-        <MainNavigation includeMedicalDocuments />
-      </section>
 
       {error && (
         <Alert tone="danger" as="p" role="alert">
@@ -120,6 +117,12 @@ export default function DashboardPage() {
       </section>
 
       {activeProfile && <ProgressSummary />}
+
+      <section className="dashboard-navigation section" aria-label="Dashboard sections">
+        <h2>Explore your health space</h2>
+        <p className="text-muted">Keep track of the details that matter to you.</p>
+        <MainNavigation includeMedicalDocuments />
+      </section>
 
       <WellbeingCorner />
     </PageLayout>

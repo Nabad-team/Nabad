@@ -2,7 +2,7 @@
 
 Nabad should feel like a good clinic: calm, warm and human. Not an AI product, not a tech template.
 
-**Do:** warm paper background, left-aligned text, generous white space, one clear action per screen, plain kind words.
+**Do:** a soft neutral canvas, white surfaces, left-aligned text, generous space, clear actions and plain kind words. Keep teal as the main identity color.
 **Don't:** gradients, glow, glassy cards, sparkle icons, emoji as icons, 3D blobs, centering everything, a shadow or a box around every block.
 
 Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`) and a few components:
@@ -55,23 +55,23 @@ All text pairs below meet WCAG AA (4.5:1) on the page background, checked with t
 
 | Token | Value | Use it for |
 | --- | --- | --- |
-| `--color-bg` | `#faf6ef` | Page background (warm paper, never pure white) |
-| `--color-surface` | `#fffdf9` | Inputs, cards, dialogs: slightly lighter than the page |
-| `--color-sunken` | `#f3ede3` | Quiet areas |
-| `--color-text` | `#2a2622` | Body text (13.9:1) |
-| `--color-text-muted` | `#5c554d` | Hints, secondary text (6.8:1) |
-| `--color-border` | `#e6ded2` | Dividers, card edges (decorative only) |
-| `--color-border-strong` | `#8b8176` | Input outlines (3.8:1, meets 3:1 for controls) |
+| `--color-bg` | `#f7f8f5` | Soft neutral page canvas |
+| `--color-surface` | `#ffffff` | Inputs, cards and dialogs |
+| `--color-sunken` | `#eef2ef` | Quiet inset areas |
+| `--color-text` | `#243631` | Body text (12.0:1 against the canvas) |
+| `--color-text-muted` | `#596962` | Hints and secondary text (5.4:1) |
+| `--color-border` | `#dce5df` | Dividers and card edges (decorative only) |
+| `--color-border-strong` | `#7d8d84` | Control outlines (3.3:1 against the canvas) |
 | `--color-primary` | `#0f766e` | Logo teal: primary buttons, links, icons (5.1:1; white on it 5.5:1) |
 | `--color-primary-strong` | `#134e4a` | Headings and teal text (8.8:1) |
-| `--color-primary-soft` | `#f0fdfa` | Light teal panels, info banners |
+| `--color-primary-soft` | `#eaf5f1` | Light teal panels and info banners |
 | `--color-accent` | `#9c4a2f` | Muted terracotta. **Sparingly**: one highlight per screen at most (e.g. the "Nabad is not a doctor" note) |
 | `--color-danger` | `#b42318` | **Only** emergencies, errors and delete buttons. Red must always mean something. |
 | `--color-success` | `#146c43` | Saved, done |
 | `--color-warning` / `-strong` | `#c98a1b` / `#7a4a08` | Needs attention soon (border / text) |
 | `--color-urgent` | `#c2410c` | Symptom urgency level "urgent" only |
 
-Colors have `-strong` (text on the soft background) and `-soft` (background) variants where needed. Grays are warm (brown-leaning), never blue-gray.
+Colors have `-strong` (text on the soft background) and `-soft` (background) variants where needed. High contrast mode overrides the shared palette.
 
 ## Typography
 
@@ -80,22 +80,22 @@ Colors have `-strong` (text on the soft background) and `-soft` (background) var
 | Token | Size | Use |
 | --- | --- | --- |
 | `--text-3xl` | 36 to 48px (fluid) | Landing headline only |
-| `--text-2xl` | 32px | `h1` |
+| `--text-2xl` | 28 to 36px (fluid) | `h1` |
 | `--text-xl` | 24px | `h2` |
 | `--text-lg` | 20px | `h3`, lead paragraphs |
-| `--text-base` | 17px | Body text |
+| `--text-base` | 16px | Body text |
 | `--text-sm` | 15px | Hints, footnotes |
 
-Line height is 1.65 for text and 1.25 for headings. Headings are semibold (600), in `--color-primary-strong`.
+Line height is 1.6 for text and 1.25 for headings. Headings are semibold (600), in `--color-primary-strong`.
 
 **Use `rem`, never `px`.** The text-size setting (#20) will change the root font size, and everything in rem grows with it. `1rem` = 16px by default.
 
 ## Spacing, shape, shadow
 
 - Spacing: `--space-1` (4px) `-2` (8) `-3` (12) `-4` (16) `-5` (24) `-6` (32) `-7` (48) `-8` (64) `-9` (96).
-- Radius: `--radius-sm` (6px), `--radius-md` (8px, buttons and inputs), `--radius-lg` (12px, cards and dialogs). Modest, not bubbly.
-- Shadows: `--shadow-sm` exists but is rarely needed; `--shadow-overlay` is for dialogs only. Separate things with space and a thin border, not shadows.
-- Widths: content column `--width-content` (46rem), forms `--width-form` (28rem), paragraphs `--width-prose` (38rem), landing `--width-wide` (68rem).
+- Radius: `--radius-sm` (8px), `--radius-md` (12px, buttons and inputs), `--radius-lg` (18px, cards and dialogs).
+- Shadows: `--shadow-sm` gives grouped surfaces a light lift; `--shadow-overlay` is for menus and dialogs. Pair these with a thin border.
+- Widths: workspace `--width-content` (62rem), forms `--width-form` (28rem), paragraphs `--width-prose` (38rem), header and landing `--width-wide` (74rem). Legal pages use a 46rem reading column.
 - Side margins: `--page-gutter` is 16px on phones and 32px from 640px up. `PageLayout` applies it, so content never touches the screen edge.
 
 ## Accessibility built in
@@ -105,6 +105,8 @@ Line height is 1.65 for text and 1.25 for headings. Headings are semibold (600),
 - Every page has a "Skip to main content" link (it appears when you press Tab).
 - Colors meet AA; color is never the only signal (errors and urgency levels are always written out).
 - Animations stop when the user turns on "reduce motion".
+
+Workspace pages use a wider column while forms keep their 28rem maximum. Progress cards use two columns on larger screens and one on phones; water and sleep sit side by side from 56rem. Document rows and their metadata editors wrap into compact grids. Avoid fixed flex bases when changing a row into a column: the basis becomes a height and can create large empty gaps. Preserve visible labels, consent text, keyboard focus, and the existing print-specific layouts when refining a screen.
 
 ---
 
@@ -133,6 +135,8 @@ The frame of every page: header, then content in a centered column with proper s
 ```jsx
 <PageLayout header={<ProfileHeader />}>...</PageLayout>   // signed-in pages with the profile switcher
 <PageLayout>...</PageLayout>                              // logo-only header (sign-in pages, onboarding)
+<PageLayout variant="auth">...</PageLayout>               // centered sign-in or account recovery panel
+<PageLayout variant="prose">...</PageLayout>              // legal reading column
 <PageLayout width="wide" header={<SiteHeader width="wide">links</SiteHeader>} footer={<p>...</p>}>  // landing
 ```
 
@@ -155,7 +159,7 @@ Phone     [Nabad]                                                               
           ┌ Dashboard · My health · Medications · Water and sleep · Acting for [▾] · My profile · Security · Sign out ┐
 ```
 
-- **Main links** (`MAIN_LINKS` in `AppHeader.js`) sit in one row next to the logo. Add a new top-level page there and it shows up in both the desktop row and the phone menu.
+- **Main links** (`MAIN_LINKS` in `AppHeader.js`, extended with Medical documents) appear below the desktop account bar on every signed-in page. The compact labels have icons and a current-page underline. Links wrap on tablets. The dashboard also offers larger section cards below the progress overview.
 - **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
 - **Phones (under 40rem / 640px):** the logo and a **Menu** button. The menu is a full-width panel under the bar, in the page flow (not an overlay), with every link, the profile switcher ("Acting for") and Sign out.
 - **From 40rem to 60rem** the main links move to their own row under the logo, so nothing gets squeezed.

@@ -8,7 +8,7 @@ const crypto = require("crypto");
 const User = require("../src/models/User");
 const ReportConversation = require("../src/models/ReportConversation");
 
-const provider = { content: "", requests: [], status: 200 };
+const provider = { content: "", replies: [], requests: [], status: 200 };
 function startFakeProvider() {
   const server = http.createServer((req, res) => {
     let body = "";
@@ -16,7 +16,8 @@ function startFakeProvider() {
     req.on("end", () => {
       provider.requests.push(JSON.parse(body || "{}"));
       res.writeHead(provider.status, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: provider.content } }] }));
+      const content = provider.replies.length ? provider.replies.shift() : provider.content;
+      res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content } }] }));
     });
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
@@ -75,6 +76,7 @@ describe("POST /api/reports routes", () => {
     process.env.LLM_API_KEY = "fake-provider-key";
     process.env.LLM_MODEL = "fake-model";
     provider.requests = [];
+    provider.replies = [];
     provider.status = 200;
     await ReportConversation.deleteMany({});
   });
@@ -187,6 +189,29 @@ describe("POST /api/reports routes", () => {
       assert.ok(!JSON.stringify(result.body).includes(answer));
       assert.equal(await ReportConversation.countDocuments(), 0);
     }
+    assert.equal(provider.requests.length, 6);
+  });
+
+  test("a rejected dizziness reply is regenerated once and only the checked replacement is saved", async () => {
+    const account = await User.create({ name: "Retry chat", email: "retry-chat@example.test", passwordHash: "x" });
+    const accessToken = jwt.sign({ sub: String(account._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    const rejectedAnswer = "You have dehydration.";
+    const answer = "Dizziness has several possible explanations, and the cause cannot be determined here. Avoid driving while dizzy. Seek urgent care for severe or worsening symptoms. How long has this lasted?";
+    provider.replies = [
+      JSON.stringify({ answer: rejectedAnswer, evidence: [] }),
+      JSON.stringify({ answer, evidence: [] }),
+    ];
+    const question = "im feeling a little dizzy today, what can i do?";
+    const result = await call("chat", { consent: true, question, conversationId: null }, accessToken);
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    assert.equal(result.body.answer, answer);
+    assert.equal(provider.requests.length, 2);
+    assert.ok(!JSON.stringify(provider.requests[1]).includes(rejectedAnswer));
+    const saved = await ReportConversation.findById(result.body.conversationId).lean();
+    assert.equal(saved.messages.length, 2);
+    assert.equal(saved.messages[0].content, question);
+    assert.equal(saved.messages[1].content, answer);
+    assert.ok(!JSON.stringify(saved).includes(rejectedAnswer));
   });
 
   test("recognized emergency gets guidance without a configured model or waiting for an upload", async () => {

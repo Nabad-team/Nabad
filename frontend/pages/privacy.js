@@ -6,6 +6,7 @@ export default function PrivacyPolicy() {
   return (
     <PageLayout
       title="Privacy Policy"
+      variant="prose"
       footer={
         <p>
           Nabad is a student software project. This page explains how data is

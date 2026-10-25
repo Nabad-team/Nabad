@@ -33,6 +33,9 @@ export const ACCOUNT_LINKS = [
   { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
 ];
 
+const DOCUMENT_LINK = { href: "/medical-documents", label: "Medical documents", shortLabel: "Documents", icon: "documents" };
+const WORKSPACE_LINKS = [...MAIN_LINKS.slice(0, -1), DOCUMENT_LINK, MAIN_LINKS[MAIN_LINKS.length - 1]];
+
 // Keep the current-page indicator in sync with client-side navigation.
 function useCurrentPath() {
   const router = useRouter();
@@ -87,7 +90,7 @@ export function MainNavigation({ className = "app-nav__list", includeMedicalDocu
     <nav aria-label="Main">
       <NavLinks
         links={includeMedicalDocuments
-          ? [...MAIN_LINKS.slice(0, -1), { href: "/medical-documents", label: "Medical documents", shortLabel: "Documents", icon: "documents" }, MAIN_LINKS[MAIN_LINKS.length - 1]]
+          ? WORKSPACE_LINKS
           : MAIN_LINKS}
         path={path}
         className={className}
@@ -121,7 +124,7 @@ function ProfileSwitcher({ id, showLabel }) {
 }
 
 // The signed-in header.
-//   Desktop: logo, then the notifications bell, profile switcher and account menu on the right.
+//   Desktop: logo and account controls, with the workspace links on a second row.
 //   Phones (under 40rem / 640px): logo, the notifications bell and a "Menu" button that opens a full-width panel
 //            with everything else.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
@@ -193,11 +196,25 @@ export default function AppHeader() {
         )}
       </div>
 
+      {signedIn && (
+        <nav aria-label="Workspace" className="workspace-nav container container--wide">
+          <ul className="workspace-nav__list">
+            {WORKSPACE_LINKS.map(({ href, label, shortLabel, icon }) => (
+              <li key={href}>
+                <Link href={href} title={label} aria-current={path === href ? "page" : undefined}>
+                  <NavIcon name={icon} /><span>{shortLabel}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       {signedIn && mobile.open && (
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
           <div className="container">
             <nav aria-label="Main">
-              <NavLinks links={MAIN_LINKS} path={path} className="mobile-menu__list mobile-menu__cards" simplified={preferences.simplifiedMode} cards />
+              <NavLinks links={WORKSPACE_LINKS} path={path} className="mobile-menu__list mobile-menu__cards" simplified={preferences.simplifiedMode} cards />
             </nav>
             <ProfileSwitcher id="profile-switcher-mobile" showLabel />
             <nav aria-label="Account">

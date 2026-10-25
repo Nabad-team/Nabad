@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
     try { const result = await resetPassword(router.query.token, password); setMessage(result.message); } catch (err) { setError(err.message); } finally { setLoading(false); }
   }
   return (
-    <PageLayout title="Choose a new password">
+    <PageLayout title="Choose a new password" variant="auth">
       <PageTitle>Choose a new password</PageTitle>
       <form onSubmit={submit} className="form">
         <NewPasswordField label="New password" value={password} onChange={setPassword} inputRef={passwordRef} />

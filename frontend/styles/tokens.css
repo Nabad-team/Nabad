@@ -9,26 +9,26 @@
   /* Font. --font-plex is set by next/font in pages/_app.js. */
   --font-sans: var(--font-plex), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Backgrounds: warm paper, never pure white. */
-  --color-bg: #faf6ef; /* page background */
-  --color-surface: #fffdf9; /* cards, inputs, dialogs: slightly lighter than the page */
-  --color-sunken: #f3ede3; /* quiet areas: footers, code samples */
+  /* Neutral canvas and distinct surfaces. */
+  --color-bg: #f7f8f5; /* soft neutral canvas */
+  --color-surface: #ffffff; /* cards, inputs and dialogs */
+  --color-sunken: #eef2ef; /* quiet inset areas */
 
-  /* Text: warm neutral grays (brown-leaning, not blue). */
-  --color-text: #2a2622; /* 13.9:1 */
-  --color-text-muted: #5c554d; /* 6.8:1, secondary text and hints */
-  --color-placeholder: #6f675e; /* 5.5:1 on surface */
+  /* Text: deep green and readable neutral tones. */
+  --color-text: #243631;
+  --color-text-muted: #596962;
+  --color-placeholder: #66736c;
 
   /* Lines. */
-  --color-border: #e6ded2; /* dividers and card edges (decorative) */
-  --color-border-strong: #8b8176; /* input and button outlines: 3.8:1 on surface, meets 3:1 for controls */
+  --color-border: #dce5df; /* decorative dividers and card edges */
+  --color-border-strong: #7d8d84; /* visible control boundaries */
 
   /* Primary: the logo teal. */
-  --color-primary: #0f766e; /* buttons, links, icons: 5.1:1, white text on it 5.5:1 */
+  --color-primary: #0f766e; /* buttons, links and icons */
   --color-primary-hover: #115e59;
-  --color-primary-strong: #134e4a; /* headings and teal text: 8.8:1 */
-  --color-primary-soft: #f0fdfa; /* light teal panels */
-  --color-primary-line: #99d5cd; /* thin teal lines on soft backgrounds (decorative) */
+  --color-primary-strong: #134e4a; /* headings and teal text */
+  --color-primary-soft: #eaf5f1;
+  --color-primary-line: #b6d9cc;
 
   /* Accent: muted terracotta. Use sparingly, for one highlight per screen at most. */
   --color-accent: #9c4a2f; /* 5.7:1 */
@@ -57,13 +57,13 @@
   /* Type scale. Generous line heights for easy reading. */
   --text-xs: 0.8125rem; /* 13px: tiny labels only */
   --text-sm: 0.9375rem; /* 15px: hints, footnotes */
-  --text-base: 1.0625rem; /* 17px: body */
+  --text-base: 1rem;
   --text-lg: 1.25rem; /* 20px: lead paragraphs, h3 */
   --text-xl: 1.5rem; /* 24px: h2 */
-  --text-2xl: 2rem; /* 32px: h1 */
+  --text-2xl: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
   --text-3xl: clamp(2.25rem, 1.6rem + 2.6vw, 3rem); /* landing headline */
   --leading-tight: 1.25;
-  --leading-normal: 1.65;
+  --leading-normal: 1.6;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -81,18 +81,19 @@
 
   /* Layout. */
   --page-gutter: 1rem; /* side margin on phones; grows on wider screens */
-  --width-content: 46rem; /* signed-in pages and forms */
-  --width-wide: 68rem; /* landing page */
+  --width-content: 62rem; /* workspace pages */
+  --width-wide: 74rem; /* header and landing page */
   --width-form: 28rem; /* a single column of inputs */
   --width-prose: 38rem; /* comfortable line length for paragraphs */
 
-  /* Shape. Modest corners, very light shadows used rarely. */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  /* Shape. Soft corners and quiet surface shadows. */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.125rem;
   --radius-full: 999rem;
-  --shadow-sm: 0 0.0625rem 0.125rem rgba(42, 38, 34, 0.06);
-  --shadow-overlay: 0 0.75rem 2rem rgba(42, 38, 34, 0.16); /* dialogs only */
+  --shadow-sm: 0 0.125rem 0.5rem rgb(22 55 42 / 4%);
+  --shadow-overlay: 0 1rem 3rem rgb(22 55 42 / 14%);
+  --duration-fast: 120ms;
 
   /* Controls. 2.75rem = 44px: the minimum tap target. */
   --tap-target: 2.75rem;

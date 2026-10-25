@@ -72,7 +72,7 @@ export default function LoginPage() {
   }
 
   return (
-    <PageLayout title="Log in">
+    <PageLayout title="Log in" variant="auth">
       <PageTitle lead={challenge ? null : "Welcome back."}>Log in to Nabad</PageTitle>
       {signedOutMessage && <Alert tone="info" as="p" role="status" className="auth-message">{signedOutMessage}</Alert>}
       {challenge ? (
