@@ -25,6 +25,7 @@ function fileToPayload(file) {
 }
 
 function DocumentMetadataEditor({ profileId, document, onSaved }) {
+  const [open, setOpen] = useState(false);
   const [type, setType] = useState(document.documentType || "other");
   const [date, setDate] = useState(document.documentDate || "");
   const [busy, setBusy] = useState(false);
@@ -34,25 +35,35 @@ function DocumentMetadataEditor({ profileId, document, onSaved }) {
     event.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
       const updated = await updateMedicalDocumentMetadata(profileId, document.id, { documentType: type, documentDate: date });
-      onSaved(updated); setNotice("Document details saved.");
+      onSaved(updated); setNotice("Document details saved."); setOpen(false);
     } catch (saveError) { setError(saveError.message || "We couldn't save these document details."); }
     finally { setBusy(false); }
   }
   return (
-    <details className="medical-documents__edit">
-      <summary>Edit type or date</summary>
-      <form onSubmit={save} className="form">
+    <div className="medical-documents__edit">
+      <Button variant="secondary" disabled={busy} aria-expanded={open} aria-controls={open ? `document-editor-${document.id}` : undefined} onClick={() => {
+        setType(document.documentType || "other"); setDate(document.documentDate || "");
+        setError(""); setNotice(""); setOpen(!open);
+      }}>Edit type or date</Button>
+      {open && <form id={`document-editor-${document.id}`} onSubmit={save} className="form">
+        <div className="medical-documents__edit-field">
         <label className="field__label" htmlFor={`edit-document-type-${document.id}`}>Document type</label>
         <select id={`edit-document-type-${document.id}`} className="input" value={type} onChange={(event) => setType(event.target.value)} disabled={busy}>
           {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
+        </div>
+        <div className="medical-documents__edit-field">
         <label className="field__label" htmlFor={`edit-document-date-${document.id}`}>Document date</label>
         <input id={`edit-document-date-${document.id}`} className="input" type="date" min="1900-01-01" max="2100-12-31" value={date} onChange={(event) => setDate(event.target.value)} disabled={busy} />
+        </div>
+        <div className="medical-documents__edit-actions">
         <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save details"}</Button>
+        <Button variant="secondary" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button>
+        </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
-        {notice && <p role="status">{notice}</p>}
-      </form>
-    </details>
+      </form>}
+      {notice && <p role="status">{notice}</p>}
+    </div>
   );
 }
 
