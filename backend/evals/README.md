@@ -1,6 +1,8 @@
 # Health assistant evaluation
 
-This runner separates application validation from real-model evaluation. It uses synthetic cases only and does not change production prompts or guardrails.
+This runner separates application validation from real-model evaluation. The local suites use synthetic cases; HealthBench uses the official held-out dataset. The runner does not change production prompts or guardrails.
+
+The new [English HealthBench integration](./HEALTHBENCH.md) also supports a held-out subset of the official dataset, preserving its physician-written rubrics. Use `--suite healthbench` explicitly; dataset download and real provider setup are separate steps.
 
 `--pipeline-checks` exits unsuccessfully if any deterministic probe misses its expected outcome. This is a regression gate, not a model-accuracy certification.
 

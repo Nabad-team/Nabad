@@ -8,7 +8,7 @@ function selectCases(cases, args) {
   };
   const caseId = value("--case");
   const suite = value("--suite") || (caseId ? "all" : "baseline");
-  if (!["baseline", "advanced", "all"].includes(suite)) throw new Error("Choose baseline, advanced or all for --suite.");
+  if (!["baseline", "advanced", "healthbench", "all"].includes(suite)) throw new Error("Choose baseline, advanced, healthbench or all for --suite.");
   let selected = cases.filter((entry) => (suite === "all" || entry.suite === suite) && (!caseId || entry.id === caseId));
   if (!selected.length) throw new Error("No evaluation cases matched the selected suite and case.");
   const limit = value("--limit");
