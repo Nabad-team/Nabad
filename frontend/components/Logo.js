@@ -1,10 +1,11 @@
+import Link from "next/link";
 const TEAL = "#0f766e";
 
 // The Nabad logo: a pulse icon followed by the name.
 // The icon is drawn on a 32x32 grid (the viewBox), then scaled to `size` (2.25rem = 36px by default).
 export default function Logo({ size = "2.25rem", href = "/" }) {
   return (
-    <a
+    <Link
       href={href}
       style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: TEAL }}
     >
@@ -22,6 +23,6 @@ export default function Logo({ size = "2.25rem", href = "/" }) {
         />
       </svg>
       <span style={{ fontSize: "1.5rem", fontWeight: "bold", lineHeight: 1 }}>Nabad</span>
-    </a>
+    </Link>
   );
 }

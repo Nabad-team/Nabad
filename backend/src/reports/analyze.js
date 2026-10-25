@@ -1,5 +1,6 @@
 const { filterText } = require("../triage/ai/guardrails");
 const { LlmError } = require("../triage/ai/llmClient");
+const { numericValues, numbersAreGrounded, hasUnsafeAdvice } = require("./responseChecks");
 
 const URGENCIES = new Set(["emergency", "urgent", "soon", "routine", "unclear"]);
 const MAX_FINDINGS = 8;
@@ -17,6 +18,8 @@ Safety rules:
 - If the upload is not a written medical report, set documentType to other and choose unclear.
 - Otherwise use routine only when the report itself does not state urgency and the readable findings do not suggest time-sensitive care. If timing cannot be determined from the report, choose unclear and advise prompt clinician review.
 - Keep the user’s language where possible (English or Arabic). Be calm, direct, and concise.
+- Explain the connection between each quoted finding and its general meaning, without presenting a possible cause as a confirmed diagnosis. Use the report's own ranges; a missing range stays missing.
+- Keep result and reference fields exactly grounded in the report. If useful in an explanation, show a unit conversion as an explicit equivalence and verify the arithmetic. Matching units alone does not establish that results from different labs are clinically comparable.
 
 Return only a JSON object with this exact shape:
 {"documentType":"written_report|raw_medical_image|other|unclear","urgency":"emergency|urgent|soon|routine|unclear","summary":"short plain-language overview","findings":[{"name":"test or finding","sourceQuote":"short exact phrase copied from the report","result":"reported value or wording","reference":"reported reference range or not provided","explanation":"what it generally means, without diagnosis","followUp":"safe next step"}],"nextStep":"when and who to contact, based only on the report; say to confirm with the ordering clinician","uncertainties":["important limits in what could be read"]}
@@ -35,14 +38,6 @@ function normalized(value) {
   return String(value || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
-function numericValues(value) {
-  const ascii = String(value || "").normalize("NFKC").replace(/[٠-٩۰-۹]/g, (digit) => {
-    const code = digit.codePointAt(0);
-    return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
-  });
-  return ascii.replace(/,/g, ".").match(/\d+(?:\.\d+)?/g) || [];
-}
-
 function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
   let value;
   try {
@@ -56,33 +51,34 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
   }
   if (!value || typeof value !== "object" || Array.isArray(value) || !URGENCIES.has(value.urgency)) throw new ReportAnalysisError("invalid_response");
   if (value.documentType !== "written_report") throw new ReportAnalysisError("not_report");
-  const clean = (text, max, allowClinicalNumbers = false) => {
+  const clean = (text, max) => {
     if (typeof text !== "string" || text.length > max) throw new ReportAnalysisError("invalid_response");
-    const filtered = filterText(text, max, allowClinicalNumbers ? { ignore: ["medication_dose", "phone_number"] } : undefined);
+    if (hasUnsafeAdvice(text)) throw new ReportAnalysisError("unsafe_response");
+    const filtered = filterText(text, max, { ignore: ["medication_dose", "phone_number"] });
     if (!filtered.text || /\b(?:you are|the patient is) (?:completely )?(?:healthy|fine)|nothing (?:is )?wrong|no (?:doctor|medical) (?:review|care|visit) (?:is )?needed|(?:everything|all (?:of )?(?:the )?(?:results|tests|values|findings)|the results) (?:is|are|looks|seems) (?:completely )?(?:fine|normal|okay|within (?:the )?(?:normal|expected) range)|you(?:'re| are) all clear\b/i.test(filtered.text)) throw new ReportAnalysisError("unsafe_response");
     return filtered.text;
   };
   if (!Array.isArray(value.findings) || value.findings.length > MAX_FINDINGS || !Array.isArray(value.uncertainties) || value.uncertainties.length > 6) throw new ReportAnalysisError("invalid_response");
   const summary = clean(value.summary, 700);
   const nextStep = clean(value.nextStep, 700);
-  const reportNumbers = reportKind === "text" ? new Set(numericValues(reportText)) : null;
-  const requireReportedNumbers = (texts) => {
-    if (reportNumbers && texts.some((text) => numericValues(text).some((number) => !reportNumbers.has(number)))) throw new ReportAnalysisError("unsupported_quote");
+  const requireReportedNumbers = (texts, allowConversions = false) => {
+    if (reportKind === "text" && texts.some((text) => !numbersAreGrounded(text, reportText, { allowConversions }))) throw new ReportAnalysisError("unsupported_quote");
   };
   requireReportedNumbers([summary, nextStep]);
   const findings = value.findings.map((item) => {
     if (!item || typeof item !== "object") throw new ReportAnalysisError("invalid_response");
     const finding = {
       name: clean(item.name, 100),
-      sourceQuote: clean(item.sourceQuote, 240, true),
-      result: clean(item.result, 160, true),
-      reference: clean(item.reference || "The report does not provide a reference range.", 160, true),
+      sourceQuote: clean(item.sourceQuote, 240),
+      result: clean(item.result, 160),
+      reference: clean(item.reference || "The report does not provide a reference range.", 160),
       explanation: clean(item.explanation, 450),
       followUp: clean(item.followUp, 300),
     };
     if (reportKind === "text") {
       if (!normalized(reportText).includes(normalized(finding.sourceQuote))) throw new ReportAnalysisError("unsupported_quote");
-      requireReportedNumbers(Object.values(finding));
+      requireReportedNumbers([finding.name, finding.sourceQuote, finding.result, finding.reference]);
+      requireReportedNumbers([finding.explanation, finding.followUp], true);
     }
     return finding;
   });
@@ -125,7 +121,7 @@ async function analyzeReport({ report, question = "", client }) {
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });
-    const reply = await client.complete(messages, { maxTokens: 1800, reasoningEffort: "low" });
+    const reply = await client.complete(messages, { maxTokens: 2200, reasoningEffort: "medium" });
     const result = parseReportReply(reply, { reportText: report.text, reportKind: report.kind });
     if (report.partial) {
       result.urgency = result.urgency === "emergency" || result.urgency === "urgent" ? result.urgency : "unclear";

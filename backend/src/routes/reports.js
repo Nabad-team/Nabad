@@ -8,6 +8,7 @@ const { getLlmClient } = require("../triage/ai/llmClient");
 const { extractReport, ReportInputError } = require("../reports/extract");
 const { analyzeReport, ReportAnalysisError } = require("../reports/analyze");
 const { answerChat } = require("../reports/chat");
+const { getChatSafetyReply } = require("../reports/chatSafety");
 const { logEvent, errorDetails } = require("../logger");
 
 const router = express.Router();
@@ -117,9 +118,9 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
       if (!savedConversation) return res.status(404).json({ error: "Conversation not found." });
       if (savedConversation.messages.length + 2 > 80) return res.status(400).json({ error: "This saved conversation has reached its message limit. Start a new conversation." });
     }
+    const safetyReply = getChatSafetyReply(req.body?.question);
     const client = getLlmClient();
-    if (!client) throw new ReportAnalysisError("not_configured");
-    const report = req.body?.file ? await extractReport(req.body.file) : null;
+    const report = !safetyReply && req.body?.file ? await extractReport(req.body.file) : null;
     if (report?.kind === "image" && process.env.LLM_VISION_ENABLED !== "true") {
       return res.status(503).json({ error: "Photo reading is not enabled for the configured AI model. Try a searchable written report or ask without the photo." });
     }
@@ -138,7 +139,7 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
         messages: chatMessages(req.body.question, result),
       });
     }
-    logEvent("health_assistant_chat", { requestId, reason: "success", durationMs: Math.round(performance.now() - started) });
+    logEvent("health_assistant_chat", { requestId, reason: result.responseSource === "safety_rules" ? "safety_rules" : "success", durationMs: Math.round(performance.now() - started) });
     return res.json({ ...result, conversationId: String(savedConversation._id) });
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });

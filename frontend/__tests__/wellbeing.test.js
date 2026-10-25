@@ -9,10 +9,14 @@ const atLeast = (ml) => ({ type: "atLeast", ml });
 const atMost = (ml) => ({ type: "atMost", ml });
 
 describe("fluid wording", () => {
-  test("shows litres with one decimal place", () => {
-    expect(litresText(1250)).toBe("1.3 L");
+  test("shows litres without rounding away millilitres", () => {
+    expect(litresText(250)).toBe("0.25 L");
+    expect(litresText(1750)).toBe("1.75 L");
+    expect(waterCountText(250, atLeast(2000))).toBe("0.25 L of 2.0 L");
+    expect(waterGoalText(250, atLeast(2000))).toBe("1.75 L more to reach the goal.");
+    expect(litresText(1250)).toBe("1.25 L");
     expect(litresText(2000)).toBe("2.0 L");
-    expect(litresText(80)).toBe("0.1 L");
+    expect(litresText(80)).toBe("0.08 L");
     expect(litresText(0)).toBe("0.0 L");
   });
 
@@ -80,7 +84,7 @@ describe("weekly summaries", () => {
   test("averages only the days that were logged", () => {
     const summary = weekSummary([day("2026-10-06", 1500, 6), day("2026-10-07", 250, 7), day("2026-10-08"), day("2026-10-09", 1000)]);
     expect(summary.hasData).toBe(true);
-    expect(summary.water).toBe("Average fluids this week: 0.9 L a day, over 3 days logged.");
+    expect(summary.water).toBe("Average fluids this week: 0.917 L a day, over 3 days logged.");
     expect(summary.sleep).toBe("Average sleep this week: 6.5 hours, over 2 nights logged.");
     expect(averages([day("2026-10-06", 1500, 6), day("2026-10-07")])).toEqual({ waterDays: 1, sleepDays: 1, waterMl: 1500, sleepHours: 6 });
   });

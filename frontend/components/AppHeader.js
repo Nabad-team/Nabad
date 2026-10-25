@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/compat/router";
 import Logo from "./Logo";
 import Avatar from "./Avatar";
 import Button from "./ui/Button";
@@ -31,10 +33,11 @@ export const ACCOUNT_LINKS = [
   { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
 ];
 
-// The page we are on, for aria-current. Every link here is a full page load, so reading it once is enough.
+// Keep the current-page indicator in sync with client-side navigation.
 function useCurrentPath() {
+  const router = useRouter();
   const [path, setPath] = useState("");
-  useEffect(() => { setPath(window.location.pathname); }, []);
+  useEffect(() => { setPath(window.location.pathname); }, [router?.asPath]);
   return path;
 }
 
@@ -58,7 +61,7 @@ function NavLinks({ links, path, className, simplified = false, cards = false })
     <ul className={className}>
       {links.map(({ href, label, shortLabel, icon }) => (
         <li key={href}>
-          <a
+          <Link
             href={href}
             className={cards ? "app-nav__card" : undefined}
             aria-current={path === href ? "page" : undefined}
@@ -66,7 +69,7 @@ function NavLinks({ links, path, className, simplified = false, cards = false })
           >
             {cards && <NavIcon name={icon} />}
             <span>{simplified ? shortLabel : label}</span>
-          </a>
+          </Link>
         </li>
       ))}
     </ul>
@@ -135,7 +138,7 @@ export default function AppHeader() {
     <header className="site-header app-header">
       <div className="container container--wide app-header__bar">
         <Logo href={signedIn ? "/dashboard" : "/"} />
-        {!signedIn && <nav aria-label="Public"><a href="/providers">{providerText("title")}</a></nav>}
+        {!signedIn && <nav aria-label="Public"><Link href="/providers">{providerText("title")}</Link></nav>}
 
         {signedIn && (
           <div className="app-header__end">

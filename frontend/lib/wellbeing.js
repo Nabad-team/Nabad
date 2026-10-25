@@ -16,8 +16,8 @@ export const GOAL_ML = [100, 10000];
 // From this share of a limit on, the page gently says the limit is close.
 export const NEAR_LIMIT = 0.8;
 
-// 1250 -> "1.3 L" (always one decimal, so 2000 -> "2.0 L")
-export const litresText = (ml) => `${(ml / 1000).toFixed(1)} L`;
+// Keep millilitre precision: 250 -> "0.25 L", 1250 -> "1.25 L", 2000 -> "2.0 L".
+export const litresText = (ml) => `${(ml / 1000).toFixed(3).replace(/0{1,2}$/, "")} L`;
 // 250 -> "250 ml"
 export const mlText = (ml) => `${ml} ml`;
 // "1 hour", "7.5 hours"
@@ -65,7 +65,7 @@ export function goalText(goal) {
   return `${goal.type === "atMost" ? "Stay under" : "Drink at least"} ${litresText(goal.ml)} a day`;
 }
 
-// "1.3 L today" without a goal, "1.3 L of 2.0 L" with one, "1.3 L of the 1.5 L limit" with a limit.
+// "1.25 L today" without a goal, "1.25 L of 2.0 L" with one, "1.25 L of the 1.5 L limit" with a limit.
 export function waterCountText(totalMl, goal) {
   if (goal && goal.type === "atMost") return `${litresText(totalMl)} of the ${litresText(goal.ml)} limit`;
   if (goal) return `${litresText(totalMl)} of ${litresText(goal.ml)}`;

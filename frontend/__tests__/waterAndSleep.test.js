@@ -1,5 +1,5 @@
 // Automated tests for the "Water and sleep" page.
-import { render, screen, within, fireEvent } from "@testing-library/react";
+import { render, screen, within, fireEvent, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import WaterAndSleepPage from "../pages/water-and-sleep";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
@@ -7,12 +7,13 @@ import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import * as fake from "../test-utils/fakeWellbeingApi";
 import { todayString } from "../lib/dates";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
+import { addDrink } from "../lib/wellbeingApi";
 
 // Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
 jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
-jest.mock("../lib/wellbeingApi", () => require("../test-utils/fakeWellbeingApi"));
+jest.mock("../lib/wellbeingApi", () => ({ ...require("../test-utils/fakeWellbeingApi"), addDrink: jest.fn() }));
 // A fixed "today", so a run that crosses midnight can't have the page and the test disagree on the date.
 jest.mock("../lib/dates", () => ({ ...jest.requireActual("../lib/dates"), todayString: () => "2026-10-12" }));
 jest.mock("../components/SessionTimeout", () => ({
@@ -41,6 +42,7 @@ describe("Water and sleep page", () => {
     localStorage.clear();
     fakeProfileApi.resetFakeProfiles();
     fake.resetFakeWellbeing();
+    addDrink.mockReset().mockImplementation(fake.addDrink);
   });
 
   test("starts empty: nothing logged, no goal, no goal wording, an empty sleep form and an empty week", async () => {
@@ -56,13 +58,59 @@ describe("Water and sleep page", () => {
     expect(screen.queryByRole("figure")).not.toBeInTheDocument();
   });
 
+  test("updates a glass immediately, prevents duplicates and saves without reloading today or history", async () => {
+    let finish;
+    addDrink.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    fake.seedGoal("self", { type: "atLeast", ml: 2000 });
+    renderPage();
+    const glass = await screen.findByRole("button", { name: "Glass (250 ml)" });
+    fireEvent.click(glass);
+    expect(await count()).toHaveTextContent("0.25 L of 2.0 L");
+    expect(await count()).toHaveTextContent("1.75 L more to reach the goal.");
+    expect(glass).toBeDisabled();
+    fireEvent.click(glass);
+    expect(addDrink).toHaveBeenCalledTimes(1);
+    await act(async () => { finish(await fake.addDrink("self", TODAY, 250)); });
+    expect(glass).toBeEnabled();
+    expect(fake.calls.filter(([name]) => name === "getToday")).toHaveLength(1);
+    expect(fake.calls.filter(([name]) => name === "getHistory")).toHaveLength(1);
+    expect(screen.getByText(/Average fluids this week: 0.25 L a day/)).toBeInTheDocument();
+  });
+
+  test("restores the water total and chart if an immediate update fails to save", async () => {
+    let fail;
+    addDrink.mockImplementation(() => new Promise((resolve, reject) => { fail = reject; }));
+    renderPage();
+    const glass = await screen.findByRole("button", { name: "Glass (250 ml)" });
+    fireEvent.click(glass);
+    expect(await count()).toHaveTextContent("0.25 L today");
+    await act(async () => { fail(new Error("Could not save drink")); });
+    expect(await count()).toHaveTextContent("Nothing logged yet today");
+    expect(screen.getByText("Nothing logged this week yet.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not save drink");
+    expect(glass).toBeEnabled();
+  });
+
+  test("a slow drink response cannot change another profile's tracker", async () => {
+    let finish;
+    addDrink.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    const child = await fakeProfileApi.addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
+    fake.seedWater(child.id, TODAY, 500);
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Glass (250 ml)" }));
+    fireEvent.change(screen.getByLabelText("Active profile"), { target: { value: child.id } });
+    await waitFor(async () => expect(await count()).toHaveTextContent("0.5 L today"));
+    await act(async () => { finish(await fake.addDrink("self", TODAY, 250)); });
+    expect(await count()).toHaveTextContent("0.5 L today");
+  });
+
   test("logs a glass, a bottle and a custom amount in millilitres, shows litres and a timed log, and undoes the last", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Glass (250 ml)" }));
-    expect(await count()).toHaveTextContent("0.3 L today");
+    expect(await count()).toHaveTextContent("0.25 L today");
     await user.click(screen.getByRole("button", { name: "Bottle (500 ml)" }));
-    expect(await count()).toHaveTextContent("0.8 L today");
+    expect(await count()).toHaveTextContent("0.75 L today");
 
     await user.click(screen.getByRole("button", { name: "Custom amount" }));
     expect(screen.getByRole("button", { name: "Custom amount" })).toHaveAttribute("aria-expanded", "true");
@@ -73,7 +121,7 @@ describe("Water and sleep page", () => {
     await user.clear(amount);
     await user.type(amount, "330");
     await user.click(screen.getByRole("button", { name: "Add drink" }));
-    expect(await count()).toHaveTextContent("1.1 L today");
+    expect(await count()).toHaveTextContent("1.08 L today");
     expect(screen.queryByLabelText("Amount (ml)")).not.toBeInTheDocument();
 
     expect(fake.calls.filter(([name]) => name === "addDrink")).toEqual([
@@ -86,7 +134,7 @@ describe("Water and sleep page", () => {
     const undo = screen.getByRole("button", { name: "Undo last drink" });
     expect(undo).toHaveAccessibleDescription(/^330 ml at \d{2}:\d{2}$/);
     await user.click(undo);
-    expect(await count()).toHaveTextContent("0.8 L today");
+    expect(await count()).toHaveTextContent("0.75 L today");
     expect(logItems()).toHaveLength(2);
     expect(fake.calls).toContainEqual(["undoLastDrink", "self", TODAY]);
     expect(fake.totalOn("self", TODAY)).toBe(750);
@@ -114,8 +162,8 @@ describe("Water and sleep page", () => {
 
     await user.clear(goal); await user.type(goal, "2");
     await user.click(screen.getByRole("button", { name: "Save goal" }));
-    expect(await count()).toHaveTextContent("0.8 L of 2.0 L");
-    expect(await count()).toHaveTextContent("1.3 L more to reach the goal.");
+    expect(await count()).toHaveTextContent("0.75 L of 2.0 L");
+    expect(await count()).toHaveTextContent("1.25 L more to reach the goal.");
     expect(screen.getByText("Daily goal: drink at least 2.0 L a day")).toBeInTheDocument();
     expect(fake.calls).toContainEqual(["setWaterGoal", "self", { type: "atLeast", ml: 2000 }]);
 
@@ -127,12 +175,12 @@ describe("Water and sleep page", () => {
     await user.clear(screen.getByLabelText("Amount a day"));
     await user.type(screen.getByLabelText("Amount a day"), "750");
     await user.click(screen.getByRole("button", { name: "Save goal" }));
-    expect(await count()).toHaveTextContent("0.8 L of 0.8 L");
+    expect(await count()).toHaveTextContent("0.75 L of 0.75 L");
     expect(await count()).toHaveTextContent("Goal reached for today.");
     expect(fake.calls).toContainEqual(["setWaterGoal", "self", { type: "atLeast", ml: 750 }]);
 
     await user.click(screen.getByRole("button", { name: "Remove goal" }));
-    expect(await count()).toHaveTextContent("0.8 L today");
+    expect(await count()).toHaveTextContent("0.75 L today");
     expect(await count()).not.toHaveTextContent(/goal/);
     expect(fake.calls).toContainEqual(["clearWaterGoal", "self"]);
   });
@@ -163,7 +211,7 @@ describe("Water and sleep page", () => {
     await user.click(screen.getByRole("button", { name: "Glass (250 ml)" }));
     expect(await count()).toHaveTextContent("You've reached the daily limit.");
     await user.click(screen.getByRole("button", { name: "Glass (250 ml)" }));
-    expect(await count()).toHaveTextContent("1.8 L of the 1.5 L limit");
+    expect(await count()).toHaveTextContent("1.75 L of the 1.5 L limit");
     expect(await count()).toHaveTextContent("You're over the daily limit for today.");
     noNudge();
   });
@@ -288,14 +336,14 @@ describe("Water and sleep page", () => {
     const facts = section.querySelector("dl").textContent;
     expect(facts).toContain("Period29 September 2026 to 12 October 2026");
     expect(facts).toContain("Daily fluid goalStay under 1.5 L a day");
-    expect(facts).toContain("Average fluids1.0 L a day (2 of 14 days logged)");
+    expect(facts).toContain("Average fluids0.975 L a day (2 of 14 days logged)");
     expect(facts).toContain("Average sleep6.7 hours a night (2 of 14 nights logged)");
 
     const table = within(section).getByRole("table", { name: "Fluids and sleep, day by day (newest first)" });
     expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Date", "Fluids", "Sleep", "Bedtime to wake-up", "Sleep quality", "Note"]);
     const rows = within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.querySelectorAll("th, td"), (cell) => cell.textContent));
     expect(rows).toHaveLength(14);
-    expect(rows[0]).toEqual(["Mon 12 Oct", "0.8 L", "Not logged", "", "", ""]);
+    expect(rows[0]).toEqual(["Mon 12 Oct", "0.75 L", "Not logged", "", "", ""]);
     expect(rows[1]).toEqual(["Sun 11 Oct", "Not logged", "7.3 hours", "23:40 to 07:00", "Well", "Woke at 3"]);
     expect(rows[13]).toEqual(["Tue 29 Sep", "1.2 L", "Not logged", "", "", ""]);
     expect(within(section).getByText(/Self-reported in Nabad, not measured by a clinician\. Made on 12 October 2026\./)).toBeInTheDocument();
@@ -316,7 +364,7 @@ describe("Water and sleep page", () => {
     fake.seedSleep(child.id, TODAY, 10, 5);
     renderPage();
 
-    expect(await count()).toHaveTextContent("1.3 L today");
+    expect(await count()).toHaveTextContent("1.25 L today");
     await user.selectOptions(screen.getByLabelText("Active profile"), child.id);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Water and sleep for Sami Haddad" })).toBeInTheDocument();
@@ -325,7 +373,7 @@ describe("Water and sleep page", () => {
     expect(within(await sleepSection()).getByText("10 hours")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Glass (250 ml)" }));
-    expect(await count()).toHaveTextContent("0.8 L of 1.0 L");
+    expect(await count()).toHaveTextContent("0.75 L of 1.0 L");
     expect(fake.calls).toContainEqual(["addDrink", child.id, TODAY, 250]);
     expect(fake.totalOn("self", TODAY)).toBe(1250);
 
@@ -334,7 +382,7 @@ describe("Water and sleep page", () => {
 
     await user.selectOptions(screen.getByLabelText("Active profile"), "self");
     expect(await screen.findByRole("heading", { level: 1, name: "Water and sleep" })).toBeInTheDocument();
-    expect(await count()).toHaveTextContent("1.3 L today");
+    expect(await count()).toHaveTextContent("1.25 L today");
     expect(within(await sleepSection()).getByLabelText("Hours slept")).toBeInTheDocument();
     expect(screen.queryByRole("table", { name: /day by day \(newest first\)/ })).not.toBeInTheDocument();
   });
