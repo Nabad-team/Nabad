@@ -13,11 +13,16 @@
 // model gets the same summary the user sees on My health as background. If that summary looks like it is
 // trying to give the model orders, it is left out of the prompt; the rules still use the facts.
 //
+// SCRUM-280: follow-up questions come one round at a time (adaptiveFollowUps.js). The model picks the next
+// approved question by id, or says it is confident; the planner checks the pick and keeps the safety questions.
+// When the model isn't used for a round, every remaining approved question is shown at once, as before.
+//
 // The function never throws because of the model. It only throws AnswerError (from followUps.js)
 // when the follow-up answers themselves are invalid, which the route turns into a 400.
 
 const { classifyUrgency, LEVELS } = require("../urgency");
-const { getFollowUpQuestions, refineUrgency, SPECIFIC, GENERAL } = require("../followUps");
+const { refineUrgency, SPECIFIC, GENERAL } = require("../followUps");
+const { planFollowUps, questionsForModel, readFollowUpState, MAX_ROUNDS } = require("../adaptiveFollowUps");
 const { emergencyRoute } = require("../careGuidance");
 const { chooseCareTypeId } = require("../careTypes");
 const { buildMessages } = require("./prompt");
@@ -48,16 +53,27 @@ function describeAnswers(answers, health = null) {
 // client: from llmClient.getLlmClient(), or null when AI triage is off.
 // answers: optional follow-up answers, as for POST /api/triage/refine.
 // health: from healthContext.readHealth(), or null when there is no profile or it couldn't be loaded.
-async function assessWithAi(symptoms, { client = null, answers, location, priorConversations = [], health = null } = {}) {
+// followUpState (SCRUM-280): what the page sent back from the last result ({ round, asked }), or nothing.
+async function assessWithAi(symptoms, { client = null, answers, location, priorConversations = [], health = null, followUpState } = {}) {
   const hasAnswers = answers !== undefined && answers !== null;
   // The safety floor. refineUrgency validates the answers and throws AnswerError if they are wrong.
   // With a profile, refineUrgency also counts the risk factors My health shows, even before any answer.
   const floor = hasAnswers || health ? refineUrgency(symptoms, hasAnswers ? answers : {}, { health }) : classifyUrgency(symptoms);
   // SCRUM-279: what the page says about My health. raisedBy: the reasons it made the result more urgent.
   const healthProfile = { used: Boolean(health), raisedBy: floor.healthRaised || [] };
+  // SCRUM-280: what the follow-up questions depend on. The level is added once it is known.
+  const followUpInput = {
+    symptoms,
+    matchedRuleIds: floor.matchedRuleIds,
+    health,
+    answers: hasAnswers ? answers : {},
+    state: readFollowUpState(followUpState),
+  };
 
-  const result = (level, { reasons, careType, careTypeId, selfCare = [], ai }) => {
+  // modelChoice: { nextQuestionId } when the model was used, undefined when the rules answered alone.
+  const result = (level, { reasons, careType, careTypeId, selfCare = [], ai, modelChoice }) => {
     const { label, timeframe, action } = LEVELS[level];
+    const followUp = planFollowUps({ ...followUpInput, level, modelChoice });
     return {
       level,
       label,
@@ -74,8 +90,10 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
       ruleLevel: floor.level,
       ai,
       healthProfile,
-      // Questions are only offered before the user has answered, and never in an emergency.
-      followUpQuestions: hasAnswers ? [] : getFollowUpQuestions(symptoms, { level, matchedRuleIds: floor.matchedRuleIds }, health),
+      // Never in an emergency. One at a time while the model picks them, at most 3 rounds (SCRUM-280).
+      followUpQuestions: followUp.questions,
+      // The page sends this back with the next answers.
+      followUpState: followUp.state,
       ...(level === "emergency" ? { emergency: emergencyRoute(location || {}) } : {}),
     };
   };
@@ -99,6 +117,7 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
       answered: describeAnswers(answers, health),
       priorConversations,
       healthSummary,
+      followUp: { ...questionsForModel({ ...followUpInput, level: floor.level }), maxRounds: MAX_ROUNDS },
     });
     reply = parseModelReply(await client.complete(messages));
   } catch (error) {
@@ -116,7 +135,10 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
 
   // The model said less serious than the rules: its explanation describes a milder situation and
   // would contradict the level shown, so the rules' reasons are used instead.
-  if (applied === "model_lower_ignored") return result(level, { reasons: floor.reasons, ai });
+  // SCRUM-280: the model's pick of the next question (checked in adaptiveFollowUps.js).
+  // When the model rated it less serious than the rules, its "I'm confident" isn't trusted either.
+  const modelChoice = { nextQuestionId: reply.nextQuestionId, trustConfident: applied !== "model_lower_ignored" };
+  if (applied === "model_lower_ignored") return result(level, { reasons: floor.reasons, ai, modelChoice });
 
   // Same level: the model's explanation first, then the rules' (unless the rules matched nothing).
   // Model raised the level: only its reasons, as the rules' reasons are for a lower level.
@@ -128,6 +150,7 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
     careTypeId: reply.careTypeId,
     selfCare: reply.selfCare,
     ai,
+    modelChoice,
   });
 }
 

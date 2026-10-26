@@ -627,7 +627,9 @@ describe("Symptoms Page", () => {
         "fever-temperature": "39.5-plus",
       },
       "profile-1",
-      "check-test"
+      "check-test",
+      // SCRUM-280: the last result's followUpState (this mocked result has none).
+      null
     );
 
     expect(

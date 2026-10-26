@@ -100,7 +100,7 @@ describe("describing symptoms in your own words", () => {
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
     await user.click(await screen.findByLabelText("Mild"));
     await user.click(screen.getByRole("button", { name: "Update my urgency" }));
-    await waitFor(() => expect(assessUrgencyWithAnswers).toHaveBeenCalledWith("i feel feverish", { severity: "mild" }, "profile-1", expect.any(String)));
+    await waitFor(() => expect(assessUrgencyWithAnswers).toHaveBeenCalledWith("i feel feverish", { severity: "mild" }, "profile-1", expect.any(String), null)); // SCRUM-280: no followUpState in this mock
     // The answers belong to the same check, so the care circle is alerted at most once for it.
     expect(assessUrgencyWithAnswers.mock.calls.at(-1)[3]).toBe(assessUrgency.mock.calls.at(-1)[2]);
   });

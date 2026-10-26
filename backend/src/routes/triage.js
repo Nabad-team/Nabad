@@ -3,7 +3,9 @@
 // POST /api/triage/classify  { symptoms }           -> first result + followUpQuestions
 // POST /api/triage/refine    { symptoms, answers }  -> final result after the answers
 //
-// POST /api/triage/ai-assess { symptoms, answers?, location? } -> AI triage (SCRUM-180)
+// POST /api/triage/ai-assess { symptoms, answers?, followUpState?, location? } -> AI triage (SCRUM-180)
+//   SCRUM-280: follow-up questions come one round at a time, at most 3. Send back every answer so far and
+//   the result's followUpState; the next result has the next question, or none when it is done.
 //
 // Every result has "careTypeId" (SCRUM-278): a fixed id for the kind of care, which the
 // "Find care" link turns into provider-directory filters. See triage/careTypes.js.
@@ -306,6 +308,9 @@ router.post(
             priorConversations,
 
             health,
+
+            followUpState:
+              req.body?.followUpState,
           }
         );
 
@@ -334,6 +339,10 @@ router.post(
 
           healthRaised:
             result.healthProfile.raisedBy.length > 0 || undefined,
+
+          // SCRUM-280: why these follow-up questions (e.g. "model_pick", "model_confident"). Never the answers.
+          followUp:
+            result.followUpState.decision,
 
           durationMs:
             Math.round(

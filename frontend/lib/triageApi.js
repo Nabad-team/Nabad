@@ -25,5 +25,7 @@ export const assessUrgency = (symptoms, profileId, checkId) =>
   request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, checkId }) });
 
 // SCRUM-125: the same assessment again with the follow-up answers ({ questionId: optionValue }).
-export const assessUrgencyWithAnswers = (symptoms, answers, profileId, checkId) =>
-  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, answers, checkId }) });
+// SCRUM-280: answers are every answer so far, and followUpState is the last result's followUpState, so the
+// server knows which round this is and what was already asked. The next result has the next question, if any.
+export const assessUrgencyWithAnswers = (symptoms, answers, profileId, checkId, followUpState) =>
+  request(profilePath(profileId), { method: "POST", body: JSON.stringify({ symptoms, answers, checkId, followUpState }) });
