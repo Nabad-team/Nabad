@@ -107,6 +107,16 @@ export default function SymptomsPage() {
     setRefining,
   ] = useState(false);
 
+  // SCRUM-280: questions come one round at a time. Every answer so far is sent each round, with the
+  // state the server gave back (which round, what was asked).
+  const [
+    followUpState,
+    setFollowUpState,
+  ] = useState(null);
+
+  const answersSoFarRef =
+    useRef({});
+
   const [
     assessmentCount,
     setAssessmentCount,
@@ -331,6 +341,8 @@ export default function SymptomsPage() {
     setUrgency(null);
     setEmergencyContact(null);
     setFollowUps([]);
+    setFollowUpState(null);
+    answersSoFarRef.current = {};
 
 
     if (!activeProfile) {
@@ -427,6 +439,11 @@ export default function SymptomsPage() {
           []
       );
 
+      setFollowUpState(
+        result.followUpState ||
+          null
+      );
+
 
       // Keep the description so
       // follow-up answers can refine it.
@@ -461,6 +478,8 @@ export default function SymptomsPage() {
   }
 
 
+  // answers: this round's answers. The server gets every answer so far; the saved conversation gets only
+  // this round's, so no answer is written twice.
   async function handleFollowUpSubmit(
     answers
   ) {
@@ -469,13 +488,22 @@ export default function SymptomsPage() {
     setRefining(true);
 
     try {
+      const allAnswers = {
+        ...answersSoFarRef.current,
+        ...answers,
+      };
+
       const updatedResult =
         await assessUrgencyWithAnswers(
           lastDescription,
-          answers,
+          allAnswers,
           activeProfile.id,
-          checkIdRef.current
+          checkIdRef.current,
+          followUpState
         );
+
+      answersSoFarRef.current =
+        allAnswers;
 
       setUrgency(
         updatedResult
@@ -492,7 +520,16 @@ export default function SymptomsPage() {
         setHistory((records) => records.map((item) => item.id === updated.id ? updated : item));
       }
 
-      setFollowUps([]);
+      // The next round's question, or none when the check is done.
+      setFollowUps(
+        updatedResult.followUpQuestions ||
+          []
+      );
+
+      setFollowUpState(
+        updatedResult.followUpState ||
+          null
+      );
     } catch (err) {
       console.error(err);
 
@@ -712,11 +749,12 @@ export default function SymptomsPage() {
 
 
       <FollowUpQuestions
-        key={
-          assessmentCount
-        }
+        key={`${assessmentCount}-${followUpState?.round ?? 0}`}
         questions={
           followUps
+        }
+        progress={
+          followUpState
         }
         onSubmit={
           handleFollowUpSubmit

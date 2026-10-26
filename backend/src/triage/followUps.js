@@ -238,4 +238,5 @@ function refineUrgency(description, answers, { health = null } = {}) {
   };
 }
 
-module.exports = { getFollowUpQuestions, refineUrgency, AnswerError, SPECIFIC, GENERAL, MAX_SPECIFIC };
+// selectQuestions and toPublic: also used by adaptiveFollowUps.js (SCRUM-280), which asks them one at a time.
+module.exports = { getFollowUpQuestions, refineUrgency, selectQuestions, toPublic, AnswerError, SPECIFIC, GENERAL, MAX_SPECIFIC };

@@ -310,6 +310,22 @@ test("routine and soon results alert nobody, and only active members are alerted
   assert.equal(await Notification.countDocuments({ owner: other.rana.user._id, type: "caregiver_urgent" }), 0);
 });
 
+// SCRUM-280: follow-up questions now come in up to 3 rounds, each a new request with the same checkId.
+test("a check answered over several rounds still alerts once", async () => {
+  const { rana, karim } = await circle();
+  const body = { symptoms: "I have a fever", checkId: "check-rounds-1" };
+  const first = await check(rana, body);
+  assert.equal(first.body.level, "soon");
+  const second = await check(rana, { ...body, answers: { "fever-temperature": "39.5-plus" }, followUpState: first.body.followUpState });
+  assert.equal(second.body.level, "urgent");
+  await eventually(async () => (await Notification.countDocuments({ owner: karim.user._id })) === 1);
+  const third = await check(rana, { ...body, answers: { "fever-temperature": "39.5-plus", severity: "severe" }, followUpState: second.body.followUpState });
+  assert.equal(third.body.level, "urgent");
+  await settle();
+  assert.equal(await Notification.countDocuments({ owner: karim.user._id }), 1);
+  assert.equal(sent.length, 1, "and one email");
+});
+
 test("one alert per check: the same check and its follow-up answers alert once", async () => {
   const { rana, karim } = await circle();
   await check(rana, { symptoms: EMERGENCY, checkId: "check-dedupe-1" });

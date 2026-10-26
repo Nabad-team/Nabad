@@ -14,6 +14,8 @@
 //     reason. Anything else is rejected and the rules answer alone.
 //   - filterText: drops any sentence with a medicine dose, a phone number or link (a made-up
 //     emergency number is dangerous), a certain diagnosis, or false reassurance.
+//   - nextQuestionId (SCRUM-280): only read as an id or null here; adaptiveFollowUps.js checks it is one of the
+//     approved questions offered, and ignores it otherwise.
 //   - applySafetyFloor: the final level is the MORE serious of the rules' level and the model's.
 //     The model can raise the urgency, never lower it, so it can never hide a red flag.
 
@@ -111,8 +113,20 @@ function extractJson(raw) {
   }
 }
 
+// SCRUM-280: the follow-up question the model picks. null when it says it is confident (also "null" or "none"
+// as text); undefined when it is missing or isn't shaped like an id. It never rejects the whole reply.
+const QUESTION_ID = /^[a-z0-9-]{1,40}$/;
+function readNextQuestionId(value) {
+  if (value === null) return null;
+  if (typeof value !== "string") return undefined;
+  const id = value.trim().toLowerCase();
+  if (id === "null" || id === "none") return null;
+  return QUESTION_ID.test(id) ? id : undefined;
+}
+
 // Turns the model's raw reply into a checked result, or throws GuardrailError.
-// Returns { level, reasons, careType, careTypeId, selfCare, removed } where removed lists the dropped sentences' reasons.
+// Returns { level, reasons, careType, careTypeId, selfCare, nextQuestionId, removed } where removed lists the
+// dropped sentences' reasons.
 function parseModelReply(raw) {
   const value = extractJson(raw);
   const level = typeof value.level === "string" ? value.level.trim().toLowerCase() : "";
@@ -130,7 +144,9 @@ function parseModelReply(raw) {
   const careTypeId = isCareTypeId(careTypeIdText) ? careTypeIdText : null;
   if (value.careTypeId !== undefined && value.careTypeId !== null && !careTypeId) removed.push("unknown_care_type_id");
 
-  return { level, reasons, careType: careTypeResult.text, careTypeId, selfCare, removed };
+  // Only present when the model gave one, so replies without it look exactly as before.
+  const nextQuestionId = readNextQuestionId(value.nextQuestionId);
+  return { level, reasons, careType: careTypeResult.text, careTypeId, selfCare, ...(nextQuestionId !== undefined ? { nextQuestionId } : {}), removed };
 }
 
 // ---------- Combining with the rules ----------
