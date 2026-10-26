@@ -14,6 +14,9 @@
 //
 // All require a signed-in user. The server is stateless: /refine classifies the symptoms
 // again itself instead of trusting a level sent by the browser.
+// SCRUM-279: /ai-assess reads the person's My health profile (the active profile: the user's own or a linked
+// one), so the rules count its risk factors, the questions skip what it already says, and the AI gets its summary.
+//
 // All three urgency results include "explanation": why this was recommended, in plain language (SCRUM-130).
 
 const express = require("express");
@@ -64,6 +67,14 @@ const {
   alertCareCircleInBackground,
 } = require("../careCircle");
 
+const {
+  loadHealthProfile,
+} = require("../healthProfile");
+
+const {
+  readHealth,
+} = require("../triage/healthContext");
+
 
 const router = express.Router();
 
@@ -90,6 +101,18 @@ const aiLimiter = rateLimit({
 
 const DISCLAIMER =
   "This is guidance, not a diagnosis. If you think it is an emergency, call 140 now.";
+
+
+// SCRUM-279: the person's My health profile for triage, or null. A symptom check must never fail because of it:
+// if it can't be loaded, triage goes on without it, and the log says so (never with any health data).
+async function healthForTriage(req) {
+  try {
+    return readHealth(await loadHealthProfile(req.userId, req.profileId));
+  } catch {
+    logEvent("triage_health_profile_unavailable", { requestId: req.requestId });
+    return null;
+  }
+}
 
 
 // Returns an error message, or null if the symptom text is acceptable.
@@ -255,10 +278,13 @@ router.post(
       performance.now();
 
     try {
-      const previousChecks = await SymptomRecord.find({
-        owner: req.userId,
-        profileId: req.profileId,
-      }).sort({ createdAt: -1 }).limit(3).lean();
+      const [previousChecks, health] = await Promise.all([
+        SymptomRecord.find({
+          owner: req.userId,
+          profileId: req.profileId,
+        }).sort({ createdAt: -1 }).limit(3).lean(),
+        healthForTriage(req),
+      ]);
       const priorConversations = previousChecks.reverse().map((record) => ({
         symptoms: record.description,
         messages: (record.conversation || []).slice(-6).map(({ role, content }) => ({ role, content })),
@@ -278,6 +304,8 @@ router.post(
               req.body?.location,
 
             priorConversations,
+
+            health,
           }
         );
 
@@ -299,6 +327,13 @@ router.post(
           // missing rule). Only this yes/no is logged, never what the user wrote.
           ruleGap:
             result.ai.ruleGap || undefined,
+
+          // SCRUM-279: whether My health was used and made it more urgent. Yes/no only, never the facts.
+          healthProfile:
+            health ? "used" : "none",
+
+          healthRaised:
+            result.healthProfile.raisedBy.length > 0 || undefined,
 
           durationMs:
             Math.round(

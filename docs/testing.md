@@ -23,6 +23,10 @@ The triage rules in [backend/src/triage/urgency.js](../backend/src/triage/urgenc
 
 When the AI finds an emergency the rules missed, the `triage_ai` log line has `"ruleGap": true` (only that flag, never the symptoms). Each one is a possible missing rule. To close a gap: add the phrase to a rule in `urgency.js` (and everyday wording to `everydayWording.js` if people say it differently), then add a sentence to `AUDIT` in the audit test. Rules use commonly published red flags and must be reviewed by the team's clinical/product owner before release.
 
+### Triage with My health (SCRUM-279)
+
+`/api/triage/ai-assess` reads the active profile's My health ([backend/src/healthProfile.js](../backend/src/healthProfile.js)) through [backend/src/triage/healthContext.js](../backend/src/triage/healthContext.js). A pregnancy, an age under 3 months or over 65, or a long-term condition raises the rules one step (never past urgent), exactly like answering "Yes" to the risk question, and that question then isn't asked. The AI also gets the My health summary as background. [backend/tests/healthAwareTriage.test.js](../backend/tests/healthAwareTriage.test.js) needs no database; [backend/tests/healthAwareTriageEndpoint.test.js](../backend/tests/healthAwareTriageEndpoint.test.js) runs the real route with real My health records. The `triage_ai` log line says `"healthProfile": "used"` or `"none"` and `"healthRaised": true` when it made the result more urgent, never what it says.
+
 ## End-to-end (Selenium)
 
 The suite was written by Leen El Baba. It drives a real Chrome against a throwaway copy of the app from [docker-compose.yml](../docker-compose.yml), never production.

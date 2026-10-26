@@ -5,6 +5,7 @@
 //   summary       one sentence: what we suggest and the main reason
 //   triggers      the user's own words that led to the result ({ words: [...], meaning })
 //   changedBy     follow-up answers that made the result more urgent
+//   fromMyHealth  what My health shows that made the result more urgent (SCRUM-279), e.g. a pregnancy
 //   notCounted    warning signs the user said they do NOT have, so they can see nothing was misread
 //   watchFor      when to get help sooner (or, for an emergency, not to wait)
 //   basedOn       what the result was based on: the safety rules, the answers, an AI check
@@ -97,7 +98,7 @@ function findChangedBy(symptoms, answers, initial) {
   });
 }
 
-function describeBasis({ ai, hasAnswers }) {
+function describeBasis({ ai, hasAnswers, usedHealth }) {
   const parts = [];
   if (ai?.used) {
     parts.push("Nabad's safety rules and an AI check of your description. The AI can only make the advice more cautious, never less.");
@@ -111,6 +112,8 @@ function describeBasis({ ai, hasAnswers }) {
     if (ai.reason === "emergency_rule") parts.push("Because this may be an emergency, we didn't wait for an AI check.");
     else if (ai.reason !== "not_configured") parts.push("The AI check wasn't available this time.");
   }
+  // SCRUM-279
+  if (usedHealth) parts.push("What you recorded in My health was taken into account too.");
   return parts.join(" ");
 }
 
@@ -123,6 +126,9 @@ function explainUrgency({ symptoms, result, answers }) {
   const changedBy = findChangedBy(symptoms, answers, initial);
   const ai = result?.ai;
   const aiRaised = ai?.used && ai.guardrails?.[0] === "model_raised";
+  // SCRUM-279: My health made the safety rules one step more urgent. Not shown when the AI raised it further,
+  // since the final level then comes from the AI's reasons.
+  const fromMyHealth = aiRaised ? [] : (result?.healthProfile?.raisedBy || []);
 
   const quoted = (items) => {
     const shown = items.slice(0, MAX_QUOTED_IN_SUMMARY).map(quote);
@@ -133,6 +139,8 @@ function explainUrgency({ symptoms, result, answers }) {
   let because;
   if (aiRaised) because = "an AI check of your description found signs that need quicker care";
   else if (changedBy.length) because = `of your ${changedBy.length === 1 ? "answer" : "answers"} ${quoted(changedBy.map((c) => c.answer))}`;
+  else if (fromMyHealth.length && triggers.length) because = `you mentioned ${quoted(triggers.flatMap((t) => t.words))}, and My health shows a reason to check it sooner`;
+  else if (fromMyHealth.length) because = "My health shows a reason to check your symptoms sooner";
   else if (triggers.length) because = `you mentioned ${quoted(triggers.flatMap((t) => t.words))}`;
   else if (ai?.used) because = "of how an AI check read your description";
   else because = "nothing you described matched a known warning sign";
@@ -141,9 +149,10 @@ function explainUrgency({ symptoms, result, answers }) {
     summary: `We suggest ${RECOMMENDATION[level]} because ${because}.`,
     triggers,
     changedBy,
+    fromMyHealth,
     notCounted: findNotCounted(text, initial.understood),
     watchFor: WATCH_FOR[level],
-    basedOn: describeBasis({ ai, hasAnswers: Boolean(answers && Object.keys(answers).length) }),
+    basedOn: describeBasis({ ai, hasAnswers: Boolean(answers && Object.keys(answers).length), usedHealth: Boolean(result?.healthProfile?.used) }),
   };
 }
 

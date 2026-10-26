@@ -63,5 +63,6 @@ There is one triage engine: the safety rules in `backend/src/triage/urgency.js` 
 4. "Runny nose and sneezing" returns a routine result with self-care guidance; urgent and soon results never show self-care.
 5. Empty, non-text, and overlong symptom descriptions are rejected with clear validation messages.
 6. The AI notice shows under the symptom box, and "How this works" opens the "AI in the symptom check" section of the privacy policy. Check it is still true for the model set on Render.
+7. SCRUM-279, My health: with a pregnancy, an age over 65 or a long-term condition saved in My health, "runny nose" returns "See a doctor soon", the explanation lists it under "From My health:", and the pregnant / age / long-term illness question is not asked. With age and "not pregnant" saved and no condition, that question asks only about a long-term illness or weak immune system. A check for a linked profile (for example a baby under 3 months) uses that person's My health, never the account owner's.
 
 Do not approve a release containing triage or routing changes while any corresponding scenario is blocked or failing.

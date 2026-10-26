@@ -5,6 +5,7 @@
 //   - the one-sentence summary (always shown, also in simplified mode)
 //   - what the user told us that led to it, and what each thing can mean
 //   - the follow-up answers that made it more urgent
+//   - what My health shows that made it more urgent (SCRUM-279)
 //   - warning signs the user said they don't have, so they can spot a misreading
 //   - when to get help sooner (always shown: it is the safety advice)
 //   - what the result was based on
@@ -19,7 +20,7 @@ function joinList(items) {
 
 export default function UrgencyExplanation({ explanation, isEmergency = false, simplified = false }) {
   if (!explanation?.summary) return null;
-  const { summary, triggers = [], changedBy = [], notCounted = [], watchFor = [], basedOn } = explanation;
+  const { summary, triggers = [], changedBy = [], fromMyHealth = [], notCounted = [], watchFor = [], basedOn } = explanation;
 
   return (
     <div className="urgency__explanation">
@@ -48,6 +49,15 @@ export default function UrgencyExplanation({ explanation, isEmergency = false, s
                 {change.question} You answered <strong>{quote(change.answer)}</strong>. {change.effect}
               </li>
             ))}
+          </ul>
+        </>
+      )}
+
+      {!simplified && fromMyHealth.length > 0 && (
+        <>
+          <p className="urgency__label"><strong>From My health:</strong></p>
+          <ul>
+            {fromMyHealth.map((reason) => <li key={reason}>{reason}</li>)}
           </ul>
         </>
       )}
