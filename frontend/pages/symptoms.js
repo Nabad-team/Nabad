@@ -601,8 +601,8 @@ export default function SymptomsPage() {
           {/* Tells the user where their words go. Keep it true for the model set in LLM_* on Render. */}
           <p className="field__hint symptoms-ai-notice">
             {simplified
-              ? "Nabad's safety rules check this first. Then it is sent over an encrypted connection to Google's Gemini AI service to help check how urgent it is. Emergencies are not sent. Nabad does not keep it in its logs."
-              : "Your description is checked by Nabad's safety rules first, then sent over an encrypted connection to Google's Gemini AI service to help assess urgency. Emergencies are not sent to the AI. Nabad doesn't write your description to its logs."}{" "}
+              ? "Nabad's safety rules check this first, using what you saved in My health. Then it is sent over an encrypted connection to Google's Gemini AI service, with your My health summary, to help check how urgent it is. Emergencies are not sent. Nabad does not keep it in its logs."
+              : "Your description is checked by Nabad's safety rules first, using what you saved in My health, then sent over an encrypted connection to Google's Gemini AI service to help assess urgency, together with your My health summary. Emergencies are not sent to the AI. Nabad doesn't write your description to its logs."}{" "}
             <a href="/privacy#ai-symptom-check">How this works</a>
           </p>
 

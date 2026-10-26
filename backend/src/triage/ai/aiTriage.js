@@ -8,6 +8,11 @@
 //      The user always gets an answer; ai.reason says why the model was not used.
 //   4. Otherwise the model's level is combined with the floor: the more serious one wins.
 //
+// SCRUM-279: with the person's My health profile ("health", from healthContext.readHealth()), the safety
+// floor counts its risk factors (followUps.js), the risk question asks only what it doesn't say, and the
+// model gets the same summary the user sees on My health as background. If that summary looks like it is
+// trying to give the model orders, it is left out of the prompt; the rules still use the facts.
+//
 // The function never throws because of the model. It only throws AnswerError (from followUps.js)
 // when the follow-up answers themselves are invalid, which the route turns into a 400.
 
@@ -18,6 +23,7 @@ const { chooseCareTypeId } = require("../careTypes");
 const { buildMessages } = require("./prompt");
 const { LlmError } = require("./llmClient");
 const { GuardrailError, cleanSymptoms, detectPromptInjection, parseModelReply, applySafetyFloor } = require("./guardrails");
+const { riskQuestionText } = require("../healthContext");
 
 // Shown when the model is not used or its care type does not fit the final level.
 const DEFAULT_CARE_TYPE = {
@@ -28,21 +34,27 @@ const DEFAULT_CARE_TYPE = {
 };
 
 // The follow-up questions and answer labels the user chose, in words the model understands.
-function describeAnswers(answers) {
+// SCRUM-279: the risk question is described as the user saw it (only what My health doesn't say).
+function describeAnswers(answers, health = null) {
   if (!answers) return [];
   return Object.entries(answers).flatMap(([id, value]) => {
     const question = [...SPECIFIC, ...GENERAL].find((q) => q.id === id);
     const option = question?.options.find((o) => o.value === value);
-    return question && option ? [{ question: question.text, answer: option.label }] : [];
+    const text = id === "risk-group" && health ? riskQuestionText(health) || question?.text : question?.text;
+    return question && option ? [{ question: text, answer: option.label }] : [];
   });
 }
 
 // client: from llmClient.getLlmClient(), or null when AI triage is off.
 // answers: optional follow-up answers, as for POST /api/triage/refine.
-async function assessWithAi(symptoms, { client = null, answers, location, priorConversations = [] } = {}) {
+// health: from healthContext.readHealth(), or null when there is no profile or it couldn't be loaded.
+async function assessWithAi(symptoms, { client = null, answers, location, priorConversations = [], health = null } = {}) {
   const hasAnswers = answers !== undefined && answers !== null;
   // The safety floor. refineUrgency validates the answers and throws AnswerError if they are wrong.
-  const floor = hasAnswers ? refineUrgency(symptoms, answers) : classifyUrgency(symptoms);
+  // With a profile, refineUrgency also counts the risk factors My health shows, even before any answer.
+  const floor = hasAnswers || health ? refineUrgency(symptoms, hasAnswers ? answers : {}, { health }) : classifyUrgency(symptoms);
+  // SCRUM-279: what the page says about My health. raisedBy: the reasons it made the result more urgent.
+  const healthProfile = { used: Boolean(health), raisedBy: floor.healthRaised || [] };
 
   const result = (level, { reasons, careType, careTypeId, selfCare = [], ai }) => {
     const { label, timeframe, action } = LEVELS[level];
@@ -61,8 +73,9 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
       matchedRuleIds: floor.matchedRuleIds,
       ruleLevel: floor.level,
       ai,
+      healthProfile,
       // Questions are only offered before the user has answered, and never in an emergency.
-      followUpQuestions: hasAnswers ? [] : getFollowUpQuestions(symptoms, { level, matchedRuleIds: floor.matchedRuleIds }),
+      followUpQuestions: hasAnswers ? [] : getFollowUpQuestions(symptoms, { level, matchedRuleIds: floor.matchedRuleIds }, health),
       ...(level === "emergency" ? { emergency: emergencyRoute(location || {}) } : {}),
     };
   };
@@ -73,9 +86,20 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
   const injection = detectPromptInjection(symptoms);
   if (injection.length > 0) return rulesOnly("prompt_injection");
 
+  // SCRUM-279: the My health summary goes to the model as background, unless it looks like orders.
+  const summary = health?.summary || "";
+  const summaryHasOrders = summary && detectPromptInjection(summary).length > 0;
+  const healthSummary = summaryHasOrders ? "" : summary;
+
   let reply;
   try {
-    const messages = buildMessages({ symptoms: cleanSymptoms(symptoms), minimumLevel: floor.level, answered: describeAnswers(answers), priorConversations });
+    const messages = buildMessages({
+      symptoms: cleanSymptoms(symptoms),
+      minimumLevel: floor.level,
+      answered: describeAnswers(answers, health),
+      priorConversations,
+      healthSummary,
+    });
     reply = parseModelReply(await client.complete(messages));
   } catch (error) {
     if (error instanceof LlmError || error instanceof GuardrailError) return rulesOnly(error.code);
@@ -84,6 +108,7 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
 
   const { level, applied } = applySafetyFloor(floor.level, reply.level);
   const ai = { used: true, level: reply.level, guardrails: [applied, ...new Set(reply.removed)] };
+  if (summaryHasOrders) ai.guardrails.push("health_summary_omitted");
   // SCRUM-281: the model found an emergency that the rules did not. The rules are the safety net
   // when the model is off or fails, so each of these is a possible missing rule. The route logs
   // this flag (never the symptoms), so the team can audit the rules against the AI's findings.

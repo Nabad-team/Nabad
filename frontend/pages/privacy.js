@@ -69,6 +69,15 @@ export default function PrivacyPolicy() {
           connection to Google&apos;s Gemini AI service to help assess urgency.
         </li>
         <li>
+          For a non-emergency check, the My health summary of the person the
+          check is for is sent with it: their age, sex, pregnancy, long-term
+          conditions, allergies, current medicines and any recent water and
+          sleep log. It is exactly the text shown under &quot;What Nabad&apos;s
+          guidance takes into account&quot; on the My health page, so you can
+          see and change it there. Nabad&apos;s safety rules also use it, so
+          the symptom check doesn&apos;t ask again what My health already says.
+        </li>
+        <li>
           For a non-emergency check, up to three earlier saved symptom checks
           for the same profile may also be sent as historical context. Past
           symptoms are identified as history and are not assumed to be current.
@@ -78,8 +87,9 @@ export default function PrivacyPolicy() {
           away and your description is not sent to the AI.
         </li>
         <li>
-          Your name, email and profile details are not sent with your
-          description.
+          Your name, email, date of birth and account details are not sent
+          with your description. The My health summary gives an age, not a
+          date of birth.
         </li>
         <li>
           Nabad does not write your description or the AI&apos;s reply to its

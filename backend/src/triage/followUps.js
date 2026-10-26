@@ -5,6 +5,11 @@
 //   1. getFollowUpQuestions(description) picks the questions that fit what the user wrote.
 //   2. refineUrgency(description, answers) re-runs the classifier and applies the answers.
 //
+// SCRUM-279: with the person's My health profile ("health", from healthContext.js readHealth()):
+//   - the risk question asks only what My health doesn't already say, and isn't asked at all when My health
+//     already shows a risk factor (a pregnancy, an age under 3 months or over 65, a long-term condition);
+//   - those risk factors count exactly like answering "Yes" to it: one step more urgent, never past urgent.
+//
 // Safety rules:
 //   - Emergencies get NO questions: the user is sent to care immediately, never slowed down.
 //   - Answers can only RAISE the level, never lower it. A wrong or careless answer can then
@@ -13,6 +18,7 @@
 //     a fake starting level.
 
 const { classifyUrgency, LEVELS, normalise, containsPositive } = require("./urgency");
+const { riskFactors, riskQuestionText } = require("./healthContext");
 
 const MAX_SPECIFIC = 2; // symptom-specific questions asked at most
 // The 4 general questions are always added after them, so a user sees at most 6.
@@ -137,12 +143,24 @@ function applies(question, text, matchedRuleIds) {
   return Boolean(byRule || byPhrase);
 }
 
+// SCRUM-279: the general questions for this person. The risk question keeps its id and answers but asks only
+// what My health doesn't say, and is left out when My health already answers it. No profile: unchanged.
+function generalFor(health) {
+  if (!health) return GENERAL;
+  const riskText = riskQuestionText(health);
+  return GENERAL.flatMap((q) => {
+    if (q.id !== "risk-group") return [q];
+    return riskText ? [{ ...q, text: riskText }] : [];
+  });
+}
+
 // The full question objects (with their escalation logic) that apply to this description.
-function selectQuestions(description, initial = classifyUrgency(description)) {
+// health: from healthContext.readHealth(), or null when there is no profile (SCRUM-279).
+function selectQuestions(description, initial = classifyUrgency(description), health = null) {
   if (initial.level === "emergency") return [];
   const text = normalise(description);
   const specific = SPECIFIC.filter((q) => applies(q, text, initial.matchedRuleIds)).slice(0, MAX_SPECIFIC);
-  return [...specific, ...GENERAL];
+  return [...specific, ...generalFor(health)];
 }
 
 // What the browser sees: the question and its choices, not the escalation rules behind them.
@@ -152,18 +170,21 @@ const toPublic = (question) => ({
   options: question.options.map(({ value, label }) => ({ value, label })),
 });
 
-function getFollowUpQuestions(description, initial) {
-  return selectQuestions(description, initial).map(toPublic);
+function getFollowUpQuestions(description, initial, health = null) {
+  return selectQuestions(description, initial, health).map(toPublic);
 }
 
 class AnswerError extends Error {}
 
 // answers = { "<question id>": "<option value>", ... }. Unanswered questions are simply skipped.
-function refineUrgency(description, answers) {
+// health (SCRUM-279): from healthContext.readHealth(); its risk factors count like a "Yes" to the risk question.
+function refineUrgency(description, answers, { health = null } = {}) {
   if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
     throw new AnswerError("Answers must be an object of question ids and chosen options.");
   }
   const initial = classifyUrgency(description);
+  // Checked against the full list (no profile), so an answer to the risk question is still accepted when
+  // My health already answers it, for example from a page opened before My health was filled in.
   const questions = selectQuestions(description, initial);
 
   const chosen = Object.entries(answers).map(([id, value]) => {
@@ -184,12 +205,16 @@ function refineUrgency(description, answers) {
     }
   }
   // Risk factors are applied last so they raise the level that the other answers produced.
+  // SCRUM-279: a "Yes" answer and the risk factors My health shows raise it once together, not once each.
   const raise = chosen.find((option) => option.raiseOne);
-  if (raise) {
+  const fromHealth = riskFactors(health).map((factor) => factor.reason);
+  let healthRaised = [];
+  if (raise || fromHealth.length > 0) {
     const raised = raiseOneStep(level);
     if (raised !== level) {
       level = raised;
-      contributions.push({ level, reason: raise.reason });
+      healthRaised = fromHealth;
+      for (const reason of [...fromHealth, ...(raise ? [raise.reason] : [])]) contributions.push({ level, reason });
     }
   }
 
@@ -207,6 +232,8 @@ function refineUrgency(description, answers) {
     matchedRuleIds: initial.matchedRuleIds,
     initialLevel: initial.level,
     answeredQuestionIds: Object.keys(answers),
+    // SCRUM-279: the My health reasons that made it one step more urgent (empty when they changed nothing).
+    healthRaised,
     followUpQuestions: [],
   };
 }

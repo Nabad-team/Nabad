@@ -54,7 +54,8 @@ describe("Privacy Policy Page", () => {
     expect(screen.getByRole("heading", { name: "AI in the symptom check" })).toHaveAttribute("id", "ai-symptom-check");
     expect(container).toHaveTextContent("sent over an encrypted connection to Google's Gemini AI service to help assess urgency");
     expect(container).toHaveTextContent("your description is not sent to the AI");
-    expect(container).toHaveTextContent("Your name, email and profile details are not sent with your description.");
+    // SCRUM-279: the My health summary is now sent too, so "profile details" became name, email, date of birth.
+    expect(container).toHaveTextContent("Your name, email, date of birth and account details are not sent with your description.");
     expect(container).toHaveTextContent("Nabad does not write your description or the AI's reply to its logs.");
     expect(container).not.toHaveTextContent("train AI");
     expect(container).not.toHaveTextContent("outside AI company");
