@@ -157,6 +157,10 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   // if deleting the user then fails, the account still exists and can be deleted again.
   await deleteProfileData(user._id);
   await LinkedProfile.deleteMany({ owner: user._id });
+  await Promise.all([
+    require("../models/ProviderFeedback").deleteMany({ owner: user._id }),
+    require("../models/ProviderCorrection").deleteMany({ owner: user._id }),
+  ]);
   // Both directions: the people this account invited, and its places in other people's care circles.
   await deleteCareCircles(user._id);
   // The emergency contact and trusted devices are stored inside the user document, so they are deleted with it.
