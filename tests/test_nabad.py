@@ -736,6 +736,29 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         finally:
             self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "screen"})
 
+    def test_authenticated_provider_directory_contributions(self):
+        # Local throwaway account only: feedback and correction persistence through the real UI.
+        self.open("/providers/aubmc")
+        self.wait_for_text("American University of Beirut Medical Center")
+        self.clickable(self.button("Save visit feedback"))
+        Select(self.visible((By.ID, "feedback-rating"))).select_by_value("4")
+        self.set_date("feedback-date", time.strftime("%Y-%m-%d"))
+        self.type_into("feedback-note", "SELENIUM-PROVIDER-NOTE")
+        self.click(self.button("Save visit feedback"))
+        self.wait_for_message("Your visit feedback was saved.")
+        self.open("/providers/aubmc")
+        self.clickable(self.button("Remove my feedback"))
+        self.assertEqual(self.visible((By.ID, "feedback-note")).get_attribute("value"), "SELENIUM-PROVIDER-NOTE")
+        self.click(self.button("Remove my feedback"))
+        self.wait_for_message("Your feedback and its waiting report were removed.")
+        self.type_into("correction-details", "SELENIUM: please verify this telephone.")
+        self.click(self.button("Send correction report"))
+        self.wait_for_message("Report saved for review.")
+        self.wait_for_text("Status: Pending review")
+        self.open("/providers/aubmc")
+        self.click(self.button("Withdraw telephone report"))
+        self.wait_for_message("Your report was withdrawn.")
+
     def test_authenticated_profile_and_security_pages(self):
         self.open("/profile")
         self.assertTrue(self.visible((By.CSS_SELECTOR, "h1")).text.strip())
