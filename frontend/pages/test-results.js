@@ -214,7 +214,7 @@ export default function TestResultsPage() {
             <li key={conversation.id}>
               <button type="button" className={`assistant-chat__history-link${conversationId === conversation.id ? " is-current" : ""}`} onClick={() => openConversation(conversation)} aria-label={conversation.title} aria-current={conversationId === conversation.id ? "page" : undefined} disabled={busy}>
                 <span>{conversation.title}</span>
-                <small>{new Date(conversation.updatedAt).toLocaleDateString()}</small>
+                <small>{new Date(conversation.updatedAt).toLocaleDateString("en-GB")}</small>
               </button>
               <button type="button" className="assistant-chat__delete" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`} disabled={busy}>x</button>
             </li>

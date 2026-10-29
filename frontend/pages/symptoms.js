@@ -783,7 +783,7 @@ export default function SymptomsPage() {
             {history.slice(0, 10).map((record) => (
               <li key={record.id}>
                 <details>
-                  <summary>{record.createdAt ? new Date(record.createdAt).toLocaleString() : "Previous check"} · {record.urgencyResult?.label || "Urgency check"}</summary>
+                  <summary>{record.createdAt ? new Date(record.createdAt).toLocaleString("en-GB") : "Previous check"} · {record.urgencyResult?.label || "Urgency check"}</summary>
                   <ol aria-label="Saved conversation">
                     {(record.conversation || [
                       { role: "patient", content: record.description },

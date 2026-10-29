@@ -187,6 +187,7 @@ const EXPORTED = [...ACCOUNT_COLLECTIONS, ...PROFILE_COLLECTIONS];
 
 // Models that hold nothing about any account.
 const EXCLUDED_MODELS = {
+  UsageDaily: "Anonymous daily service totals contain no account or profile identifiers and cannot be attributed to an individual account.",
   Provider: "The public directory of hospitals and clinics. The account's favorites are exported as favoriteProviders.",
 };
 

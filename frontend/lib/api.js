@@ -1,20 +1,46 @@
-// Same-site path, forwarded to the backend by the rewrite in next.config.js.
+// Same-site API only. Never retry writes automatically: a timed-out write may already have succeeded.
 const API_BASE = "/api";
-
+const slowRequest = path => /^\/(?:triage\/ai-assess|reports(?:\/|$)|medical-documents(?:\/|$)|visit-prep(?:\/|$))/.test(path);
 export async function request(path, options = {}) {
-  const res = await fetch(API_BASE + path, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    ...options,
+  const { timeoutMs = slowRequest(path) ? 120000 : 30000, signal, ...fetchOptions } = options;
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 120000) throw new RangeError("Invalid request timeout.");
+  if (signal?.aborted) throw new DOMException("Request cancelled.", "AbortError");
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal?.addEventListener("abort", cancel, { once: true });
+  let timedOut = false, rejectAbort;
+  const aborted = new Promise((_, reject) => {
+    rejectAbort = () => reject(new DOMException("Request cancelled.", "AbortError"));
+    controller.signal.addEventListener("abort", rejectAbort, { once: true });
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(data.error || "Request failed.");
-    error.status = res.status; // lets callers tell "signed out" (401) apart from a network problem
-    error.requestId = data.requestId;
-    throw error;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+  try {
+    const res = await Promise.race([fetch(API_BASE + path, {
+      credentials: "include", ...fetchOptions,
+      headers: { "Content-Type": "application/json", ...fetchOptions.headers },
+      signal: controller.signal,
+    }), aborted]);
+    const data = await Promise.race([res.json().catch(() => ({})), aborted]);
+    if (!res.ok) {
+      const error = new Error(data.error || (res.status >= 500
+        ? "Nabad is temporarily unavailable. Please try again. In an emergency in Lebanon, call 140."
+        : "Request failed."));
+      error.status = res.status; error.requestId = data.requestId;
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    if (signal?.aborted) throw new DOMException("Request cancelled.", "AbortError");
+    if (error.status !== undefined) throw error;
+    const failure = new Error(timedOut
+      ? "Nabad took too long to respond. Please try again. In an emergency in Lebanon, call 140."
+      : "Cannot connect to Nabad. Check your connection and try again. In an emergency in Lebanon, call 140.");
+    failure.status = 0; failure.code = timedOut ? "REQUEST_TIMEOUT" : "NETWORK_UNAVAILABLE";
+    throw failure;
+  } finally {
+    clearTimeout(timer); signal?.removeEventListener("abort", cancel);
+    controller.signal.removeEventListener("abort", rejectAbort);
   }
-  return data;
 }
 
 export const signup = (name, email, password) => request("/auth/signup", { method: "POST", body: JSON.stringify({ name, email, password }) });

@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> October 23, 2026
+        <strong>Last updated:</strong> October 28, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -228,6 +228,27 @@ export default function PrivacyPolicy() {
           reports.
         </li>
       </ul>
+
+      <h2 id="usage-statistics">Anonymous usage statistics</h2>
+
+      <p>
+        Nabad counts completed symptom assessments and follow-up requests in
+        daily totals to understand how the service is used. These counters do
+        not contain your account or profile ID, symptoms, urgency level,
+        location, IP address, cookies or individual activity history. They are
+        kept for up to 90 days and are not sent to an advertising or analytics
+        service. A resubmitted initial check is counted as another request.
+      </p>
+
+      <h2>Offline emergency help</h2>
+
+      <p>
+        After a successful online visit, a public emergency-help page may be
+        stored on your device for connection failures. It contains no personal
+        or medical information. Nabad does not cache your account pages, health
+        records or API responses for offline use. Internet access is still
+        required to load or save your information and run symptom checks.
+      </p>
 
       <h2>Account security</h2>
 
