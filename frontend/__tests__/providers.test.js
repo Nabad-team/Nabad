@@ -110,3 +110,13 @@ test("district search is shareable and unlocated facilities do not offer fake di
   expect(mockRouter.push).toHaveBeenCalledWith("/providers?district=saida", undefined, { shallow: true, scroll: false });
   await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ district: "saida", city: "" }), expect.any(AbortSignal)));
 });
+
+test("insurance filters are submitted and retained in shareable URLs", async () => {
+  getProviders.mockResolvedValue({ ...result, insurances: ["nssf", "coop"] });
+  const user = userEvent.setup(); render(<ProvidersPage />); await screen.findByText("Test Clinic");
+  await user.selectOptions(screen.getByLabelText("Insurance and third-party payers"), "nssf");
+  await user.click(screen.getByRole("button", { name: "Search providers" }));
+  expect(mockRouter.push).toHaveBeenCalledWith("/providers?insurance=nssf", undefined, { shallow: true, scroll: false });
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ insurance: "nssf" }), expect.any(AbortSignal)));
+  expect(screen.getByRole("link", { name: "Test Clinic" })).toHaveAttribute("href", "/providers/clinic");
+});

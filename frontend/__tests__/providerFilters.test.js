@@ -61,3 +61,21 @@ test("every specialty label has a seeded match and every seeded specialty has a 
   for (const slug of Object.keys(labels)) expect(seeded.has(slug)).toBe(true);
   for (const slug of seeded) expect(labels[slug]).toEqual(expect.any(String));
 });
+
+test("insurance URL filters reject objects and survive a round trip without GPS", () => {
+  expect(providerUrl({ insurance: "NSSF", lat: 33.9, lng: 35.5 })).toBe("/providers?insurance=nssf");
+  expect(readProviderFilters({ insurance: { $ne: "" } }).insurance).toBe("");
+});
+test("every sourced service and insurance has an English label and source evidence", () => {
+  const providers = require("../../backend/data/providers");
+  const labels = require("../locales/en/providers.json");
+  for (const p of providers) {
+    for (const id of p.services) expect(labels.services[id]).toEqual(expect.any(String));
+    for (const id of p.insurances || []) expect(labels.insurances[id]).toEqual(expect.any(String));
+    if (p.insurances?.length) {
+      expect(p.insuranceSources.length).toBeGreaterThan(0);
+      expect(Number.isFinite(Date.parse(p.insuranceVerifiedAt))).toBe(true);
+    }
+    if (p.servicesReviewedAt) expect(p.serviceSources.length).toBeGreaterThan(0);
+  }
+});
