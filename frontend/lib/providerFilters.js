@@ -5,7 +5,7 @@ const SPECIALTY_NAMES = providerText.specialties;
 
 export function readProviderFilters(query = {}) {
   const filters = {};
-  for (const key of ["q", "specialty", "city", "district", "governorate", "service"]) {
+  for (const key of ["q", "specialty", "city", "district", "governorate", "service", "insurance"]) {
     filters[key] = typeof query[key] === "string" && query[key].length <= 100 ? query[key].trim().toLowerCase() : "";
   }
   for (const key of ["openNow", "emergency24h", "favorites"]) filters[key] = query[key] === "true" || query[key] === true;
