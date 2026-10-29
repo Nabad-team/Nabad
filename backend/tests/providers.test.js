@@ -205,14 +205,16 @@ test("unlocated hospitals remain searchable and saveable without a fabricated ge
   assert.ok(!(await Provider.findOne({ slug: fixture.slug }).lean()).location);
 });
 
-test("new location-only listings remain unknown and do not qualify for emergency routing", async () => {
+test("source-reviewed services do not invent emergency availability or specialty coverage", async () => {
   const result = await get("?q=Saida&city=Saida&limit=100");
   const hospital = result.body.providers.find(p => p.id === "saida-governmental");
   assert.ok(hospital);
   assert.equal(hospital.emergency24h, null);
   assert.equal(hospital.openingStatus, "unknown");
   assert.deepEqual(hospital.specialties, []);
-  assert.deepEqual(hospital.services, []);
+  assert.ok(hospital.services.includes("laboratory"));
+  assert.ok(hospital.serviceSources.some(url => url.includes("moph.gov.lb")));
+  assert.ok(!hospital.services.includes("ct"));
   assert.equal((await get("?city=Saida&emergency24h=true")).body.total, 0);
   assert.equal((await get("?q=Clemenceau&emergency24h=true")).body.total, 1);
 });
@@ -270,4 +272,18 @@ test("source review adds matched locations and capabilities without guessing eme
     assert.ok(p.sources.every(url => /^https:\/\//.test(url)), p.slug);
     assert.equal(p.latitude == null, p.longitude == null, p.slug);
   }
+});
+
+test("a newer empty service review records evidence without replacing curated fields", async () => {
+  const original = seedData.find(p => p.slug === "hermel-governmental");
+  await Provider.updateOne({ slug: original.slug }, { $set: { name: "Curated name", servicesReviewedAt: null } });
+  const review = { ...original, name: "Must not replace curated name", servicesReviewedAt: "2032-01-01T00:00:00Z", serviceSources: ["https://example.test/review"] };
+  await seedProviders([review]);
+  let saved = await Provider.findOne({ slug: original.slug }).lean();
+  assert.equal(saved.name, "Curated name");
+  assert.equal(saved.servicesReviewedAt.toISOString(), "2032-01-01T00:00:00.000Z");
+  assert.deepEqual(saved.serviceSources, ["https://example.test/review"]);
+  await seedProviders([{ ...review, servicesReviewedAt: "2031-01-01", serviceSources: ["https://example.test/older"] }]);
+  saved = await Provider.findOne({ slug: original.slug }).lean();
+  assert.deepEqual(saved.serviceSources, ["https://example.test/review"]);
 });
