@@ -79,6 +79,7 @@ const {
 
 
 const router = express.Router();
+const { countTriageUsage } = require("../usageAnalytics");
 
 router.use(requireAuth);
 
@@ -257,6 +258,7 @@ router.post(
   "/ai-assess",
   resolveProfile,
   aiLimiter,
+  countTriageUsage,
   async (
     req,
     res,
