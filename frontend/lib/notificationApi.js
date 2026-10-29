@@ -36,5 +36,5 @@ export function timeAgo(isoDate, now = new Date()) {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
   if (hours < 48) return "Yesterday";
-  return date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }

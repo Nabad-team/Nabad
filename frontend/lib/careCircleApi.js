@@ -13,4 +13,4 @@ export const lookupCareCircleInvite = (token) => request("/care-circle/invites/l
 export const acceptCareCircleInvite = (token) => request("/care-circle/invites/accept", { method: "POST", body: JSON.stringify({ token }) });
 
 // "22 October 2026".
-export const longDate = (isoDate) => new Date(isoDate).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+export const longDate = (isoDate) => new Date(isoDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
