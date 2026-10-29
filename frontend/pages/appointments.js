@@ -30,7 +30,7 @@ function dateKey(date) {
 }
 
 function monthLabel(date) {
-  return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  return date.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 }
 
 function monthDays(month) {
@@ -145,7 +145,7 @@ function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
               key={key}
               className={`calendar__day${inMonth ? "" : " calendar__day--outside"}${key === today ? " calendar__day--today" : ""}`}
               onDoubleClick={() => onDateDoubleClick(key)}
-              aria-label={`${date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}`}
+              aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}`}
             >
               <span className="calendar__number">{date.getDate()}</span>
               {events.map((appointment) => <span className="calendar__event" key={appointment.id}>{appointment.appointmentTime} {appointment.title}</span>)}
