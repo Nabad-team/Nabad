@@ -26,6 +26,11 @@ const schema = new mongoose.Schema({
   specialties: { type: [String], default: [] },
   // A positive list of sourced capabilities; absence means unverified, not unavailable.
   services: { type: [String], default: [] },
+  insurances: { type: [String], default: [], validate: values => values.length <= 40 && values.every(v => /^[a-z0-9-]+$/.test(v)) },
+  insuranceSources: { type: [String], default: [] },
+  insuranceVerifiedAt: { type: Date, default: null },
+  servicesReviewedAt: { type: Date, default: null },
+  serviceSources: { type: [String], default: [] },
   // null = not verified, never infer a closed facility or a non-existent ER.
   emergency24h: { type: Boolean, default: null },
   hoursKnown: { type: Boolean, default: false },
@@ -40,7 +45,9 @@ schema.index({ governorate: 1 });
 schema.index({ district: 1 });
 schema.index({ legacySlugs: 1 });
 schema.index({ services: 1 });
+schema.index({ insurances: 1 });
 schema.pre("validate", function () {
+  if (this.insurances.length && (!this.insuranceVerifiedAt || !this.insuranceSources.length || !this.insuranceSources.every(url => /^https:\/\//.test(url)))) this.invalidate("insurances", "Insurance listings require HTTPS sources and a verification date.");
   if (this.legacySlugs.includes(this.slug)) this.invalidate("legacySlugs", "A provider cannot retire its own slug.");
   if ((this.latitude == null) !== (this.longitude == null)) this.invalidate("latitude", "Provide both coordinates or neither.");
   this.location = this.latitude == null || this.longitude == null ? undefined : { type: "Point", coordinates: [this.longitude, this.latitude] };

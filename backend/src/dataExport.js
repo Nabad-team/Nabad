@@ -182,7 +182,13 @@ const CARE_CIRCLE = {
   },
 };
 
-const ACCOUNT_COLLECTIONS = [ACCOUNT, LINKED_PROFILES, CARE_CIRCLE];
+const PROVIDER_CONTRIBUTIONS = [
+  { key: "providerFeedback", model: require("./models/ProviderFeedback"),
+    fields: { _id: ["id", id], providerSlug: "providerId", rating: "rating", visitDate: "visitDate", note: "note", waitLevel: "waitLevel", waitReportedAt: "waitReportedAt", ...TIMESTAMPS } },
+  { key: "providerCorrections", model: require("./models/ProviderCorrection"),
+    fields: { _id: ["id", id], providerSlug: "providerId", field: "field", details: "details", status: "status", ...TIMESTAMPS } },
+];
+const ACCOUNT_COLLECTIONS = [ACCOUNT, LINKED_PROFILES, CARE_CIRCLE, ...PROVIDER_CONTRIBUTIONS];
 const EXPORTED = [...ACCOUNT_COLLECTIONS, ...PROFILE_COLLECTIONS];
 
 // Models that hold nothing about any account.
@@ -216,6 +222,7 @@ async function buildExport(userId, now = new Date()) {
     CareCircle.find({ inviter: user._id }).sort(SORT).populate("member", "name email").lean(),
     CareCircle.find({ member: user._id, status: "active" }).sort({ acceptedAt: 1, _id: 1 }).populate("inviter", "name").lean(),
     ...PROFILE_COLLECTIONS.map(({ model, sort = SORT, select }) => model.find({ owner: user._id }).sort(sort).select(select || "").lean()),
+    ...PROVIDER_CONTRIBUTIONS.map(({ model }) => model.find({ owner: user._id }).sort(SORT).lean()),
   ]);
 
   const { emergencyContact, favoriteProviders: favorites, notificationPreferences, ...account } = pick(user, ACCOUNT);
@@ -252,6 +259,8 @@ async function buildExport(userId, now = new Date()) {
       circlesIBelongTo: joined.filter((entry) => entry.inviter).map(circleView),
     },
     profiles: [...entries.values()],
+    ...Object.fromEntries(PROVIDER_CONTRIBUTIONS.map((collection, index) =>
+      [collection.key, records[PROFILE_COLLECTIONS.length + index].map(row => pick(row, collection))])),
   };
 }
 

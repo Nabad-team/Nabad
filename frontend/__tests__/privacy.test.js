@@ -44,7 +44,7 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/October 28, 2026/)
+      screen.getByText(/October 29, 2026/)
     ).toBeInTheDocument();
   });
 
@@ -109,4 +109,10 @@ test("explains anonymous counters and public-only offline caching", () => {
   expect(container).toHaveTextContent("kept for up to 90 days");
   expect(container).toHaveTextContent("does not cache your account pages, health records or API responses");
   expect(screen.getByRole("heading", { name: "Offline emergency help" })).toBeInTheDocument();
+});
+
+test("provider contribution privacy and deletion choices are explained", () => {
+  render(<PrivacyPolicy />);
+  expect(screen.getByRole("heading", { name: "Provider visit feedback and corrections" })).toBeInTheDocument();
+  expect(screen.getByText(/Your note and incorrect-information reports are private/)).toBeInTheDocument();
 });
