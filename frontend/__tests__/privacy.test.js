@@ -44,7 +44,7 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/October 23, 2026/)
+      screen.getByText(/October 28, 2026/)
     ).toBeInTheDocument();
   });
 
@@ -100,4 +100,13 @@ describe("Privacy Policy Page", () => {
       })
     ).toHaveAttribute("href", "/dashboard");
   });
+});
+
+
+test("explains anonymous counters and public-only offline caching", () => {
+  const { container } = render(<PrivacyPolicy />);
+  expect(screen.getByRole("heading", { name: "Anonymous usage statistics" })).toBeInTheDocument();
+  expect(container).toHaveTextContent("kept for up to 90 days");
+  expect(container).toHaveTextContent("does not cache your account pages, health records or API responses");
+  expect(screen.getByRole("heading", { name: "Offline emergency help" })).toBeInTheDocument();
 });
