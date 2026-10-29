@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useSignedIn } from "../components/SessionTimeout";
 import Card from "../components/ui/Card";
-import Badge from "../components/ui/Badge";
+import Link from "next/link";
+import ProviderFacts from "../components/ProviderFacts";
 import { readProviderFilters, providerUrl } from "../lib/providerFilters";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
@@ -137,6 +138,13 @@ export default function ProvidersPage() {
               {(data.services || []).map(value => <option key={value} value={value}>{t(`services.${value}`)}</option>)}
             </select>
           </div>
+          <div className="field"><label htmlFor="provider-insurance" className="field__label">{t("insurance")}</label>
+            <select id="provider-insurance" className="input" {...field("insurance")}>
+              <option value="">{t("allInsurance")}</option>
+              {(data.insurances || []).map(value => <option key={value} value={value}>{t(`insurances.${value}`)}</option>)}
+            </select>
+            <p className="text-muted">{t("insuranceNote")}</p>
+          </div>
           <p id="provider-location-hint">{t("locationHint")}</p>
           <div className="form-actions">
             <Button variant="secondary" disabled={locating} aria-describedby="provider-location-hint" onClick={locate}>{t(locating ? "locating" : "location")}</Button>
@@ -170,27 +178,11 @@ export default function ProvidersPage() {
       {!data.providers.length && <p>{t("empty")}</p>}
       <ul className="provider-list" aria-label={t("results")}>
         {data.providers.map(provider => <Card as="li" className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
-          <h2>{provider.name}</h2>
+          <h2><Link href={`/providers/${provider.id}`}>{provider.name}</Link></h2>
           {signedIn ? <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
             aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}
             onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button> : <a className="button button--secondary" href="/login">{t("signInToSave")}</a>}
-          <p>{t(provider.type)}{provider.city ? ` · ${provider.city}` : ""}{provider.district ? ` · ${t("district")}: ${provider.district}` : ""}</p>
-          <p>{provider.address || t("addressUnknown")}</p>
-          {provider.distanceKm != null && <p><Badge tone="neutral">{t("distance", { km: provider.distanceKm })}</Badge></p>}
-          {provider.locationApproximate && <p>{t("approximatePin")}</p>}
-          <p>{provider.specialties.length ? provider.specialties.map(s => t(`specialties.${s}`)).join(", ") : t("specialtiesUnknown")}</p>
-          <p><Badge tone={provider.openingStatus === "open" ? "info" : "neutral"}>{t(provider.openingStatus || "unknown")}</Badge></p>
-          <p><Badge tone={provider.emergency24h === true ? "info" : "neutral"}>{t(provider.emergency24h === true ? "erYes" : provider.emergency24h === false ? "erNo" : "erUnknown")}</Badge></p>
-          <p>{provider.services?.length ? `${t("service")}: ${provider.services.map(s => t(`services.${s}`)).join(", ")}` : t("servicesUnknown")}</p>
-          <p className="text-muted">{t("servicesNote")}</p>
-          {provider.hoursKnown && <details><summary>{t("hoursTitle")}</summary>
-            <ul>{provider.hours.map((slot, index) => <li key={index}>{t(`day${slot.day}`)}: {formatTime(slot.start)}–{formatTime(slot.end)} {slot.end < slot.start ? t("overnight") : ""}</li>)}</ul>
-          </details>}
-          <p className="text-muted">{t("hoursNote")}</p>
-          {provider.phone && <p><a href={`tel:${provider.phone}`}>{t("call", { name: provider.name })}</a></p>}
-          {Number.isFinite(provider.latitude) && Number.isFinite(provider.longitude) ? <p><a className="button button--secondary" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${provider.latitude},${provider.longitude}`)}`} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p> : <p>{t("locationUnknown")}</p>}
-          <p className="text-muted">{t("checked", { date: provider.verifiedAt.slice(0, 10) })}</p>
-          <div className="provider-sources">{provider.sources.map((source, index) => <a key={source} href={source} target="_blank" rel="noopener noreferrer">{t("source", { number: index + 1 })}</a>)}</div>
+          <ProviderFacts provider={provider} />
         </Card>)}
       </ul>
       {data.total > (data.limit || 20) && <div className="form-actions">
@@ -201,5 +193,4 @@ export default function ProvidersPage() {
     </>}
   </PageLayout>;
 }
-// Public browsing; only the favorites endpoints require authentication.
-function formatTime(minutes) { return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`; }
+// Public browsing; only saved providers and contributions require authentication.

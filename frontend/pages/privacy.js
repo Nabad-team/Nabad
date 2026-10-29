@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> October 28, 2026
+        <strong>Last updated:</strong> October 29, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -161,6 +161,23 @@ export default function PrivacyPolicy() {
         circle, and anyone can leave a care circle, at any time. Invitations
         expire after 7 days, and Nabad never tells you whether an invited email
         address has a Nabad account.
+      </p>
+
+      <h2 id="provider-contributions">Provider visit feedback and corrections</h2>
+      <p>
+        If you submit visit feedback, Nabad stores your rating, visit date and
+        optional note with your account. Only aggregate ratings and recent
+        waiting levels are public, without author names or account identifiers.
+        Your note and incorrect-information reports are private to you and the
+        directory team. Do not include patient details in these submissions.
+      </p>
+      <p>
+        A waiting observation contributes for two hours and needs at least
+        three reporting accounts before a level is displayed. One current
+        review per account and facility prevents duplicate ratings. You can
+        update or remove your feedback and withdraw correction reports from
+        the provider page. These contributions are included in your data
+        download and removed when you delete your account.
       </p>
 
       <h2>Services Nabad uses</h2>
