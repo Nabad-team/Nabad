@@ -1,6 +1,6 @@
 # Provider directory integration
 
-`/providers` is public. Only favorites require a signed-in account. The read API is
+`/providers` is public. Favorites, visit feedback and correction submissions require a signed-in account. The read API is
 `GET /api/providers`; PUT/DELETE `/api/providers/:id/favorite` keep the existing
 authentication, origin checks and rate limits.
 
@@ -11,7 +11,7 @@ Use `frontend/lib/providerFilters.js` to build links. Example:
 `/providers?specialty=emergency-medicine&emergency24h=true`
 
 Supported public URL fields: `q`, `specialty`, `service`, `city`, `governorate`,
-`openNow`, `emergency24h`, `favorites`, `page`. Boolean values are `true`/`false`.
+`insurance`, `openNow`, `emergency24h`, `favorites`, `page`. Boolean values are `true`/`false`.
 The directory restores these on load and browser back/forward navigation. GPS
 coordinates are intentionally kept out of shareable URLs; the API additionally
 accepts `lat`, `lng`, `radiusKm`, and `limit` for distance searches.
@@ -76,3 +76,7 @@ index migration must be resolved before treating directory search as ready.
 No new secret or environment variable is needed. Deploy backend and frontend from
 the same merged commit. Verify public browsing, URL links, service and geographic
 filters, maps/directions, and authenticated favorite persistence after deployment.
+
+## Provider detail and contribution features
+
+See [provider-contributions.md](provider-contributions.md) for public /providers/:id pages, sourced insurance filtering, the completed service-source review, private feedback/correction storage, recent waiting aggregates, account export/deletion and validation. No Jira changes are made.
