@@ -5,7 +5,7 @@ const { createTestMongo } = require("./helpers/testMongo");
 function fakeServer(errors) {
   const instances = [];
   class Server {
-    constructor() { this.index = instances.length; instances.push(this); }
+    constructor(options) { this.options = options; this.index = instances.length; instances.push(this); }
     async start() { if (errors[this.index]) throw errors[this.index]; }
     async stop(options) { this.cleanup = options; }
   }
@@ -34,4 +34,19 @@ test("temporary MongoDB preserves other startup failures without retrying", asyn
   await assert.rejects(createTestMongo(undefined, Server), (failure) => failure === error);
   assert.equal(instances.length, 1);
   assert.ok(instances[0].cleanup.doCleanup);
+});
+
+
+test("temporary MongoDB allows bounded slow startup on shared runners", async () => {
+  const { Server } = fakeServer([]);
+  const server = await createTestMongo(undefined, Server);
+  assert.equal(server.options.instance.launchTimeout, 60000);
+});
+
+test("temporary MongoDB preserves explicit startup limits and other server options", async () => {
+  const options = { instance: { launchTimeout: 15000, dbName: "isolated" }, binary: { version: "8.2.1" } };
+  const { Server } = fakeServer([]);
+  const server = await createTestMongo(options, Server);
+  assert.deepEqual(server.options, options);
+  assert.notEqual(server.options.instance, options.instance);
 });
