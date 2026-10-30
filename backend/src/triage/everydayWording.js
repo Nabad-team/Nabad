@@ -20,6 +20,11 @@
 
 const PERSON = "(?:my|his|her|their|the|our)";
 
+// SCRUM-282: a fever in a young baby, used after an age ("7 weeks old ... temperature is 38.3"): the word
+// fever, "a/high temperature", or a measured temperature of 38-42°C or 100.4-106°F. Not after "no", "not"
+// or "without", so "my 6 week old has no fever" doesn't count.
+const INFANT_FEVER = "(?<!\\b(?:no|not|not a|without|without a) )\\b(?:fever|feverish|(?:a|high) (?:temperature|temp)|(?:temperature|temp)(?: is| of| was| reached| hit| at)? (?:about |around |over )?(?:3[89]|4[0-2]|100\\.[4-9]|10[1-6])(?:\\.\\d+)?)\\b";
+
 const EVERYDAY_WORDING = [
   // ---------- Emergency ----------
   { means: "chest pain", patterns: [
@@ -103,7 +108,15 @@ const EVERYDAY_WORDING = [
     /\b(?:can't|cannot) see (?:anything )?(?:out of|from|with) (?:my|his|her|one) (?:left |right )?eye\b/,
   ] },
   { means: "mottled", patterns: [
-    /\bskin (?:is |looks |looking |has gone |went |turned )?(?:mottled|grey|gray|ashen)\b/,
+    // SCRUM-282: "her skin looks blotchy and bluish" (sepsis). "Blotchy" alone is not enough, it is
+    // often a harmless rash; it only counts here when the skin is also mottled, grey or bluish.
+    /\bskin (?:is |looks |looking |has gone |went |turned )?(?:(?:a bit |a little |kind of )?(?:blotchy|pale|patchy) and )?(?:mottled|grey|gray|ashen|bluish|blueish)\b/,
+  ] },
+  // SCRUM-282: a stiff neck in everyday words ("I can't bend my neck"). The meningitis rule still needs
+  // a fever too, so a stiff neck alone (after sleeping badly) stays as it was.
+  { means: "stiff neck", patterns: [
+    new RegExp(`\\b(?:can't|cannot|couldn't) (?:bend|move|turn|lower) ${PERSON} (?:neck|head)(?: forward| down| at all)?\\b`),
+    /\bneck (?:is |feels |has gone |went )?(?:really |very |so )?(?:stiff|rigid)\b/,
   ] },
   { means: "can't feel my legs", patterns: [
     new RegExp(`\\b(?:can't|cannot) (?:feel|move) ${PERSON} (?:legs|arms|body)\\b`),
@@ -121,6 +134,9 @@ const EVERYDAY_WORDING = [
   ] },
   { means: "swallowed a battery", patterns: [
     /\b(?:swallowed|ate|eaten) (?:a |an |some |the |two |2 )?(?:button |coin |watch |small )?(?:battery|batteries|magnet|magnets)\b/,
+    // SCRUM-282: "swallowed one of those small round batteries from the remote". Only words that describe
+    // the battery can come between, so "swallowed my pills before charging the batteries" doesn't count.
+    /\b(?:swallowed|ate|eaten)(?: (?:one|two|three|some|of|those|these|them|the|a|an|small|tiny|little|round|flat|shiny|silver|button|coin|watch|lithium|aa|aaa|\d+)){1,5} (?:battery|batteries|magnet|magnets)\b/,
   ] },
   { means: "baby stopped moving", patterns: [
     /\bbaby (?:hasn't|has not|isn't|is not|stopped|has stopped)(?: been)? (?:moved|moving|kicking|kicked)\b/,
@@ -140,14 +156,26 @@ const EVERYDAY_WORDING = [
     /\b(?:stomach|belly|tummy|abdomen) (?:hurts?|pain|ache|is hurting)(?: so much)? (?:that )?i (?:can't|cannot) (?:stand|move|walk|sleep)\b/,
     /\b(?:terrible|unbearable|excruciating|worst|really bad|very bad|agonising|agonizing) (?:stomach|belly|tummy|abdominal) (?:pain|ache)\b/,
     /\b(?:stomach|belly|tummy|abdomen) is (?:hard|rigid|swollen)\b/,
+    // SCRUM-282: "really bad pain in the lower right side of my belly". Same intensifiers as above.
+    /\b(?:terrible|unbearable|excruciating|worst|really bad|very bad|agonising|agonizing|severe) pain in (?:the |my )?(?:lower |upper )?(?:right |left )?(?:side (?:of )?)?(?:my |his |her |the )?(?:stomach|belly|tummy|abdomen)\b/,
   ] },
   { means: "can't keep anything down", patterns: [
     /\b(?:throwing up|vomiting|puking|bringing up) (?:everything|all (?:the )?(?:water|fluids|food))\b/,
-    /\b(?:can't|cannot) (?:keep|hold) (?:any )?(?:water|fluids|food|drinks) down\b/,
+    // SCRUM-282: "even" added: "I can't keep even water down".
+    /\b(?:can't|cannot) (?:keep|hold) (?:any |even )?(?:water|fluids|food|drinks) down\b/,
   ] },
   { means: "broken bone", patterns: [
     new RegExp(`\\b(?:broke|broken|fractured|cracked) ${PERSON} (?:arm|leg|wrist|ankle|finger|toe|hand|foot|nose|rib|ribs|collarbone|hip|elbow|knee|shoulder)\\b`),
     new RegExp(`\\b${PERSON} (?:arm|leg|wrist|ankle|finger|toe|hand|foot|nose|rib|collarbone|hip) (?:is|looks|might be|may be) (?:broken|fractured|bent the wrong way)\\b`),
+    // SCRUM-282: "it's swollen and looks bent". Only "looks": "my toenail is deformed" is not an injury.
+    /\b(?:looks|looking) (?:bent|deformed|misshapen|out of shape)\b|\bat (?:a|an) (?:weird|strange|odd|funny) angle\b/,
+  ] },
+  // SCRUM-282: "cut my hand on broken glass, it's deep", "I can see something white inside".
+  // Nothing in between may say "not": "the cut isn't very deep" doesn't count.
+  { means: "deep cut", patterns: [
+    /\b(?:cut|cuts|wound|gash)\b(?:(?!\bnot\b|n't\b|\bno\b)[^]){0,40}?\b(?:it's|it is|its|is|looks|very|really|quite|pretty|so) deep\b/,
+    /\b(?:can|could) see (?:the |my |his |her )?(?:bone|tendon|fat|something white inside)\b/,
+    /\bgaping\b/,
   ] },
   { means: "hit my head", patterns: [
     new RegExp(`\\b(?:banged|bumped|hit|knocked|smashed|cracked) ${PERSON} head\\b`),
@@ -163,6 +191,10 @@ const EVERYDAY_WORDING = [
     // "my 2 month old has a fever", "a newborn baby with a temperature", "our 6 week old girl is running a fever"
     /\b(?:newborn|new born|(?:\d|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve) (?:day|days|week|weeks) old|(?:1|2|one|two) months? old)(?: baby| son| daughter| boy| girl)? (?:has|with|got|is running|running|developed|had)(?: got)? (?:a |an )?(?:high |slight |little |bit of a )?(?:fever|temperature)\b/,
     /\b(?:fever|temperature) in (?:my |our |a |the )?(?:newborn|new born|(?:\d|1[0-2]|one|two|three|four) weeks? old|(?:1|2|one|two) months? old)\b/,
+    // SCRUM-282: the age and the fever in different parts of the sentence: "my baby is 7 weeks old and her
+    // temperature is 38.3". A measured temperature only counts from 38°C (100.4°F), the fever threshold for
+    // babies this age, and "no fever" or "not a fever" does not count.
+    new RegExp(`\\b(?:newborn|new born|(?:\\d|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve) (?:day|days|week|weeks) old|(?:1|2|one|two) months? old)\\b[^]{0,60}?${INFANT_FEVER}`),
   ] },
   { means: "can't pee", patterns: [
     /\b(?:can't|cannot|haven't been able to|have not been able to|hasn't been able to|has not been able to|not able to|unable to) (?:pee|wee|urinate|pass urine|pass water)\b/,
@@ -178,7 +210,8 @@ const EVERYDAY_WORDING = [
     /\bmy balls (?:hurt|are hurting|are swollen|ache)\b/,
   ] },
   { means: "sudden testicle pain", patterns: [
-    /\bsudden(?:ly)? (?:severe |sharp |bad |really bad )?(?:pain|ache) in (?:my|his|one) (?:testicle|testicles|balls)\b/,
+    // SCRUM-282: "left" or "right" allowed: "sudden really bad pain in my left testicle".
+    /\bsudden(?:ly)? (?:severe |sharp |bad |really bad )?(?:pain|ache) in (?:my|his|one) (?:left |right )?(?:testicle|testicles|balls)\b/,
   ] },
 
   // ---------- See a doctor soon ----------
@@ -194,7 +227,8 @@ const EVERYDAY_WORDING = [
     /\b(?:urine|pee|wee) (?:is|looks|was|has been|turned) (?:red|pink|bloody)\b/,
   ] },
   { means: "ear pain", patterns: [
-    new RegExp(`\\b(?:${PERSON} )?ears? (?:hurts?|is hurting|are hurting|aches?|is aching|is killing me)\\b`),
+    // SCRUM-282: "has been hurting" added: "my ear has been hurting since yesterday".
+    new RegExp(`\\b(?:${PERSON} )?ears? (?:hurts?|is hurting|are hurting|(?:has|have) been (?:hurting|aching|sore)|aches?|is aching|is killing me)\\b`),
   ] },
   { means: "burning when i pee", patterns: [
     /\b(?:burns?|stings?|hurts?|it's painful|painful) (?:to|when i|when i'm|when he|when she) (?:pee|wee|urinate|peeing|urinating)\b/,
@@ -203,6 +237,13 @@ const EVERYDAY_WORDING = [
   { means: "for weeks", patterns: [
     /\bfor (?:\d+|two|three|four|five|six|several|a few|a couple of|a couple) (?:weeks|months)\b/,
     /\bfor (?:over |more than )?a (?:month|fortnight)\b/,
+    // SCRUM-282: longer than weeks counts too: "for months", "for over a year", "since my accident last year".
+    /\bfor (?:over |more than )?(?:months|years|a year)\b/,
+    /\bsince (?:[a-z']+ ){0,3}?(?:last (?:year|month)|(?:a|one|two|three|several|a few|\d+) (?:years?|months?) ago)\b/,
+  ] },
+  // SCRUM-282: "sore throat for over a week now", "it's been more than a week".
+  { means: "for a week", patterns: [
+    /\b(?:for )?(?:over|more than|longer than|at least|almost|nearly) a week\b/,
   ] },
   { means: "for several days", patterns: [
     /\bfor (?:[4-9]|1[0-3]|four|five|six|seven|eight|nine|ten) days\b/,

@@ -82,7 +82,8 @@ const RULES = [
     any: ["sudden loss of vision", "lost my vision", "lost vision", "lost my sight", "lost sight", "went blind", "gone blind", "sudden blindness", "suddenly blind", "suddenly can't see"] },
   { id: "sepsis", level: "emergency", reason: "Mottled, blue or very pale skin while feeling very unwell can be a sign of sepsis, a life-threatening reaction to an infection.",
     any: ["sepsis", "septic", "mottled"] },
-  { id: "major-injury", level: "emergency", reason: "A serious injury, such as a fall from a height, a road accident, a stab or gunshot wound, an electric shock or a severe burn, needs emergency care.",
+  // SCRUM-282: notLongAgo: "headaches since my car accident last year" is history, not an injury now.
+  { id: "major-injury", level: "emergency", notLongAgo: true, reason: "A serious injury, such as a fall from a height, a road accident, a stab or gunshot wound, an electric shock or a severe burn, needs emergency care.",
     any: ["fell from a height", "fall from a height", "fell off a roof", "fell from the roof", "can't feel my legs", "cannot feel my legs", "can't move my legs", "cannot move my legs", "car accident", "car crash", "hit by a car", "motorcycle accident", "stabbed", "stab wound", "gunshot", "been shot", "was shot", "electric shock", "electrocuted", "severe burn", "serious burn", "chemical burn"] },
   { id: "testicle-sudden", level: "emergency", reason: "Sudden, severe pain in a testicle can mean it has twisted, which needs treatment within hours.",
     any: ["sudden testicle pain", "sudden testicular pain", "sudden pain in my testicle", "sudden severe pain in my testicle", "twisted testicle", "testicle is twisted"] },
@@ -98,7 +99,7 @@ const RULES = [
     any: ["severe stomach pain", "severe abdominal pain", "severe belly pain", "sharp pain in my lower right"] },
   { id: "dehydration", level: "urgent", reason: "Not being able to keep fluids down can lead to dehydration.",
     any: ["can't keep anything down", "cannot keep fluids down", "can't keep water down", "no urine", "not peeing"] },
-  { id: "injury", level: "urgent", reason: "A possible broken bone, deep cut or head injury should be checked today.",
+  { id: "injury", level: "urgent", notLongAgo: true, reason: "A possible broken bone, deep cut or head injury should be checked today.",
     any: ["broken bone", "bone is sticking out", "deep cut", "head injury", "hit my head", "can't move my", "cannot put weight"] },
   { id: "pregnancy", level: "urgent", reason: "Bleeding or pain during pregnancy should be checked today.",
     all: ["pregnant", "bleeding"] },
@@ -236,8 +237,35 @@ function containsCurrentEmergency(text, phrase) {
   }
 }
 
+// SCRUM-282: an injury the person says happened long ago ("since my car accident last year", "my head
+// injury from 2 years ago") is history, not something happening now. Only weeks or more count as long
+// ago: "a car accident last night" or "this morning" still counts. Checked within the phrase's own clause
+// (between full stops, commas and the like), so another sentence's "last year" changes nothing.
+const LONG_AGO = /\b(?:(?:years?|months?|weeks?) ago|last (?:year|month|week)|in the past|history of|recovered from|used to)\b/;
+
+function isLongAgoAt(text, index, length) {
+  const start = text.lastIndexOf(".", index) + 1;
+  const end = text.indexOf(".", index + length);
+  return LONG_AGO.test(text.slice(start, end === -1 ? undefined : end));
+}
+
+// Like mentions(), but each place the phrase (or everyday wording for it) appears must not be long ago.
+function mentionsRecent(text, phrase, understood) {
+  const recentAt = (said) => {
+    const isLetter = (char) => /[a-z0-9]/.test(char || "");
+    for (let from = 0, index; (index = text.indexOf(said, from)) !== -1; from = index + 1) {
+      if (isLetter(text[index - 1]) || isLetter(text[index + said.length])) continue;
+      if (!isNegatedAt(text, index) && !isLongAgoAt(text, index, said.length)) return true;
+    }
+    return false;
+  };
+  if (containsPositive(text, phrase) && recentAt(phrase)) return true;
+  return understood.some((item) => item.means === phrase && recentAt(item.said));
+}
+
 function ruleMatches(text, rule, understood = []) {
   if (rule.currentEmergency) return rule.any.some((phrase) => containsCurrentEmergency(text, phrase));
+  if (rule.notLongAgo) return rule.any.some((phrase) => mentionsRecent(text, phrase, understood));
   if (rule.all) return rule.all.every((phrase) => mentions(text, phrase, understood));
   return rule.any.some((phrase) => mentions(text, phrase, understood));
 }
