@@ -131,6 +131,65 @@ describe("what must not change the urgency", () => {
   });
 });
 
+// SCRUM-282: wording added after the triage quality test set (tests/triage-quality) found it was missed.
+describe("wording found by the triage quality test set", () => {
+  test("now reaches the right level", () => {
+    expectLevel("emergency", [
+      "he swallowed a tiny round battery",
+      "my toddler ate one of those small round batteries",
+      "my neck is so stiff and i have a fever",
+      "fever and i cant bend my neck forward",
+      "her skin looks blotchy and bluish",
+      "sudden sharp pain in his right testicle",
+      "i was in a car accident this morning and my neck hurts",
+      "car crash last year, and today i was hit by a car",
+    ]);
+    expectLevel("urgent", [
+      "my 3 week old baby has a temperature of 38.5",
+      "my 2 month old feels hot, temperature 100.6",
+      "my baby is 7 weeks old and her temperature is 38.3",
+      "severe pain in my upper left abdomen",
+      "really bad pain in the lower right side of my belly",
+      "i cant keep even water down",
+      "my wrist is swollen and looks bent",
+      "my arm is at a weird angle after i fell",
+      "cut my hand on glass, it's deep",
+      "i can see the bone in my finger",
+      "my son hit his head an hour ago and threw up",
+    ]);
+    expectLevel("soon", [
+      "my ears have been aching all week",
+      "my ear has been hurting since yesterday",
+      "cough for more than a week",
+      "sore throat for over a week now",
+      "back pain for months",
+      "headaches since my car accident last year",
+    ]);
+  });
+
+  test("harmless sentences that look similar are not raised", () => {
+    expectLevel("routine", [
+      "my skin looks a bit blotchy after the shower",
+      "i can see white spots on my tonsils",
+      "my 6 week old has no fever but is a bit fussy",
+      "my neck is stiff from sleeping in a weird position",
+      "i swallowed my pills before charging the batteries",
+      "small cut on my finger, it is not very deep",
+      "the cut isnt deep",
+      "my toenail is deformed",
+    ]);
+  });
+
+  test("an injury from long ago is history, not an emergency now", () => {
+    expectLevel("routine", [
+      "i fell off a ladder 2 years ago and now my knee hurts sometimes",
+      "i hit my head last year and want to know about my cold",
+    ]);
+    // Only within its own clause: a new injury in another clause still counts.
+    assert.equal(levelOf("headaches since my car accident last year. today i was stabbed"), "emergency");
+  });
+});
+
 describe("what was understood, and the explanation", () => {
   test("the result lists the everyday wording and what it was taken to mean", () => {
     const { understood } = classifyUrgency("my chest hurts and i cant catch my breath");
