@@ -17,6 +17,24 @@ cd frontend && npm ci && npm test
 
 The backend tests download a MongoDB binary the first time (mongodb-memory-server). Nothing else needs to be running. `npm test` runs at most 4 test files at a time (`--test-concurrency=4`). Each file starts its own MongoDB, and starting one per CPU core at once makes them time out on Windows. Four is still as fast as Node's default on GitHub's 4-core runners.
 
+### Emergency popup (SCRUM-175)
+
+The symptoms page opens an in-app emergency alert immediately when the assessment
+or a follow-up returns `emergency`, before waiting for record storage or contact
+lookup. It does not request browser notification permission. The native modal
+announces its title/instructions, keeps focus inside, and offers a direct call to
+140. Closing it or pressing Escape restores focus and leaves the emergency guidance
+on the page. It does not time out, repeat on ordinary rerenders/history loads, or
+appear for non-emergency results. A new emergency check alerts again; stale
+responses from an earlier profile or check cannot trigger it.
+
+`cd frontend && npm test -- --runInBand __tests__/emergencyPopup.test.js` exercises
+initial detection, follow-up escalation, deferred/failed storage, dismissal,
+repeat checks and stale profile responses. jsdom has a minimal dialog open-state
+shim; native focus containment and background inertness are exercised by the
+emergency-popup regression in the existing Selenium suite. The full browser suite
+runs in CI against the Docker app as described below.
+
 ### Red-flag rule audit
 
 The triage rules in [backend/src/triage/urgency.js](../backend/src/triage/urgency.js) are the safety net: when the AI is off, unreachable or its reply is rejected, they answer alone. [backend/tests/redFlagAudit.test.js](../backend/tests/redFlagAudit.test.js) checks that every emergency and urgent warning sign the AI is expected to flag is also caught by the rules on their own, that every warning-sign rule has audit sentences, and that every phrase of every rule works and is cancelled by "no". It needs no database: `node --test tests/redFlagAudit.test.js`.

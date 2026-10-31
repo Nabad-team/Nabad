@@ -24,6 +24,7 @@ import {
   getEmergencyContact,
 } from "../lib/api";
 
+import EmergencyAlert from "../components/EmergencyAlert";
 import UrgencyResult from "../components/UrgencyResult";
 import FollowUpQuestions from "../components/FollowUpQuestions";
 import ProfileHeader from "../components/ProfileHeader";
@@ -122,6 +123,22 @@ export default function SymptomsPage() {
     setAssessmentCount,
   ] = useState(0);
 
+  const [emergencyAlert, setEmergencyAlert] = useState(null);
+  const emergencyAlertedRef = useRef(false);
+  const assessmentRequestRef = useRef(0);
+
+  function presentAssessment(result) {
+    setUrgency(result);
+    if (result.level === "emergency") {
+      setFollowUps([]);
+      setFollowUpState(null);
+      if (!emergencyAlertedRef.current) {
+        emergencyAlertedRef.current = true;
+        setEmergencyAlert(result);
+      }
+    }
+  }
+
   const [savedRecord, setSavedRecord] = useState(null);
   const [history, setHistory] = useState([]);
 
@@ -168,6 +185,13 @@ export default function SymptomsPage() {
 
   useEffect(() => {
     let current = true;
+    setEmergencyAlert(null);
+    emergencyAlertedRef.current = false;
+    setUrgency(null);
+    setFollowUps([]);
+    setFollowUpState(null);
+    setRefining(false);
+    setEmergencyContact(null);
     setSavedRecord(null);
     setHistory([]);
     if (activeProfile?.id) {
@@ -182,7 +206,7 @@ export default function SymptomsPage() {
         })
         .catch(() => { if (current) setHistory([]); });
     }
-    return () => { current = false; };
+    return () => { current = false; assessmentRequestRef.current += 1; };
   }, [activeProfile?.id]);
 
 
@@ -335,10 +359,15 @@ export default function SymptomsPage() {
     event
   ) {
     event.preventDefault();
+    const request = ++assessmentRequestRef.current;
+    setRefining(false);
 
     setMessage("");
     setError("");
     setUrgency(null);
+    setEmergencyAlert(null);
+    emergencyAlertedRef.current = false;
+    setSavedRecord(null);
     setEmergencyContact(null);
     setFollowUps([]);
     setFollowUpState(null);
@@ -393,6 +422,10 @@ export default function SymptomsPage() {
         );
 
 
+      if (request !== assessmentRequestRef.current) return;
+      // Alert immediately on detection; storage and contact lookup must never delay it.
+      presentAssessment(result);
+
       // Save BOTH the symptom description
       // and its urgency result on the backend.
       const saved = await addSymptomRecord(
@@ -401,12 +434,9 @@ export default function SymptomsPage() {
         description,
         result
       );
+      if (request !== assessmentRequestRef.current) return;
       setSavedRecord(saved);
       setHistory((records) => [saved, ...records]);
-
-
-      // Show the urgency result.
-      setUrgency(result);
 
 
       // If this is an emergency,
@@ -419,11 +449,13 @@ export default function SymptomsPage() {
           const contactResponse =
             await getEmergencyContact();
 
+          if (request !== assessmentRequestRef.current) return;
           setEmergencyContact(
             contactResponse.contact ||
               null
           );
         } catch {
+          if (request !== assessmentRequestRef.current) return;
           // The emergency result must still
           // be shown even if the contact
           // cannot be loaded.
@@ -467,6 +499,7 @@ export default function SymptomsPage() {
       // successful storage.
       setSymptoms("");
     } catch (err) {
+      if (request !== assessmentRequestRef.current) return;
       console.error(err);
 
       setError(
@@ -486,6 +519,7 @@ export default function SymptomsPage() {
     setError("");
 
     setRefining(true);
+    const request = ++assessmentRequestRef.current;
 
     try {
       const allAnswers = {
@@ -502,12 +536,11 @@ export default function SymptomsPage() {
           followUpState
         );
 
+      if (request !== assessmentRequestRef.current) return;
       answersSoFarRef.current =
         allAnswers;
 
-      setUrgency(
-        updatedResult
-      );
+      presentAssessment(updatedResult);
 
       if (savedRecord?.id) {
         const updated = await updateSymptomRecord(
@@ -516,6 +549,7 @@ export default function SymptomsPage() {
           answers,
           updatedResult
         );
+        if (request !== assessmentRequestRef.current) return;
         setSavedRecord(updated);
         setHistory((records) => records.map((item) => item.id === updated.id ? updated : item));
       }
@@ -531,13 +565,14 @@ export default function SymptomsPage() {
           null
       );
     } catch (err) {
+      if (request !== assessmentRequestRef.current) return;
       console.error(err);
 
       setError(
         "We could not update the urgency with your answers. The result above still applies."
       );
     } finally {
-      setRefining(false);
+      if (request === assessmentRequestRef.current) setRefining(false);
     }
   }
 
@@ -706,6 +741,8 @@ export default function SymptomsPage() {
         </Alert>
       )}
 
+
+      {emergencyAlert && <EmergencyAlert result={emergencyAlert} onDismiss={() => setEmergencyAlert(null)} />}
 
       <UrgencyResult
         result={urgency}
