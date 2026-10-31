@@ -123,6 +123,9 @@ export default function SymptomsPage() {
     setAssessmentCount,
   ] = useState(0);
 
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState(false);
+  const [contactRetry, setContactRetry] = useState(0);
   const [emergencyAlert, setEmergencyAlert] = useState(null);
   const emergencyAlertedRef = useRef(false);
   const assessmentRequestRef = useRef(0);
@@ -134,6 +137,8 @@ export default function SymptomsPage() {
       setFollowUpState(null);
       if (!emergencyAlertedRef.current) {
         emergencyAlertedRef.current = true;
+        setEmergencyContact(null); setContactLoading(true); setContactError(false);
+        setContactRetry(value => value + 1);
         setEmergencyAlert(result);
       }
     }
@@ -209,6 +214,20 @@ export default function SymptomsPage() {
     return () => { current = false; assessmentRequestRef.current += 1; };
   }, [activeProfile?.id]);
 
+
+  // Contact lookup runs independently of record storage and is scoped to the patient.
+  useEffect(() => {
+    if (urgency?.level !== "emergency" || !activeProfile?.id) return;
+    const controller = new AbortController();
+    let current = true;
+    setEmergencyContact(null); setContactLoading(true); setContactError(false);
+    getEmergencyContact(activeProfile.id, controller.signal).then(({ contact }) => {
+      if (current) { setEmergencyContact(contact || null); setContactLoading(false); }
+    }).catch(error => {
+      if (current && error.name !== "AbortError") { setContactError(true); setContactLoading(false); }
+    });
+    return () => { current = false; controller.abort(); };
+  }, [urgency?.level, activeProfile?.id, contactRetry]);
 
   function toggleSpeechInput() {
     if (!SpeechRecognition) {
@@ -437,31 +456,6 @@ export default function SymptomsPage() {
       if (request !== assessmentRequestRef.current) return;
       setSavedRecord(saved);
       setHistory((records) => [saved, ...records]);
-
-
-      // If this is an emergency,
-      // also load the user's saved
-      // emergency contact.
-      if (
-        result.level === "emergency"
-      ) {
-        try {
-          const contactResponse =
-            await getEmergencyContact();
-
-          if (request !== assessmentRequestRef.current) return;
-          setEmergencyContact(
-            contactResponse.contact ||
-              null
-          );
-        } catch {
-          if (request !== assessmentRequestRef.current) return;
-          // The emergency result must still
-          // be shown even if the contact
-          // cannot be loaded.
-          setEmergencyContact(null);
-        }
-      }
 
 
       // Emergencies normally return
@@ -742,7 +736,7 @@ export default function SymptomsPage() {
       )}
 
 
-      {emergencyAlert && <EmergencyAlert result={emergencyAlert} onDismiss={() => setEmergencyAlert(null)} />}
+      {emergencyAlert && <EmergencyAlert result={emergencyAlert} onDismiss={() => setEmergencyAlert(null)} profileId={activeProfile?.id} contact={emergencyContact} contactLoading={contactLoading} contactError={contactError} onRetryContact={() => setContactRetry(value => value + 1)} />}
 
       <UrgencyResult
         result={urgency}

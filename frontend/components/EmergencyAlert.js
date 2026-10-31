@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef } from "react";
+import EmergencyLocationShare from "./EmergencyLocationShare";
 import Button from "./ui/Button";
 
 // Native modal dialogs keep keyboard focus inside and make the background inert.
 // This is an in-app alert: it needs no browser notification permission.
-export default function EmergencyAlert({ result, onDismiss }) {
+export default function EmergencyAlert({ result, onDismiss, profileId, contact, contactLoading, contactError, onRetryContact }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const id = useId();
@@ -37,5 +38,6 @@ export default function EmergencyAlert({ result, onDismiss }) {
       {!localNumberUnknown && <Button variant="danger" href="tel:140">Call 140 (Lebanese Red Cross)</Button>}
       <Button variant="secondary" onClick={onDismiss}>Close alert</Button>
     </div>
+    {profileId && <EmergencyLocationShare profileId={profileId} contact={contact} loading={contactLoading} error={contactError} onRetry={onRetryContact} />}
   </dialog>;
 }

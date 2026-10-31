@@ -566,6 +566,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.click(self.button("Close alert"))
         self.wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, "dialog[open][role='alertdialog']")))
         self.assertIn("Emergency", self.visible((By.ID, "urgency-heading")).text)
+
         self.assertEqual(self.visible((By.LINK_TEXT, "Call 140 now")).get_attribute("href"), "tel:140")
 
         # A fresh emergency must alert again; Escape dismisses the modal accessibly.
@@ -575,6 +576,37 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, "dialog[open][role='alertdialog']")))
         self.assertIn("Emergency", self.visible((By.ID, "urgency-heading")).text)
 
+    def test_emergency_location_share_prepares_a_draft_and_handles_denied_location(self):
+        self.open("/symptoms")
+        contact = self.driver.execute_async_script("fetch('/api/profile/emergency-contact').then(r => r.json()).then(r => arguments[0](r.contact));")
+        added = not contact
+        if added:
+            contact = {"name": "Location test contact", "phone": "+96170123456"}
+            self.assertEqual(self.fetch_json("POST", "/api/profile/emergency-contact", contact), 201)
+        self.driver.execute_cdp_cmd("Browser.grantPermissions", {"origin": BASE_URL, "permissions": ["geolocation"]})
+        self.driver.execute_cdp_cmd("Emulation.setGeolocationOverride", {"latitude": 33.9, "longitude": 35.5, "accuracy": 20})
+        try:
+            self.submit_symptoms("Chest pain today", dismiss_emergency=False)
+            self.click(self.button(f"Share my location with {contact['name']}"))
+            draft = self.visible((By.LINK_TEXT, f"Text location to {contact['name']}"))
+            href = draft.get_attribute("href")
+            self.assertTrue(href.startswith(f"sms:{contact['phone']}?body="))
+            message = parse_qs(urlparse(href).query)["body"][0]
+            self.assertIn("33.900000,35.500000", message)
+            self.assertIn("captured", message)
+            self.assertNotIn("chest pain", message.lower())
+            # Never launch or send a real text from a test. Check the prepared draft only.
+            self.driver.execute_cdp_cmd("Browser.setPermission", {"origin": BASE_URL, "permission": {"name": "geolocation"}, "setting": "denied"})
+            self.click(self.button("Get updated location"))
+            self.wait_for_text("Location access was denied")
+            self.assertFalse(self.driver.find_elements(By.LINK_TEXT, f"Text location to {contact['name']}"))
+            self.visible((By.LINK_TEXT, "Call 140 (Lebanese Red Cross)"))
+        finally:
+            self.driver.execute_cdp_cmd("Browser.resetPermissions", {})
+            self.driver.execute_cdp_cmd("Emulation.clearGeolocationOverride", {})
+            self.open("/symptoms")
+            if added:
+                self.assertEqual(self.fetch_json("DELETE", "/api/profile/emergency-contact"), 204)
     def medication_item(self, name, list_label="Your medications"):
         return (
             By.XPATH,
