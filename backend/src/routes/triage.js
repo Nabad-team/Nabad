@@ -21,6 +21,7 @@
 //
 // All three urgency results include "explanation": why this was recommended, in plain language (SCRUM-130).
 
+const { emergencyNeeds } = require("../triage/emergencyNeeds");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 
@@ -161,6 +162,7 @@ router.post(
 
     return res.json({
       ...result,
+      emergencyNeeds: emergencyNeeds(result, symptoms),
 
       // SCRUM-278: which kind of care, as a fixed id for the "Find care" link.
       careTypeId:
@@ -217,6 +219,7 @@ router.post(
 
       return res.json({
         ...result,
+        emergencyNeeds: emergencyNeeds(result, symptoms),
 
         // SCRUM-278: chosen for the level after the answers.
         careTypeId:

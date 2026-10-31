@@ -12,6 +12,50 @@ const provider = { id: "clinic", name: "Test Clinic", type: "clinic", city: "Bei
   latitude: 33.9, longitude: 35.5, services: ["mri"], specialties: ["pediatrics"], phone: "+9611000000", sources: ["https://example.org"], verifiedAt: "2026-10-15T00:00:00Z" };
 const result = { providers: [provider], total: 1, specialties: ["pediatrics"], cities: ["Beirut"] };
 beforeEach(() => { jest.resetAllMocks(); mockSignedIn = true; mockRouter = { isReady: true, query: {}, asPath: "/providers", push: jest.fn() }; getProviders.mockResolvedValue(result); getProviderFavorites.mockResolvedValue([]); setProviderFavorite.mockResolvedValue({}); });
+
+test("emergency routing asks for location, applies it immediately and identifies the closest capability match", async () => {
+  mockRouter = { ...mockRouter, query: { emergencyNeeds: "cardiac" }, asPath: "/providers?emergencyNeeds=cardiac" };
+  const locate = jest.fn(success => success({ coords: { latitude: 33.9, longitude: 35.5 } }));
+  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: locate } });
+  getProviders.mockResolvedValue({ ...result, page: 1, providers: [{ ...provider, type: "hospital", distanceKm: 2.1 }] });
+  const user = userEvent.setup(); render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  expect(locate).not.toHaveBeenCalled();
+  expect(screen.getByRole("link", { name: /Call 140/ })).toHaveAttribute("href", "tel:140");
+  expect(screen.getByText(/Only hospital ERs with all published requirements/)).toHaveTextContent("cardiology and catheterization lab");
+  expect(screen.queryByText(/Closest listed match/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Find nearest matching hospital" }));
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ emergencyNeeds: "cardiac", emergency24h: true, lat: 33.9, lng: 35.5, page: 1 }), expect.any(AbortSignal)));
+  expect(await screen.findByText(/Closest listed match by straight-line distance/)).toBeInTheDocument();
+  expect(mockRouter.push.mock.calls.at(-1)[0]).not.toMatch(/33\.9|35\.5|lat|lng/);
+});
+
+test("emergency location denial stays unranked and no match keeps emergency help visible", async () => {
+  mockRouter = { ...mockRouter, query: { emergencyNeeds: "burns" }, asPath: "/providers?emergencyNeeds=burns" };
+  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: (success, failure) => failure({ code: 1 }) } });
+  getProviders.mockResolvedValue({ ...result, providers: [], total: 0 });
+  const user = userEvent.setup(); render(<ProvidersPage />);
+  expect(await screen.findByText(/No hospital with all required published capabilities/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Find nearest matching hospital" }));
+  expect(screen.getByRole("alert")).toHaveTextContent("choose a city");
+  expect(screen.getByText(/Without it, results are alphabetical/)).toBeInTheDocument();
+  expect(screen.queryByText(/Closest listed match/)).not.toBeInTheDocument();
+  expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ emergencyNeeds: "burns" }), expect.any(AbortSignal));
+});
+
+test("a late location callback cannot restore a previous condition after navigation", async () => {
+  let success;
+  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: callback => { success = callback; } } });
+  mockRouter = { ...mockRouter, query: { emergencyNeeds: "cardiac" }, asPath: "/providers?emergencyNeeds=cardiac" };
+  const user = userEvent.setup(); const view = render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  await user.click(screen.getByRole("button", { name: "Find nearest matching hospital" }));
+  mockRouter = { ...mockRouter, query: { emergencyNeeds: "stroke" }, asPath: "/providers?emergencyNeeds=stroke" };
+  view.rerender(<ProvidersPage />);
+  await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ emergencyNeeds: "stroke" }), expect.any(AbortSignal)));
+  success({ coords: { latitude: 33.9, longitude: 35.5 } });
+  expect(mockRouter.push).not.toHaveBeenCalled();
+});
 test("lists providers and submits a specialty search", async () => {
   const user = userEvent.setup(); render(<ProvidersPage />);
   expect(await screen.findByRole("heading", { name: "Test Clinic" })).toBeInTheDocument();

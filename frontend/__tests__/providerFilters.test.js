@@ -1,4 +1,4 @@
-import { readProviderFilters, providerUrl, triageProviderUrl, triageProviderLabel, TRIAGE_CARE_TYPE_IDS } from "../lib/providerFilters";
+import { readProviderFilters, providerUrl, triageProviderUrl, triageProviderLabel, TRIAGE_CARE_TYPE_IDS, EMERGENCY_NEED_IDS } from "../lib/providerFilters";
 test("public URL contract round-trips canonical filters without location or symptoms", () => {
   const url = providerUrl({ specialty: "cardiology", service: "cath-lab", emergency24h: true, lat: 33.9, lng: 35.5, radiusKm: 10, symptoms: "private" });
   expect(url).toBe("/providers?specialty=cardiology&service=cath-lab&emergency24h=true");
@@ -78,4 +78,15 @@ test("every sourced service and insurance has an English label and source eviden
     }
     if (p.servicesReviewedAt) expect(p.serviceSources.length).toBeGreaterThan(0);
   }
+});
+
+test("emergency links carry only canonical treatment requirements, never symptoms or GPS", () => {
+  const url = triageProviderUrl({ level: "emergency", emergencyNeeds: ["stroke", "cardiac", "stroke"], symptoms: "PRIVATE", lat: 33.9 });
+  expect(url).toBe("/providers?emergency24h=true&emergencyNeeds=cardiac%2Cstroke");
+  expect(readProviderFilters({ emergencyNeeds: "cardiac" })).toMatchObject({ emergencyNeeds: "cardiac", emergency24h: true });
+  expect(triageProviderLabel({ level: "emergency", emergencyNeeds: ["cardiac"] })).toContain("required emergency capabilities");
+  // Invalid requirements reach a rejecting API rather than silently broadening matches.
+  expect(readProviderFilters({ emergencyNeeds: { $ne: "" } }).emergencyNeeds).toBe("invalid");
+  expect(readProviderFilters({ emergencyNeeds: "unknown" }).emergencyNeeds).toBe("invalid");
+  expect([...EMERGENCY_NEED_IDS].sort()).toEqual(Object.keys(require("../../backend/src/triage/emergencyNeeds").EMERGENCY_NEEDS).sort());
 });

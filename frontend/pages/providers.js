@@ -50,19 +50,24 @@ export default function ProvidersPage() {
   const [locationError, setLocationError] = useState("");
   const locationRequest = useRef(0);
   useEffect(() => () => { locationRequest.current += 1; }, []);
-  function locate() {
+  function locate(rankEmergency = false) {
     const request = ++locationRequest.current;
     setLocationError(""); setLocating(true);
     const fail = () => { if (request === locationRequest.current) { setLocating(false); setLocationError(t("locationError")); } };
     if (!navigator.geolocation) return fail();
     navigator.geolocation.getCurrentPosition(position => {
       if (request !== locationRequest.current) return;
-      setLocation({ lat: position.coords.latitude, lng: position.coords.longitude }); setLocating(false);
+      const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+      setLocation(coords); setLocating(false);
+      if (rankEmergency) applyFilters({ ...filters, ...coords, page: 1 });
     }, fail, { timeout: 10000, maximumAge: 60000 });
   }
   const [filters, setFilters] = useState(null);
   useEffect(() => {
     if (!router.isReady) return;
+    // A late GPS callback must not restore requirements from a previous search.
+    locationRequest.current += 1;
+    setLocating(false);
     const restored = readProviderFilters(router.query);
     setDraft(restored);
     // Coordinates are intentionally not read from or written to shareable URLs.
@@ -97,6 +102,14 @@ export default function ProvidersPage() {
   return <PageLayout title={t("title")} header={<ProfileHeader showPicture={false} />}>
     <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
     <p className="text-muted">{t("notice")}</p>
+    {filters?.emergency24h && <Alert tone="danger">
+      <p><a href="tel:140">{t("emergencyCall")}</a> {t("emergencyHelp")}</p>
+      <p>{filters.emergencyNeeds ? t("emergencyMatching", { needs: filters.emergencyNeeds.split(",").map(id => t(`emergencyNeeds.${id}`)).join(", ") }) : t("emergencyGeneral")}</p>
+      <p>{t("emergencyAvailability")}</p>
+      <Button variant="secondary" disabled={locating} onClick={() => locate(true)}>{t(locating ? "locating" : "emergencyLocation")}</Button>
+      {filters.lat == null && <p>{t("emergencyUnranked")}</p>}
+      {locationError && <p role="alert">{locationError}</p>}
+    </Alert>}
     <p className="text-muted">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
     {notice && <p role="status">{notice}</p>}
     {favoriteError && <Alert tone="danger" role="alert"><p>{favoriteError}</p>
@@ -147,14 +160,14 @@ export default function ProvidersPage() {
           </div>
           <p id="provider-location-hint">{t("locationHint")}</p>
           <div className="form-actions">
-            <Button variant="secondary" disabled={locating} aria-describedby="provider-location-hint" onClick={locate}>{t(locating ? "locating" : "location")}</Button>
+            <Button variant="secondary" disabled={locating} aria-describedby="provider-location-hint" onClick={() => locate()}>{t(locating ? "locating" : "location")}</Button>
             {(location || locating) && <Button variant="secondary" onClick={() => {
               locationRequest.current += 1; setLocation(null); setLocating(false); setLocationError("");
               setDraft(old => ({ ...old, radiusKm: "" }));
               applyFilters({ ...filters, lat: undefined, lng: undefined, radiusKm: "", page: 1 });
             }}>{t("clearLocation")}</Button>}
           </div>
-          {locationError && <p role="alert">{locationError}</p>}
+          {!filters?.emergency24h && locationError && <p role="alert">{locationError}</p>}
           {location && <p role="status">{t("locationReady")}</p>}
           <div className="field"><label htmlFor="provider-radius" className="field__label">{t("radius")}</label>
             <select id="provider-radius" className="input" disabled={!location} {...field("radiusKm")}>
@@ -163,7 +176,7 @@ export default function ProvidersPage() {
             </select>
           </div>
           <label><input type="checkbox" checked={draft.openNow} onChange={e => setDraft(old => ({ ...old, openNow: e.target.checked }))} /> {t("openNow")}</label>
-          <label><input type="checkbox" checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> {t("emergencyOnly")}</label>
+          <label><input type="checkbox" disabled={Boolean(draft.emergencyNeeds)} checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> {t("emergencyOnly")}</label>
           {signedIn && <label><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> {t("favoritesOnly")}</label>}
         </div>
       </details>
@@ -175,9 +188,10 @@ export default function ProvidersPage() {
       <p role="status">{t("count", { count: data.total })}</p>
       <Button variant="secondary" aria-pressed={showMap} onClick={() => setShowMap(value => !value)}>{t(showMap ? "hideMap" : "showMap")}</Button>
       {showMap && <ProviderMap providers={data.providers} />}
-      {!data.providers.length && <p>{t("empty")}</p>}
+      {!data.providers.length && <p>{t(filters.emergencyNeeds ? "emergencyNoMatch" : "empty")}</p>}
       <ul className="provider-list" aria-label={t("results")}>
-        {data.providers.map(provider => <Card as="li" className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
+        {data.providers.map((provider, index) => <Card as="li" className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
+          {filters.emergencyNeeds && filters.lat != null && data.page === 1 && index === 0 && provider.distanceKm != null && <p role="status">{t("emergencyNearest")}</p>}
           <h2><Link href={`/providers/${provider.id}`}>{provider.name}</Link></h2>
           {signedIn ? <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
             aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}

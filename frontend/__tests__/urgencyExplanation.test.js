@@ -5,6 +5,7 @@ import UrgencyResult from "../components/UrgencyResult";
 import { useAccessibility } from "../context/AccessibilityContext";
 
 jest.mock("../context/AccessibilityContext", () => ({ useAccessibility: jest.fn() }));
+jest.mock("next/link", () => ({ __esModule: true, default: ({ children, ...props }) => <a data-client-navigation="true" {...props}>{children}</a> }));
 // Shows the text that would be read aloud, so the test can check it.
 jest.mock("../components/ReadAloudButton", () => ({
   __esModule: true,
@@ -57,6 +58,14 @@ const setSimplified = (simplifiedMode) => useAccessibility.mockReturnValue({ pre
 const explanationBox = () => screen.getByRole("heading", { name: "Why we suggest this" }).closest(".urgency__explanation");
 
 beforeEach(() => setSimplified(false));
+
+test("condition-specific emergency care opens a document with the directory's location permission", () => {
+  render(<UrgencyResult result={{ ...EMERGENCY_RESULT, emergencyNeeds: ["cardiac"] }} />);
+  const link = screen.getByRole("link", { name: /required emergency capabilities/ });
+  expect(link).toHaveAttribute("href", "/providers?emergency24h=true&emergencyNeeds=cardiac");
+  expect(link).not.toHaveAttribute("data-client-navigation");
+  expect(screen.getByRole("link", { name: "Call 140 now" })).toBeInTheDocument();
+});
 
 test("emergency directory link retains the call action and does not narrow to a specialty", () => {
   render(<UrgencyResult result={EMERGENCY_RESULT} />);

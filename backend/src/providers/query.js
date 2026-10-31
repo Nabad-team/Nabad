@@ -1,6 +1,7 @@
 // Parse scalar strings explicitly: objects/arrays must never become MongoDB operators.
+const { parseEmergencyNeeds } = require("../triage/emergencyNeeds");
 function parseQuery(query) {
-  const parsed = {};
+  const parsed = { emergencyNeeds: parseEmergencyNeeds(query.emergencyNeeds) };
   for (const key of ["q", "specialty", "city", "district", "service", "governorate", "insurance"]) {
     const value = query[key];
     if (value !== undefined && (typeof value !== "string" || value.length > 100)) {
