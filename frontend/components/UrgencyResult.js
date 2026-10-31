@@ -312,10 +312,11 @@ export default function UrgencyResult({
       </p>
 
 
-      {/* SCRUM-278: opens the directory filtered by the recommended kind of care (careTypeId). */}
+      {/* Load the directory document so its route-specific geolocation permission takes effect.
+          Client-side navigation would retain the symptoms page's geolocation=() policy. */}
       <p>
-        <Button
-          variant="secondary"
+        <a
+          className="button button--secondary"
           href={
             triageProviderUrl(
               result
@@ -325,7 +326,7 @@ export default function UrgencyResult({
           {triageProviderLabel(
             result
           )}
-        </Button>
+        </a>
       </p>
     </section>
   );

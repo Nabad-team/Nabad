@@ -1,3 +1,4 @@
+const { EMERGENCY_NEEDS } = require("../triage/emergencyNeeds");
 const Provider = require("../models/Provider");
 const { openingStatus } = require("./hours");
 
@@ -9,6 +10,14 @@ async function searchProviders(query, favorites, now = new Date()) {
   for (const key of ["city", "district", "governorate"]) if (query[key]) match[key] = new RegExp(`^${query[key].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
   if (query.insurance) match.insurances = query.insurance;
   if (query.emergency24h) match.emergency24h = true;
+  if (query.emergencyNeeds?.length) {
+    match.type = "hospital";
+    match.emergency24h = true;
+    for (const field of ["specialties", "services"]) {
+      const required = [...new Set(query.emergencyNeeds.flatMap(id => EMERGENCY_NEEDS[id][field]))];
+      if (required.length) match[field] = { $all: [...new Set([...required, ...(match[field] ? [match[field]] : [])])] };
+    }
+  }
   if (query.favorites) match.slug = { $in: favorites || [] };
   // Words/phrases only: do not interpret quotes or leading '-' as search operators.
   const words = (query.q || "").match(/[\p{L}\p{N}]+/gu) || [];

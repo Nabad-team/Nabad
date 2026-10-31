@@ -11,18 +11,52 @@ Use `frontend/lib/providerFilters.js` to build links. Example:
 `/providers?specialty=emergency-medicine&emergency24h=true`
 
 Supported public URL fields: `q`, `specialty`, `service`, `city`, `governorate`,
-`insurance`, `openNow`, `emergency24h`, `favorites`, `page`. Boolean values are `true`/`false`.
+`insurance`, `openNow`, `emergency24h`, `emergencyNeeds`, `favorites`, `page`. Boolean values are `true`/`false`.
 The directory restores these on load and browser back/forward navigation. GPS
 coordinates are intentionally kept out of shareable URLs; the API additionally
 accepts `lat`, `lng`, `radiusKm`, and `limit` for distance searches.
 
-The existing triage result links emergency cases to published 24/7 ER facilities,
-without replacing the instruction to call emergency services. Non-Lebanon results
-do not link to this Lebanon-only directory. The symptom-entry result also links
-to the directory, explicitly labelled as facilities in Lebanon. Triage returns
-urgency and localized careType prose, not a specialty. Emergency links use only
-`emergency24h=true`; other results offer unfiltered browsing. No specialty is
-inferred from symptom text or rule IDs, and clinical recommendations are unchanged.
+Emergency triage results keep `careTypeId=emergency-department` and additionally
+return `emergencyNeeds`, an allow-listed array chosen by the server from positive
+matched safety rules. The frontend never parses model prose or symptoms into
+filters. The link carries only capability IDs, for example
+`/providers?emergency24h=true&emergencyNeeds=cardiac%2Cstroke`; GPS and symptom text
+are never put in shareable URLs. Older results without requirements still offer
+broad ER browsing, explicitly labelled as not condition-specific.
+
+| Requirement | Positive rule/context | Required published capabilities |
+| --- | --- | --- |
+| cardiac | Chest pain / suspected heart attack | Cardiology and catheterization lab |
+| stroke | Stroke signs / suspected stroke / thunderclap headache | Neurology and CT |
+| trauma | Current major injury | Surgery, CT and ICU |
+| burns | Current severe, serious or chemical burn | Burn unit and ICU |
+| surgical | Sudden testicular pain / swallowed battery or magnets | Surgery |
+| maternity | Reduced baby movements with explicit pregnancy/fetal context | Obstetrics-gynecology and maternity |
+| pediatric | Baby not moving with explicit newborn/after-birth/infant-age context | Pediatrics |
+
+These are conservative directory capability requirements, not a diagnosis,
+certification of a specialist center, or a transport/treatment protocol. Ambiguous
+or unmapped emergencies (including model-only escalation) retain general ER
+browsing and the emergency call instruction; the application does not guess a
+specialized destination. The clinical/product owner should review the requirement
+mapping before release, as with the existing triage safety rules.
+
+`GET /api/providers` accepts scalar `emergencyNeeds` as comma-separated IDs.
+Unknown, nested or repeated values return 400. Every selected requirement and any
+additional user filters must match: the database requires **hospital**, published
+**24/7 ER**, and **all** required specialties/services before distance sorting,
+counting and pagination. Setting `emergency24h=false` cannot bypass requirements.
+Unverified capabilities and unknown ER status do not qualify.
+
+On the directory, “Find nearest matching hospital” asks for location permission
+and immediately sorts matching hospitals by geodesic distance. Only the first
+located match on the first page is labelled closest; distance is straight-line,
+not travel time. Without GPS, matches stay alphabetical without a nearest claim.
+Unlocated facilities can appear in non-geographic browsing but cannot be selected
+as a nearest match. No matches or denied GPS never relax capability requirements.
+The page preserves a prominent call-140 link and advises emergency services to
+coordinate a destination: the directory cannot confirm current staff, beds or
+equipment. It does not replace emergency dispatch or delay seeking care.
 
 Canonical specialty slugs currently seeded:
 `cardiology`, `dermatology`, `emergency-medicine`, `ent`, `family-medicine`,

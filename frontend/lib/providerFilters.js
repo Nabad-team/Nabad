@@ -2,6 +2,8 @@
 import providerText from "../locales/en/providers.json";
 
 const SPECIALTY_NAMES = providerText.specialties;
+export const EMERGENCY_NEED_IDS = Object.keys(providerText.emergencyNeeds);
+const validNeeds = value => typeof value === "string" && value.length <= 100 && value.split(",").every(id => EMERGENCY_NEED_IDS.includes(id));
 
 export function readProviderFilters(query = {}) {
   const filters = {};
@@ -9,6 +11,9 @@ export function readProviderFilters(query = {}) {
     filters[key] = typeof query[key] === "string" && query[key].length <= 100 ? query[key].trim().toLowerCase() : "";
   }
   for (const key of ["openNow", "emergency24h", "favorites"]) filters[key] = query[key] === "true" || query[key] === true;
+  filters.emergencyNeeds = query.emergencyNeeds === undefined || query.emergencyNeeds === "" ? ""
+    : validNeeds(query.emergencyNeeds) ? [...new Set(query.emergencyNeeds.split(","))].sort().join(",") : "invalid";
+  if (filters.emergencyNeeds) filters.emergency24h = true;
   filters.radiusKm = "";
   filters.page = /^\d+$/.test(String(query.page)) && Number(query.page) > 0 && Number(query.page) <= 100000 ? Number(query.page) : 1;
   return filters;
@@ -45,8 +50,11 @@ const CARE_TYPE_FILTERS = {
 export const TRIAGE_CARE_TYPE_IDS = Object.keys(CARE_TYPE_FILTERS);
 
 export function triageProviderFilters(result) {
-  // Keep emergency browsing broad: every published 24/7 ER, whatever the specialty.
-  if (result?.level === "emergency") return { emergency24h: true };
+  // Only server-selected requirement IDs cross this boundary, never symptoms or model prose.
+  if (result?.level === "emergency") {
+    const needs = Array.isArray(result.emergencyNeeds) ? result.emergencyNeeds : [];
+    return { emergency24h: true, ...(needs.length ? { emergencyNeeds: needs.every(id => EMERGENCY_NEED_IDS.includes(id)) ? [...new Set(needs)].sort().join(",") : "invalid" } : {}) };
+  }
   const id = result?.careTypeId;
   if (typeof id !== "string" || !Object.hasOwn(CARE_TYPE_FILTERS, id)) return {};
   const filters = { ...CARE_TYPE_FILTERS[id] };
@@ -59,7 +67,8 @@ export function triageProviderUrl(result) {
 }
 // The words on the "Find care" button, so the user knows what the directory will show.
 export function triageProviderLabel(result) {
-  const { specialty, emergency24h } = triageProviderFilters(result);
+  const { specialty, emergency24h, emergencyNeeds } = triageProviderFilters(result);
+  if (emergencyNeeds) return "Find a hospital with the required emergency capabilities in Lebanon";
   const name = specialty ? SPECIALTY_NAMES[specialty]?.toLowerCase() : null;
   if (name && emergency24h) return `Browse 24/7 ER facilities with ${name} in Lebanon`;
   if (name) return `Find ${name} providers in Lebanon`;

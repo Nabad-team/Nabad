@@ -24,6 +24,7 @@ const { classifyUrgency, LEVELS } = require("../urgency");
 const { refineUrgency, SPECIFIC, GENERAL } = require("../followUps");
 const { planFollowUps, questionsForModel, readFollowUpState, MAX_ROUNDS } = require("../adaptiveFollowUps");
 const { emergencyRoute } = require("../careGuidance");
+const { emergencyNeeds } = require("../emergencyNeeds");
 const { chooseCareTypeId } = require("../careTypes");
 const { buildMessages } = require("./prompt");
 const { LlmError } = require("./llmClient");
@@ -82,6 +83,7 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
       reasons,
       careType: careType || DEFAULT_CARE_TYPE[level],
       // SCRUM-278: a fixed id the "Find care" button turns into directory filters (careTypes.js).
+      emergencyNeeds: emergencyNeeds({ level, matchedRuleIds: floor.matchedRuleIds }, symptoms),
       careTypeId: chooseCareTypeId({ level, symptoms, modelCareTypeId: careTypeId }),
       // Self-care is only offered when home care is the advice; for anything more serious it could delay care.
       selfCare: level === "routine" ? selfCare : [],
