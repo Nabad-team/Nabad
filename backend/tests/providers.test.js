@@ -287,3 +287,52 @@ test("a newer empty service review records evidence without replacing curated fi
   saved = await Provider.findOne({ slug: original.slug }).lean();
   assert.deepEqual(saved.serviceSources, ["https://example.test/review"]);
 });
+
+test("new source snapshots update existing facilities and insurance filters without duplicates", async () => {
+  for (const slug of ["beirut-eye-specialist-hospital", "machghara-governmental-hospital"]) {
+    const current = seedData.find(p => p.slug === slug);
+    await Provider.updateOne({ slug }, { $set: {
+      services: [], insurances: [], serviceSources: [], insuranceSources: [],
+      verifiedAt: new Date("2026-10-29"), servicesReviewedAt: new Date("2026-10-29"),
+    } });
+    await seedProviders([current]);
+    await seedProviders([current]);
+    const saved = await Provider.findOne({ slug }).lean();
+    assert.deepEqual(saved.services, current.services);
+    assert.deepEqual(saved.insurances, current.insurances || []);
+    assert.deepEqual(saved.serviceSources, current.serviceSources);
+    assert.equal(saved.emergency24h, null);
+    assert.equal(saved.hoursKnown, false);
+    assert.equal(await Provider.countDocuments({ slug }), 1);
+  }
+  const eye = seedData.find(p => p.slug === "beirut-eye-specialist-hospital");
+  assert.deepEqual(eye.specialties, ["ophthalmology", "ent"]);
+  assert.ok(!eye.services.includes("ct"));
+  assert.ok(!eye.insurances.includes("allianz"));
+  const machghara = seedData.find(p => p.slug === "machghara-governmental-hospital");
+  assert.ok(!machghara.services.includes("nicu"));
+  assert.ok(!machghara.services.includes("dialysis"));
+  const result = await get("?insurance=coop&limit=100");
+  assert.equal(result.status, 200);
+  assert.ok(result.body.providers.some(p => p.id === eye.slug));
+  assert.equal(await Provider.countDocuments(), seedData.length);
+});
+
+test("published insurer network uses canonical facilities and does not infer contracts from shared phone numbers", async () => {
+  const rows = seedData.filter(p => p.insurances?.includes("victoire"));
+  assert.equal(rows.length, 69);
+  for (const p of rows) {
+    assert.ok(p.insuranceSources.includes("https://victoire.com.lb/hospital/"), p.slug);
+    assert.ok(p.insuranceVerifiedAt, p.slug);
+  }
+  for (const slug of ["aubmc-specialty-clinics", "aubmc-outpatient", "rida-mroue-hospital", "hopital-francais-st-lourdes"]) {
+    assert.ok(!rows.some(p => p.slug === slug), slug);
+  }
+  const found = await get("?insurance=victoire&limit=100");
+  assert.equal(found.status, 200);
+  assert.equal(found.body.total, rows.length);
+  assert.deepEqual(found.body.providers.map(p => p.id).sort(), rows.map(p => p.slug).sort());
+  const combined = await get("?insurance=victoire&city=Saida&limit=100");
+  assert.ok(combined.body.total > 0);
+  assert.ok(combined.body.providers.every(p => p.city === "Saida" && p.insurances.includes("victoire")));
+});

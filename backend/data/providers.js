@@ -34,9 +34,10 @@ module.exports = [
       "https://www.aubmc.org.lb/patientcare/Pages/pat_info.aspx",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84535/american-university-of-beirut-medical-center?facility_type=8",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/208",
-      "https://aubmc.org.lb/patientcare/Pages/pat_info.aspx"
+      "https://aubmc.org.lb/patientcare/Pages/pat_info.aspx",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "governorate": "Beirut",
     "services": [
       "cath-lab",
@@ -51,12 +52,14 @@ module.exports = [
     "insurances": [
       "nssf",
       "moph",
-      "lebanese-army"
+      "lebanese-army",
+      "victoire"
     ],
     "insuranceSources": [
-      "https://aubmc.org.lb/patientcare/Pages/pat_info.aspx"
+      "https://aubmc.org.lb/patientcare/Pages/pat_info.aspx",
+      "https://victoire.com.lb/hospital/"
     ],
-    "insuranceVerifiedAt": "2026-10-29T12:00:00Z"
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "lau-rizk",
@@ -85,16 +88,24 @@ module.exports = [
       "https://www.laumcrh.com/departments/medical-departments",
       "https://www.laumcrh.com/departments/medical-departments/internal-medicine/emergency-department",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84544/university-medical-center-rizk-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/41"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/41",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "governorate": "Beirut",
     "services": [
       "cath-lab",
       "ct",
       "mri"
     ],
-    "district": "Beirut"
+    "district": "Beirut",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "nini-hospital",
@@ -119,9 +130,10 @@ module.exports = [
       "https://www.hopitalnini.com/en/component/jecontact/",
       "https://www.hopitalnini.com/en/departments/2-uncategorised",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84639/nine-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/52"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/52",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "governorate": "North",
     "services": [
       "mri",
@@ -131,7 +143,14 @@ module.exports = [
       "dialysis"
     ],
     "phone": "+9616431400",
-    "district": "Tripoli"
+    "district": "Tripoli",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hammoud-hospital",
@@ -158,9 +177,10 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://hhumc.org.lb/en/department-MD.php",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84651/hammoud-hospital-university-medical-center?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/194"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/194",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "governorate": "South",
     "services": [
       "ct",
@@ -169,7 +189,14 @@ module.exports = [
       "cath-lab"
     ],
     "district": "Saida",
-    "phone": "+9617723111"
+    "phone": "+9617723111",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "aubmc-specialty-clinics",
@@ -382,11 +409,19 @@ module.exports = [
       "https://www.hopital-libanais.com/department/critical-care-units",
       "https://syndicateofhospitals.org.lb/Hospitals/Details/130",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84548/jeatawi-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/130"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/130",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9611590000",
-    "district": "Beirut"
+    "district": "Beirut",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "chtoura-hospital",
@@ -420,11 +455,19 @@ module.exports = [
       "https://www.chtourahospital.com/node/1",
       "https://chtourahospital.com/departments",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84558/chtoura-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/155"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/155",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Zahle",
-    "phone": "+9618544022"
+    "phone": "+9618544022",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "bekaa-hospital",
@@ -458,12 +501,20 @@ module.exports = [
       "https://bekaahospital.com/departments/",
       "https://www.bekaahospital.com/index.php",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84562/bekaa-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/160"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/160",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "emergency24h": true,
     "phone": "+9618543150",
-    "district": "Zahle"
+    "district": "Zahle",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "mount-lebanon-hospital",
@@ -544,9 +595,10 @@ module.exports = [
       "https://www.bmc.com.lb/contact-us/",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84611/belle-vue-hopital?facility_type=8",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/231",
-      "https://www.bmc.com.lb/patients-visitor-guide/accepted-insurance-companies/"
+      "https://www.bmc.com.lb/patients-visitor-guide/accepted-insurance-companies/",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "emergency24h": true,
     "phone": "+9611682666",
     "district": "Metn",
@@ -565,12 +617,14 @@ module.exports = [
       "fidelity",
       "libano-suisse",
       "assurex",
-      "lia"
+      "lia",
+      "victoire"
     ],
     "insuranceSources": [
-      "https://www.bmc.com.lb/patients-visitor-guide/accepted-insurance-companies/"
+      "https://www.bmc.com.lb/patients-visitor-guide/accepted-insurance-companies/",
+      "https://victoire.com.lb/hospital/"
     ],
-    "insuranceVerifiedAt": "2026-10-29T12:00:00Z"
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "notre-dame-des-secours",
@@ -642,11 +696,19 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://nbguh.com/contact/",
       "https://moph.gov.lb/en/Media/view/70231/minister-abiad-toured-nabih-berri-governmental-university-hospital-in-nabatiyeh",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84371/nabatieh-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84371/nabatieh-governmental-hospital?facility_type=1",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9617766888",
-    "district": "Nabatieh"
+    "district": "Nabatieh",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "akkar-rahal",
@@ -671,11 +733,19 @@ module.exports = [
       "https://moph.gov.lb/en/HealthFacilities/view/3/8/71288/akkar-rahal-hospital",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/171",
       "https://www.old.jinan.edu.lb/pages/en/Public-Health",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84625/akkar-rahal-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84625/akkar-rahal-hospital?facility_type=8",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616690000",
-    "district": "Akkar"
+    "district": "Akkar",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "baalbek-governmental",
@@ -731,11 +801,19 @@ module.exports = [
       "https://www.haykelhospital.com/home/en/medical/departments",
       "https://www.haykelhospital.com/home/en/about",
       "https://syndicateofhospitals.org.lb/Hospitals/Details/178",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84628/hopital-albert-haykel-sal?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84628/hopital-albert-haykel-sal?facility_type=8",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616411111",
-    "district": "Koura"
+    "district": "Koura",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -913,16 +991,24 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84388/beirut-governmental-hospital?facility_type=1",
-      "https://www.moph.gov.lb/en/Pages/130/80057/nassereddine-inaugurates-the-rehabilitation-of-the-dialysis-unit-at-hariri-hospital-as-an-initiative"
+      "https://www.moph.gov.lb/en/Pages/130/80057/nassereddine-inaugurates-the-rehabilitation-of-the-dialysis-unit-at-hariri-hospital-as-an-initiative",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Beirut",
     "phone": "+9611830000",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84388/beirut-governmental-hospital?facility_type=1",
       "https://www.moph.gov.lb/en/Pages/130/80057/nassereddine-inaugurates-the-rehabilitation-of-the-dialysis-unit-at-hariri-hospital-as-an-initiative"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1228,16 +1314,24 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84384/bent-jbeil-governmental-hospital?facility_type=1",
-      "https://www.gov.pl/web/polishaid/polish-aid-for-world-water-da"
+      "https://www.gov.pl/web/polishaid/polish-aid-for-world-water-da",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Bint Jbeil",
     "phone": "+9617452000",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84384/bent-jbeil-governmental-hospital?facility_type=1",
       "https://www.gov.pl/web/polishaid/polish-aid-for-world-water-da"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1260,11 +1354,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84643/new-mazloum-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/180"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/180",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Tripoli",
-    "phone": "+9616410025"
+    "phone": "+9616410025",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1329,11 +1431,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84616/hopital-beit-chabab?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/111"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/111",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Metn",
-    "phone": "+9614983393"
+    "phone": "+9614983393",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1414,11 +1524,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84539/rosaire-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/115"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/115",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Beirut",
-    "phone": "+9611447980"
+    "phone": "+9611447980",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1451,11 +1569,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84550/makasid-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/43"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/43",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Beirut",
-    "phone": "+9611636000"
+    "phone": "+9611636000",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1532,16 +1658,24 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84541/fouad-khoury-hospital-associates-sal?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/59"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/59",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Beirut",
     "phone": "+9611742140",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84541/fouad-khoury-hospital-associates-sal?facility_type=8",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/59"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1604,11 +1738,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84571/al-iman-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/150"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/150",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Aley",
-    "phone": "+9615554264"
+    "phone": "+9615554264",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1631,11 +1773,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84566/al-watani-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/154"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/154",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Aley",
-    "phone": "+9615557880"
+    "phone": "+9615557880",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1668,21 +1818,24 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84586/ain-wzen-hospital?facility_type=8",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/49",
-      "https://awmv.org/patients-services/"
+      "https://awmv.org/patients-services/",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Chouf",
     "phone": "+9615509001",
     "insurances": [
       "nssf",
       "coop",
       "moph",
-      "lebanese-army"
+      "lebanese-army",
+      "victoire"
     ],
     "insuranceSources": [
-      "https://awmv.org/patients-services/"
+      "https://awmv.org/patients-services/",
+      "https://victoire.com.lb/hospital/"
     ],
-    "insuranceVerifiedAt": "2026-10-29T12:00:00Z"
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1903,11 +2056,19 @@ module.exports = [
     "sources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84554/dr-hamed-farhat-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/75"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/75",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "West Bekaa",
-    "phone": "+9618660101"
+    "phone": "+9618660101",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1957,10 +2118,18 @@ module.exports = [
       "https://www.cmsm.org.lb/index.php/providers?page=2",
       "https://www.moph.gov.lb/en/HealthFacilities/view/0/55728/84542/beirut-general-hospital?facility_type=8",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84542/beirut-general-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/96"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/96",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "district": "Beirut",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -1996,10 +2165,18 @@ module.exports = [
       "https://www.cmsm.org.lb/index.php/providers?keywords=Najjar",
       "https://www.moph.gov.lb/fr/HealthFacilities/view/17/85908/84540/najjar-hospital?facility_type=8",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84540/najjar-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/71"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/71",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "district": "Beirut"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "district": "Beirut",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -2030,10 +2207,18 @@ module.exports = [
       "https://www.cmsm.org.lb/index.php/providers?keywords=Najd",
       "https://beirut.diplo.de/resource/blob/2494926/ad07b020fe965573107e810926c50de7/krankenhaeuserliste-data.pdf",
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84622/secours-populaire-hospital?facility_type=8",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/200"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/200",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "district": "Nabatieh"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "district": "Nabatieh",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "type": "hospital",
@@ -2139,14 +2324,22 @@ module.exports = [
     "sources": [
       "https://moph.gov.lb/en/HealthFacilities/index/3/188/8/sort%3AHealthFacility.title/direction%3Aasc/page%3A2",
       "https://mapcarta.com/fr/N4661434309",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84565/bchamoun-speciality-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84565/bchamoun-speciality-hospital?facility_type=8",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "district": "Aley",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84565/bchamoun-speciality-hospital?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "specialized-hospital-haidar-and-hajjar",
@@ -2253,19 +2446,41 @@ module.exports = [
     "address": "Museum Mathaf Square، 116-5311، Hotel Dieu Street, Beirut, Lebanon",
     "latitude": 33.881590621084705,
     "longitude": 35.51255724248133,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "ophthalmology",
+      "ent"
+    ],
+    "services": [
+      "eye-procedures",
+      "outpatient",
+      "surgical-inpatient-care"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84547/beirut-eye-specialist-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/10"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/10",
+      "https://besh.com.lb/",
+      "https://besh.com.lb/patient-information/third-party-coverage/",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "servicesReviewedAt": "2026-10-30T12:00:00Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84547/beirut-eye-specialist-hospital?facility_type=8"
-    ]
+      "https://besh.com.lb/"
+    ],
+    "insurances": [
+      "nssf",
+      "moph",
+      "lebanese-army",
+      "coop",
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://besh.com.lb/patient-information/third-party-coverage/",
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "al-manara-doctors-hospital",
@@ -2290,10 +2505,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84553/al-manara-doctors-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/16",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/158"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/158",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9618563101"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9618563101",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "bahmad-el-fakih-hospital",
@@ -2560,10 +2783,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84574/sahel-general-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/32",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/126"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/126",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9611858333"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9611858333",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "specialized-medical-rehabilitation-hospital",
@@ -2652,10 +2883,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84577/st-georges-hadath-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/35",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/227"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/227",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9615463922"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9615463922",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "borj-hospital",
@@ -2717,10 +2956,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84579/hopital-saint-charles?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/37",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/136"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/136",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9615451100"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9615451100",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "sacre-coeur-hospital",
@@ -2798,10 +3045,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84581/al-zahraa-hospital-university-medical-center?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/4",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/81"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/81",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9611851040"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9611851040",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "al-hayat-hospital",
@@ -2924,10 +3179,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84587/alerfan-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/43",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/97"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/97",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9615500877"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9615500877",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "osman-hospital",
@@ -2983,14 +3246,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84590/baakleenhospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/152"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/152",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9615300882",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84590/baakleenhospital?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hopital-maritime-jbeil",
@@ -3019,10 +3290,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84591/hopital-maritime-jbeil?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/46",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/50"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/50",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9619540017"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9619540017",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hopital-saint-michel-amchit",
@@ -3113,10 +3392,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84595/st-georges-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/50",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/108"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/108",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9619234201"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9619234201",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hospital-mgr-cortbawi",
@@ -3140,14 +3427,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84596/hospital-mgr-cortbawi?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/51"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/51",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9619855410",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84596/hospital-mgr-cortbawi?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "kesserwan-medical-center",
@@ -3201,10 +3496,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84599/notre-dame-de-liban-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/53",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/140"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/140",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9619644644"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9619644644",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "psychiatric-hospital-of-the-cross",
@@ -3263,10 +3566,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84601/arz-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/55",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/87"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/87",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9611876770"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9611876770",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "eye-ear-hospital-international",
@@ -3292,10 +3603,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84602/eye-ear-hospital-international?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/56",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/74"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/74",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9614521130"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9614521130",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "middle-east-institutd-of-health",
@@ -3320,10 +3639,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84603/middle-east-institutd-of-health?facility_type=8",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=3",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/217"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/217",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9614712111"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9614712111",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hopital-abou-jaouke",
@@ -3351,18 +3678,21 @@ module.exports = [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/58",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/106",
       "https://www.hopitalaboujaoude.com/en/lebanon/payment-and-reimbursement",
-      "https://www.hopitalaboujaoude.com/en/department/medical-imaging"
+      "https://www.hopitalaboujaoude.com/en/department/medical-imaging",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9614718000",
     "insurances": [
-      "nssf"
+      "nssf",
+      "victoire"
     ],
     "insuranceSources": [
       "https://www.hopitalaboujaoude.com/en/lebanon/payment-and-reimbursement",
-      "https://www.hopitalaboujaoude.com/en/department/medical-imaging"
+      "https://www.hopitalaboujaoude.com/en/department/medical-imaging",
+      "https://victoire.com.lb/hospital/"
     ],
-    "insuranceVerifiedAt": "2026-10-29T12:00:00Z"
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "sach-medical-co-bitar-hospital",
@@ -3411,11 +3741,19 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84606/lebanise-canadian-hospital?facility_type=8",
       "https://www.syndicateofhospitals.org.lb/Hospitals/Details/133",
-      "https://www.openstreetmap.org/way/305423504"
+      "https://www.openstreetmap.org/way/305423504",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9611511487",
-    "locationApproximate": true
+    "locationApproximate": true,
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "serhal-hospital",
@@ -3440,10 +3778,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84607/serhal-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/61",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/39"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/39",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9614405050"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9614405050",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "centre-hopital-de-behannss",
@@ -3507,10 +3853,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84609/saint-joseph-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/63",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/63"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/63",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9611240111"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9611240111",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "haroun-hospital",
@@ -3539,10 +3893,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84610/haroun-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/64",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/132"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/132",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9611897300"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9611897300",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hopital-dar-al-raheme",
@@ -3592,10 +3954,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84613/clinique-du-levant-sm?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/150",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/228"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/228",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9611501500"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9611501500",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "hopital-notre-dame-pour-les-malade-cronique",
@@ -3820,10 +4190,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84621/alcheick-harb-hospital?facility_type=8",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/220"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/220",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617766799"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617766799",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "al-hikme-hospital",
@@ -3903,10 +4281,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84626/hopital-notre-dame-de-la-paix?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/82",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/183"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/183",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9616351670"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9616351670",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "el-youssef-hospital-center",
@@ -3998,14 +4384,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84631/al-kheir-hospital-miniyeh?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/85"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/85",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616461444",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84631/al-kheir-hospital-miniyeh?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "dar-al-shifa-hospital",
@@ -4032,14 +4426,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84633/dar-al-shifa-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/87"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/87",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616429595",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84633/dar-al-shifa-hospital?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "social-services-association-dar-al-ajaza-hospice",
@@ -4153,10 +4555,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84638/al-mounla-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/92",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/182"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/182",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9616207000"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9616207000",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "dar-al-zahraa-hospital",
@@ -4247,10 +4657,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84642/al-hanan-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/96",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/80"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/80",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9616200526"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9616200526",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "al-rahma-hospital",
@@ -4351,10 +4769,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84646/hospital-saydet-zgharta?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/101",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/184"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/184",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9616660575"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9616660575",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "centre-hospitalier-du-nord",
@@ -4380,14 +4806,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84647/centre-hospitalier-du-nord?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/102"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/102",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-29T12:00:00Z",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616555230",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84647/centre-hospitalier-du-nord?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "alaa-el-dine-hospital",
@@ -4417,10 +4851,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84650/alaa-el-dine-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/104",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/107"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/107",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617443200"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617443200",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "dalaa-hospital",
@@ -4462,10 +4904,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84652/dalaa-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/106",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/191"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/191",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617724088"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617724088",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "health-medical-center-osseiran-hospital",
@@ -4490,10 +4940,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84653/health-medical-center-osseiran-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/107",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/188"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/188",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617726078"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617726078",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "alraai-hospital",
@@ -4516,10 +4974,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84654/alraai-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/108",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/84"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/84",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617222023"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617222023",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "aljanoub-hospital",
@@ -4582,10 +5048,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84656/kassab-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/110",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/113"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/113",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617723900"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617723900",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "al-hamshari-hospital",
@@ -4650,10 +5124,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84658/labib-medical-center?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/148",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/110"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/110",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617723444"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617723444",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "abed-el-rahman-al-nakib-hospital",
@@ -4755,10 +5237,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84662/hiram-hospital?facility_type=8",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/112",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/196"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/196",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617343700"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617343700",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "rida-mroue-hospital",
@@ -4816,10 +5306,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84665/jabal-amel-hospital?facility_type=8",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=3",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/90"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/90",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9617740343"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9617740343",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "iben-sinna-hospital",
@@ -4991,10 +5489,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84671/al-tatari-hospital?facility_type=8",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/73"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/73",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9618370799"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9618370799",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "al-rayan-hospital",
@@ -5029,10 +5535,18 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84672/al-rayan-hospital?facility_type=8",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=1",
-      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/166"
+      "https://www.syndicateofhospitals.org.lb/Hospitals/Details/166",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "phone": "+9618372182"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "phone": "+9618372182",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "mortada-hospital",
@@ -5050,15 +5564,23 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8",
-      "https://www.openstreetmap.org/way/1324186477"
+      "https://www.openstreetmap.org/way/1324186477",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9618377880",
     "locationApproximate": true,
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "universal-hospital",
@@ -5250,14 +5772,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1",
-      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4"
+      "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616520555",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "batroun-governmental-hospital",
@@ -5339,14 +5869,22 @@ module.exports = [
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/131"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/131",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9616561701",
     "servicesReviewedAt": "2026-10-29T12:00:00Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1"
-    ]
+    ],
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   },
   {
     "slug": "orange-nassau-governmental-hospital",
@@ -5434,18 +5972,24 @@ module.exports = [
     "latitude": 33.521704248977535,
     "longitude": 35.674936117655726,
     "specialties": [],
-    "services": [],
+    "services": [
+      "icu",
+      "ct",
+      "general-radiology",
+      "medical-inpatient-care"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84392/machghara-governmental-hospital?facility_type=1",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/149"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/149",
+      "https://www.machghara.com/en/government-institutions/machghara-governmental-hospital"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-30T12:00:00Z",
     "phone": "+9618651738",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-30T12:00:00Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84392/machghara-governmental-hospital?facility_type=1"
+      "https://www.machghara.com/en/government-institutions/machghara-governmental-hospital"
     ]
   },
   {
@@ -5725,8 +6269,16 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84629/hopital-al-koura?facility_type=8",
       "https://www.openstreetmap.org/way/843483047",
       "https://www.hopital-alkoura.com.lb/fr/dep-detail.php?id=9",
-      "https://www.hopital-alkoura.com.lb/fr/dep-detail.php?id=10"
+      "https://www.hopital-alkoura.com.lb/fr/dep-detail.php?id=10",
+      "https://victoire.com.lb/hospital/"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00"
+    "verifiedAt": "2026-10-31T10:00:00Z",
+    "insurances": [
+      "victoire"
+    ],
+    "insuranceSources": [
+      "https://victoire.com.lb/hospital/"
+    ],
+    "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
   }
 ];
