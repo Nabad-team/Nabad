@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import EmergencyLocationShare from "./EmergencyLocationShare";
+import { contactNumber } from "../lib/emergencyLocation";
 import Button from "./ui/Button";
 
 // Native modal dialogs keep keyboard focus inside and make the background inert.
@@ -9,6 +10,7 @@ export default function EmergencyAlert({ result, onDismiss, profileId, contact, 
   const headingRef = useRef(null);
   const id = useId();
   const localNumberUnknown = result.emergency?.contactNumber === null;
+  const savedNumber = contactNumber(contact?.phone);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -38,6 +40,18 @@ export default function EmergencyAlert({ result, onDismiss, profileId, contact, 
       {!localNumberUnknown && <Button variant="danger" href="tel:140">Call 140 (Lebanese Red Cross)</Button>}
       <Button variant="secondary" onClick={onDismiss}>Close alert</Button>
     </div>
-    {profileId && <EmergencyLocationShare profileId={profileId} contact={contact} loading={contactLoading} error={contactError} onRetry={onRetryContact} />}
+    {profileId && <section className="emergency-saved-contact" aria-labelledby={`${id}-contact`}>
+      <h3 id={`${id}-contact`}>Saved emergency contact</h3>
+      {contactLoading ? <p role="status">Loading emergency contact...</p>
+        : contactError ? <><p role="alert">Your emergency contact couldn't be loaded. You can still call emergency services.</p><Button variant="secondary" onClick={onRetryContact}>Retry emergency contact</Button></>
+          : contact && savedNumber ? <>
+            <p><strong>{contact.name}</strong><br />{savedNumber}</p>
+            <Button variant="secondary" href={`tel:${savedNumber}`}>Call {contact.name} (emergency contact)</Button>
+            <EmergencyLocationShare profileId={profileId} contact={contact} onRetry={onRetryContact} />
+          </> : <>
+            <p>No emergency contact with a valid phone number is saved for this profile.</p>
+            {profileId === "self" && <Button variant="secondary" href="/profile">Add an emergency contact</Button>}
+          </>}
+    </section>}
   </dialog>;
 }
