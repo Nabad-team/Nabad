@@ -430,6 +430,7 @@ export default function MyHealthPage() {
         <PageTitle lead="Nabad uses this to give you safer guidance. Everything here is optional, and you can change it anytime.">My health</PageTitle>
       )}
 
+      <p><Button variant="secondary" href="/emergency-card">Emergency information card</Button></p>
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loadError && (

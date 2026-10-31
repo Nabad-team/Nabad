@@ -17,6 +17,35 @@ cd frontend && npm ci && npm test
 
 The backend tests download a MongoDB binary the first time (mongodb-memory-server). Nothing else needs to be running. `npm test` runs at most 4 test files at a time (`--test-concurrency=4`). Each file starts its own MongoDB, and starting one per CPU core at once makes them time out on Windows. Four is still as fast as Node's default on GitHub's 4-core runners.
 
+### Emergency information card (SCRUM-290)
+
+Open **Emergency information card** from My health or the account menu. The
+signed-in page uses `GET /api/emergency-card?profileId=self` (or an owned linked
+profile ID) to read an allowlisted snapshot of that patient's name, date of birth,
+confirmed conditions/allergies/blood type, active medications and emergency
+contact. Suggestions and discontinued medication are excluded. Missing data is
+labelled “not recorded”; an empty allergy list does not establish no known allergies.
+A linked profile never inherits the account owner's emergency contact.
+
+The card is rebuilt from saved records on opening or refreshing; no extra stored
+card, public sharing URL or database migration is created. The API uses the
+existing session/ownership checks and `Cache-Control: no-store`; the page is
+excluded from crawling in robots.txt. Changing profiles hides the previous
+snapshot immediately and disables printing until the selected patient's card is
+ready. Failed requests cannot print a partial card.
+
+**Print emergency card** opens the browser print dialog, including its save-as-PDF
+option. Print styles show only the card in black on white, preserve all entries
+without truncation, and allow longer cards to span pages. Preparation time is
+shown in Beirut time; it does not claim clinical verification. Review the card
+before printing and keep the printed health information private.
+
+Tests: `backend/tests/emergencyCard.test.js` exercises authenticated access,
+ownership/isolation, confirmed facts, medication status, contact scoping and
+refreshes. `frontend/__tests__/emergencyCard.test.js` covers all sections, missing
+values, retry, printing, profile races and text escaping. The full Selenium suite
+also checks card access and print styles.
+
 ### Emergency popup (SCRUM-175)
 
 The symptoms page opens an in-app emergency alert immediately when the assessment
