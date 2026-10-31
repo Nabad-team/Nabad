@@ -160,6 +160,12 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 - **Care circle:** user A invites user B by email; B opens the link from the email in Mailpit, signs in and accepts; A runs an emergency symptom check; B's bell shows the care circle alert (with A's name and the level, not the symptoms) and a Call button for A's phone.
 - **Download my data:** on the profile page, confirm with the password; the browser saves `nabad-data-YYYY-MM-DD.json`, which must be valid JSON for this account (and not contain a password hash), and the account gets the "A copy of your Nabad data was downloaded" email.
 
+### Emergency guidance with AI disabled
+
+Emergency rules run before the AI assessment budget and optional history or health-context reads. All 20 canonical emergency rules and the three emergency follow-up answers return essential guidance without calling a model, including when AI configuration is absent, invalid or unavailable. Authentication, profile ownership and input validation still apply; non-emergency assessments retain their rate limit. This does not provide offline service or bypass required account storage.
+
+The emergency popup shows 140 for Lebanon or an unspecified location, and the selected profile's saved emergency contact with a direct call action. Contact loading, failure or absence does not hide emergency guidance. Known locations outside Lebanon retain the existing local-emergency guidance. Backend and component tests cover every emergency rule; Selenium covers representative red flags in the default Docker app with AI disabled. Contact retrieval and the popup must also work while assessment saving is pending.
+
 ### Never against production
 
 The tests that sign up, add or delete anything refuse to run when `NABAD_BASE_URL` points at the live site (https://nabad-psi.vercel.app), with a message saying so. Only the read-only public page tests run there.

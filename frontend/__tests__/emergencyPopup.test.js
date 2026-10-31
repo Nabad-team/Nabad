@@ -15,6 +15,8 @@ jest.mock("../lib/api", () => ({ ...jest.requireActual("../lib/api"), getEmergen
 
 const EMERGENCY = { level: "emergency", label: "Emergency", timeframe: "Now", action: "Call 140 now.", reasons: [], followUpQuestions: [] };
 const SOON = { level: "soon", label: "See a doctor soon", timeframe: "Within 24 to 48 hours", action: "See a doctor soon.", followUpQuestions: [] };
+const { RULES, classifyUrgency } = require("../../backend/src/triage/urgency");
+const emergencyRules = RULES.filter(rule => rule.level === "emergency");
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 beforeEach(() => {
   jest.clearAllMocks();
@@ -132,4 +134,34 @@ test("a late assessment for a previous profile cannot open the popup", async () 
   await act(async () => assessment.resolve(EMERGENCY));
   expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   expect(addSymptomRecord).not.toHaveBeenCalled();
+});
+
+test.each(emergencyRules.map(rule => [rule.id, rule.all ? rule.all.join(" and ") : rule.any[0]]))(
+  "AI-off red flag %s displays 140 and the saved contact inside the alert", async (id, symptoms) => {
+    const result = classifyUrgency(symptoms);
+    expect(result.level).toBe("emergency");
+    expect(result.matchedRuleIds).toContain(id);
+    assessUrgency.mockResolvedValue({ ...result, ai: { used: false, reason: "emergency_rule" } });
+    getEmergencyContact.mockResolvedValue({ contact: { name: "Rana", phone: "+96170123456" } });
+    addSymptomRecord.mockReturnValue(new Promise(() => {})); // saving must not gate either action
+    const user = userEvent.setup({ delay: null }); render(<SymptomsPage />);
+    await submit(user, symptoms);
+    const alert = await screen.findByRole("alertdialog");
+    expect(within(alert).getByRole("link", { name: "Call 140 (Lebanese Red Cross)" })).toHaveAttribute("href", "tel:140");
+    const contact = await within(alert).findByRole("region", { name: "Saved emergency contact" });
+    expect(await within(contact).findByRole("link", { name: "Call Rana (emergency contact)" })).toHaveAttribute("href", "tel:+96170123456");
+    expect(contact).toHaveTextContent("+96170123456");
+  }
+);
+
+test("missing or failed contact lookup does not hide the emergency call action", async () => {
+  getEmergencyContact.mockRejectedValue(new Error("contact service unavailable"));
+  const user = userEvent.setup(); render(<SymptomsPage />); await submit(user);
+  const alert = await screen.findByRole("alertdialog");
+  expect(within(alert).getByRole("link", { name: "Call 140 (Lebanese Red Cross)" })).toBeInTheDocument();
+  await within(alert).findByRole("button", { name: "Retry emergency contact" });
+  getEmergencyContact.mockResolvedValue({ contact: null });
+  await user.click(within(alert).getByRole("button", { name: "Retry emergency contact" }));
+  expect(await within(alert).findByText(/No emergency contact with a valid phone number/)).toBeInTheDocument();
+  expect(within(alert).getByRole("link", { name: "Call 140 (Lebanese Red Cross)" })).toBeInTheDocument();
 });

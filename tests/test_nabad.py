@@ -607,6 +607,32 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.open("/symptoms")
             if added:
                 self.assertEqual(self.fetch_json("DELETE", "/api/profile/emergency-contact"), 204)
+
+    def test_rules_only_emergencies_show_140_and_saved_contact(self):
+        # The default Compose app has AI disabled. These signs must always use
+        # the safety rules and expose both call actions in the emergency popup.
+        self.open("/symptoms")
+        contact = self.driver.execute_async_script("fetch('/api/profile/emergency-contact').then(r => r.json()).then(r => arguments[0](r.contact));")
+        added = not contact
+        if added:
+            contact = {"name": "Rules-only test contact", "phone": "+96170123456"}
+            self.assertEqual(self.fetch_json("POST", "/api/profile/emergency-contact", contact), 201)
+        try:
+            for symptoms in ("Chest pain today", "My face is drooping and my speech is slurred", "Heavy bleeding that won't stop"):
+                with self.subTest(symptoms=symptoms):
+                    self.submit_symptoms(symptoms, dismiss_emergency=False)
+                    popup = self.visible((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
+                    self.assertEqual(popup.find_element(By.LINK_TEXT, "Call 140 (Lebanese Red Cross)").get_attribute("href"), "tel:140")
+                    saved = self.visible((By.LINK_TEXT, f"Call {contact['name']} (emergency contact)"))
+                    self.assertEqual(saved.get_attribute("href"), f"tel:{contact['phone']}")
+                    self.assertIn(contact["phone"], popup.text)
+                    self.click(self.button("Close alert"))
+                    self.visible((By.LINK_TEXT, "Call 140 now"))
+        finally:
+            self.open("/symptoms")
+            if added:
+                self.assertEqual(self.fetch_json("DELETE", "/api/profile/emergency-contact"), 204)
+
     def medication_item(self, name, list_label="Your medications"):
         return (
             By.XPATH,

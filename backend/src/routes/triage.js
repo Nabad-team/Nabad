@@ -91,6 +91,9 @@ const aiLimiter = rateLimit({
 
   max: 30,
 
+  // This budget protects optional model assessments, never essential rule-only emergency guidance.
+  skip: req => Boolean(req.ruleEmergency),
+
   keyGenerator: (req) =>
     req.userId,
 
@@ -257,9 +260,33 @@ router.post(
 );
 
 
+// Evaluate the existing safety rules before touching AI configuration, history or
+// optional health context. Only a server-classified emergency can take this path.
+async function prepareRuleEmergency(req, res, next) {
+  const symptoms = req.body?.symptoms;
+  const error = symptomsError(symptoms);
+  if (error) return res.status(400).json({ error });
+  try {
+    const answers = req.body?.answers;
+    const floor = answers === undefined || answers === null
+      ? classifyUrgency(symptoms) : refineUrgency(symptoms, answers);
+    if (floor.level === "emergency") {
+      req.ruleEmergency = await assessWithAi(symptoms, {
+        client: null, answers, location: req.body?.location, followUpState: req.body?.followUpState,
+      });
+    }
+    return next();
+  } catch (error) {
+    if (error instanceof AnswerError) return res.status(400).json({ error: error.message });
+    return next(error);
+  }
+}
+
+
 router.post(
   "/ai-assess",
   resolveProfile,
+  prepareRuleEmergency,
   aiLimiter,
   countTriageUsage,
   async (
@@ -285,39 +312,24 @@ router.post(
       performance.now();
 
     try {
-      const [previousChecks, health] = await Promise.all([
-        SymptomRecord.find({
-          owner: req.userId,
-          profileId: req.profileId,
-        }).sort({ createdAt: -1 }).limit(3).lean(),
-        healthForTriage(req),
-      ]);
-      const priorConversations = previousChecks.reverse().map((record) => ({
-        symptoms: record.description,
-        messages: (record.conversation || []).slice(-6).map(({ role, content }) => ({ role, content })),
-      }));
-
-      const result =
-        await assessWithAi(
-          symptoms,
-          {
-            client:
-              getLlmClient(),
-
-            answers:
-              req.body?.answers,
-
-            location:
-              req.body?.location,
-
-            priorConversations,
-
-            health,
-
-            followUpState:
-              req.body?.followUpState,
-          }
-        );
+      let health = null;
+      let result = req.ruleEmergency;
+      if (!result) {
+        const [previousChecks, profileHealth] = await Promise.all([
+          SymptomRecord.find({ owner: req.userId, profileId: req.profileId })
+            .sort({ createdAt: -1 }).limit(3).lean(),
+          healthForTriage(req),
+        ]);
+        health = profileHealth;
+        const priorConversations = previousChecks.reverse().map(record => ({
+          symptoms: record.description,
+          messages: (record.conversation || []).slice(-6).map(({ role, content }) => ({ role, content })),
+        }));
+        result = await assessWithAi(symptoms, {
+          client: getLlmClient(), answers: req.body?.answers, location: req.body?.location,
+          priorConversations, health, followUpState: req.body?.followUpState,
+        });
+      }
 
 
       // Only the outcome is logged,
