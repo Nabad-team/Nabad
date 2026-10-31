@@ -111,8 +111,8 @@ describe("next.config.js", () => {
       });
     });
 
-    test("allows the microphone everywhere on the site, and location only on the providers page", async () => {
-      expect((await headersFor("/symptoms"))["Permissions-Policy"]).toBe("camera=(), microphone=(self), geolocation=()");
+    test("allows same-origin location across client-side routes while keeping cameras disabled", async () => {
+      expect((await headersFor("/symptoms"))["Permissions-Policy"]).toBe("camera=(), microphone=(self), geolocation=(self)");
       expect((await headersFor("/providers"))["Permissions-Policy"]).toBe("camera=(), microphone=(self), geolocation=(self)");
     });
   });

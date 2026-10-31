@@ -312,8 +312,7 @@ export default function UrgencyResult({
       </p>
 
 
-      {/* Load the directory document so its route-specific geolocation permission takes effect.
-          Client-side navigation would retain the symptoms page's geolocation=() policy. */}
+      {/* Open the care directory with the server-selected capability filters. */}
       <p>
         <a
           className="button button--secondary"

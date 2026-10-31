@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
 import SymptomsPage from "../pages/symptoms";
@@ -474,7 +474,7 @@ describe("Symptoms Page", () => {
       })
     ).toBeInTheDocument();
 
-    expect(screen.getByText("Rana Hamdan")).toBeInTheDocument();
+    expect(within(screen.getByRole("heading", { name: "Your emergency contact" }).closest('[role="alert"]')).getByText("Rana Hamdan")).toBeInTheDocument();
     expect(screen.getByText("+961 70 123 456")).toBeInTheDocument();
 
     expect(

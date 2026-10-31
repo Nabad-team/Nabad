@@ -46,6 +46,38 @@ refreshes. `frontend/__tests__/emergencyCard.test.js` covers all sections, missi
 values, retry, printing, profile races and text escaping. The full Selenium suite
 also checks card access and print styles.
 
+### Sharing location from an emergency alert
+
+The emergency popup loads the selected owned profile's emergency contact without
+waiting for symptom storage. The read endpoint accepts `profileId` (default
+`self`); foreign/malformed IDs are rejected, and linked profiles never inherit
+the account contact. Existing contact writes still manage the account contact.
+
+Sharing is opt-in. **Share my location with [contact]** requests one fresh device
+position with a 10-second timeout. After success, the popup shows capture time,
+approximate accuracy and a map link. **Text location to [contact]** opens a draft
+addressed to the saved phone number, containing the map link and capture time.
+The user reviews/sends it in their messaging app; Nabad neither sends a text nor
+claims delivery. SMS body separators are handled for Apple mobile devices and
+other platforms. **Copy location link** is a fallback; if clipboard access fails,
+the link stays selectable for manual copying.
+
+The position is this device's location, which may differ from a dependent's
+location. It is not live tracking. Coordinates are not stored on the server,
+logged or placed in the app URL. A fix expires after two minutes; obtaining an
+updated fix requires another explicit action. Denied/unsupported/unavailable or
+timed-out GPS, missing contact and failed contact lookup retain emergency call
+and dismissal actions. Closing the alert or changing patient/recipient discards
+the fix and ignores late callbacks.
+
+The same-origin geolocation Permissions-Policy applies across documents because
+client-side navigation retains the original document's policy. Browser location
+permission is still required; third-party geolocation and cameras remain blocked.
+The API/location tests cover ownership, consent, Android/Apple draft formatting,
+coordinate validation, stale/expired fixes, clipboard fallback and late callbacks.
+The Selenium regression checks draft preparation and permission denial without
+opening or sending a real SMS. Real-device SMS delivery is outside browser tests.
+
 ### Emergency popup (SCRUM-175)
 
 The symptoms page opens an in-app emergency alert immediately when the assessment

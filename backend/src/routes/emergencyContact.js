@@ -1,12 +1,14 @@
 const express = require("express");
+const LinkedProfile = require("../models/LinkedProfile");
+const { resolveProfile } = require("../middleware/profileAccess");
 const User = require("../models/User");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { normalizePhone, validPhone } = require("../models/contactSchema");
 const router = express.Router();
 router.use(requireAuth);
 
-// The emergency contact lives inside the signed-in user's own document, so every query
-// filters by req.userId. An id in the body is never used: one account cannot touch another's contact.
+// Reads use the selected owned profile; writes retain the account contact API.
+// Never inherit the account contact for a dependent or trust an owner supplied in the body.
 const INVALID_CONTACT = "Enter a contact name and a valid Lebanese or international phone number.";
 // Returns the cleaned { name, phone } or null if the body is invalid. Shared by add (POST) and edit (PUT).
 function readContact(body) {
@@ -16,10 +18,12 @@ function readContact(body) {
   return { name: name.trim(), phone: normalizePhone(phone) };
 }
 
-router.get("/", async (req, res, next) => {
+router.get("/", resolveProfile, async (req, res, next) => {
   try {
-    const user = await User.findById(req.userId).select("emergencyContact");
-    if (!user) return res.status(401).json({ error: "Not authenticated." });
+    const self = String(req.userId) === String(req.profileId);
+    const user = self ? await User.findById(req.userId).select("emergencyContact")
+      : await LinkedProfile.findOne({ _id: req.profileId, owner: req.userId }).select("emergencyContact");
+    if (!user) return res.status(404).json({ error: "Profile not found." });
     return res.json({ contact: user.emergencyContact || null });
   } catch (error) { next(error); }
 });

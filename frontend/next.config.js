@@ -44,8 +44,8 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
 ].join("; ");
 
-// The microphone is for voice input on the symptom check. Location is only allowed on the providers page
-// ("near me"); the rule for /providers comes last so it replaces the site-wide one.
+// Same-origin microphone/location remain browser-permission gated. The document policy must
+// allow location across client-side navigation into symptom alerts and the care directory.
 const permissionsPolicy = (geolocation) => `camera=(), microphone=(self), geolocation=${geolocation}`;
 
 const securityHeaders = [
@@ -53,7 +53,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: permissionsPolicy("()") },
+  { key: "Permissions-Policy", value: permissionsPolicy("(self)") },
 ];
 
 const nextConfig = {

@@ -59,12 +59,13 @@ test("unmount restores focus and scroll state, and an unknown country does not i
 });
 
 test("emergency popup appears before symptom saving or contact lookup finishes", async () => {
+  const contacts = deferred(); getEmergencyContact.mockReturnValue(contacts.promise);
   const saving = deferred(); addSymptomRecord.mockReturnValue(saving.promise);
   const user = userEvent.setup(); render(<SymptomsPage />); await submit(user);
   expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
-  expect(getEmergencyContact).not.toHaveBeenCalled();
+  expect(getEmergencyContact).toHaveBeenCalledWith("self", expect.any(AbortSignal));
   expect(screen.queryByText("Symptoms recorded for Test User.")).not.toBeInTheDocument();
-  await act(async () => saving.resolve({ id: "record" }));
+  await act(async () => { saving.resolve({ id: "record" }); contacts.resolve({ contact: null }); });
   expect(screen.getByRole("alertdialog")).toBeInTheDocument();
 });
 
@@ -89,6 +90,7 @@ test.each(["urgent", "soon", "routine"])("%s does not open an emergency popup", 
 });
 
 test("closing the alert survives rerenders but a new emergency check alerts again", async () => {
+  getEmergencyContact.mockResolvedValue({ contact: { name: "Rana", phone: "+96170123456" } });
   const user = userEvent.setup(); const view = render(<SymptomsPage />); await submit(user);
   await screen.findByRole("alertdialog");
   await screen.findByText("Symptoms recorded for Test User.");
@@ -98,6 +100,8 @@ test("closing the alert survives rerenders but a new emergency check alerts agai
   expect(screen.getByRole("heading", { name: "Urgency: Emergency" })).toBeInTheDocument();
   await submit(user);
   expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: "Share my location with Rana" })).toBeInTheDocument();
+  expect(getEmergencyContact).toHaveBeenCalledTimes(2);
 });
 
 test("follow-up escalation alerts before the updated record is saved", async () => {

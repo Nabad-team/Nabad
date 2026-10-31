@@ -59,7 +59,7 @@ export const completeOnboarding = () => request("/auth/onboarding/complete", { m
 export const googleLoginUrl = () => API_BASE + "/auth/google";
 export const verifyEmail = (token) => request("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });
 export const resendVerificationEmail = () => request("/auth/verify-email/resend", { method: "POST" });
-export const getEmergencyContact =() => request("/profile/emergency-contact");
+export const getEmergencyContact = (profileId, signal) => request(`/profile/emergency-contact${profileId ? `?profileId=${encodeURIComponent(profileId)}` : ""}`, { signal });
 export const addEmergencyContact = (name, phone) => request("/profile/emergency-contact", { method: "POST", body: JSON.stringify({ name, phone }) });
 export const updateEmergencyContact = (name, phone) => request("/profile/emergency-contact", { method: "PUT", body: JSON.stringify({ name, phone }) });
 export const removeEmergencyContact = () => request("/profile/emergency-contact", { method: "DELETE" });
