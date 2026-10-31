@@ -27,6 +27,7 @@ from urllib.request import urlopen
 from selenium import webdriver
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
@@ -518,11 +519,40 @@ class SignedInWorkflowTests(NabadWebsiteTests):
     def setUp(self):
         self.ensure_signed_in()
 
-    def submit_symptoms(self, description):
+    def submit_symptoms(self, description, dismiss_emergency=True):
         self.open("/symptoms")
         self.type_into("symptoms", description)
         self.submit_form_of("symptoms")
-        return self.visible((By.ID, "urgency-heading"))
+        heading = self.visible((By.ID, "urgency-heading"))
+        if dismiss_emergency:
+            if "Emergency" in heading.text:
+                self.visible((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
+                self.click(self.button("Close alert"))
+            # Existing workflows need the stored record; the emergency popup itself
+            # intentionally appears before this save completes.
+            self.visible((By.CSS_SELECTOR, ".symptoms-message"))
+        return heading
+
+    def test_emergency_popup_has_immediate_actions_and_keeps_guidance_after_dismissal(self):
+        self.submit_symptoms("I have chest pain today", dismiss_emergency=False)
+        popup = self.visible((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
+        self.assertIn("Emergency detected", popup.text)
+        self.assertIn("Do not wait for symptoms to improve", popup.text)
+        self.assertEqual(popup.get_attribute("aria-modal"), "true")
+        self.assertEqual(popup.find_element(By.CSS_SELECTOR, "a").get_attribute("href"), "tel:140")
+        self.assertTrue(self.driver.execute_script("return arguments[0].contains(document.activeElement)", popup))
+        self.assertTrue(self.driver.execute_script("document.getElementById('symptoms').focus(); return arguments[0].contains(document.activeElement)", popup))
+        self.click(self.button("Close alert"))
+        self.wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, "dialog[open][role='alertdialog']")))
+        self.assertIn("Emergency", self.visible((By.ID, "urgency-heading")).text)
+        self.assertEqual(self.visible((By.LINK_TEXT, "Call 140 now")).get_attribute("href"), "tel:140")
+
+        # A fresh emergency must alert again; Escape dismisses the modal accessibly.
+        self.submit_symptoms("Chest pain again", dismiss_emergency=False)
+        self.visible((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
+        self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+        self.wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, "dialog[open][role='alertdialog']")))
+        self.assertIn("Emergency", self.visible((By.ID, "urgency-heading")).text)
 
     def medication_item(self, name, list_label="Your medications"):
         return (

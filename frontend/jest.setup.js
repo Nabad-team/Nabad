@@ -7,3 +7,10 @@ require("@testing-library/jest-dom");
 // 5 seconds costs nothing when things are fast: a wait ends as soon as its check passes.
 const { configure } = require("@testing-library/react");
 configure({ asyncUtilTimeout: 5000 });
+
+// jsdom does not implement the native dialog top layer. Browser E2E tests cover
+// actual focus containment and background inertness; this shim exposes open state.
+if (typeof HTMLDialogElement !== "undefined" && !HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  HTMLDialogElement.prototype.close = function () { this.open = false; };
+}
