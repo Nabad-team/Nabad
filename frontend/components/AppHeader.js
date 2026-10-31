@@ -30,6 +30,7 @@ export const ACCOUNT_LINKS = [
   { href: "/care-circle", label: "Care circle", shortLabel: "Care circle" },
   { href: "/symptoms", label: "Safety check", shortLabel: "Safety" },
   { href: "/medications", label: "Medications", shortLabel: "Medicines" },
+  { href: "/emergency-card", label: "Emergency information card", shortLabel: "Emergency card" },
   { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
 ];
 

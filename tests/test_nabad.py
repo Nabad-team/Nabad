@@ -499,6 +499,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/onboarding",
             "/dashboard",
             "/symptoms",
+            "/emergency-card",
             "/medications",
             "/my-health",
             "/water-and-sleep",
@@ -518,6 +519,26 @@ class SignedInWorkflowTests(NabadWebsiteTests):
 
     def setUp(self):
         self.ensure_signed_in()
+
+    def test_emergency_information_card_is_accessible_and_printable(self):
+        self.open("/emergency-card")
+        card = self.visible((By.CSS_SELECTOR, "article.emergency-card"))
+        self.assertIn(RunAccount.name, card.text)
+        for heading in ("Medical conditions", "Allergies", "Active medications", "Emergency contact"):
+            self.assertIn(heading, card.text)
+        self.driver.execute_script("window.originalCardPrint = window.print; window.print = () => { window.cardPrintRequested = true; };")
+        try:
+            self.click(self.button("Print emergency card"))
+            self.assertTrue(self.driver.execute_script("return window.cardPrintRequested === true"))
+            self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "print"})
+            self.assertTrue(card.is_displayed())
+            self.assertFalse(self.driver.find_element(By.CSS_SELECTOR, ".emergency-card-controls").is_displayed())
+            self.assertFalse(self.driver.find_element(By.CSS_SELECTOR, ".site-header").is_displayed())
+            self.assertFalse(self.driver.find_element(By.CSS_SELECTOR, ".site-footer").is_displayed())
+            self.assertIn("Based on saved health information", card.text)
+        finally:
+            self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": ""})
+            self.driver.execute_script("window.print = window.originalCardPrint;")
 
     def submit_symptoms(self, description, dismiss_emergency=True):
         self.open("/symptoms")

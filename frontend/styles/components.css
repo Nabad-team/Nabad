@@ -3296,6 +3296,38 @@ select.input {
 .visit-prep__document-options input { margin-top: 0.2rem; }
 .visit-prep__document-options li { margin: 0; }
 .visit-prep__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* Printable emergency card: no fixed height or truncation of medical information. */
+.emergency-card {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.emergency-card__heading { border-bottom: 1px solid currentColor; padding-bottom: var(--space-3); }
+.emergency-card section { margin-top: var(--space-4); }
+.emergency-card h2, .emergency-card h3 { margin-bottom: var(--space-2); }
+.emergency-card footer { margin-top: var(--space-5); font-size: var(--text-sm); }
+@media print {
+  body:has(.emergency-card) .site-header,
+  body:has(.emergency-card) .profile-strip,
+  body:has(.emergency-card) .site-footer,
+  body:has(.emergency-card) .page-note,
+  body:has(.emergency-card) .skip-link,
+  .emergency-card-controls { display: none !important; }
+  body:has(.emergency-card),
+  body:has(.emergency-card) .page-shell,
+  body:has(.emergency-card) .page-main {
+    display: block; margin: 0; padding: 0; min-height: 0; max-width: none;
+    color: #000; background: #fff;
+  }
+  .emergency-card { margin: 0; padding: 12pt; border: 1pt solid #000; border-radius: 0; color: #000; background: #fff; font-size: 11pt; }
+  .emergency-card h2, .emergency-card h3 { color: #000; break-after: avoid; }
+  .emergency-card li, .emergency-card__heading { break-inside: avoid; }
+  .emergency-card a { color: #000; text-decoration: none; }
+}
 .visit-prep__editor fieldset { display: grid; gap: var(--space-4); }
 .visit-prep__editor .form { max-width: none; }
 .visit-prep__editor fieldset > div { display: grid; gap: var(--space-2); }

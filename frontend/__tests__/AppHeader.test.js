@@ -109,6 +109,7 @@ describe("Account menu", () => {
       ["Care circle", "/care-circle"],
       ["Safety check", "/symptoms"],
       ["Medications", "/medications"],
+      ["Emergency information card", "/emergency-card"],
       ["Privacy Policy", "/privacy"],
     ]);
     expect(within(panel).getByRole("link", { name: "My profile" })).toHaveFocus();
@@ -149,6 +150,8 @@ describe("Account menu", () => {
     expect(screen.getByRole("link", { name: "Safety check" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Medications" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Emergency information card" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveFocus();
     await user.tab();
@@ -207,6 +210,7 @@ describe("Phone menu", () => {
       "Care circle",
       "Safety check",
       "Medications",
+      "Emergency information card",
       "Privacy Policy",
     ]);
     expect(within(panel).getByLabelText("Acting for")).toHaveValue("self");
