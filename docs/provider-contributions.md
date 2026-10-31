@@ -8,13 +8,13 @@ Every result links to /providers/:id. Detail pages are public and include source
 
 The directory accepts an insurance filter in its existing public API and shareable URL, for example /providers?insurance=nssf. Insurance queries use a MongoDB index and combine with specialty, service, location, distance and pagination filters.
 
-Seven facilities have sourced insurance or payer lists in this snapshot: AUBMC, Bellevue Medical Center, Hotel Dieu de France, Ain W Zain Medical Village, Aboujaoude Hospital (existing slug hopital-abou-jaouke), Khalaf Al Habtoor Hospital and Clemenceau Medical Center. Sources and separate check dates are displayed. Lists include NSSF, COOP, named private insurers, and clearly labelled third-party administrators where published. No payer list is invented for the remaining facilities.
+Eight facilities had sourced insurance or payer lists before the 31 October network review: AUBMC, Bellevue Medical Center, Hotel Dieu de France, Ain W Zain Medical Village, Aboujaoude Hospital (existing slug hopital-abou-jaouke), Khalaf Al Habtoor Hospital Clemenceau Medical Center and Beirut Eye Specialist Hospital. Sources and separate check dates are displayed. Lists include NSSF, COOP, named private insurers, and clearly labelled third-party administrators where published. No payer list is invented for the remaining facilities.
 
 A published insurer or administrator relationship is not a promise that every policy, procedure or doctor is covered. The interface asks users to confirm their policy, approvals and costs directly.
 
 ## Services source review
 
-The directory still contains 176 distinct listings: 174 hospitals and 2 clinics. All 90 records that previously had empty service lists were reviewed. Published service information is now available for 153 listings, compared with 86 before this change. The remaining 23 stay unknown.
+The directory still contains 176 distinct listings: 174 hospitals and 2 clinics. All 90 records that previously had empty service lists were reviewed. Published service information is now available for 155 listings, compared with 86 before this change. The remaining 21 stay unknown.
 
 MoPH facility pages provide laboratory and general-radiology licences and published bed categories. Positive bed counts are represented as broad medical, surgical, pediatric, obstetric/gynecologic or critical-care categories; they are not treated as proof of CT, MRI, a cath lab or live operating capacity. Syndicate profiles and hospital or institutional pages provide additional named services. Planned equipment purchases and services at another campus are not assigned to a facility.
 
@@ -66,7 +66,6 @@ The reviewed public sources do not establish a usable service/equipment list for
 
 - Hermel Governmental Hospital (hermel-governmental): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital
 - Qana Governmental Hospital (qana-governmental): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84387/kana-governmental-hospital?facility_type=1
-- Beirut Eye Specialist Hospital (beirut-eye-specialist-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84547/beirut-eye-specialist-hospital?facility_type=8
 - Hopital DAR AL Raheme? (hopital-dar-al-raheme): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84612/hopital-dar-al-raheme-?facility_type=8
 - Kalout Hospital (kalout-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84620/kalout-hospital?facility_type=8
 - Ghossein Hospital (ghossein-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84624/ghossein-hospital?facility_type=8
@@ -82,10 +81,46 @@ The reviewed public sources do not establish a usable service/equipment list for
 - Orange Nassau governmental hospital (orange-nassau-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84381/orange-nassau-governmental-hospital?facility_type=1
 - sour governmental hospital (sour-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1
 - Daher elbachek governmental hospital (daher-elbachek-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84389/daher-elbachek-governmental-hospital?facility_type=1
-- Machghara Governmental Hospital (machghara-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84392/machghara-governmental-hospital?facility_type=1
 - Kherbet Kanafar Governmental Hospital (kherbet-kanafar-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84393/kherbet-kanafar-governmental-hospital?facility_type=1
 - Family Medical Center (family-medical-center): https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7802
 - Martyr Salah Ghandour Hospital (martyr-salah-ghandour-hospital): https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7911
 - Al Jabal Hospital (al-jabal-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84570/al-jabal-hospital?facility_type=8
 
 The source review does not establish whether any facility is currently reachable, open, staffed or fully operating. In particular, damage reports and reopening announcements must not be read as proof of current capacity.
+
+
+## Additional primary-source review (30 October 2026)
+
+The existing Beirut Eye Specialist Hospital record is matched to BESH by its Beirut location and MoPH telephone, 01 423 111. The hospital's own website, https://besh.com.lb/, describes ophthalmology and ENT care, outpatient consultations and surgical inpatient care. Its coverage page, https://besh.com.lb/patient-information/third-party-coverage/, names Social Security, Ministry of Health, Army and COOP/MFE. These map to existing filters. Its general claim about private insurance does not name individual insurers, so none are inferred.
+
+Machghara Municipality's institutional page, https://www.machghara.com/en/government-institutions/machghara-governmental-hospital, matches the existing hospital name, road and telephone. It documents intensive care, CT imaging, general radiology and inpatient medical care. These existing service slugs are added. Neonatal care is not interpreted as a NICU, and investment plans do not establish additional capabilities.
+
+Both records have newer complete snapshot and service-review timestamps so the existing seed propagates the updates. No new facility, location, specialty slug or insurance slug is created. Emergency opening hours remain unknown for both facilities. Published services do not guarantee live staffing, equipment availability or individual policy coverage.
+
+Coverage: 176 distinct listings; 155 have at least one sourced service, 21 still have unknown service lists; 8 have sourced named payer lists. The remaining unknowns above require further authoritative evidence. Jira remains read-only; no tickets or statuses have changed.
+
+Validation for this follow-up: all 893 backend tests across 59 suites passed against main at 761f8fa plus this change. The new regression restores prior empty records, reapplies the seed twice, checks payer search and confirms unique identities and conservative unknowns. A static comparison confirmed that only the two intended provider records changed and every slug already has an English label. No frontend source or dependency changed. GitHub upload and deployment are not confirmed for this follow-up because the local credential helper failed before authentication.
+
+
+## Insurer network follow-up (31 October 2026)
+
+The insurer's published network at https://victoire.com.lb/hospital/ was checked against existing directory names, locations and telephone numbers. Victoire is added for 69 existing hospital listings. Source links and check dates accompany every match. Existing payer lists are retained. There are now 72 listings with at least one sourced named payer.
+
+Four apparent telephone matches were excluded: the two AUBMC clinic/department listings, Rida Mroue Hospital and Hopital Francais St Lourdes. A shared telephone number does not establish that a network contract covers another facility or department. The Arz Hospital match uses the hospital entry, not a physician listing on the same page. BESH is independently matched to its own official hospital information.
+
+The existing English label catalogue gains the insurer name; the existing URL filter, database query and provider facts renderer handle it without a second implementation. No facilities are added. A published network entry is not a guarantee of an individual policy, approval, procedure or current payment agreement; patients must confirm coverage.
+
+The 21 empty service lists remain unresolved. Older assessment reports, proposed equipment procurement and accounts of damage or reopening are insufficient to establish present capabilities. No CT, MRI, ICU or other service is added solely to make the completion count reach 176.
+
+Jira is read-only by the user's explicit instruction. Bug-report drafts may be prepared locally, but actual Jira logging and status changes are excluded. GitHub publishing requires a working account connection; neither local test success nor an exported patch confirms a merge or deployment.
+
+
+## Follow-up validation (31 October 2026)
+
+Against main at b3f653e plus this follow-up, all 916 backend tests across 59 suites and all 616 frontend tests across 62 suites passed. The backend regressions check seed propagation, repeatability, exact insurer filtering, combined city filters, source metadata and exclusion of shared-telephone mismatches. Static checks confirm unchanged provider IDs/order, only permitted fields changed in 70 existing records, and English labels for every service, specialty and payer slug.
+
+Frontend verification used identical sources in the clean mirror (203 tracked frontend files compared after line-ending normalization). Test discovery required a fresh workspace cache and disabled Watchman; no application configuration changed for this workaround. Existing feedback, correction, analytics, reliability and English regressions remain in the complete suites. Production readiness and a public directory request returned HTTP 200.
+
+Four bug-report drafts and a 21-facility service-verification queue are saved locally for team review. They are not Jira tickets. This follow-up has not been confirmed on GitHub or production: publishing requires a working authenticated GitHub connection.
+
+The Next.js 16.4.3 production build also passed, including the directory and provider-detail routes. This confirms local buildability, not deployment.
