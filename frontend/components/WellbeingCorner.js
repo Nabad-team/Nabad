@@ -1,4 +1,20 @@
 import Card from "./ui/Card";
+import { formatDate } from "../lib/dates";
+import { wellbeingSupport } from "../data/wellbeingSupport";
+
+export function WellbeingSupportNumber({ contact }) {
+  const value = contact.verifiedOn;
+  const parsed = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : null;
+  const date = parsed && Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
+  const source = typeof contact.sourceUrl === "string" && /^https:\/\//.test(contact.sourceUrl) ? contact.sourceUrl : null;
+  return <section className="wellbeing-support-number" aria-labelledby={`wellbeing-support-${contact.id}`}>
+    <h4 id={`wellbeing-support-${contact.id}`}>{contact.name}</h4>
+    <p>{contact.description}</p>
+    <p><a href={`tel:${contact.phone}`}>Call {contact.phone}</a></p>
+    <p><small>{date ? <>Last verified: <time dateTime={date}>{formatDate(date)}</time></> : "Verification date unavailable."}</small></p>
+    {source && <p><a href={source} target="_blank" rel="noopener noreferrer" aria-label={`Official verification source for ${contact.name}`}>Official source</a></p>}
+  </section>;
+}
 
 const dailyMessages = [
   "Take things one step at a time today.",
@@ -60,41 +76,8 @@ export default function WellbeingCorner() {
 
       <h3>Support in Lebanon</h3>
 
-      <p>
-        <strong>National Lifeline 1564</strong>
-      </p>
-
-      <p>
-        Psychological support and suicide prevention hotline,
-        available 24/7 in partnership with Embrace.
-      </p>
-
-      <p>
-        <a href="tel:1564">
-          Call 1564
-        </a>
-      </p>
-
-      <p>
-        <strong>Lebanese Red Cross 140</strong>
-      </p>
-
-      <p>
-        If you or someone else is in immediate danger or needs
-        emergency medical help, call the Lebanese Red Cross.
-      </p>
-
-      <p>
-        <a href="tel:140">
-          Call 140
-        </a>
-      </p>
-
-      <p>
-        <small>
-          Numbers last verified: October 16, 2026
-        </small>
-      </p>
+      {wellbeingSupport.map(contact => <WellbeingSupportNumber key={contact.id} contact={contact} />)}
+      <p className="text-muted"><small>Dates show when published contact information was checked, not a live phone-line availability check. Availability can change.</small></p>
     </Card>
   );
 }
