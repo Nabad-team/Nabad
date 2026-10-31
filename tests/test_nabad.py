@@ -645,6 +645,17 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.click((By.CSS_SELECTOR, "#account-menu a[href='/profile']"))
             self.wait.until(EC.url_contains("/profile"))
 
+    def test_wellbeing_support_numbers_show_individual_verification_dates(self):
+        self.open("/dashboard")
+        for phone in ("1564", "140"):
+            entry = self.visible((By.XPATH, f"//section[contains(@class,'wellbeing-support-number')][.//a[@href='tel:{phone}']]"))
+            self.assertIn("Last verified:", entry.text)
+            verified = entry.find_element(By.TAG_NAME, "time")
+            self.assertRegex(verified.get_attribute("datetime"), r"^\d{4}-\d{2}-\d{2}$")
+            self.assertRegex(verified.text, r"^\d{1,2} [A-Za-z]+ \d{4}$")
+            source = entry.find_element(By.LINK_TEXT, "Official source")
+            self.assertTrue(source.get_attribute("href").startswith("https://"))
+
     def test_authenticated_symptoms_flow(self):
         self.submit_symptoms("A mild headache since yesterday")
         self.wait_for_text(f"Symptoms recorded for {RunAccount.name}", (By.CSS_SELECTOR, ".symptoms-message"))
