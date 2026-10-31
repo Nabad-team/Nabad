@@ -2091,7 +2091,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-18T12:18:00Z",
     "district": "Hermel",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital"
     ]
@@ -2279,8 +2279,12 @@ module.exports = [
   },
   {
     "type": "hospital",
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "psychiatry"
+    ],
+    "services": [
+      "outpatient"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "qana-governmental",
@@ -2294,13 +2298,17 @@ module.exports = [
     "sources": [
       "https://moph.gov.lb/en/Search/tags/1484",
       "https://mapcarta.com/W1019828085",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84387/kana-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84387/kana-governmental-hospital?facility_type=1",
+      "https://www.moph.gov.lb/userfiles/files/PHCCs%20List%20with%20Psychiatrist%20September%2010%2C2026.pdf",
+      "https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-10-31T21:24:06Z",
     "district": "Tyre",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84387/kana-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84387/kana-governmental-hospital?facility_type=1",
+      "https://www.moph.gov.lb/userfiles/files/PHCCs%20List%20with%20Psychiatrist%20September%2010%2C2026.pdf",
+      "https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf"
     ]
   },
   {
@@ -3927,7 +3935,7 @@ module.exports = [
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9614872211",
     "locationApproximate": true,
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84612/hopital-dar-al-raheme-?facility_type=8"
     ]
@@ -4160,7 +4168,7 @@ module.exports = [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84620/kalout-hospital?facility_type=8"
     ],
     "verifiedAt": "2026-10-18T12:18:00Z",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84620/kalout-hospital?facility_type=8"
     ]
@@ -4253,7 +4261,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9613224402",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84624/ghossein-hospital?facility_type=8"
     ]
@@ -5156,7 +5164,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9617721721",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84659/abed-el-rahman-al-nakib-hospital?facility_type=8"
     ]
@@ -5181,7 +5189,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9617443470",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84660/fakih-hospital?facility_type=8"
     ]
@@ -5338,7 +5346,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9618377811",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84666/iben-sinna-hospital?facility_type=8"
     ]
@@ -5397,7 +5405,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9618200234",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84668/al-assi-hospital?facility_type=8"
     ]
@@ -5570,7 +5578,7 @@ module.exports = [
     "verifiedAt": "2026-10-31T10:00:00Z",
     "phone": "+9618377880",
     "locationApproximate": true,
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8"
     ],
@@ -5603,7 +5611,7 @@ module.exports = [
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9618210560",
     "locationApproximate": true,
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84674/universal-hospital?facility_type=8"
     ]
@@ -5629,7 +5637,7 @@ module.exports = [
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9618912444",
     "locationApproximate": true,
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84675/temnine-general-hospital?facility_type=8"
     ]
@@ -5766,20 +5774,32 @@ module.exports = [
     "address": "Main road",
     "latitude": 34.212547,
     "longitude": 35.861156,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "ophthalmology"
+    ],
+    "services": [
+      "dialysis",
+      "eye-procedures",
+      "mammography",
+      "general-radiology",
+      "outpatient"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1",
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4",
-      "https://victoire.com.lb/hospital/"
+      "https://victoire.com.lb/hospital/",
+      "https://www.honaalbatroun.com/my-post25ff875b",
+      "https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf"
     ],
-    "verifiedAt": "2026-10-31T10:00:00Z",
+    "verifiedAt": "2026-10-31T21:24:06Z",
     "phone": "+9616520555",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1",
+      "https://www.honaalbatroun.com/my-post25ff875b",
+      "https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf"
     ],
     "insurances": [
       "victoire"
@@ -5863,20 +5883,28 @@ module.exports = [
     "address": "Ehden Midan square",
     "latitude": 34.290089999718454,
     "longitude": 35.968380000368626,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "emergency-medicine"
+    ],
+    "services": [
+      "laboratory",
+      "general-radiology",
+      "ultrasound"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1",
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/131",
-      "https://victoire.com.lb/hospital/"
+      "https://victoire.com.lb/hospital/",
+      "https://www.cafein.press/post/zghrta-oalktaaa-alastshfayy-taadd-fy-almossat-othdyat-fy-alamkanat"
     ],
-    "verifiedAt": "2026-10-31T10:00:00Z",
+    "verifiedAt": "2026-10-31T21:24:06Z",
     "phone": "+9616561701",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1",
+      "https://www.cafein.press/post/zghrta-oalktaaa-alastshfayy-taadd-fy-almossat-othdyat-fy-alamkanat"
     ],
     "insurances": [
       "victoire"
@@ -5897,18 +5925,22 @@ module.exports = [
     "latitude": 34.45088262337987,
     "longitude": 35.853419714359354,
     "specialties": [],
-    "services": [],
+    "services": [
+      "outpatient"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84381/orange-nassau-governmental-hospital?facility_type=1",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/99"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/99",
+      "https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T21:24:06Z",
     "phone": "+9616435997",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84381/orange-nassau-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84381/orange-nassau-governmental-hospital?facility_type=1",
+      "https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf"
     ]
   },
   {
@@ -5931,7 +5963,7 @@ module.exports = [
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9617740293",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1"
     ]
@@ -5947,18 +5979,23 @@ module.exports = [
     "latitude": 33.88315672097074,
     "longitude": 35.59881236304985,
     "specialties": [],
-    "services": [],
+    "services": [
+      "ct",
+      "general-radiology"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84389/daher-elbachek-governmental-hospital?facility_type=1",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/121"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/121",
+      "https://www.moph.gov.lb/en/Media/view/80654/nassereddine-inaugurates-the-ct-scan-machine-in-dahr-el-bacheck-hospital"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-10-31T21:24:06Z",
     "phone": "+9614872148",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84389/daher-elbachek-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84389/daher-elbachek-governmental-hospital?facility_type=1",
+      "https://www.moph.gov.lb/en/Media/view/80654/nassereddine-inaugurates-the-ct-scan-machine-in-dahr-el-bacheck-hospital"
     ]
   },
   {
@@ -6013,7 +6050,7 @@ module.exports = [
     "verifiedAt": "2026-10-19T00:00:00+03:00",
     "phone": "+9618645917",
     "locationApproximate": true,
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84393/kherbet-kanafar-governmental-hospital?facility_type=1"
     ]
@@ -6138,7 +6175,7 @@ module.exports = [
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=2"
     ],
     "verifiedAt": "2026-10-18T12:18:00Z",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7802"
     ]
@@ -6162,7 +6199,7 @@ module.exports = [
       "https://www.cmsm.org.lb/index.php/providers?category=Hospital&page=4"
     ],
     "verifiedAt": "2026-10-18T12:18:00Z",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7911"
     ]
@@ -6221,7 +6258,7 @@ module.exports = [
       "https://pe.ppa.gov.lb/storage/lots/files/u6ne5a1FfMFqNl8VsEpcP3fD4cXmDsYU8bQ1-1760108985.pdf"
     ],
     "verifiedAt": "2026-10-19T00:00:00+03:00",
-    "servicesReviewedAt": "2026-10-29T12:00:00Z",
+    "servicesReviewedAt": "2026-10-31T21:24:06Z",
     "serviceSources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84570/al-jabal-hospital?facility_type=8"
     ]

@@ -110,7 +110,7 @@ Four apparent telephone matches were excluded: the two AUBMC clinic/department l
 
 The existing English label catalogue gains the insurer name; the existing URL filter, database query and provider facts renderer handle it without a second implementation. No facilities are added. A published network entry is not a guarantee of an individual policy, approval, procedure or current payment agreement; patients must confirm coverage.
 
-The 21 empty service lists remain unresolved. Older assessment reports, proposed equipment procurement and accounts of damage or reopening are insufficient to establish present capabilities. No CT, MRI, ICU or other service is added solely to make the completion count reach 176.
+At the end of the payer follow-up in PR #159, 21 service lists were still empty. The additional review below resolves five of them. Older assessment reports, proposed procurement and accounts of damage or reopening are insufficient to establish current capabilities by themselves.
 
 Jira is read-only by the user's explicit instruction. Bug-report drafts may be prepared locally, but actual Jira logging and status changes are excluded. GitHub publishing requires a working account connection; neither local test success nor an exported patch confirms a merge or deployment.
 
@@ -121,6 +121,36 @@ Against main at b3f653e plus this follow-up, all 916 backend tests across 59 sui
 
 Frontend verification used identical sources in the clean mirror (203 tracked frontend files compared after line-ending normalization). Test discovery required a fresh workspace cache and disabled Watchman; no application configuration changed for this workaround. Existing feedback, correction, analytics, reliability and English regressions remain in the complete suites. Production readiness and a public directory request returned HTTP 200.
 
-Four bug-report drafts and a 21-facility service-verification queue are saved locally for team review. They are not Jira tickets. This follow-up has not been confirmed on GitHub or production: publishing requires a working authenticated GitHub connection.
+The payer follow-up was merged in [PR #159](https://github.com/Nabad-team/Nabad/pull/159), merge commit 9ff4fcaa81e93c9608842989515f7b8828b5968f. All PR and main-branch checks passed. Live verification confirmed readiness, all 69 Victoire matches and the BESH/Machghara service updates. Four local bug-report drafts remain unlogged in Jira under the read-only instruction. The 21-facility verification queue described that completed follow-up; the newer review below reduces it to 16.
 
-The Next.js 16.4.3 production build also passed, including the directory and provider-detail routes. This confirms local buildability, not deployment.
+The Next.js 16.4.3 production build also passed, including the directory and provider-detail routes. Production verification for PR #159 is recorded separately above.
+
+## Additional service evidence review (31 October 2026)
+
+All 21 remaining empty service lists were reviewed again. Five existing facilities now have specific published service evidence, bringing coverage to 160 of 176 listings. The other 16 remain unknown. Provider identities, order, map coordinates, insurance records, emergency availability and opening hours are unchanged.
+
+| Existing facility | Supported services | Evidence and scope |
+| --- | --- | --- |
+| Qana Governmental Hospital | Outpatient consultations; psychiatry specialty | MoPH's 10 September 2026 psychiatrist directory identifies the hospital-operated primary care centre. The 27 October 2026 PHC directory confirms its campus/operator. This establishes outpatient psychiatry at that centre, without implying an inpatient psychiatric ward. |
+| Orange Nassau Governmental Hospital | Outpatient consultations | The 27 October 2026 MoPH PHC directory identifies the hospital's primary care centre with its existing 06-435997 phone. No equipment or additional specialty is inferred. |
+| Tannourine Governmental Hospital | Dialysis, eye procedures, mammography, general radiology, outpatient consultations | A 2026 firsthand interview with director Mireille Youssef describes these operating services. The current MoPH PHC list independently matches the hospital's 06-520555 phone. MRI remains in preparation; cardiac catheterization equipment is described as out of service. Neither is added. |
+| Ehden Governmental Hospital | Laboratory, general radiology, ultrasound; emergency medicine specialty | Director Ibrahim Makdessi's 12 February 2026 interview describes these services and emergency stabilization before transfer. Admissions and surgery are not inferred from proposed work. |
+| Daher Elbachek Governmental Hospital | CT, general radiology | MoPH's 19 September 2025 report documents completed CT reopening and radiology operation. This is dated published capability evidence, not a real-time equipment-availability claim. |
+
+Sources:
+
+- MoPH psychiatrist directory, page 15: https://www.moph.gov.lb/userfiles/files/PHCCs%20List%20with%20Psychiatrist%20September%2010%2C2026.pdf
+- MoPH PHC network, pages 10, 11 and 23: https://www.moph.gov.lb/userfiles/files/HealthCareSystem/PHC/phcc.pdf
+- Original Tannourine director interview: https://www.honaalbatroun.com/my-post25ff875b
+- Original Ehden director interview: https://www.cafein.press/post/zghrta-oalktaaa-alastshfayy-taadd-fy-almossat-othdyat-fy-alamkanat
+- MoPH CT reopening report: https://www.moph.gov.lb/en/Media/view/80654/nassereddine-inaugurates-the-ct-scan-machine-in-dahr-el-bacheck-hospital
+
+The two director interviews are firsthand testimony published by local news outlets. They are distinguished from hospital-owned pages and government directories. Review timestamps record checking published evidence; they do not certify present operation.
+
+Still requiring current facility/operator confirmation: Hermel Governmental, Dar Al Rahme, Kalout, Ghossein, Abed El Rahman Al Nakib, Fakih/Infinity, Iben Sinna, Al Assi, Mortada, Universal, Temnine General, Kherbet Kanafar Governmental, Sour Governmental, Family Medical Center, Salah Ghandour and Al Jabal.
+
+Rejected evidence includes planned procurement, undated construction status, old closure/reopening reports, a physician page that could not be independently read, and nearby PHCs with different operators or phones. These findings do not establish current closure or current clinical capability. All 21 review dates advance, while complete snapshots advance only for the five supported updates.
+
+Jira remains read-only at the user's explicit request. The four prepared bug reports have not been created or imported as Jira tickets. Service-data completion remains pending for the 16 facilities above.
+
+Validation for this review: 27/27 provider tests and 918/918 backend tests across 59 suites passed. Static checks confirmed all 176 identities and their order, only the intended 21 review records changed, and English labels for every service and specialty slug.
