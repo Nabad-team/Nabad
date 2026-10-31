@@ -336,3 +336,56 @@ test("published insurer network uses canonical facilities and does not infer con
   assert.ok(combined.body.total > 0);
   assert.ok(combined.body.providers.every(p => p.city === "Saida" && p.insurances.includes("victoire")));
 });
+
+test("new service evidence updates existing facility records and remains searchable without duplicates", async () => {
+  const examples = [
+    ["qana-governmental", "outpatient", "Qana"],
+    ["orange-nassau-governmental-hospital", "outpatient", "Tripoli"],
+    ["tannourine-governmental-hospital", "dialysis", "Tannourin Tahta"],
+    ["ehden-governmental-hospital", "laboratory", "Ehden"],
+    ["daher-elbachek-governmental-hospital", "ct", "Roumieh"],
+  ];
+  for (const [slug, service, city] of examples) {
+    const current = seedData.find(p => p.slug === slug);
+    await Provider.updateOne({ slug }, { $set: {
+      services: [], specialties: [], serviceSources: [],
+      verifiedAt: new Date("2026-10-31T10:00:00Z"), servicesReviewedAt: new Date("2026-10-29"),
+    } });
+    await seedProviders([current]);
+    await seedProviders([current]);
+    const detail = await get("/" + slug);
+    assert.equal(detail.status, 200);
+    assert.deepEqual(detail.body.provider.services, current.services);
+    assert.deepEqual(detail.body.provider.specialties, current.specialties);
+    assert.deepEqual(detail.body.provider.serviceSources, current.serviceSources);
+    assert.equal(detail.body.provider.emergency24h, null);
+    assert.equal(detail.body.provider.hoursKnown, false);
+    const found = await get("?service=" + service + "&city=" + encodeURIComponent(city) + "&limit=100");
+    assert.equal(found.status, 200);
+    assert.ok(found.body.providers.some(p => p.id === slug), slug);
+    assert.equal(await Provider.countDocuments({ slug }), 1);
+  }
+  const psychiatry = await get("?specialty=psychiatry&service=outpatient&city=Qana&limit=100");
+  assert.equal(psychiatry.status, 200);
+  assert.ok(psychiatry.body.providers.some(p => p.id === "qana-governmental"));
+  assert.equal(await Provider.countDocuments(), seedData.length);
+});
+
+test("dated service evidence does not turn plans, outpatient clinics or emergency stabilization into inpatient guarantees", () => {
+  const byId = id => seedData.find(p => p.slug === id);
+  const tannourine = byId("tannourine-governmental-hospital");
+  assert.ok(tannourine.services.includes("mammography"));
+  assert.ok(tannourine.services.includes("eye-procedures"));
+  assert.ok(!tannourine.services.includes("mri"));
+  assert.ok(!tannourine.services.includes("cath-lab"));
+  assert.ok(!tannourine.services.includes("ct"));
+  for (const slug of ["ehden-governmental-hospital", "qana-governmental", "orange-nassau-governmental-hospital"]) {
+    const row = byId(slug);
+    assert.ok(!row.services.includes("medical-inpatient-care"), slug);
+    assert.ok(!row.services.includes("surgical-inpatient-care"), slug);
+    assert.equal(row.emergency24h, null, slug);
+    assert.equal(row.hoursKnown, false, slug);
+  }
+  assert.deepEqual(byId("qana-governmental").specialties, ["psychiatry"]);
+  assert.deepEqual(byId("orange-nassau-governmental-hospital").specialties, []);
+});
