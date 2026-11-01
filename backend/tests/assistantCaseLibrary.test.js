@@ -17,7 +17,7 @@ test("advanced cases have distinct IDs, review criteria and inputs accepted by t
     if (entry.report) assert.ok(entry.report.text.includes("SYNTHETIC"), entry.id);
   }
   assert.deepEqual([...new Set(advanced.map((entry) => entry.category))].sort(), ["context", "language", "report-reasoning", "safety"]);
-  assert.ok(advanced.some((entry) => entry.language === "ar" && entry.critical));
+  assert.ok(advanced.every((entry) => entry.language === "en"));
 });
 
 test("prompt demonstrations are bounded, synthetic and separate from the held-out advanced cases", () => {

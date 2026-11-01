@@ -12,7 +12,7 @@ const rejected = (answer, code = "unsafe_response") => assert.throws(() => parse
 for (const answer of [
   "You have anemia.", "Based on your results, you have diabetes.", "Your symptoms are caused by cancer.", "You have no cancer.",
   "Take 40 mg of ExampleDrug every day.", "You should take 0.5 mg of ExampleDrug.", "Please take one tablet.", "I recommend you take two pills daily.",
-  "Increase your dose to 10 mg.", "تناول ٤٠ ملغ يوميا.", "خذ جرعة يومية من الدواء.", "عليك تناول ٤٠ ملغ يوميا.", "أنت مصاب بفقر الدم.",
+  "Increase your dose to 10 mg.",
 ]) test(`chat blocks a direct diagnosis or personal regimen: ${answer}`, () => rejected(answer));
 
 for (const answer of [
@@ -22,9 +22,13 @@ for (const answer of [
   "You have described tiredness; several explanations are possible.",
   "Do not change your dose based on this explanation; ask your clinician.",
   "Hemoglobin is a protein in red blood cells that carries oxygen.",
-  "لا يمكن تحديد التشخيص من هذه المعلومات وحدها.",
 ]) test(`chat keeps an educational or uncertainty statement: ${answer}`, () => {
   assert.equal(parseChatReply(JSON.stringify({ answer, evidence: [] })).answer, answer);
+});
+
+test("the English-only assistant rejects non-English input and output", async () => {
+  await assert.rejects(answerChat({ question: "هل يمكنك شرح هذا؟", client: { complete: async () => "" } }), (error) => error.code === "invalid_language");
+  assert.throws(() => parseChatReply(JSON.stringify({ answer: "لا يمكن تحديد التشخيص.", evidence: [] })), (error) => error.code === "non_english_response");
 });
 
 test("a quoted medication strength is not treated as a personal dosing instruction", () => {
@@ -86,6 +90,9 @@ test("the chat requests a supported higher reasoning effort and explicitly bound
   assert.match(result.answer, /oxygen/);
   assert.equal(settings.reasoningEffort, "medium");
   assert.match(CHAT_SYSTEM_PROMPT, /Prior assistant replies are unverified/);
+  assert.match(CHAT_SYSTEM_PROMPT, /warm, generous with useful explanation/);
+  assert.match(CHAT_SYSTEM_PROMPT, /false reassurance/);
+  assert.match(CHAT_SYSTEM_PROMPT, /For emergencies, put the action first/);
 });
 
 for (const [reason, rejectedReply] of [

@@ -1,6 +1,7 @@
 const { filterText } = require("../triage/ai/guardrails");
 const { LlmError } = require("../triage/ai/llmClient");
 const { numericValues, numbersAreGrounded, hasUnsafeAdvice } = require("./responseChecks");
+const { isEnglishCompatibleText } = require("./englishPolicy");
 
 const URGENCIES = new Set(["emergency", "urgent", "soon", "routine", "unclear"]);
 const MAX_FINDINGS = 8;
@@ -17,7 +18,9 @@ Safety rules:
 - If the upload is a raw scan image (MRI, CT, X-ray, ultrasound) rather than a written report, do not interpret the pixels. Set documentType to raw_medical_image and choose unclear.
 - If the upload is not a written medical report, set documentType to other and choose unclear.
 - Otherwise use routine only when the report itself does not state urgency and the readable findings do not suggest time-sensitive care. If timing cannot be determined from the report, choose unclear and advise prompt clinician review.
-- Keep the user’s language where possible (English or Arabic). Be calm, direct, and concise.
+- Respond in English only. Be warm, patient, compassionate, and clear. Acknowledge that medical reports can feel worrying or confusing when appropriate, without offering false reassurance.
+- Explain unfamiliar wording generously enough to be useful, but avoid repetition. Pair uncertainty or a safety boundary with the closest practical help you can offer.
+- For urgent findings, state the required action first; warmth must never delay or weaken the instruction.
 - Explain the connection between each quoted finding and its general meaning, without presenting a possible cause as a confirmed diagnosis. Use the report's own ranges; a missing range stays missing.
 - Keep result and reference fields exactly grounded in the report. If useful in an explanation, show a unit conversion as an explicit equivalence and verify the arithmetic. Matching units alone does not establish that results from different labs are clinically comparable.
 
@@ -53,6 +56,7 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
   if (value.documentType !== "written_report") throw new ReportAnalysisError("not_report");
   const clean = (text, max) => {
     if (typeof text !== "string" || text.length > max) throw new ReportAnalysisError("invalid_response");
+    if (!isEnglishCompatibleText(text)) throw new ReportAnalysisError("invalid_response");
     if (hasUnsafeAdvice(text)) throw new ReportAnalysisError("unsafe_response");
     const filtered = filterText(text, max, { ignore: ["medication_dose", "phone_number"] });
     if (!filtered.text || /\b(?:you are|the patient is) (?:completely )?(?:healthy|fine)|nothing (?:is )?wrong|no (?:doctor|medical) (?:review|care|visit) (?:is )?needed|(?:everything|all (?:of )?(?:the )?(?:results|tests|values|findings)|the results) (?:is|are|looks|seems) (?:completely )?(?:fine|normal|okay|within (?:the )?(?:normal|expected) range)|you(?:'re| are) all clear\b/i.test(filtered.text)) throw new ReportAnalysisError("unsafe_response");
@@ -118,6 +122,7 @@ function reportMessages({ report, question }) {
 async function analyzeReport({ report, question = "", client }) {
   if (!client) throw new ReportAnalysisError("not_configured");
   if (typeof question !== "string" || question.length > 1200) throw new ReportAnalysisError("invalid_question");
+  if (!isEnglishCompatibleText(question) || (report.kind === "text" && !isEnglishCompatibleText(report.text))) throw new ReportAnalysisError("invalid_language");
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });

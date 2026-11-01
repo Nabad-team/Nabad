@@ -1827,6 +1827,9 @@ select.input {
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }
+.report-chat__sources { margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.report-chat__sources ul { margin: var(--space-1) 0 0; padding-left: var(--space-5); }
+.report-chat__sources a { overflow-wrap: anywhere; }
 
 .assistant-chat {
   display: grid;
