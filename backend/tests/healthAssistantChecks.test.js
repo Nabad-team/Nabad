@@ -64,7 +64,7 @@ test("overlong answers are rejected rather than cutting away qualifications or n
   rejected("A".repeat(1801), "invalid_response");
 });
 
-const analysis = () => ({ documentType: "written_report", urgency: "routine", summary: "The report contains CRP measurements.", findings: [{ name: "CRP", sourceQuote: "Later 1.8 mg/dL", result: "1.8 mg/dL", reference: "Not provided", explanation: "CRP is a marker of inflammation.", followUp: "Review the complete report with the ordering clinician." }], nextStep: "Ask the ordering clinician to review the full report.", uncertainties: ["The report supplies no reference range."] });
+const analysis = () => ({ documentType: "written_report", urgency: "routine", summary: "The report contains CRP measurements.", findings: [{ name: "CRP", category: "unclear", sourceQuote: "Later 1.8 mg/dL", result: "1.8 mg/dL", reference: "Not provided", explanation: "CRP is a marker of inflammation.", followUp: "Review the complete report with the ordering clinician." }], nextStep: "Ask the ordering clinician to review the full report.", uncertainties: ["The report supplies no reference range."] });
 
 test("report explanations reject direct treatment instructions but retain quoted values", () => {
   const value = analysis();
@@ -92,6 +92,18 @@ test("duplicate report findings are rejected", () => {
   const value = analysis();
   value.findings.push({ ...value.findings[0] });
   assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "invalid_response");
+});
+
+test("finding categories require explicit local evidence", () => {
+  const supported = analysis();
+  supported.findings[0].category = "abnormal";
+  supported.findings[0].sourceQuote = "Initial 20 mg/L, flagged HIGH";
+  supported.findings[0].result = "20 mg/L";
+  assert.equal(parseReportReply(JSON.stringify(supported), { reportText: `${report.text} Initial 20 mg/L, flagged HIGH` }).findings[0].category, "abnormal");
+
+  const unsupported = analysis();
+  unsupported.findings[0].category = "normal";
+  assert.throws(() => parseReportReply(JSON.stringify(unsupported), { reportText: report.text }), (error) => error.code === "unsupported_quote");
 });
 
 for (const [reason, rejectedReply] of [

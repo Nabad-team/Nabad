@@ -9,6 +9,8 @@
     "start": "node src/server.js",
     "test": "node --test --test-concurrency=4 --test-timeout=120000 tests/*.test.js",
     "test:triage-quality": "node --test --test-reporter=spec tests/triageQuality.test.js",
+    "test:report-quality": "node evals/report-analysis-gate.cjs",
+    "test:report-review": "node evals/reportReview.cjs",
     "dataset:validate": "node datasets/validate.cjs"
   },
   "dependencies": {

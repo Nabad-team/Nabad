@@ -24,7 +24,7 @@ const savedConversation = {
   reportResult: {
     urgency: "routine",
     summary: "The report includes one finding.",
-    findings: [{ name: "Test value", sourceQuote: "Value 1", result: "1", explanation: "A reported finding.", followUp: "Ask your clinician." }],
+    findings: [{ name: "Test value", category: "abnormal", sourceQuote: "Value 1", result: "1", explanation: "A reported finding.", followUp: "Ask your clinician." }],
     nextStep: "Review it with your clinician.",
     uncertainties: [],
     reportCoverage: "complete_text",
@@ -44,10 +44,29 @@ test("loads saved chats for review and prints the report explanation as PDF", as
   fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
 
   expect(await screen.findByText("The report includes one finding.")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Abnormal findings" })).toBeInTheDocument();
   expect(screen.queryByText("The report lists a result for review.")).not.toBeInTheDocument();
   expect(screen.getByText("The readable text of the uploaded report was processed.")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Print or save as PDF" }));
   expect(print).toHaveBeenCalledTimes(1);
+});
+
+test("shows page-level coverage when PDF extraction is incomplete", async () => {
+  getReportConversations.mockResolvedValueOnce({ conversations: [{
+    ...savedConversation,
+    id: "partial-conversation",
+    title: "Partial report",
+    reportResult: {
+      ...savedConversation.reportResult,
+      reportCoverage: "partial_text",
+      extractionCoverage: { pageCount: 3, readablePages: 1, sparsePages: [3], unreadablePages: [2], status: "uncertain" },
+    },
+  }] });
+  render(<TestResultsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: "Partial report" }));
+  expect(await screen.findByRole("status")).toHaveTextContent("1 readable of 3 PDF pages");
+  expect(screen.getByRole("status")).toHaveTextContent("unreadable pages: 2");
+  expect(screen.getByRole("status")).toHaveTextContent("low-text pages: 3");
 });
 
 test("sends a follow-up in the selected saved conversation and displays its answer", async () => {
