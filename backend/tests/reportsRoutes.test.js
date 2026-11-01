@@ -107,6 +107,7 @@ describe("POST /api/reports routes", () => {
     assert.equal(res.status, 200, JSON.stringify(res.body));
     assert.equal(res.body.findings[0].result, "13.5 g/dL");
     assert.equal(res.body.findings[0].reference, "12.0-15.5 g/dL");
+    assert.equal(res.body.reportCoverage, "complete_text");
     assert.ok(res.body.conversationId);
     assert.equal(provider.requests.length, 1);
 
@@ -115,6 +116,7 @@ describe("POST /api/reports routes", () => {
     assert.equal(history.conversations.length, 1);
     assert.match(history.conversations[0].messages[0].content, /CBC report/);
     assert.match(history.conversations[0].reportResult.summary, /blood count/);
+    assert.equal(history.conversations[0].messages[1].content, `${res.body.summary}\n${res.body.nextStep}`);
 
     const outsider = await User.create({ name: "Other", email: `other-report-${Date.now()}@example.test`, passwordHash: "x" });
     const outsiderToken = jwt.sign({ sub: String(outsider._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });

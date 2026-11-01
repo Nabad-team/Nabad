@@ -27,6 +27,7 @@ const savedConversation = {
     findings: [{ name: "Test value", sourceQuote: "Value 1", result: "1", explanation: "A reported finding.", followUp: "Ask your clinician." }],
     nextStep: "Review it with your clinician.",
     uncertainties: [],
+    reportCoverage: "complete_text",
     disclaimer: "AI information is not a diagnosis.",
   },
 };
@@ -43,7 +44,8 @@ test("loads saved chats for review and prints the report explanation as PDF", as
   fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
 
   expect(await screen.findByText("The report includes one finding.")).toBeInTheDocument();
-  expect(screen.getByText("The report lists a result for review.")).toBeInTheDocument();
+  expect(screen.queryByText("The report lists a result for review.")).not.toBeInTheDocument();
+  expect(screen.getByText("The readable text of the uploaded report was processed.")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Print or save as PDF" }));
   expect(print).toHaveBeenCalledTimes(1);
 });

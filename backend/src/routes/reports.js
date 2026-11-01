@@ -18,7 +18,9 @@ router.use(express.json({ limit: "7mb" }));
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 function analysisMessages(question, result) {
-  const explanation = [result.summary, ...result.findings.map((finding) => `${finding.name}: ${finding.explanation} Next step: ${finding.followUp}`), result.nextStep].join("\n").slice(0, 4000);
+  // The structured result is stored separately. Keep only a bounded overview in
+  // chat history so it cannot be cut mid-finding or duplicate the full review.
+  const explanation = [result.summary, result.nextStep].filter(Boolean).join("\n");
   return [
     { role: "user", content: question.slice(0, 4000) },
     { role: "assistant", content: explanation, disclaimer: result.disclaimer },

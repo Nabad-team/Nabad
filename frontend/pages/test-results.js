@@ -123,8 +123,9 @@ export default function TestResultsPage() {
         if (profileRef.current !== requestedProfileId) return;
         setResult(analysis);
         setConversationId(analysis.conversationId);
-        const explanation = [analysis.summary, ...analysis.findings.map((finding) => `${finding.name}: ${finding.explanation} Next step: ${finding.followUp}`), analysis.nextStep].join("\n").slice(0, 1200);
-        setMessages([...messages, { role: "user", content: currentQuestion }, { role: "assistant", content: explanation, disclaimer: analysis.disclaimer }].slice(-20));
+        // The structured review below is the authoritative first response.
+        // Follow-up chat messages are displayed separately instead of duplicating it.
+        setMessages([]);
         await refreshConversations();
       } else {
         const answer = await request(`/reports/chat?profileId=${encodeURIComponent(profileId)}`, {
@@ -180,7 +181,7 @@ export default function TestResultsPage() {
   function openConversation(conversation) {
     setFile(null);
     setResult(conversation.reportResult || null);
-    setMessages(conversation.messages || []);
+    setMessages(conversation.reportResult ? (conversation.messages || []).slice(2) : (conversation.messages || []));
     setConversationId(conversation.id);
     setQuestion("");
     setConsent(false);
@@ -230,7 +231,7 @@ export default function TestResultsPage() {
             <span className="assistant-chat__status">Health assistant</span>
             {activeProfile?.fullName && <p>Conversation for <strong>{activeProfile.fullName}</strong></p>}
           </div>
-          {messages.length > 0 && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
+          {(messages.length > 0 || result) && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
         </header>
         {messages.length > 0 && historyError && <Alert tone="danger" role="alert">{historyError}</Alert>}
         {messages.length > 0 ? (
@@ -249,7 +250,7 @@ export default function TestResultsPage() {
             ))}
             {busy && <div className="assistant-chat__typing" role="status"><span /><span /><span /><span className="sr-only">The assistant is preparing a response</span></div>}
           </section>
-        ) : (
+        ) : !result ? (
           <section className="assistant-chat__welcome" aria-labelledby="assistant-welcome-title">
             <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
@@ -261,10 +262,10 @@ export default function TestResultsPage() {
             </div>
             {busy && <div className="assistant-chat__typing" role="status"><span /><span /><span /><span className="sr-only">The assistant is preparing a response</span></div>}
           </section>
-        )}
+        ) : null}
 
       <form className="assistant-composer" onSubmit={sendMessage}>
-        {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>{file.name}</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
+        {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>Report attached ({file.name.split(".").pop()?.toLowerCase() || "file"})</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         <label className="sr-only" htmlFor="report-question">Your message</label>
         <textarea
@@ -298,6 +299,8 @@ export default function TestResultsPage() {
         <section className={`report-result report-result--${result.urgency}`} aria-labelledby="report-result-heading" aria-live="polite">
           <p className="report-result__eyebrow">AI explanation · not reviewed by a clinician</p>
           <p className="report-result__meta">Prepared for {activeProfile?.fullName || "the selected profile"}</p>
+          {result.reportCoverage === "partial_text" && <Alert tone="warning" role="status">Only part of this report could be read. Later pages or findings may be missing.</Alert>}
+          {result.reportCoverage === "complete_text" && <p className="report-result__coverage">The readable text of the uploaded report was processed.</p>}
           <h2 id="report-result-heading">{URGENCY_LABELS[result.urgency] || URGENCY_LABELS.unclear}</h2>
           <p>{result.summary}</p>
 
