@@ -127,6 +127,18 @@ test("finding categories require explicit local evidence", () => {
   assert.throws(() => parseReportReply(JSON.stringify(unsupported), { reportText: report.text }), (error) => error.code === "unsupported_quote");
 });
 
+test("laboratory asterisks and insufficiency labels support abnormal categories", () => {
+  for (const sourceQuote of ["Lymphocytes: 40.8 * %", "25 Hydroxy-Vitamin D: 28.353 ng/ml - Insufficiency"]) {
+    const value = analysis();
+    value.findings[0] = {
+      ...value.findings[0], category: "abnormal", sourceQuote,
+      result: sourceQuote.includes("40.8") ? "40.8 %" : "28.353 ng/ml",
+    };
+    const result = parseReportReply(JSON.stringify(value), { reportText: `SYNTHETIC LAB REPORT. ${sourceQuote}.` });
+    assert.equal(result.findings[0].category, "abnormal");
+  }
+});
+
 for (const [reason, rejectedReply] of [
   ["unsafe_response", (() => { const value = analysis(); value.findings[0].explanation = "This may be caused by an infection."; return JSON.stringify(value); })()],
   ["unsupported_quote", (() => { const value = analysis(); value.findings[0].sourceQuote = "Invented CRP 1.8 mg/dL"; return JSON.stringify(value); })()],

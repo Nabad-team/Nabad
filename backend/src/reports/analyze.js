@@ -10,7 +10,7 @@ const MAX_INPUT_CHARS = 30000;
 const DISCLAIMER = "AI-generated information can be wrong or miss findings. This is not a diagnosis or a substitute for a clinician reviewing the complete report.";
 const REPLY_CORRECTIONS = {
   unsafe_response: "The previous generation failed safety validation. Analyze the report again from the original source. Do not diagnose, speculate about causes, recommend treatment or supplements, minimize abnormalities, or offer broad reassurance.",
-  unsupported_quote: "The previous generation failed evidence validation. Analyze the report again using only the supplied report. Every finding must include an exact short source quote that contains and supports its reported result. Do not invent or alter values, units, ranges, flags, or wording.",
+  unsupported_quote: "The previous generation failed evidence validation. Analyze the report again using only the supplied report. Every finding must include an exact short source quote that contains and supports its reported result. Do not invent or alter values, units, ranges, flags, or wording. Use category unclear unless the local quote explicitly contains a category word or laboratory flag such as HIGH, LOW, critical, insufficient, or an asterisk.",
   invalid_response: "The previous generation failed response-format validation. Analyze the report again and return exactly one JSON object in the required shape, with no markdown or surrounding text.",
 };
 const SYSTEM_PROMPT = `You are Nabad's medical-report explainer. Read only the provided written lab or radiology report and explain important findings in plain language. This is health information, not a diagnosis.
@@ -102,7 +102,7 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
       if (!numbersAreGrounded(finding.result, finding.sourceQuote)) throw new ReportAnalysisError("unsupported_quote");
       const categoryEvidence = {
         urgent: /\b(?:critical|urgent|immediate(?:ly)?|emergency)\b|(?:حرج|عاجل|فوري|طوارئ)/i,
-        abnormal: /\b(?:abnormal|high|low|elevated|decreased|positive|outside (?:the )?(?:range|limits))\b|(?:^|\s)[HL](?:\s|$)|(?:غير طبيعي|مرتفع|منخفض|إيجابي|خارج (?:النطاق|المجال))/i,
+        abnormal: /\b(?:abnormal|high|low|elevated|decreased|positive|insufficient|insufficiency|deficient|deficiency|outside (?:the )?(?:range|limits))\b|(?:^|\s)(?:[HL]|\*)(?:\s|$)|(?:غير طبيعي|مرتفع|منخفض|إيجابي|غير كاف|نقص|خارج (?:النطاق|المجال))/i,
         borderline: /\b(?:borderline|marginal|equivocal|indeterminate)\b|(?:حد[يية]|هامشي|غير حاسم)/i,
         normal: /\b(?:normal|within (?:the )?(?:reference )?range|negative|not flagged abnormal)\b|(?:طبيعي|ضمن (?:النطاق|المجال)|سلبي)/i,
       };
