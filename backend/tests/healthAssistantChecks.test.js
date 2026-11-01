@@ -81,6 +81,18 @@ test("report explanations allow checked conversions but result and reference fie
   assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsupported_quote");
 });
 
+test("report explanations reject broad reassurance, speculative causes and ungrounded supplements", () => {
+  for (const mutate of [
+    (value) => { value.summary = "Most values are within the normal range, with minor deviations."; },
+    (value) => { value.findings[0].explanation = "This may be associated with a recent viral infection."; },
+    (value) => { value.findings[0].followUp = "Ask whether supplementation is needed."; },
+  ]) {
+    const value = analysis();
+    mutate(value);
+    assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsafe_response");
+  }
+});
+
 test("the chat requests a supported higher reasoning effort and explicitly bounds available context", async () => {
   let settings;
   const result = await answerChat({ question: "What does hemoglobin do?", client: { complete: async (messages, options) => {

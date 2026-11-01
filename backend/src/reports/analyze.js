@@ -14,6 +14,7 @@ Safety rules:
 - Never claim the patient is healthy, that everything is fine, or that care is unnecessary. Do not diagnose, prescribe, or suggest treatment or medicine doses.
 - Do not invent values, units, reference ranges, dates, findings, or conclusions. Distinguish what the report explicitly says from what you infer. If unreadable, incomplete, or ambiguous, say so and choose unclear.
 - Explain every important abnormal or flagged finding in simple words; include the exact source wording (a short quote) so the user can check it. If no abnormal finding is explicitly marked, say that no clearly marked abnormality was found in the readable text and still advise review with the ordering clinician.
+- Never summarize a report as "mostly normal," "minor deviations," or similar reassurance. Describe only the specific readable findings and their relationship to the report's own ranges or flags; numerical closeness does not establish clinical insignificance.
 - If the report explicitly marks a critical/urgent result or recommends immediate/same-day contact, choose urgent or emergency and repeat the report's instruction in plain language. Do not downgrade explicit urgency.
 - If the upload is a raw scan image (MRI, CT, X-ray, ultrasound) rather than a written report, do not interpret the pixels. Set documentType to raw_medical_image and choose unclear.
 - If the upload is not a written medical report, set documentType to other and choose unclear.
@@ -22,6 +23,9 @@ Safety rules:
 - Explain unfamiliar wording generously enough to be useful, but avoid repetition. Pair uncertainty or a safety boundary with the closest practical help you can offer.
 - For urgent findings, state the required action first; warmth must never delay or weaken the instruction.
 - Explain the connection between each quoted finding and its general meaning, without presenting a possible cause as a confirmed diagnosis. Use the report's own ranges; a missing range stays missing.
+- Do not propose possible causes (for example, infection, deficiency, or how the body processes a nutrient) unless the report explicitly states that cause. Explain what the measurement represents instead.
+- When repeating a category such as low, high, insufficient, deficient, normal, or preferred, say explicitly that this is the report or laboratory's category. Do not present a laboratory cutoff as a universal medical threshold.
+- Do not steer the user toward supplements or treatment. Ask the ordering clinician whether any action is needed based on the complete context.
 - Keep result and reference fields exactly grounded in the report. If useful in an explanation, show a unit conversion as an explicit equivalence and verify the arithmetic. Matching units alone does not establish that results from different labs are clinically comparable.
 
 Return only a JSON object with this exact shape:
@@ -65,6 +69,7 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
   if (!Array.isArray(value.findings) || value.findings.length > MAX_FINDINGS || !Array.isArray(value.uncertainties) || value.uncertainties.length > 6) throw new ReportAnalysisError("invalid_response");
   const summary = clean(value.summary, 700);
   const nextStep = clean(value.nextStep, 700);
+  if (/\b(?:most|nearly all)\b[^.!?]{0,80}\b(?:normal|within (?:the )?(?:normal|reference) range)\b|\bminor deviations?\b/i.test(summary)) throw new ReportAnalysisError("unsafe_response");
   const requireReportedNumbers = (texts, allowConversions = false) => {
     if (reportKind === "text" && texts.some((text) => !numbersAreGrounded(text, reportText, { allowConversions }))) throw new ReportAnalysisError("unsupported_quote");
   };
@@ -83,6 +88,8 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
       if (!normalized(reportText).includes(normalized(finding.sourceQuote))) throw new ReportAnalysisError("unsupported_quote");
       requireReportedNumbers([finding.name, finding.sourceQuote, finding.result, finding.reference]);
       requireReportedNumbers([finding.explanation, finding.followUp], true);
+      if (/\b(?:may|might|could|can sometimes)\s+(?:be\s+)?(?:associated|related|caused|linked)\b|\bsuggests? (?:a|an|that)\b/i.test(finding.explanation)) throw new ReportAnalysisError("unsafe_response");
+      if (!/\bsupplement/i.test(reportText) && /\bsupplement/i.test(`${finding.explanation} ${finding.followUp}`)) throw new ReportAnalysisError("unsafe_response");
     }
     return finding;
   });
@@ -101,6 +108,7 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
     uncertainties,
     disclaimer: DISCLAIMER,
     reviewedByClinician: false,
+    reportCoverage: reportKind === "image" ? "image" : "complete_text",
   };
 }
 
@@ -129,6 +137,7 @@ async function analyzeReport({ report, question = "", client }) {
     const reply = await client.complete(messages, { maxTokens: 2200, reasoningEffort: "medium" });
     const result = parseReportReply(reply, { reportText: report.text, reportKind: report.kind });
     if (report.partial) {
+      result.reportCoverage = "partial_text";
       result.urgency = result.urgency === "emergency" || result.urgency === "urgent" ? result.urgency : "unclear";
       result.nextStep = "Only part of the report could be read. Please have a clinician review the complete report; do not rely on this partial explanation.";
       result.uncertainties.unshift("Only the beginning of the PDF could be read; later pages or findings may be missing.");
