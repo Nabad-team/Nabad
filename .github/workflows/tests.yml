@@ -55,6 +55,30 @@ jobs:
       - name: Test API with temporary MongoDB
         run: npm test
 
+  report-quality:
+    name: Medical report safety gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      MONGOMS_DISABLE_POSTINSTALL: "1"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate report analysis and extraction fixtures
+        run: npm run test:report-quality
+      - name: Validate clinical review records
+        run: npm run test:report-review
+
   # SCRUM-282: the 50 realistic triage cases (backend/tests/triage-quality) as their own check, so a
   # change that makes triage less accurate is named on the pull request. The scorecard is on the run's
   # summary page. No database or AI provider is needed, so the MongoDB download is skipped.

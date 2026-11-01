@@ -1,0 +1,42 @@
+[
+  {
+    "id": "complete-searchable-pdf",
+    "pageTexts": [
+      "Synthetic searchable report page with laboratory test names, reported values, units, flags, and reference ranges.",
+      "Synthetic continuation page with additional laboratory rows and enough selectable text for extraction."
+    ],
+    "pageLabels": ["1", "2"],
+    "expectedStatus": "complete",
+    "expectedUnreadablePages": []
+  },
+  {
+    "id": "blank-or-scanned-page",
+    "pageTexts": [
+      "Synthetic searchable report page with enough selectable text to support a cautious report explanation.",
+      ""
+    ],
+    "pageLabels": ["1", "2"],
+    "expectedStatus": "uncertain",
+    "expectedUnreadablePages": [2]
+  },
+  {
+    "id": "broken-table-extraction",
+    "pageTexts": [
+      "Synthetic searchable report page with enough selectable text to support a cautious report explanation.",
+      "4.2 mg/dL"
+    ],
+    "pageLabels": ["1", "2"],
+    "expectedStatus": "uncertain",
+    "expectedSparsePages": [2]
+  },
+  {
+    "id": "missing-page-label",
+    "pageTexts": [
+      "Synthetic searchable report page with enough selectable text to support a cautious report explanation.",
+      "Synthetic later report page with enough selectable text to support a cautious report explanation."
+    ],
+    "pageLabels": ["1", "3"],
+    "expectedStatus": "uncertain",
+    "expectedIssue": "not sequential"
+  }
+]

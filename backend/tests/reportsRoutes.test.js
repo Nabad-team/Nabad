@@ -100,7 +100,7 @@ describe("POST /api/reports routes", () => {
   test("analyzes a sample PDF with lab values and a reference range", async () => {
     provider.content = JSON.stringify({
       documentType: "written_report", urgency: "routine", summary: "The report includes blood count results.",
-      findings: [{ name: "Hemoglobin", sourceQuote: "Hemoglobin 13.5 g/dL", result: "13.5 g/dL", reference: "12.0-15.5 g/dL", explanation: "This is the reported hemoglobin value.", followUp: "Ask the ordering clinician to review the complete report." }],
+      findings: [{ name: "Hemoglobin", category: "unclear", sourceQuote: "Hemoglobin 13.5 g/dL", result: "13.5 g/dL", reference: "12.0-15.5 g/dL", explanation: "This is the reported hemoglobin value.", followUp: "Ask the ordering clinician to review the complete report." }],
       nextStep: "Please have the ordering clinician review the complete report.", uncertainties: [],
     });
     const res = await call("analyze", { consent: true, question: "What does this CBC report say?", file: { mimeType: "application/pdf", extension: "pdf", data: makeSamplePdf() } });

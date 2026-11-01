@@ -2203,6 +2203,17 @@ select.input {
   gap: var(--space-3);
 }
 
+.report-finding-group + .report-finding-group {
+  margin-top: var(--space-5);
+}
+
+.report-finding-group > h4 {
+  margin-bottom: var(--space-3);
+}
+
+.report-finding-group--urgent > h4 { color: var(--color-danger, #a61b1b); }
+.report-finding-group--abnormal > h4 { color: var(--color-warning-text, #7a4300); }
+
 .report-finding {
   padding: var(--space-4);
   background: var(--color-bg);
@@ -2210,7 +2221,7 @@ select.input {
   border-radius: var(--radius-md);
 }
 
-.report-finding h4 {
+.report-finding h5 {
   margin-bottom: var(--space-2);
 }
 

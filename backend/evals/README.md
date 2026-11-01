@@ -16,7 +16,13 @@ node evals/health-assistant.cjs --run --case unit-conversion
 node evals/health-assistant.cjs --list --suite advanced
 node evals/health-assistant.cjs --run --suite advanced --limit 5
 node evals/health-assistant.cjs --run --suite all
+npm run test:report-quality
+npm run test:report-review
 ```
+
+`test:report-quality` is an offline release gate for the report-analysis validator and PDF coverage checks. Its synthetic fixtures cover a flagged abnormal result, a report with no explicit abnormality, a missing reference range, poor-quality extraction, an explicit critical instruction, blank/scanned pages, sparse table extraction, and non-sequential page labels. It verifies grounding, response-shape enforcement, and coverage warnings without contacting an AI provider. Passing it does not establish medical accuracy; live-model evaluation, real OCR benchmarking, and qualified clinical review remain separate requirements.
+
+`test:report-review` validates the clinical-review manifest. Every synthetic report case starts as `pending`. Approval requires a named reviewer, their clinical qualification, an ISO review date, a 0-2 score for accuracy, grounding, uncertainty, urgency, actionability and patient language, plus an explicit critical-safety assessment. A case with a critical safety failure cannot be approved, and the dataset cannot be labelled clinically validated until every case is approved. The tooling enforces review bookkeeping; it does not perform or impersonate clinical review.
 
 Live evaluation needs the same `LLM_API_URL`, `LLM_MODEL`, `LLM_PROVIDER` and, where required, `LLM_API_KEY` used by the deployment. Configure secrets locally in `backend/.env`; do not commit them. The runner also reads existing root/frontend `.env.local` files without overriding already-set environment variables. It prints only configuration metadata, never the API key or endpoint URL.
 

@@ -299,24 +299,43 @@ export default function TestResultsPage() {
         <section className={`report-result report-result--${result.urgency}`} aria-labelledby="report-result-heading" aria-live="polite">
           <p className="report-result__eyebrow">AI explanation · not reviewed by a clinician</p>
           <p className="report-result__meta">Prepared for {activeProfile?.fullName || "the selected profile"}</p>
-          {result.reportCoverage === "partial_text" && <Alert tone="warning" role="status">Only part of this report could be read. Later pages or findings may be missing.</Alert>}
+          {result.reportCoverage === "partial_text" && (
+            <Alert tone="warning" role="status">
+              The complete report could not be verified as readable. Pages or findings may be missing.
+              {result.extractionCoverage && (
+                <> Processed coverage: {result.extractionCoverage.readablePages} readable of {result.extractionCoverage.pageCount} PDF pages
+                  {result.extractionCoverage.unreadablePages?.length > 0 && `; unreadable pages: ${result.extractionCoverage.unreadablePages.join(", ")}`}
+                  {result.extractionCoverage.sparsePages?.length > 0 && `; low-text pages: ${result.extractionCoverage.sparsePages.join(", ")}`}.</>
+              )}
+            </Alert>
+          )}
           {result.reportCoverage === "complete_text" && <p className="report-result__coverage">The readable text of the uploaded report was processed.</p>}
           <h2 id="report-result-heading">{URGENCY_LABELS[result.urgency] || URGENCY_LABELS.unclear}</h2>
           <p>{result.summary}</p>
 
           {result.findings.length > 0 ? (
             <div className="report-findings">
-              <h3>Important findings</h3>
-              {result.findings.map((finding, index) => (
-                <article className="report-finding" key={`${finding.name}-${index}`}>
-                  <h4>{finding.name}</h4>
-                  <p><strong>In the report:</strong> {finding.sourceQuote}</p>
-                  <p><strong>Reported result:</strong> {finding.result}</p>
-                  <p><strong>In simpler words:</strong> {finding.explanation}</p>
-                  {finding.reference && <p><strong>Reference:</strong> {finding.reference}</p>}
-                  <p><strong>Next step:</strong> {finding.followUp}</p>
-                </article>
-              ))}
+              <h3>Report findings</h3>
+              {["urgent", "abnormal", "borderline", "normal", "unclear"].map((category) => {
+                const categoryFindings = result.findings.filter((finding) => (finding.category || "unclear") === category);
+                if (!categoryFindings.length) return null;
+                const labels = { urgent: "Urgent findings", abnormal: "Abnormal findings", borderline: "Borderline findings", normal: "Results marked normal", unclear: "Findings needing clarification" };
+                return (
+                  <section className={`report-finding-group report-finding-group--${category}`} key={category} aria-labelledby={`finding-group-${category}`}>
+                    <h4 id={`finding-group-${category}`}>{labels[category]}</h4>
+                    {categoryFindings.map((finding, index) => (
+                      <article className="report-finding" key={`${finding.name}-${index}`}>
+                        <h5>{finding.name}</h5>
+                        <p><strong>In the report:</strong> {finding.sourceQuote}</p>
+                        <p><strong>Reported result:</strong> {finding.result}</p>
+                        <p><strong>In simpler words:</strong> {finding.explanation}</p>
+                        {finding.reference && <p><strong>Reference:</strong> {finding.reference}</p>}
+                        <p><strong>Next step:</strong> {finding.followUp}</p>
+                      </article>
+                    ))}
+                  </section>
+                );
+              })}
             </div>
           ) : <p>No clearly marked abnormal findings were identified in what the AI could read. This does not confirm that everything is normal.</p>}
 
