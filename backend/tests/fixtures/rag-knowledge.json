@@ -1,6 +1,7 @@
 [
   {
     "id": "fixture-hemoglobin",
+    "version": "1.0.0",
     "title": "Hemoglobin overview",
     "passage": "Hemoglobin is a protein in red blood cells that carries oxygen from the lungs to the body's tissues.",
     "sourceUrl": "https://example.test/hemoglobin",
@@ -12,6 +13,7 @@
   },
   {
     "id": "fixture-expired",
+    "version": "1.0.0",
     "title": "Expired content",
     "passage": "This content must never be retrieved after its review expires.",
     "sourceUrl": "https://example.test/expired",

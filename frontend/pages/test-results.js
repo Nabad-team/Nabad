@@ -243,7 +243,7 @@ export default function TestResultsPage() {
                 {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
                 {message.citations?.length > 0 && <div className="report-chat__sources">
                   <strong>Reviewed sources:</strong>
-                  <ul>{message.citations.map((source) => <li key={source.id}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}</li>)}</ul>
+                  <ul>{message.citations.map((source) => <li key={`${source.id}-${source.version || "legacy"}`}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}{source.version && ` · version ${source.version}`}{source.reviewedAt && ` · reviewed ${new Date(source.reviewedAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}`}</li>)}</ul>
                 </div>}
                 {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
               </article>
