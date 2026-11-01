@@ -124,7 +124,19 @@ test("finding categories require explicit local evidence", () => {
 
   const unsupported = analysis();
   unsupported.findings[0].category = "normal";
-  assert.throws(() => parseReportReply(JSON.stringify(unsupported), { reportText: report.text }), (error) => error.code === "unsupported_quote");
+  assert.equal(parseReportReply(JSON.stringify(unsupported), { reportText: report.text }).findings[0].category, "unclear");
+});
+
+test("a grounded out-of-range result is delivered as unclear when its quote has no explicit flag", () => {
+  const reportText = "SYNTHETIC REPORT. Magnesium: 1.83 mg/dL. Female reference: 1.9-2.5 mg/dL.";
+  const value = analysis();
+  value.findings[0] = {
+    ...value.findings[0], name: "Magnesium", category: "abnormal",
+    sourceQuote: "Magnesium: 1.83 mg/dL", result: "1.83 mg/dL", reference: "1.9-2.5 mg/dL",
+  };
+  const parsed = parseReportReply(JSON.stringify(value), { reportText });
+  assert.equal(parsed.findings[0].result, "1.83 mg/dL");
+  assert.equal(parsed.findings[0].category, "unclear");
 });
 
 test("laboratory asterisks and insufficiency labels support abnormal categories", () => {

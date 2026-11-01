@@ -106,7 +106,11 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
         borderline: /\b(?:borderline|marginal|equivocal|indeterminate)\b|(?:حد[يية]|هامشي|غير حاسم)/i,
         normal: /\b(?:normal|within (?:the )?(?:reference )?range|negative|not flagged abnormal)\b|(?:طبيعي|ضمن (?:النطاق|المجال)|سلبي)/i,
       };
-      if (categoryEvidence[finding.category] && !categoryEvidence[finding.category].test(finding.sourceQuote)) throw new ReportAnalysisError("unsupported_quote");
+      // Category labels are presentation metadata, not source evidence. If the
+      // model infers a label from a number/range comparison but the local quote
+      // does not explicitly carry that label or a lab flag, keep the grounded
+      // finding and downgrade only its category instead of hiding the report.
+      if (categoryEvidence[finding.category] && !categoryEvidence[finding.category].test(finding.sourceQuote)) finding.category = "unclear";
       requireReportedNumbers([finding.explanation, finding.followUp], true);
       if (/\b(?:may|might|could|can sometimes)\s+(?:be\s+)?(?:associated|related|caused|linked)\b|\bsuggests? (?:a|an|that)\b/i.test(finding.explanation)) throw new ReportAnalysisError("unsafe_response");
       if (!/\bsupplement/i.test(reportText) && /\bsupplement/i.test(`${finding.explanation} ${finding.followUp}`)) throw new ReportAnalysisError("unsafe_response");
