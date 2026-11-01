@@ -95,7 +95,7 @@ router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
       const messages = {
         not_configured: "AI report review is not configured on this server yet. Your file was not analyzed.",
         invalid_question: "Keep your question under 1200 characters.",
-        invalid_language: "The health assistant currently accepts English questions and English written reports only.",
+        invalid_language: "The health assistant accepts English or Arabic questions and written reports, and replies in English.",
         timeout: "The AI report review took too long. Your file was not analyzed; please try again later.",
         provider_unavailable: "The AI report service is unavailable. Your file was not analyzed; please try again later.",
         unsupported_quote: "The AI could not reliably link its explanation to text in the report. No result was shown; try a clearer copy.",
@@ -159,7 +159,7 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
         not_configured: "The health assistant is not configured on this server yet. Your message was not sent.",
         invalid_question: "Write a question between 3 and 1200 characters.",
         invalid_history: "This conversation is too long to continue. Start a new conversation and try again.",
-        invalid_language: "The health assistant currently accepts English questions, conversation history, and written reports only.",
+        invalid_language: "The health assistant accepts English or Arabic questions, conversation history, and written reports, and replies in English.",
         timeout: "The health assistant took too long to respond. Please try again.",
         provider_unavailable: "The health assistant is unavailable right now. Please try again later.",
         unsupported_quote: "The AI could not reliably ground that answer in the report. No answer was shown; try a clearer report or ask your clinician.",

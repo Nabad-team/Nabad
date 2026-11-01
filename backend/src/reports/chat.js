@@ -4,7 +4,7 @@ const { numbersAreGrounded, hasUnsafeAdvice } = require("./responseChecks");
 const { chatExampleMessages } = require("./chatExamples");
 const { getChatSafetyReply } = require("./chatSafety");
 const { getKnowledgeRetriever } = require("./knowledgeRetriever");
-const { isEnglishCompatibleText, isEnglishCompatibleReport } = require("./englishPolicy");
+const { isEnglishCompatibleText, isSupportedInputText } = require("./englishPolicy");
 
 const MAX_HISTORY_MESSAGES = 8;
 const MAX_HISTORY_CHARS = 1200;
@@ -117,9 +117,9 @@ function parseChatReply(raw, { report = null, knowledge = [] } = {}) {
 
 async function answerChat({ question, history = [], report = null, client, retriever }) {
   if (typeof question !== "string" || question.trim().length < 3 || question.length > 1200) throw new ReportAnalysisError("invalid_question");
-  if (!isEnglishCompatibleText(question)) throw new ReportAnalysisError("invalid_language");
+  if (!isSupportedInputText(question)) throw new ReportAnalysisError("invalid_language");
   const safeHistory = validateHistory(history);
-  if (safeHistory.some((message) => !isEnglishCompatibleText(message.content)) || (report?.kind === "text" && !isEnglishCompatibleReport(report.text))) throw new ReportAnalysisError("invalid_language");
+  if (safeHistory.some((message) => !isSupportedInputText(message.content)) || (report?.kind === "text" && !isSupportedInputText(report.text))) throw new ReportAnalysisError("invalid_language");
   const safetyReply = getChatSafetyReply(question);
   if (safetyReply) return safetyReply;
   if (!client) throw new ReportAnalysisError("not_configured");
