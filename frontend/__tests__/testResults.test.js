@@ -69,6 +69,27 @@ test("shows page-level coverage when PDF extraction is incomplete", async () => 
   expect(screen.getByRole("status")).toHaveTextContent("low-text pages: 3");
 });
 
+test("shows server-validated RAG source version and review date", async () => {
+  getReportConversations.mockResolvedValueOnce({ conversations: [{
+    ...savedConversation,
+    id: "sourced-conversation",
+    title: "Sourced answer",
+    reportResult: null,
+    messages: [{
+      role: "assistant",
+      content: "Hemoglobin carries oxygen.",
+      citations: [{
+        id: "hemoglobin-source", version: "1.2.0", title: "Hemoglobin overview", sourceUrl: "https://example.test/hemoglobin",
+        publisher: "Reviewed medical publisher", reviewedAt: "2026-10-20T00:00:00.000Z", reviewExpiresAt: "2027-10-20T00:00:00.000Z",
+      }],
+    }],
+  }] });
+  render(<TestResultsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: "Sourced answer" }));
+  expect(await screen.findByText(/version 1\.2\.0/)).toHaveTextContent("reviewed 20/10/2026");
+  expect(screen.getByRole("link", { name: "Hemoglobin overview" })).toHaveAttribute("href", "https://example.test/hemoglobin");
+});
+
 test("sends a follow-up in the selected saved conversation and displays its answer", async () => {
   request.mockResolvedValue({
     answer: "Here is the follow-up answer.",

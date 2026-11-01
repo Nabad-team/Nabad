@@ -6,9 +6,9 @@ const { answerChat, parseChatReply } = require("../src/reports/chat");
 
 const fixturePath = path.join(__dirname, "fixtures", "rag-knowledge.json");
 const knowledge = {
-  id: "fixture-hemoglobin", title: "Hemoglobin overview",
+  id: "fixture-hemoglobin", version: "1.0.0", title: "Hemoglobin overview",
   passage: "Hemoglobin is a protein in red blood cells that carries oxygen from the lungs to the body's tissues.",
-  sourceUrl: "https://example.test/hemoglobin", publisher: "Test medical publisher", reviewedAt: "2026-01-01T00:00:00.000Z",
+  sourceUrl: "https://example.test/hemoglobin", publisher: "Test medical publisher", reviewedAt: "2026-01-01T00:00:00.000Z", reviewExpiresAt: "2099-01-01T00:00:00.000Z",
 };
 
 test("RAG stays off unless explicitly enabled with a corpus path", () => {
@@ -36,7 +36,15 @@ test("chat sends only the question to retrieval and returns server-validated sou
     } },
   });
   assert.deepEqual(seen, ["What does hemoglobin do?"]);
-  assert.deepEqual(result.citations, [{ id: knowledge.id, title: knowledge.title, sourceUrl: knowledge.sourceUrl, publisher: knowledge.publisher, reviewedAt: knowledge.reviewedAt }]);
+  assert.deepEqual(result.citations, [{ id: knowledge.id, version: knowledge.version, title: knowledge.title, sourceUrl: knowledge.sourceUrl, publisher: knowledge.publisher, reviewedAt: knowledge.reviewedAt, reviewExpiresAt: knowledge.reviewExpiresAt }]);
+});
+
+test("RAG records require an explicit semantic version", () => {
+  const valid = { ...require("./fixtures/rag-knowledge.json")[0] };
+  const { validateDocument } = require("../src/reports/knowledgeRetriever");
+  assert.equal(validateDocument({ ...valid, version: undefined }, new Date("2026-11-01T00:00:00.000Z")), null);
+  assert.equal(validateDocument({ ...valid, version: "draft" }, new Date("2026-11-01T00:00:00.000Z")), null);
+  assert.equal(validateDocument(valid, new Date("2026-11-01T00:00:00.000Z")).version, "1.0.0");
 });
 
 test("chat rejects invented, missing, and non-retrieved citations", () => {

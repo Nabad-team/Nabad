@@ -19,15 +19,16 @@ function readKnowledgeConfig(env = process.env) {
 
 function validateDocument(value, now = new Date()) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const { id, title, passage, sourceUrl, publisher, languages, approved, reviewedAt, reviewExpiresAt } = value;
-  if (![id, title, passage, sourceUrl, publisher, reviewedAt, reviewExpiresAt].every((item) => typeof item === "string" && item.trim())) return null;
+  const { id, version, title, passage, sourceUrl, publisher, languages, approved, reviewedAt, reviewExpiresAt } = value;
+  if (![id, version, title, passage, sourceUrl, publisher, reviewedAt, reviewExpiresAt].every((item) => typeof item === "string" && item.trim())) return null;
   if (!/^[a-z0-9][a-z0-9._-]{2,79}$/i.test(id) || passage.length > MAX_PASSAGE_CHARS) return null;
+  if (!/^\d+\.\d+\.\d+$/.test(version)) return null;
   let url;
   try { url = new URL(sourceUrl); } catch { return null; }
   const reviewed = new Date(reviewedAt); const expires = new Date(reviewExpiresAt);
   if (url.protocol !== "https:" || approved !== true || Number.isNaN(reviewed.valueOf()) || Number.isNaN(expires.valueOf()) || reviewed > now || expires <= now) return null;
   if (!Array.isArray(languages) || languages.length !== 1 || languages[0] !== "en") return null;
-  return { id, title: title.trim(), passage: passage.trim(), sourceUrl: url.href, publisher: publisher.trim(), languages, reviewedAt, reviewExpiresAt };
+  return { id, version, title: title.trim(), passage: passage.trim(), sourceUrl: url.href, publisher: publisher.trim(), languages, reviewedAt, reviewExpiresAt };
 }
 
 function loadDocuments(filePath, now = new Date()) {

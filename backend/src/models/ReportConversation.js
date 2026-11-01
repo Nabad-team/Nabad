@@ -5,8 +5,10 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true, maxlength: 4000 },
   evidence: { type: [String], default: [] },
   citations: { type: [new mongoose.Schema({
-    id: { type: String, required: true }, title: { type: String, required: true }, sourceUrl: { type: String, required: true },
-    publisher: { type: String, required: true }, reviewedAt: { type: String, required: true },
+    // version/reviewExpiresAt are optional only for conversations saved before
+    // versioned citations were introduced. Every newly retrieved source has both.
+    id: { type: String, required: true }, version: { type: String }, title: { type: String, required: true }, sourceUrl: { type: String, required: true },
+    publisher: { type: String, required: true }, reviewedAt: { type: String, required: true }, reviewExpiresAt: { type: String },
   }, { _id: false })], default: [] },
   disclaimer: { type: String, default: "" },
 }, { _id: false });
