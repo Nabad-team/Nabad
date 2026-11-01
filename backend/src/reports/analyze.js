@@ -7,6 +7,11 @@ const URGENCIES = new Set(["emergency", "urgent", "soon", "routine", "unclear"])
 const MAX_FINDINGS = 8;
 const MAX_INPUT_CHARS = 30000;
 const DISCLAIMER = "AI-generated information can be wrong or miss findings. This is not a diagnosis or a substitute for a clinician reviewing the complete report.";
+const REPLY_CORRECTIONS = {
+  unsafe_response: "The previous generation failed safety validation. Analyze the report again from the original source. Do not diagnose, speculate about causes, recommend treatment or supplements, minimize abnormalities, or offer broad reassurance.",
+  unsupported_quote: "The previous generation failed evidence validation. Analyze the report again using only the supplied report. Every finding must include an exact short source quote that contains and supports its reported result. Do not invent or alter values, units, ranges, flags, or wording.",
+  invalid_response: "The previous generation failed response-format validation. Analyze the report again and return exactly one JSON object in the required shape, with no markdown or surrounding text.",
+};
 const SYSTEM_PROMPT = `You are Nabad's medical-report explainer. Read only the provided written lab or radiology report and explain important findings in plain language. This is health information, not a diagnosis.
 
 Safety rules:
@@ -87,6 +92,10 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
     if (reportKind === "text") {
       if (!normalized(reportText).includes(normalized(finding.sourceQuote))) throw new ReportAnalysisError("unsupported_quote");
       requireReportedNumbers([finding.name, finding.sourceQuote, finding.result, finding.reference]);
+      // A value appearing somewhere in a long report is not enough to support a
+      // finding. Its local evidence quote must carry the result's measurements.
+      // This prevents a real number from another row being attached to this test.
+      if (!numbersAreGrounded(finding.result, finding.sourceQuote)) throw new ReportAnalysisError("unsupported_quote");
       requireReportedNumbers([finding.explanation, finding.followUp], true);
       if (/\b(?:may|might|could|can sometimes)\s+(?:be\s+)?(?:associated|related|caused|linked)\b|\bsuggests? (?:a|an|that)\b/i.test(finding.explanation)) throw new ReportAnalysisError("unsafe_response");
       if (!/\bsupplement/i.test(reportText) && /\bsupplement/i.test(`${finding.explanation} ${finding.followUp}`)) throw new ReportAnalysisError("unsafe_response");
@@ -94,6 +103,8 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
     return finding;
   });
   const uncertainties = value.uncertainties.map((item) => clean(item, 240));
+  const findingKeys = findings.map((finding) => `${normalized(finding.name)}|${normalized(finding.sourceQuote)}`);
+  if (new Set(findingKeys).size !== findingKeys.length) throw new ReportAnalysisError("invalid_response");
   requireReportedNumbers(uncertainties);
   // Report wording that explicitly marks a critical/urgent result always gets same-day review,
   // even if the model tries to classify it as routine.
@@ -134,8 +145,21 @@ async function analyzeReport({ report, question = "", client }) {
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });
-    const reply = await client.complete(messages, { maxTokens: 2200, reasoningEffort: "medium" });
-    const result = parseReportReply(reply, { reportText: report.text, reportKind: report.kind });
+    const options = { maxTokens: 2200, reasoningEffort: "medium" };
+    const reply = await client.complete(messages, options);
+    let result;
+    try {
+      result = parseReportReply(reply, { reportText: report.text, reportKind: report.kind });
+    } catch (error) {
+      if (!(error instanceof ReportAnalysisError) || !Object.hasOwn(REPLY_CORRECTIONS, error.code)) throw error;
+      // Regenerate once from the original report. The rejected output is never
+      // returned, stored, or supplied to the model as an example.
+      const correctedMessages = messages.map((message, index) => index === 0
+        ? { ...message, content: `${message.content}\n\n${REPLY_CORRECTIONS[error.code]}` }
+        : message);
+      const correctedReply = await client.complete(correctedMessages, options);
+      result = parseReportReply(correctedReply, { reportText: report.text, reportKind: report.kind });
+    }
     if (report.partial) {
       result.reportCoverage = "partial_text";
       result.urgency = result.urgency === "emergency" || result.urgency === "urgent" ? result.urgency : "unclear";
@@ -153,4 +177,4 @@ async function analyzeReport({ report, question = "", client }) {
   }
 }
 
-module.exports = { analyzeReport, parseReportReply, reportMessages, numericValues, ReportAnalysisError, SYSTEM_PROMPT, DISCLAIMER };
+module.exports = { analyzeReport, parseReportReply, reportMessages, numericValues, ReportAnalysisError, SYSTEM_PROMPT, DISCLAIMER, REPLY_CORRECTIONS };

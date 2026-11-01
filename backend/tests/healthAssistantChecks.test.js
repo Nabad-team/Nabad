@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { parseChatReply, answerChat, CHAT_SYSTEM_PROMPT } = require("../src/reports/chat");
-const { parseReportReply } = require("../src/reports/analyze");
+const { analyzeReport, parseReportReply } = require("../src/reports/analyze");
 const { numbersAreGrounded } = require("../src/reports/responseChecks");
 const { LlmError } = require("../src/triage/ai/llmClient");
 
@@ -79,6 +79,47 @@ test("report explanations allow checked conversions but result and reference fie
   assert.equal(parseReportReply(JSON.stringify(value), { reportText: report.text }).findings[0].explanation, value.findings[0].explanation);
   value.findings[0].reference = "Reference range 18 to 20 mg/L";
   assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsupported_quote");
+});
+
+test("each report finding's quote must support that finding's result", () => {
+  const value = analysis();
+  value.findings[0].sourceQuote = "Initial 20 mg/L";
+  value.findings[0].result = "1.8 mg/dL";
+  assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsupported_quote");
+});
+
+test("duplicate report findings are rejected", () => {
+  const value = analysis();
+  value.findings.push({ ...value.findings[0] });
+  assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "invalid_response");
+});
+
+for (const [reason, rejectedReply] of [
+  ["unsafe_response", (() => { const value = analysis(); value.findings[0].explanation = "This may be caused by an infection."; return JSON.stringify(value); })()],
+  ["unsupported_quote", (() => { const value = analysis(); value.findings[0].sourceQuote = "Invented CRP 1.8 mg/dL"; return JSON.stringify(value); })()],
+  ["invalid_response", "not JSON"],
+]) test(`report analysis regenerates once after ${reason}`, async () => {
+  const calls = [];
+  const accepted = JSON.stringify(analysis());
+  const result = await analyzeReport({ report, client: { complete: async (messages, options) => {
+    calls.push({ messages, options });
+    return calls.length === 1 ? rejectedReply : accepted;
+  } } });
+  assert.equal(result.findings[0].result, "1.8 mg/dL");
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].options, calls[0].options);
+  assert.deepEqual(calls[1].messages.slice(1), calls[0].messages.slice(1));
+  assert.match(calls[1].messages[0].content, /previous generation failed/i);
+  assert.ok(!JSON.stringify(calls[1].messages).includes(rejectedReply));
+});
+
+test("a second invalid report analysis stays blocked", async () => {
+  let calls = 0;
+  await assert.rejects(analyzeReport({ report, client: { complete: async () => {
+    calls += 1;
+    return "not JSON";
+  } } }), (error) => error.code === "invalid_response");
+  assert.equal(calls, 2);
 });
 
 test("report explanations reject broad reassurance, speculative causes and ungrounded supplements", () => {
