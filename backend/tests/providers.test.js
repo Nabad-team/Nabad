@@ -344,6 +344,10 @@ test("new service evidence updates existing facility records and remains searcha
     ["tannourine-governmental-hospital", "dialysis", "Tannourin Tahta"],
     ["ehden-governmental-hospital", "laboratory", "Ehden"],
     ["daher-elbachek-governmental-hospital", "ct", "Roumieh"],
+    ["mortada-hospital", "outpatient", "Baalbek"],
+    ["hermel-governmental", "general-radiology", "Hermel"],
+    ["fakih-hospital", "general-radiology", "Saksakiyeh"],
+    ["sour-governmental-hospital", "outpatient", "Tyre"],
   ];
   for (const [slug, service, city] of examples) {
     const current = seedData.find(p => p.slug === slug);
@@ -368,6 +372,12 @@ test("new service evidence updates existing facility records and remains searcha
   const psychiatry = await get("?specialty=psychiatry&service=outpatient&city=Qana&limit=100");
   assert.equal(psychiatry.status, 200);
   assert.ok(psychiatry.body.providers.some(p => p.id === "qana-governmental"));
+  const orthopedics = await get("?specialty=orthopedics&service=outpatient&city=Baalbek&limit=100");
+  assert.equal(orthopedics.status, 200);
+  assert.ok(orthopedics.body.providers.some(p => p.id === "mortada-hospital"));
+  const sourRadiology = await get("?service=general-radiology&city=Tyre&limit=100");
+  assert.equal(sourRadiology.status, 200);
+  assert.ok(sourRadiology.body.providers.some(p => p.id === "sour-governmental-hospital"));
   assert.equal(await Provider.countDocuments(), seedData.length);
 });
 
@@ -388,4 +398,13 @@ test("dated service evidence does not turn plans, outpatient clinics or emergenc
   }
   assert.deepEqual(byId("qana-governmental").specialties, ["psychiatry"]);
   assert.deepEqual(byId("orange-nassau-governmental-hospital").specialties, []);
+  // Physician consultations and broad MoPH registrations do not establish equipment or admissions.
+  for (const slug of ["mortada-hospital", "hermel-governmental", "fakih-hospital", "sour-governmental-hospital"]) {
+    const row = byId(slug);
+    for (const service of ["ct", "mri", "laboratory", "blood-bank", "medical-inpatient-care", "surgical-inpatient-care"]) {
+      assert.ok(!row.services.includes(service), slug + ": " + service);
+    }
+    assert.equal(row.emergency24h, null, slug);
+    assert.equal(row.hoursKnown, false, slug);
+  }
 });
