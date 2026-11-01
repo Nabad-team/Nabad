@@ -1,7 +1,7 @@
 const { filterText } = require("../triage/ai/guardrails");
 const { LlmError } = require("../triage/ai/llmClient");
 const { numericValues, numbersAreGrounded, hasUnsafeAdvice } = require("./responseChecks");
-const { isEnglishCompatibleText } = require("./englishPolicy");
+const { isEnglishCompatibleText, isEnglishCompatibleReport } = require("./englishPolicy");
 
 const URGENCIES = new Set(["emergency", "urgent", "soon", "routine", "unclear"]);
 const FINDING_CATEGORIES = new Set(["urgent", "abnormal", "borderline", "normal", "unclear"]);
@@ -155,7 +155,7 @@ function reportMessages({ report, question }) {
 async function analyzeReport({ report, question = "", client }) {
   if (!client) throw new ReportAnalysisError("not_configured");
   if (typeof question !== "string" || question.length > 1200) throw new ReportAnalysisError("invalid_question");
-  if (!isEnglishCompatibleText(question) || (report.kind === "text" && !isEnglishCompatibleText(report.text))) throw new ReportAnalysisError("invalid_language");
+  if (!isEnglishCompatibleText(question) || (report.kind === "text" && !isEnglishCompatibleReport(report.text))) throw new ReportAnalysisError("invalid_language");
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });

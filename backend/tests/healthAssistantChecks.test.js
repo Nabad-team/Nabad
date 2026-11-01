@@ -31,6 +31,13 @@ test("the English-only assistant rejects non-English input and output", async ()
   assert.throws(() => parseChatReply(JSON.stringify({ answer: "لا يمكن تحديد التشخيص.", evidence: [] })), (error) => error.code === "non_english_response");
 });
 
+test("an English report may contain an incidental non-English patient name", () => {
+  const { isEnglishCompatibleReport } = require("../src/reports/englishPolicy");
+  assert.equal(isEnglishCompatibleReport("Patient: ليان البابا. Complete blood count laboratory report. Hemoglobin and platelet results are listed in English."), true);
+  assert.equal(isEnglishCompatibleReport("هذا تقرير مختبر مكتوب بالكامل باللغة العربية ولا يحتوي على محتوى سريري باللغة الإنجليزية"), false);
+  assert.equal(isEnglishCompatibleReport("English heading. هذا قسم عربي طويل يكرر معلومات التقرير بالكامل باللغة العربية ويشكل جزءا كبيرا من المستند"), false);
+});
+
 test("a quoted medication strength is not treated as a personal dosing instruction", () => {
   const medicationReport = { kind: "text", text: "The report lists ExampleDrug 40 mg. It does not specify a schedule." };
   const result = parseChatReply(JSON.stringify({ answer: "The report lists ExampleDrug 40 mg; it does not specify a schedule. Ask the clinician to confirm your instructions.", evidence: ["ExampleDrug 40 mg"] }), { report: medicationReport });
