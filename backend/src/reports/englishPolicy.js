@@ -2,9 +2,16 @@
 // boundary rejects scripts that clearly indicate another language. It is not a
 // general language classifier: Latin-script names and medical terms remain valid.
 const UNSUPPORTED_SCRIPTS = /[\p{Script=Arabic}\p{Script=Armenian}\p{Script=Bengali}\p{Script=Cyrillic}\p{Script=Devanagari}\p{Script=Georgian}\p{Script=Han}\p{Script=Hangul}\p{Script=Hebrew}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Tamil}\p{Script=Thai}]/u;
+const UNSUPPORTED_INPUT_SCRIPTS = /[\p{Script=Armenian}\p{Script=Bengali}\p{Script=Cyrillic}\p{Script=Devanagari}\p{Script=Georgian}\p{Script=Han}\p{Script=Hangul}\p{Script=Hebrew}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Tamil}\p{Script=Thai}]/u;
 
 function isEnglishCompatibleText(value) {
   return typeof value === "string" && !UNSUPPORTED_SCRIPTS.test(value.normalize("NFKC"));
 }
 
-module.exports = { isEnglishCompatibleText, UNSUPPORTED_SCRIPTS };
+// User-supplied questions, history and reports may be English, Arabic, or a
+// mixture. Output uses the stricter function above and therefore remains English.
+function isSupportedInputText(value) {
+  return typeof value === "string" && !UNSUPPORTED_INPUT_SCRIPTS.test(value.normalize("NFKC"));
+}
+
+module.exports = { isEnglishCompatibleText, isSupportedInputText, UNSUPPORTED_SCRIPTS, UNSUPPORTED_INPUT_SCRIPTS };

@@ -26,9 +26,30 @@ for (const answer of [
   assert.equal(parseChatReply(JSON.stringify({ answer, evidence: [] })).answer, answer);
 });
 
-test("the English-only assistant rejects non-English input and output", async () => {
-  await assert.rejects(answerChat({ question: "هل يمكنك شرح هذا؟", client: { complete: async () => "" } }), (error) => error.code === "invalid_language");
+test("the assistant accepts Arabic input but rejects non-English output", async () => {
+  const result = await answerChat({ question: "هل يمكنك شرح هذا؟", retriever: null, client: { complete: async () => JSON.stringify({ answer: "I can explain the written result in English.", evidence: [], citations: [] }) } });
+  assert.match(result.answer, /in English/);
   assert.throws(() => parseChatReply(JSON.stringify({ answer: "لا يمكن تحديد التشخيص.", evidence: [] })), (error) => error.code === "non_english_response");
+});
+
+test("reports may be English, Arabic, or bilingual", () => {
+  const { isSupportedInputText } = require("../src/reports/englishPolicy");
+  assert.equal(isSupportedInputText("Patient: ليان البابا. Complete blood count laboratory report."), true);
+  assert.equal(isSupportedInputText("تقرير مختبر. الهيموغلوبين 13.5 غ/دل. المجال المرجعي مذكور في التقرير."), true);
+  assert.equal(isSupportedInputText("Лабораторный отчет"), false);
+});
+
+test("Arabic report evidence is allowed while generated explanation remains English", () => {
+  const arabicReport = "تقرير مختبر. الهيموغلوبين: 10 غ/دل. المجال المرجعي: 12-16 غ/دل. النتيجة منخفضة.";
+  const value = {
+    documentType: "written_report", urgency: "routine", summary: "The report marks the hemoglobin result as low.",
+    findings: [{ name: "Hemoglobin", category: "abnormal", sourceQuote: "الهيموغلوبين: 10 غ/دل. المجال المرجعي: 12-16 غ/دل. النتيجة منخفضة.", result: "10 غ/دل", reference: "12-16 غ/دل", explanation: "Hemoglobin carries oxygen in red blood cells. The laboratory marks this result as low.", followUp: "Ask the ordering clinician to review this result in context." }],
+    nextStep: "Please have the ordering clinician review the complete report.", uncertainties: [],
+  };
+  const parsed = parseReportReply(JSON.stringify(value), { reportText: arabicReport });
+  assert.equal(parsed.findings[0].category, "abnormal");
+  value.summary = "النتيجة منخفضة.";
+  assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: arabicReport }), (error) => error.code === "invalid_response");
 });
 
 test("a quoted medication strength is not treated as a personal dosing instruction", () => {

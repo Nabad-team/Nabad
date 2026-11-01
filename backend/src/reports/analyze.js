@@ -1,7 +1,7 @@
 const { filterText } = require("../triage/ai/guardrails");
 const { LlmError } = require("../triage/ai/llmClient");
 const { numericValues, numbersAreGrounded, hasUnsafeAdvice } = require("./responseChecks");
-const { isEnglishCompatibleText } = require("./englishPolicy");
+const { isEnglishCompatibleText, isSupportedInputText } = require("./englishPolicy");
 
 const URGENCIES = new Set(["emergency", "urgent", "soon", "routine", "unclear"]);
 const FINDING_CATEGORIES = new Set(["urgent", "abnormal", "borderline", "normal", "unclear"]);
@@ -65,9 +65,9 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
   }
   if (!value || typeof value !== "object" || Array.isArray(value) || !URGENCIES.has(value.urgency)) throw new ReportAnalysisError("invalid_response");
   if (value.documentType !== "written_report") throw new ReportAnalysisError("not_report");
-  const clean = (text, max) => {
+  const clean = (text, max, { sourceData = false } = {}) => {
     if (typeof text !== "string" || text.length > max) throw new ReportAnalysisError("invalid_response");
-    if (!isEnglishCompatibleText(text)) throw new ReportAnalysisError("invalid_response");
+    if (!(sourceData ? isSupportedInputText(text) : isEnglishCompatibleText(text))) throw new ReportAnalysisError("invalid_response");
     if (hasUnsafeAdvice(text)) throw new ReportAnalysisError("unsafe_response");
     const filtered = filterText(text, max, { ignore: ["medication_dose", "phone_number"] });
     if (!filtered.text || /\b(?:you are|the patient is) (?:completely )?(?:healthy|fine)|nothing (?:is )?wrong|no (?:doctor|medical) (?:review|care|visit) (?:is )?needed|(?:everything|all (?:of )?(?:the )?(?:results|tests|values|findings)|the results) (?:is|are|looks|seems) (?:completely )?(?:fine|normal|okay|within (?:the )?(?:normal|expected) range)|you(?:'re| are) all clear\b/i.test(filtered.text)) throw new ReportAnalysisError("unsafe_response");
@@ -87,9 +87,9 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
     const finding = {
       name: clean(item.name, 100),
       category: item.category,
-      sourceQuote: clean(item.sourceQuote, 240),
-      result: clean(item.result, 160),
-      reference: clean(item.reference || "The report does not provide a reference range.", 160),
+      sourceQuote: clean(item.sourceQuote, 240, { sourceData: true }),
+      result: clean(item.result, 160, { sourceData: true }),
+      reference: clean(item.reference || "The report does not provide a reference range.", 160, { sourceData: true }),
       explanation: clean(item.explanation, 450),
       followUp: clean(item.followUp, 300),
     };
@@ -101,10 +101,10 @@ function parseReportReply(raw, { reportText = "", reportKind = "text" } = {}) {
       // This prevents a real number from another row being attached to this test.
       if (!numbersAreGrounded(finding.result, finding.sourceQuote)) throw new ReportAnalysisError("unsupported_quote");
       const categoryEvidence = {
-        urgent: /\b(?:critical|urgent|immediate(?:ly)?|emergency)\b/i,
-        abnormal: /\b(?:abnormal|high|low|elevated|decreased|positive|outside (?:the )?(?:range|limits))\b|(?:^|\s)[HL](?:\s|$)/i,
-        borderline: /\b(?:borderline|marginal|equivocal|indeterminate)\b/i,
-        normal: /\b(?:normal|within (?:the )?(?:reference )?range|negative|not flagged abnormal)\b/i,
+        urgent: /\b(?:critical|urgent|immediate(?:ly)?|emergency)\b|(?:حرج|عاجل|فوري|طوارئ)/i,
+        abnormal: /\b(?:abnormal|high|low|elevated|decreased|positive|outside (?:the )?(?:range|limits))\b|(?:^|\s)[HL](?:\s|$)|(?:غير طبيعي|مرتفع|منخفض|إيجابي|خارج (?:النطاق|المجال))/i,
+        borderline: /\b(?:borderline|marginal|equivocal|indeterminate)\b|(?:حد[يية]|هامشي|غير حاسم)/i,
+        normal: /\b(?:normal|within (?:the )?(?:reference )?range|negative|not flagged abnormal)\b|(?:طبيعي|ضمن (?:النطاق|المجال)|سلبي)/i,
       };
       if (categoryEvidence[finding.category] && !categoryEvidence[finding.category].test(finding.sourceQuote)) throw new ReportAnalysisError("unsupported_quote");
       requireReportedNumbers([finding.explanation, finding.followUp], true);
@@ -155,7 +155,7 @@ function reportMessages({ report, question }) {
 async function analyzeReport({ report, question = "", client }) {
   if (!client) throw new ReportAnalysisError("not_configured");
   if (typeof question !== "string" || question.length > 1200) throw new ReportAnalysisError("invalid_question");
-  if (!isEnglishCompatibleText(question) || (report.kind === "text" && !isEnglishCompatibleText(report.text))) throw new ReportAnalysisError("invalid_language");
+  if (!isSupportedInputText(question) || (report.kind === "text" && !isSupportedInputText(report.text))) throw new ReportAnalysisError("invalid_language");
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });
