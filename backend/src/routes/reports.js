@@ -28,7 +28,7 @@ function analysisMessages(question, result) {
 function chatMessages(question, result) {
   return [
     { role: "user", content: question.slice(0, 4000) },
-    { role: "assistant", content: result.answer, evidence: result.evidence, disclaimer: result.disclaimer },
+    { role: "assistant", content: result.answer, evidence: result.evidence, citations: result.citations || [], disclaimer: result.disclaimer },
   ];
 }
 
@@ -85,7 +85,7 @@ router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {
-      const status = error.code === "not_configured" ? 503 : error.code === "invalid_question" ? 400 : error.code === "not_report" ? 422 : 502;
+      const status = error.code === "not_configured" ? 503 : ["invalid_question", "invalid_language"].includes(error.code) ? 400 : error.code === "not_report" ? 422 : 502;
       const reason = error.providerFailure
         ? `provider_${error.providerFailure.code}${error.providerFailure.status ? `_${error.providerFailure.status}` : ""}`
         : `unavailable:${error.code}`;
@@ -93,6 +93,7 @@ router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
       const messages = {
         not_configured: "AI report review is not configured on this server yet. Your file was not analyzed.",
         invalid_question: "Keep your question under 1200 characters.",
+        invalid_language: "The health assistant currently accepts English questions and English written reports only.",
         timeout: "The AI report review took too long. Your file was not analyzed; please try again later.",
         provider_unavailable: "The AI report service is unavailable. Your file was not analyzed; please try again later.",
         unsupported_quote: "The AI could not reliably link its explanation to text in the report. No result was shown; try a clearer copy.",
@@ -147,7 +148,7 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {
-      const status = error.code === "not_configured" ? 503 : ["invalid_question", "invalid_history"].includes(error.code) ? 400 : 502;
+      const status = error.code === "not_configured" ? 503 : ["invalid_question", "invalid_history", "invalid_language"].includes(error.code) ? 400 : 502;
       const reason = error.providerFailure
         ? `provider_${error.providerFailure.code}${error.providerFailure.status ? `_${error.providerFailure.status}` : ""}`
         : `unavailable:${error.code}`;
@@ -156,9 +157,12 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
         not_configured: "The health assistant is not configured on this server yet. Your message was not sent.",
         invalid_question: "Write a question between 3 and 1200 characters.",
         invalid_history: "This conversation is too long to continue. Start a new conversation and try again.",
+        invalid_language: "The health assistant currently accepts English questions, conversation history, and written reports only.",
         timeout: "The health assistant took too long to respond. Please try again.",
         provider_unavailable: "The health assistant is unavailable right now. Please try again later.",
         unsupported_quote: "The AI could not reliably ground that answer in the report. No answer was shown; try a clearer report or ask your clinician.",
+        unsupported_knowledge: "The AI could not reliably link that answer to the reviewed health sources. No answer was shown; please try again.",
+        non_english_response: "The AI did not return a valid English response. No answer was shown; please try again.",
         unsafe_response: "The AI response did not pass safety checks. No answer was shown; please contact a clinician for personal medical advice.",
       };
       const providerIssue = providerFailureDetails(error, "chat");

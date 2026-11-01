@@ -133,7 +133,11 @@ export default function TestResultsPage() {
         });
         if (profileRef.current !== requestedProfileId) return;
         setConversationId(answer.conversationId);
-        setMessages([...messages, { role: "user", content: currentQuestion }, { role: "assistant", content: answer.answer, evidence: answer.evidence, disclaimer: answer.disclaimer }].slice(-20));
+        setMessages([
+          ...messages,
+          { role: "user", content: currentQuestion },
+          { role: "assistant", content: answer.answer, evidence: answer.evidence, citations: answer.citations, disclaimer: answer.disclaimer },
+        ].slice(-20));
         await refreshConversations();
       }
       setQuestion("");
@@ -236,6 +240,10 @@ export default function TestResultsPage() {
                 <h3>{message.role === "user" ? "You" : "Nabad assistant"}</h3>
                 <p>{message.content}</p>
                 {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
+                {message.citations?.length > 0 && <div className="report-chat__sources">
+                  <strong>Reviewed sources:</strong>
+                  <ul>{message.citations.map((source) => <li key={source.id}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}</li>)}</ul>
+                </div>}
                 {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
               </article>
             ))}
@@ -245,7 +253,7 @@ export default function TestResultsPage() {
           <section className="assistant-chat__welcome" aria-labelledby="assistant-welcome-title">
             <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
-            <p>Ask a health question or get help understanding a written test report.</p>
+            <p>Ask a health question or get help understanding an English written test report.</p>
             <div className="assistant-chat__suggestions" aria-label="Suggested questions">
               {["What does a high cholesterol result mean?", "How can I prepare for a blood test?", "What should I ask my doctor about a new medicine?"].map((suggestion) => (
                 <button className="assistant-chat__suggestion" key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>
@@ -283,7 +291,7 @@ export default function TestResultsPage() {
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
           I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
         </label>
-        <p className="report-privacy-note">Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
+        <p className="report-privacy-note">The assistant currently supports English only. Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
       </form>
 
       {result && (

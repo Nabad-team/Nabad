@@ -4,6 +4,10 @@ const messageSchema = new mongoose.Schema({
   role: { type: String, enum: ["user", "assistant"], required: true },
   content: { type: String, required: true, maxlength: 4000 },
   evidence: { type: [String], default: [] },
+  citations: { type: [new mongoose.Schema({
+    id: { type: String, required: true }, title: { type: String, required: true }, sourceUrl: { type: String, required: true },
+    publisher: { type: String, required: true }, reviewedAt: { type: String, required: true },
+  }, { _id: false })], default: [] },
   disclaimer: { type: String, default: "" },
 }, { _id: false });
 
