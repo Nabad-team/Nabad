@@ -62,32 +62,24 @@ The uploaded files must match these tested sources. GitHub check and merge/deplo
 
 ## Listings whose services remain unverified
 
-The reviewed public sources do not establish a usable service/equipment list for these facilities. Unknown is retained instead of treating a hospital name, a proposed purchase, an insurer network listing or an unsupported assumption as a verified capability. These data gaps need an authoritative published update or confirmation from the facility; they are not resolved by the software implementation.
+Current coverage after the 1 November follow-up is 164 of 176 listings. Published sources still do not establish a usable service/equipment list for the 12 facilities below. Later sections retain the historical counts for their respective snapshots.
 
-- Hermel Governmental Hospital (hermel-governmental): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital
-- Qana Governmental Hospital (qana-governmental): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84387/kana-governmental-hospital?facility_type=1
+Unknown is retained instead of treating a hospital name, proposed purchase, insurer network listing or ambiguous combined registration category as a verified capability. These gaps require authoritative published evidence or confirmation from the facility.
+
 - Hopital DAR AL Raheme? (hopital-dar-al-raheme): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84612/hopital-dar-al-raheme-?facility_type=8
 - Kalout Hospital (kalout-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84620/kalout-hospital?facility_type=8
 - Ghossein Hospital (ghossein-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84624/ghossein-hospital?facility_type=8
 - Abed El Rahman Al Nakib Hospital (abed-el-rahman-al-nakib-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84659/abed-el-rahman-al-nakib-hospital?facility_type=8
-- Fakih Hospital (fakih-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84660/fakih-hospital?facility_type=8
 - Iben Sinna Hospital (iben-sinna-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84666/iben-sinna-hospital?facility_type=8
 - Al Assi Hospital (al-assi-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84668/al-assi-hospital?facility_type=8
-- Mortada Hospital (mortada-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8
 - Universal Hospital (universal-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84674/universal-hospital?facility_type=8
 - Temnine General Hospital (temnine-general-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84675/temnine-general-hospital?facility_type=8
-- Tannourine governmental hospital (tannourine-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84373/tannourine-governmental-hospital?facility_type=1
-- Ehden governmental hospital (ehden-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84380/ehden-governmental-hospital?facility_type=1
-- Orange Nassau governmental hospital (orange-nassau-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84381/orange-nassau-governmental-hospital?facility_type=1
-- sour governmental hospital (sour-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1
-- Daher elbachek governmental hospital (daher-elbachek-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84389/daher-elbachek-governmental-hospital?facility_type=1
 - Kherbet Kanafar Governmental Hospital (kherbet-kanafar-governmental-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84393/kherbet-kanafar-governmental-hospital?facility_type=1
 - Family Medical Center (family-medical-center): https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7802
 - Martyr Salah Ghandour Hospital (martyr-salah-ghandour-hospital): https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7911
 - Al Jabal Hospital (al-jabal-hospital): https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84570/al-jabal-hospital?facility_type=8
 
-The source review does not establish whether any facility is currently reachable, open, staffed or fully operating. In particular, damage reports and reopening announcements must not be read as proof of current capacity.
-
+Source review does not establish present staffing, reachability, opening or equipment availability. Dated damage and reopening reports do not by themselves establish current operation.
 
 ## Additional primary-source review (30 October 2026)
 
@@ -154,3 +146,29 @@ Rejected evidence includes planned procurement, undated construction status, old
 Jira remains read-only at the user's explicit request. The four prepared bug reports have not been created or imported as Jira tickets. Service-data completion remains pending for the 16 facilities above.
 
 Validation for this review: 27/27 provider tests and 918/918 backend tests across 59 suites passed. Static checks confirmed all 176 identities and their order, only the intended 21 review records changed, and English labels for every service and specialty slug.
+
+## Physician and MoPH registration follow-up (1 November 2026)
+
+Four existing records gain narrowly supported services, bringing sourced service coverage to 164 of 176 listings. All identities and their order, coordinates, phones, insurance records, emergency availability and opening hours are retained.
+
+| Existing facility | Supported addition | Evidence and identity check |
+| --- | --- | --- |
+| Mortada Hospital, Baalbek | Outpatient consultations; orthopedics specialty | Dr Ali Fares's clinic site lists consultations at Al-Murtada in Baalbek, with a dedicated map link resolving to Murtada Hospital. His surgical qualifications do not establish surgery, imaging or inpatient capability at this campus. |
+| Hermel Governmental Hospital | General radiology | MoPH record 6113 explicitly identifies the governmental hospital in English and Arabic as RADIOLOGY, with a licence number and Hermel address. Its point is near the existing campus. Inconsistent legacy phone and district values do not replace curated fields. |
+| Fakih Hospital, Saksakiyeh | General radiology | MoPH record 549 is a RADIOLOGY registration with a licence number, exact hospital name, Khaizaran Main Street address and a point approximately 26 metres from the existing campus. Its phone matches the separate hospital registration. |
+| Sour Governmental Hospital, Tyre | General radiology; outpatient consultations | Radiology record 559 names the governmental hospital in English and Arabic and matches 07-740293. PHC record 7041 explicitly names the hospital-operated primary care centre in Arabic and matches the same phone. Its different point is not used to relocate the hospital. |
+
+Primary sources checked:
+
+- Physician clinic locations: https://www.dralifares.com/
+- Mortada campus map linked from that site: https://maps.app.goo.gl/XQBqPHfk1N1ae8UE6?g_st=ac
+- Hermel radiology: https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/6113
+- Fakih radiology: https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/549
+- Sour radiology: https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/559
+- Sour hospital PHC: https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7041
+
+These Ministry records are undated published registrations, not certification that equipment is currently staffed or operating. RADIOLOGY supports only the existing broad general-radiology label; it does not establish CT, MRI, ultrasound or round-the-clock operation. The physician site is also undated. Review timestamps record source checks; complete snapshot timestamps advance only for the four updated records so the existing seed propagates the corrections.
+
+Combined LABS_AND_BLOOD_BANK registrations cannot establish either component individually. Unrelated nearby clinics, malformed private-clinic rows and proposed equipment are excluded. The remaining 12 service lists stay unknown and are listed above. Jira remains read-only: the four prepared bug-report drafts have not been created as tickets.
+
+Validation for this follow-up: 27/27 provider tests and 920/920 backend tests across 59 suites passed against main at 03b86c8 plus this change. Regressions exercise repeated seed propagation, public details, combined service/specialty/location filters, unique facility identities and conservative clinical scope. Static audits confirm all 176 IDs and their order, only four intended data records changed, all 69 Victoire matches retained, and existing English labels for every slug. GitHub checks and production deployment are verified separately on publication.

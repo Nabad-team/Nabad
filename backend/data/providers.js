@@ -2073,7 +2073,9 @@ module.exports = [
   {
     "type": "hospital",
     "specialties": [],
-    "services": [],
+    "services": [
+      "general-radiology"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "slug": "hermel-governmental",
@@ -2087,13 +2089,15 @@ module.exports = [
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital",
       "https://www.cedro-undp.org/projects-implementations/hermel-public-hospital",
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital?facility_type=1",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/6113"
     ],
-    "verifiedAt": "2026-10-18T12:18:00Z",
+    "verifiedAt": "2026-11-01T13:26:56Z",
     "district": "Hermel",
-    "servicesReviewedAt": "2026-10-31T21:24:06Z",
+    "servicesReviewedAt": "2026-11-01T13:26:56Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84382/hermel-governmental-hospital",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/6113"
     ]
   },
   {
@@ -5180,18 +5184,22 @@ module.exports = [
     "latitude": 33.43447435501468,
     "longitude": 35.27421201820005,
     "specialties": [],
-    "services": [],
+    "services": [
+      "general-radiology"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84660/fakih-hospital?facility_type=8",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/151"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/151",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/549"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-11-01T13:26:56Z",
     "phone": "+9617443470",
-    "servicesReviewedAt": "2026-10-31T21:24:06Z",
+    "servicesReviewedAt": "2026-11-01T13:26:56Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84660/fakih-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84660/fakih-hospital?facility_type=8",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/549"
     ]
   },
   {
@@ -5566,21 +5574,27 @@ module.exports = [
     "address": "بعلبك",
     "latitude": 33.9964128,
     "longitude": 36.1828802,
-    "specialties": [],
-    "services": [],
+    "specialties": [
+      "orthopedics"
+    ],
+    "services": [
+      "outpatient"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8",
       "https://www.openstreetmap.org/way/1324186477",
-      "https://victoire.com.lb/hospital/"
+      "https://victoire.com.lb/hospital/",
+      "https://www.dralifares.com/"
     ],
-    "verifiedAt": "2026-10-31T10:00:00Z",
+    "verifiedAt": "2026-11-01T13:26:56Z",
     "phone": "+9618377880",
     "locationApproximate": true,
-    "servicesReviewedAt": "2026-10-31T21:24:06Z",
+    "servicesReviewedAt": "2026-11-01T13:26:56Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84673/mortada-hospital?facility_type=8",
+      "https://www.dralifares.com/"
     ],
     "insurances": [
       "victoire"
@@ -5954,18 +5968,25 @@ module.exports = [
     "latitude": 33.27207606826316,
     "longitude": 35.211423824953826,
     "specialties": [],
-    "services": [],
+    "services": [
+      "general-radiology",
+      "outpatient"
+    ],
     "emergency24h": null,
     "hoursKnown": false,
     "sources": [
       "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1",
-      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/134"
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/134",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/559",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7041"
     ],
-    "verifiedAt": "2026-10-19T00:00:00+03:00",
+    "verifiedAt": "2026-11-01T13:26:56Z",
     "phone": "+9617740293",
-    "servicesReviewedAt": "2026-10-31T21:24:06Z",
+    "servicesReviewedAt": "2026-11-01T13:26:56Z",
     "serviceSources": [
-      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1"
+      "https://www.moph.gov.lb/en/HealthFacilities/view/3/188/84386/sour-governmental-hospital?facility_type=1",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/559",
+      "https://maps.moph.gov.lb/server/rest/services/Health_Facility_Locator/MapServer/0/7041"
     ]
   },
   {
