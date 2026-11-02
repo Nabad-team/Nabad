@@ -133,7 +133,8 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
     const history = savedConversation
       ? savedConversation.messages.slice(-8).map(({ role, content }) => ({ role, content: content.slice(0, 1200) }))
       : req.body?.history;
-    const result = await answerChat({ question: req.body?.question, history, report, client });
+    const result = await answerChat({ question: req.body?.question, history, report,
+      previousReportReview: savedConversation?.reportResult || null, client });
     if (savedConversation) {
       savedConversation.messages.push(...chatMessages(req.body.question, result));
       await savedConversation.save();

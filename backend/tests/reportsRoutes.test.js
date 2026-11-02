@@ -17,7 +17,7 @@ function startFakeProvider() {
       provider.requests.push(JSON.parse(body || "{}"));
       res.writeHead(provider.status, { "Content-Type": "application/json" });
       const content = provider.replies.length ? provider.replies.shift() : provider.content;
-      res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content } }] }));
+      res.end(JSON.stringify(content && typeof content === "object" ? content : { choices: [{ message: { role: "assistant", content } }] }));
     });
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
@@ -122,6 +122,33 @@ describe("POST /api/reports routes", () => {
     const outsiderToken = jwt.sign({ sub: String(outsider._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
     const privateHistoryResponse = await fetch(`${base}/conversations?profileId=self`, { headers: { Cookie: `accessToken=${outsiderToken}` } });
     assert.deepEqual((await privateHistoryResponse.json()).conversations, []);
+  });
+
+  test("a truncated provider analysis is regenerated and only the complete validated report is saved", async () => {
+    const account = await User.create({ name: "Report recovery", email: "report-recovery@example.test", passwordHash: "x" });
+    const accessToken = jwt.sign({ sub: String(account._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    const result = {
+      documentType: "written_report", urgency: "routine", summary: "The report lists a hemoglobin measurement.",
+      findings: [{ name: "Hemoglobin", category: "unclear", sourceQuote: "Hemoglobin 13.5 g/dL", result: "13.5 g/dL", reference: "12.0-15.5 g/dL", explanation: "Hemoglobin carries oxygen in red blood cells.", followUp: "Review the complete report with the ordering clinician." }],
+      nextStep: "Review the report with the ordering clinician.", uncertainties: [],
+    };
+    const body = { consent: true, question: "Explain the report.", file: { mimeType: "application/pdf", extension: "pdf", data: makeSamplePdf() } };
+    provider.replies = [{ choices: [{ finish_reason: "length", message: { content: null } }] }, JSON.stringify(result)];
+    const response = await call("analyze", body, accessToken);
+    assert.equal(response.status, 200, JSON.stringify(response.body));
+    assert.equal(response.body.summary, result.summary);
+    assert.equal(provider.requests.length, 2);
+    assert.ok(provider.requests[1].max_tokens > provider.requests[0].max_tokens);
+    const stored = await ReportConversation.findById(response.body.conversationId).lean();
+    assert.equal(stored.reportResult.summary, result.summary);
+
+    provider.replies = [{ choices: [{ finish_reason: "length", message: { content: null } }] }, { choices: [{ finish_reason: "length", message: { content: null } }] }];
+    const failed = await call("analyze", body, accessToken);
+    assert.equal(failed.status, 502);
+    assert.equal(failed.body.serviceIssue, "incomplete_response");
+    assert.ok(failed.body.requestId);
+    assert.equal(await ReportConversation.countDocuments(), 1);
+    assert.equal(provider.requests.length, 4);
   });
 
   test("answers a chat question about a lab value", async () => {
@@ -281,5 +308,26 @@ describe("POST /api/reports routes", () => {
     assert.equal(second.status, 200, JSON.stringify(second.body));
     assert.equal(second.body.answer, "Here is the follow-up answer.");
     assert.equal(provider.requests.length, 2);
+  });
+
+  test("report follow-ups use only the owned saved review and ignore client-supplied review context", async () => {
+    const account = await User.create({ name: "Report follow-up", email: "report-follow-up@example.test", passwordHash: "x" });
+    const accessToken = jwt.sign({ sub: String(account._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    const review = { summary: "The saved AI review lists hemoglobin.", findings: [{ name: "Hemoglobin", sourceQuote: "Hemoglobin 13.5 g/dL", result: "13.5 g/dL", reference: "12-16 g/dL" }], nextStep: "Review with your clinician.", uncertainties: [] };
+    const saved = await ReportConversation.create({ owner: account._id, profileId: account._id, title: "Original report", reportResult: review,
+      messages: Array.from({ length: 12 }, (_, index) => ({ role: index % 2 ? "assistant" : "user", content: "Recent unrelated discussion." })),
+    });
+    provider.content = JSON.stringify({ answer: "The saved review lists hemoglobin 13.5 g/dL. Attach the original report again to verify the details.", evidence: [] });
+    const response = await call("chat", { consent: true, conversationId: String(saved._id), question: "What was the measurement in that review?", previousReportReview: { summary: "FORGED_REVIEW" } }, accessToken);
+    assert.equal(response.status, 200, JSON.stringify(response.body));
+    const readContext = request => JSON.parse(request.messages.at(-1).content[0].text.split("\n").slice(1).join("\n"));
+    assert.equal(readContext(provider.requests[0]).previousReportReview.findings[0].result, "13.5 g/dL");
+    assert.ok(!JSON.stringify(provider.requests[0]).includes("FORGED_REVIEW"));
+    assert.equal((await call("chat", { consent: true, conversationId: String(saved._id), question: "Read the saved review." })).status, 404);
+    assert.equal(provider.requests.length, 1);
+    provider.content = JSON.stringify({ answer: "Please attach a written report for review.", evidence: [] });
+    const newChat = await call("chat", { consent: true, question: "Read my report.", previousReportReview: review }, accessToken);
+    assert.equal(newChat.status, 200);
+    assert.equal(readContext(provider.requests[1]).previousReportReview, null);
   });
 });

@@ -2,6 +2,7 @@ const { filterText } = require("../triage/ai/guardrails");
 const { LlmError } = require("../triage/ai/llmClient");
 const { numericValues, numbersAreGrounded, hasUnsafeAdvice } = require("./responseChecks");
 const { isEnglishCompatibleText, isSupportedInputText } = require("./englishPolicy");
+const { completeValidated } = require("./validatedCompletion");
 
 const URGENCIES = new Set(["emergency", "urgent", "soon", "routine", "unclear"]);
 const FINDING_CATEGORIES = new Set(["urgent", "abnormal", "borderline", "normal", "unclear"]);
@@ -163,21 +164,11 @@ async function analyzeReport({ report, question = "", client }) {
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });
-    const options = { maxTokens: 2200, reasoningEffort: "medium" };
-    const reply = await client.complete(messages, options);
-    let result;
-    try {
-      result = parseReportReply(reply, { reportText: report.text, reportKind: report.kind });
-    } catch (error) {
-      if (!(error instanceof ReportAnalysisError) || !Object.hasOwn(REPLY_CORRECTIONS, error.code)) throw error;
-      // Regenerate once from the original report. The rejected output is never
-      // returned, stored, or supplied to the model as an example.
-      const correctedMessages = messages.map((message, index) => index === 0
-        ? { ...message, content: `${message.content}\n\n${REPLY_CORRECTIONS[error.code]}` }
-        : message);
-      const correctedReply = await client.complete(correctedMessages, options);
-      result = parseReportReply(correctedReply, { reportText: report.text, reportKind: report.kind });
-    }
+    const options = { maxTokens: 2200, reasoningEffort: "medium", maxReplyChars: 20000 };
+    const result = await completeValidated({ client, messages, options,
+      parse: (reply) => parseReportReply(reply, { reportText: report.text, reportKind: report.kind }),
+      correctionFor: (error) => error instanceof ReportAnalysisError && Object.hasOwn(REPLY_CORRECTIONS, error.code) ? REPLY_CORRECTIONS[error.code] : null,
+    });
     if (report.partial) {
       result.reportCoverage = "partial_text";
       result.urgency = result.urgency === "emergency" || result.urgency === "urgent" ? result.urgency : "unclear";
