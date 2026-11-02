@@ -5,6 +5,9 @@ function providerFailureDetails(error, mode = "report") {
   const failure = error.providerFailure || {};
   const ending = mode === "report" ? " No analysis was completed." : " No AI answer was generated.";
   if (error.code === "timeout") return { serviceIssue: "timeout", message: `The AI service took too long to respond. Please try again.${ending}` };
+  if (failure.code === "incomplete_response") return { serviceIssue: "incomplete_response", message: `The AI provider could not finish its response. Please try again with a shorter question or report.${ending}` };
+  if (failure.code === "bad_response") return { serviceIssue: "invalid_response", message: `The AI provider returned an empty or unreadable response. Please try again; if this continues, contact the website administrator with this reference.${ending}` };
+  if (failure.code === "provider_blocked") return { serviceIssue: "provider_blocked", message: `The AI provider declined this request. Try a question about a written medical report, or contact your clinician.${ending}` };
   if (failure.code === "network") return { serviceIssue: "connection", message: `The AI service could not be reached. Please try again later.${ending}` };
   if ([401, 403].includes(failure.status)) return { serviceIssue: "access", message: `The AI service connection needs attention. Please contact the website administrator with this reference.${ending}` };
   if (failure.status === 429) return { serviceIssue: "usage_limit", message: `The AI provider has reached a usage limit. Please try again later; if this continues, contact the website administrator.${ending}` };

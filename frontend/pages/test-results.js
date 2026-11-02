@@ -45,10 +45,17 @@ export default function TestResultsPage() {
   const [consent, setConsent] = useState(false);
   const profileId = activeProfile?.id || "self";
   const profileRef = useRef(profileId);
+  const pendingRequest = useRef(null);
   profileRef.current = profileId;
 
   useEffect(() => {
     let current = true;
+    pendingRequest.current?.controller.abort();
+    pendingRequest.current = null;
+    setBusy(false);
+    setQuestion("");
+    setConsent(false);
+    setError("");
     setConversations([]);
     setConversationId(null);
     setMessages([]);
@@ -58,15 +65,20 @@ export default function TestResultsPage() {
     getReportConversations(profileId)
       .then((data) => { if (current && profileRef.current === profileId) setConversations(data.conversations); })
       .catch(() => { if (current && profileRef.current === profileId) setHistoryError("Saved conversations could not be loaded."); });
-    return () => { current = false; };
+    const input = document.getElementById("test-report-file");
+    if (input) input.value = "";
+    return () => { current = false; pendingRequest.current?.controller.abort(); pendingRequest.current = null; };
   }, [profileId]);
 
-  async function refreshConversations() {
+  async function refreshConversations(operation) {
     try {
       const data = await getReportConversations(profileId);
-      if (profileRef.current === profileId) setConversations(data.conversations);
+      if (profileRef.current === profileId && pendingRequest.current === operation) {
+        setConversations(data.conversations);
+        setHistoryError("");
+      }
     } catch {
-      setHistoryError("Your new conversation was saved, but the history list could not be refreshed.");
+      if (profileRef.current === profileId && pendingRequest.current === operation) setHistoryError("Your new conversation was saved, but the history list could not be refreshed.");
     }
   }
 
@@ -97,7 +109,9 @@ export default function TestResultsPage() {
 
   async function sendMessage(event) {
     event.preventDefault();
-    if (!question.trim() || !consent || busy) return;
+    if (!question.trim() || !consent || busy || pendingRequest.current) return;
+    const operation = { controller: new AbortController() };
+    pendingRequest.current = operation;
     const currentQuestion = question.trim();
     const requestedProfileId = profileId;
     const previousMessages = messages.slice(-8);
@@ -107,6 +121,7 @@ export default function TestResultsPage() {
       let upload = null;
       if (file) {
         const bytes = new Uint8Array(await file.arrayBuffer());
+        if (operation.controller.signal.aborted || profileRef.current !== requestedProfileId) return;
         let binary = "";
         for (let offset = 0; offset < bytes.length; offset += 0x8000) {
           binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
@@ -118,32 +133,34 @@ export default function TestResultsPage() {
       if (file && !result) {
         const analysis = await request(`/reports/analyze?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
+          signal: operation.controller.signal,
           body: JSON.stringify({ file: upload, question: currentQuestion, consent: true }),
         });
-        if (profileRef.current !== requestedProfileId) return;
+        if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
         setResult(analysis);
         setConversationId(analysis.conversationId);
         // The structured review below is the authoritative first response.
         // Follow-up chat messages are displayed separately instead of duplicating it.
         setMessages([]);
-        await refreshConversations();
+        await refreshConversations(operation);
       } else {
         const answer = await request(`/reports/chat?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
+          signal: operation.controller.signal,
           body: JSON.stringify({ file: upload, question: currentQuestion, history: previousMessages, ...(conversationId ? { conversationId } : {}), consent: true }),
         });
-        if (profileRef.current !== requestedProfileId) return;
+        if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
         setConversationId(answer.conversationId);
         setMessages([
           ...messages,
           { role: "user", content: currentQuestion },
           { role: "assistant", content: answer.answer, evidence: answer.evidence, citations: answer.citations, disclaimer: answer.disclaimer },
         ].slice(-20));
-        await refreshConversations();
+        await refreshConversations(operation);
       }
-      setQuestion("");
+      if (profileRef.current === requestedProfileId && pendingRequest.current === operation) setQuestion("");
     } catch (err) {
-      if (profileRef.current !== requestedProfileId) return;
+      if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
       if (err.status === 404 && conversationId) {
         setConversationId(null);
         setConversations((items) => items.filter((item) => item.id !== conversationId));
@@ -156,7 +173,10 @@ export default function TestResultsPage() {
       const message = err.message || "The report could not be safely analyzed. Please try again or ask your clinician.";
       setError(err.requestId ? `${message} (Reference: ${err.requestId})` : message);
     } finally {
-      setBusy(false);
+      if (pendingRequest.current === operation) {
+        pendingRequest.current = null;
+        setBusy(false);
+      }
     }
   }
 
@@ -192,12 +212,14 @@ export default function TestResultsPage() {
 
   async function removeConversation(conversation) {
     if (!window.confirm(`Delete the saved conversation “${conversation.title}”?`)) return;
+    const requestedProfileId = profileId;
     try {
       await deleteReportConversation(profileId, conversation.id);
+      if (profileRef.current !== requestedProfileId) return;
       setConversations((items) => items.filter((item) => item.id !== conversation.id));
       if (conversationId === conversation.id) newConversation();
     } catch {
-      setError("Could not delete this saved conversation. Please try again.");
+      if (profileRef.current === requestedProfileId) setError("Could not delete this saved conversation. Please try again.");
     }
   }
 
@@ -265,6 +287,7 @@ export default function TestResultsPage() {
         ) : null}
 
       <form className="assistant-composer" onSubmit={sendMessage}>
+        {result && !file && <p className="report-privacy-note" role="note">Follow-up questions use the saved AI explanation. Attach the original report again to verify its wording, values, or completeness.</p>}
         {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>Report attached ({file.name.split(".").pop()?.toLowerCase() || "file"})</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         <label className="sr-only" htmlFor="report-question">Your message</label>
