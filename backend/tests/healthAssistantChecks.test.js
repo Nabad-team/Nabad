@@ -191,6 +191,16 @@ test("report explanations reject broad reassurance, speculative causes and ungro
   }
 });
 
+test("report analysis uses low reasoning and one bounded retry budget", async () => {
+  let settings;
+  await analyzeReport({ report, client: { complete: async (messages, options) => {
+    settings = options;
+    return JSON.stringify(analysis());
+  } } });
+  assert.equal(settings.reasoningEffort, "low");
+  assert.ok(settings.timeoutMs > 0 && settings.timeoutMs <= 55000);
+});
+
 test("the chat requests a supported higher reasoning effort and explicitly bounds available context", async () => {
   let settings;
   const result = await answerChat({ question: "What does hemoglobin do?", client: { complete: async (messages, options) => {

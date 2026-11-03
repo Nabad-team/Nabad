@@ -745,7 +745,8 @@ select.input {
 .wellbeing-support-number__call span { display: grid; text-align: left; font-size: var(--text-lg); line-height: 1.05; }
 .wellbeing-support-number__call small { font-size: .72rem; font-weight: 600; opacity: .85; }
 .wellbeing-support-number__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--text-sm); }
-.wellbeing-support-number__meta a { font-weight: 600; }
+.wellbeing-support-number__meta a { display: inline-flex; align-items: center; gap: .25rem; font-weight: 600; }
+.wellbeing-support-number__meta a svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .wellbeing-support__note { margin: var(--space-4) 0 0; }
 @media (max-width: 46rem) {
   .wellbeing-tips ul, .wellbeing-support__grid { grid-template-columns: 1fr; }

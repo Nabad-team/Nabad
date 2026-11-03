@@ -69,11 +69,12 @@ function readLlmConfig(env = process.env) {
 function createLlmClient(config, fetchImpl = globalThis.fetch) {
   if (!config?.configured) throw new Error("createLlmClient needs a configured LLM config.");
 
-  async function complete(messages, { maxTokens = 600, reasoningEffort, maxReplyChars = MAX_REPLY_CHARS } = {}) {
+  async function complete(messages, { maxTokens = 600, reasoningEffort, maxReplyChars = MAX_REPLY_CHARS, timeoutMs } = {}) {
     if (!Number.isInteger(maxReplyChars) || maxReplyChars < 1 || maxReplyChars > 32000) throw new TypeError("Invalid reply limit");
+    const requestTimeoutMs = timeoutMs === undefined ? config.timeoutMs : Math.min(config.timeoutMs, Math.max(1000, Math.floor(timeoutMs)));
     // The timeout covers the whole exchange, including reading the reply body.
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
     try {
       return await send(messages, controller.signal, maxTokens, reasoningEffort, maxReplyChars);
     } finally {
@@ -88,7 +89,7 @@ function createLlmClient(config, fetchImpl = globalThis.fetch) {
       // Gemini's output limit also pays for internal thinking. Reserve room for
       // it rather than letting the small visible-answer limit exhaust the request.
       const thinkingModel = /^gemini-(?:2\.5|[3-9](?:\.|-))/i.test(config.model);
-      const thinkingReserve = reasoningEffort === "high" ? 24576 : 8192;
+      const thinkingReserve = reasoningEffort === "high" ? 24576 : reasoningEffort === "low" ? 4096 : 8192;
       const tokenLimit = thinkingModel ? Math.max(maxTokens, Math.min(32768, maxTokens + thinkingReserve)) : maxTokens;
       requestBody = config.provider === "ollama"
         ? { model: config.model, messages: toOllamaMessages(messages), stream: false, format: "json", options: { temperature: 0, num_predict: maxTokens } }

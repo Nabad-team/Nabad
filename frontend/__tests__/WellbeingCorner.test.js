@@ -71,6 +71,7 @@ describe("Wellbeing Corner", () => {
       const source = within(entry).getByRole("link", { name: `Official verification source for ${contact.name}` });
       expect(source).toHaveAttribute("href", contact.sourceUrl);
       expect(source).toHaveAttribute("rel", "noopener noreferrer");
+      expect(source).toHaveTextContent(/^Official source$/);
     }
     expect(screen.getByRole("link", { name: "Call 140" })).toHaveClass("button--danger");
     expect(screen.queryByText(/Numbers last verified:/)).not.toBeInTheDocument();

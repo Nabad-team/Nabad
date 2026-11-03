@@ -59,7 +59,7 @@ Chat can now show an explicit, verified mass-concentration equivalence, such as 
 
 Prompts now ask for a direct answer, a short evidence-based explanation, relevant uncertainty and a practical next step, without exposing internal deliberation. They explicitly distinguish report observations from diagnoses, respect user corrections and acknowledge absent profile data or attachments. These instructions follow [MedlinePlus guidance on report ranges and clinical context](https://medlineplus.gov/lab-tests/how-to-understand-your-lab-results/).
 
-Chat and report analysis request `medium` reasoning effort on models supported by the existing client (currently the Gemini 3 family), with a larger reply token allowance. Other providers continue using their existing behavior. The actual effect on accuracy, response time and provider cost has not been measured; a live-model run is still needed. No provider credentials or deployment configuration have been changed.
+Chat requests `medium` reasoning effort on supported models. Structured report analysis uses `low` reasoning with a smaller thinking reserve because its output shape and grounding rules are already tightly constrained. Report generation and its one validation retry share a 55-second budget, so a rejected first response cannot trigger a second full provider timeout. The actual effect on accuracy, response time and provider cost still needs live-model evaluation; no provider credentials or model selection have been changed.
 
 ## Advanced cases and example-guided responses
 

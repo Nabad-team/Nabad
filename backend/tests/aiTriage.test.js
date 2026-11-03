@@ -157,6 +157,13 @@ describe("LLM client: requests and errors", () => {
     }
   });
 
+  test("low reasoning uses a smaller thinking reserve for faster structured replies", async () => {
+    const { fetchImpl, requests } = fakeFetch(() => completion("{}"));
+    await createLlmClient(readLlmConfig({ ...CONFIG_ENV, LLM_MODEL: "gemini-2.5-flash" }), fetchImpl)
+      .complete([], { maxTokens: 2200, reasoningEffort: "low" });
+    assert.equal(requests[0].body.max_tokens, 6296);
+  });
+
   test("truncated outputs are rejected even when the partial JSON happens to parse", async () => {
     for (const content of [null, "", '{"answer":"cut off"}']) {
       const fetchImpl = async () => jsonResponse(200, { choices: [{ finish_reason: "length", message: { content } }] });
