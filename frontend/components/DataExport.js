@@ -49,7 +49,7 @@ export default function DataExport({ isGoogleAccount = false }) {
       <ul>
         <li>Your account details, emergency contact and notification settings</li>
         <li>Your linked family profiles</li>
-        <li>For you and each linked profile: medications and check-ins, My health, water and sleep, symptom checks, appointments, health assistant conversations and notifications</li>
+        <li>For you and each linked profile: medications and check-ins, My health, vital readings, water and sleep, symptom checks, appointments, health assistant conversations and notifications</li>
         <li>Your favorite providers and your care circle</li>
       </ul>
       <p className="text-muted">

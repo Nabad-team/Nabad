@@ -71,6 +71,12 @@ const PROFILE_COLLECTIONS = [
     omit: { slot: "An internal key that stops the same fact being saved twice; worked out from the category." },
   },
   {
+    key: "vitalReadings",
+    model: require("./models/VitalReading"),
+    sort: { recordedAt: 1 },
+    fields: { _id: ["id", id], recordedAt: "recordedAt", systolic: "systolic", diastolic: "diastolic", heartRate: "heartRate", temperature: "temperature", ...TIMESTAMPS },
+  },
+  {
     key: "waterEntries",
     model: HydrationEntry,
     sort: { date: 1 },

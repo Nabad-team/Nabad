@@ -158,6 +158,11 @@ function createApp() {
   );
 
   app.use(
+    "/api/vitals",
+    require("./routes/vitals")
+  );
+
+  app.use(
     "/api/triage",
     require("./routes/triage")
   );

@@ -807,6 +807,22 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text("Stay under 1.5 L a day", summary)
         self.visible(self.button("Print or save as PDF"))
 
+    def test_authenticated_vitals_history_and_trends(self):
+        self.open("/vitals")
+        self.type_into("vital-systolic", "120")
+        self.type_into("vital-diastolic", "80")
+        self.type_into("vital-heart-rate", "72")
+        self.type_into("vital-temperature", "36.7")
+        self.submit_form_of("vital-systolic")
+        self.wait_for_text("Vital reading saved.", (By.CSS_SELECTOR, "[role='status']"))
+        history = (By.CSS_SELECTOR, "table.vitals-table")
+        self.wait_for_text("120/80 mmHg", history)
+        self.wait_for_text("72 bpm", history)
+        self.wait_for_text("36.7°C", history)
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Blood pressure trend'] svg[role='img']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Heart rate trend'] svg[role='img']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Temperature trend'] svg[role='img']"))
+
     def test_authenticated_visit_prep_document_attachment_and_editing(self):
         filename = f"Selenium visit prep X-ray {secrets.token_hex(3)}.pdf"
         uploaded = self.driver.execute_async_script(
