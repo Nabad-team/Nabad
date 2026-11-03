@@ -23,7 +23,7 @@ export function WellbeingSupportNumber({ contact }) {
       </Button>
       <div className="wellbeing-support-number__meta">
         <small>{date ? <>Last verified: <time dateTime={date}>{formatDate(date)}</time></> : "Verification date unavailable."}</small>
-        {source && <a href={source} target="_blank" rel="noopener noreferrer" aria-label={`Official verification source for ${contact.name}`}>View official source <span aria-hidden="true">↗</span></a>}
+        {source && <a href={source} target="_blank" rel="noopener noreferrer" aria-label={`Official verification source for ${contact.name}`}>Official source <span aria-hidden="true">↗</span></a>}
       </div>
     </div>
   </section>;

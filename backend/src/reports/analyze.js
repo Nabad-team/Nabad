@@ -164,8 +164,12 @@ async function analyzeReport({ report, question = "", client }) {
   if (report.kind === "text" && (!report.text || report.text.length < 40 || report.text.length > MAX_INPUT_CHARS)) throw new ReportAnalysisError("unreadable_report");
   try {
     const messages = reportMessages({ report, question });
-    const options = { maxTokens: 2200, reasoningEffort: "medium", maxReplyChars: 20000 };
+    // A structured lab explanation needs less deliberation than open-ended chat. A lower
+    // thinking reserve returns the JSON sooner, while the shared deadline prevents a
+    // validation retry from doubling the user's wait on a slow provider.
+    const options = { maxTokens: 2200, reasoningEffort: "low", maxReplyChars: 20000 };
     const result = await completeValidated({ client, messages, options,
+      totalTimeoutMs: 55000,
       parse: (reply) => parseReportReply(reply, { reportText: report.text, reportKind: report.kind }),
       correctionFor: (error) => error instanceof ReportAnalysisError && Object.hasOwn(REPLY_CORRECTIONS, error.code) ? REPLY_CORRECTIONS[error.code] : null,
     });
