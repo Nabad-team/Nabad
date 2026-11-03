@@ -43,6 +43,7 @@ const {
 
 const PROFILE_MODELS = [
   require("./models/VisitPrep"),
+  require("./models/VisitPrepShare"),
   Medication,
   MedicationAdherence,
   SymptomRecord,
