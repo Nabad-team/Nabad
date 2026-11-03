@@ -44,7 +44,8 @@ describe("Header navigation", () => {
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     const navigation = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(navigation).getAllByRole("link")).toHaveLength(9);
+    expect(within(navigation).getAllByRole("link")).toHaveLength(10);
+    expect(within(navigation).getByRole("link", { name: "Vitals" })).toHaveAttribute("href", "/vitals");
     expect(within(navigation).getByRole("link", { name: "Documents" })).toHaveAttribute("href", "/medical-documents");
     expect(within(navigation).getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
@@ -201,7 +202,7 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Visit preparation", "Health assistant", "Medications", "Appointments", "Water and sleep", "Medical documents", "Find care"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "My health", "Vitals", "Visit preparation", "Health assistant", "Medications", "Appointments", "Water and sleep", "Medical documents", "Find care"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([

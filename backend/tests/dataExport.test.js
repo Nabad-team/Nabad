@@ -22,6 +22,7 @@ const Appointment = require("../src/models/Appointment");
 const ReportConversation = require("../src/models/ReportConversation");
 const Notification = require("../src/models/Notification");
 const MedicalDocument = require("../src/models/MedicalDocument");
+const VitalReading = require("../src/models/VitalReading");
 const VisitPrepShare = require("../src/models/VisitPrepShare");
 const { HydrationEntry, SleepEntry, WellbeingSettings } = require("../src/models/Wellbeing");
 const { PROFILE_MODELS } = require("../src/profileData");
@@ -105,6 +106,7 @@ async function fillProfile(owner, profileId, label) {
   const medication = await Medication.create({ ...ids, name: `${label} medication`, dose: "5", unit: "mg", startDate: new Date("2026-01-02") });
   await MedicationAdherence.create({ ...ids, medicationId: medication._id, date: "2026-10-20" });
   await HealthFact.create({ ...ids, category: "allergy", value: { name: `${label} allergy` } });
+  await VitalReading.create({ ...ids, recordedAt: new Date("2026-10-20T08:30:00Z"), systolic: 120, diastolic: 80, heartRate: 72, temperature: 36.7 });
   await HydrationEntry.create({ ...ids, date: new Date("2026-10-20T00:00:00Z"), totalMl: 250, entries: [{ ml: 250, at: new Date() }] });
   await SleepEntry.create({ ...ids, date: new Date("2026-10-21T00:00:00Z"), hours: 7.5, quality: 4, note: `${label} sleep` });
   await WellbeingSettings.create({ ...ids, waterGoal: { type: "atLeast", ml: 2000 } });
@@ -193,6 +195,7 @@ test("the file has every registered collection for the user's own and linked pro
     assert.equal(entry.medications[0].name, `${label} medication`);
     assert.equal(entry.medicationCheckIns[0].medicationId, entry.medications[0].id);
     assert.deepEqual(entry.myHealthFacts[0].value, { name: `${label} allergy` });
+    assert.deepEqual({ systolic: entry.vitalReadings[0].systolic, diastolic: entry.vitalReadings[0].diastolic, heartRate: entry.vitalReadings[0].heartRate, temperature: entry.vitalReadings[0].temperature }, { systolic: 120, diastolic: 80, heartRate: 72, temperature: 36.7 });
     assert.equal(entry.waterEntries[0].date, "2026-10-20");
     assert.equal(entry.waterEntries[0].drinks[0].ml, 250);
     assert.equal(entry.sleepEntries[0].note, `${label} sleep`);

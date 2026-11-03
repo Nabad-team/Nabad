@@ -41,7 +41,7 @@ async function openAndConfirm(user, secret, label = "Password") {
 test("explains what the file includes and what it never includes", () => {
   render(<DataExport />);
   expect(screen.getByRole("heading", { name: "Download my data" })).toBeInTheDocument();
-  expect(screen.getByText(/medications and check-ins, My health, water and sleep, symptom checks, appointments/)).toBeInTheDocument();
+  expect(screen.getByText(/medications and check-ins, My health, vital readings, water and sleep, symptom checks, appointments/)).toBeInTheDocument();
   expect(screen.getByText("Your favorite providers and your care circle")).toBeInTheDocument();
   expect(screen.getByText(/never includes your password or sign-in security details/)).toBeInTheDocument();
   // Nothing is asked or loaded until the user chooses to download.

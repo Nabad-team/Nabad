@@ -55,6 +55,7 @@ const PROFILE_MODELS = [
   HealthFact,
   Notification,
   MedicalDocument,
+  require("./models/VitalReading"),
 ];
 
 // Deletes the health data of one profile.
