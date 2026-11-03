@@ -57,7 +57,7 @@ const PROFILE_COLLECTIONS = [
   {
     key: "medications",
     model: Medication,
-    fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", ...TIMESTAMPS },
+    fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", times: "times", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", ...TIMESTAMPS },
   },
   {
     key: "medicationCheckIns",

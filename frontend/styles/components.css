@@ -41,6 +41,7 @@
 .vitals-table caption { text-align: left; font-weight: 700; margin-bottom: var(--space-2); }
 .vitals-table th, .vitals-table td { padding: var(--space-3); border-bottom: 1px solid var(--color-border); text-align: left; white-space: nowrap; }
 .vitals-empty { padding: var(--space-6); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); }
+.calendar__event--medication { background: #e8f4ef; color: #185b48; border-left: 3px solid #27866b; }
 
 .text-muted {
   color: var(--color-text-muted);

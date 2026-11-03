@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import AppointmentsPage from "../pages/appointments";
+import AppointmentsPage, { medicationEventsForDate } from "../pages/appointments";
+import { getMedications } from "../lib/medicationApi";
 
 jest.mock("../components/ProfileHeader", () => () => <div />);
 jest.mock("../context/ActiveProfileContext", () => ({
@@ -15,6 +16,7 @@ jest.mock("../lib/appointmentApi", () => ({
   updateAppointment: jest.fn(),
   deleteAppointment: jest.fn(),
 }));
+jest.mock("../lib/medicationApi", () => ({ getMedications: jest.fn().mockResolvedValue([]) }));
 
 function setPermission(permission, requestPermission = jest.fn().mockResolvedValue(permission)) {
   Object.defineProperty(window, "Notification", {
@@ -25,7 +27,16 @@ function setPermission(permission, requestPermission = jest.fn().mockResolvedVal
 }
 
 describe("appointment reminder permissions", () => {
-  beforeEach(() => setPermission("default"));
+  beforeEach(() => { setPermission("default"); getMedications.mockReset().mockResolvedValue([]); });
+
+  test("builds calendar events only for active medication dates", () => {
+    const medications = [{ id: "med-1", name: "Aspirin", status: "active", startDate: "2026-11-01", endDate: "2026-11-30", times: ["08:00", "20:00"] }];
+    expect(medicationEventsForDate(medications, "2026-11-03")).toEqual([
+      { id: "med-1-08:00", time: "08:00", name: "Aspirin" },
+      { id: "med-1-20:00", time: "20:00", name: "Aspirin" },
+    ]);
+    expect(medicationEventsForDate(medications, "2026-12-01")).toEqual([]);
+  });
 
   test("asks only after the user selects Enable reminders and handles a grant", async () => {
     const requestPermission = setPermission("default", jest.fn().mockResolvedValue("granted"));
