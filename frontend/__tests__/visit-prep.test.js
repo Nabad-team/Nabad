@@ -258,8 +258,22 @@ describe("Visit preparation page", () => {
     const link = await screen.findByRole("textbox", { name: /New secure link/ });
     expect(link.value).toMatch(/\/visit-prep-share\/secure-token$/);
     expect(writeText).toHaveBeenCalledWith(link.value);
+    fireEvent.click(screen.getByRole("button", { name: "Copy secure link" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("copied to your clipboard"));
     fireEvent.click(screen.getByRole("button", { name: "Revoke" }));
     await waitFor(() => expect(revokeVisitPrepShare).toHaveBeenCalledWith("self", "share-1"));
     expect(await screen.findByText("Revoked")).toBeInTheDocument();
+  });
+
+  test("refreshes the patient's list to show clinician confirmation", async () => {
+    getVisitPrepShares
+      .mockResolvedValueOnce({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 1, confirmedAt: null, revokedAt: null }] })
+      .mockResolvedValueOnce({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 2, confirmedAt: "2026-11-04T09:30:00.000Z", confirmedBy: "Dr Layla Khoury", revokedAt: null }] });
+    renderPage();
+    expect(await screen.findByText("Awaiting clinician confirmation")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh status" }));
+    expect(await screen.findByText("✓ Confirmed accurate by Dr Layla Khoury")).toBeInTheDocument();
+    expect(screen.getByText(/confirmed 4 November 2026/)).toBeInTheDocument();
   });
 });
