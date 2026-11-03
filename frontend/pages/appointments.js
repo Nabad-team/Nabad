@@ -17,6 +17,7 @@ import {
   updateAppointment,
   deleteAppointment,
 } from "../lib/appointmentApi";
+import { getMedications } from "../lib/medicationApi";
 
 const emptyFields = () => ({
   title: "", hospital: "", location: "", appointmentDate: todayString(),
@@ -60,6 +61,11 @@ function reminderDue(appointment, now) {
 
 function reminderSignature(appointment) {
   return `${appointment.appointmentDate}|${appointment.appointmentTime}|${appointment.reminderMinutes}`;
+}
+
+export function medicationEventsForDate(medications, date) {
+  return medications.flatMap(medication => medication.status === "active" && medication.startDate <= date && (!medication.endDate || medication.endDate >= date)
+    ? (medication.times || []).map(time => ({ id: `${medication.id}-${time}`, time, name: medication.name })) : []);
 }
 
 function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCancel }) {
@@ -115,7 +121,7 @@ function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCanc
   );
 }
 
-function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
+function Calendar({ month, appointments, medications, onMonthChange, onDateDoubleClick }) {
   const days = monthDays(month);
   const appointmentsByDate = appointments.reduce((groups, appointment) => {
     groups[appointment.appointmentDate] = (groups[appointment.appointmentDate] || []).concat(appointment);
@@ -138,6 +144,7 @@ function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
         {days.map((date) => {
           const key = dateKey(date);
           const events = appointmentsByDate[key] || [];
+          const medicineEvents = medicationEventsForDate(medications, key);
           const inMonth = date.getMonth() === month.getMonth();
           return (
             <button
@@ -145,10 +152,11 @@ function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
               key={key}
               className={`calendar__day${inMonth ? "" : " calendar__day--outside"}${key === today ? " calendar__day--today" : ""}`}
               onDoubleClick={() => onDateDoubleClick(key)}
-              aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}`}
+              aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}${medicineEvents.length ? `, ${medicineEvents.length} medication time${medicineEvents.length === 1 ? "" : "s"}` : ""}`}
             >
               <span className="calendar__number">{date.getDate()}</span>
               {events.map((appointment) => <span className="calendar__event" key={appointment.id}>{appointment.appointmentTime} {appointment.title}</span>)}
+              {medicineEvents.map(item => <span className="calendar__event calendar__event--medication" key={item.id}>{item.time} 💊 {item.name}</span>)}
             </button>
           );
         })}
@@ -162,6 +170,7 @@ export default function AppointmentsPage() {
   const { preferences } = useAccessibility();
   const simplified = preferences.simplifiedMode;
   const [appointments, setAppointments] = useState(null);
+  const [medications, setMedications] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
@@ -184,8 +193,8 @@ export default function AppointmentsPage() {
     const requested = profileRef.current;
     setLoadError("");
     try {
-      const list = await getAppointments(requested);
-      if (profileRef.current === requested) setAppointments(list);
+      const [list, medicineList] = await Promise.all([getAppointments(requested), getMedications(requested)]);
+      if (profileRef.current === requested) { setAppointments(list); setMedications(medicineList); }
     } catch {
       if (profileRef.current === requested) setLoadError(`We couldn't load ${forSelf ? "your" : `${name}'s`} appointments. Please check your connection and try again.`);
     }
@@ -279,6 +288,7 @@ export default function AppointmentsPage() {
           <Calendar
             month={month}
             appointments={appointments}
+            medications={medications}
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
             onDateDoubleClick={openNewAppointment}
           />

@@ -73,7 +73,7 @@ test("creates a medication for my own profile, ignoring owner, profile and statu
   assert.equal(created.status, 201);
   const { id, createdAt, updatedAt, ...fields } = created.body.medication;
   assert.ok(id && createdAt && updatedAt);
-  assert.deepEqual(fields, { profileId: "self", name: "Paracetamol", dose: "500", unit: "mg", form: "tablet", frequency: "twice a day", startDate: "2026-09-01", endDate: "", status: "active", notes: "After food" });
+  assert.deepEqual(fields, { profileId: "self", name: "Paracetamol", dose: "500", unit: "mg", form: "tablet", frequency: "twice a day", times: [], startDate: "2026-09-01", endDate: "", status: "active", notes: "After food" });
   const stored = await Medication.findById(id);
   assert.equal(String(stored.owner), String(account._id));
   assert.equal(String(stored.profileId), String(account._id));
@@ -86,6 +86,17 @@ test("only the name and start date are required", async () => {
   assert.equal(created.body.medication.form, "tablet");
   assert.equal(created.body.medication.dose, "");
   assert.equal(created.body.medication.endDate, "");
+});
+
+test("stores sorted medication times and rejects invalid or duplicate times", async () => {
+  const cookie = token(await user("times@example.test"));
+  const created = await request("POST", "/medications", { cookie, body: { ...paracetamol, times: ["20:00", "08:00"] } });
+  assert.equal(created.status, 201);
+  assert.deepEqual(created.body.medication.times, ["08:00", "20:00"]);
+  for (const times of [["8:00"], ["24:00"], ["08:00", "08:00"], "08:00"]) {
+    const response = await request("POST", "/medications", { cookie, body: { ...paracetamol, times } });
+    assert.equal(response.status, 400, JSON.stringify(times));
+  }
 });
 
 test("lists active medications first, then discontinued, newest first within each", async () => {

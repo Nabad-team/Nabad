@@ -122,7 +122,7 @@ describe("Medications page", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("Amoxicillin was added to your list.");
     expect(mockApi.addMedication).toHaveBeenCalledWith("self", {
-      name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", startDate: "2026-10-01", endDate: "", notes: "",
+      name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", times: [], startDate: "2026-10-01", endDate: "", notes: "",
     });
     expect(within(await item("Amoxicillin")).getByText("250 mg syrup · three times a day")).toBeInTheDocument();
     expect(screen.queryByRole("form", { name: "Add a medication" })).not.toBeInTheDocument();

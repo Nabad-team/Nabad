@@ -27,7 +27,7 @@ router.use(resolveProfile);
 const view = (medication) => ({
   id: String(medication._id),
   profileId: profileView(medication),
-  name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form, frequency: medication.frequency,
+  name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form, frequency: medication.frequency, times: medication.times || [],
   startDate: dateString(medication.startDate), endDate: dateString(medication.endDate),
   status: medication.status, notes: medication.notes,
   createdAt: medication.createdAt, updatedAt: medication.updatedAt,
@@ -63,6 +63,8 @@ function readMedication(body) {
   const dose = readText(body, "dose", "Dose", errors);
   const unit = readText(body, "unit", "Unit", errors);
   const frequency = readText(body, "frequency", "How often", errors);
+  const times = body.times === undefined ? [] : body.times;
+  if (!Array.isArray(times) || times.length > 12 || times.some(value => typeof value !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || new Set(times).size !== times.length) errors.push("Enter up to 12 unique medication times in HH:MM format.");
   const notes = readText(body, "notes", "Notes", errors);
   const form = body.form === undefined || body.form === "" ? "tablet" : body.form;
   if (!FORMS.includes(form)) errors.push("Choose a form: tablet, syrup, injection, inhaler, drops or other.");
@@ -75,7 +77,7 @@ function readMedication(body) {
     else if (startDate && endDate < startDate) errors.push("The end date can't be before the start date.");
   }
   if (errors.length) return { error: errors[0] };
-  return { medication: { name, dose, unit, form, frequency, startDate, endDate, notes } };
+  return { medication: { name, dose, unit, form, frequency, times: [...times].sort(), startDate, endDate, notes } };
 }
 
 // Matches the medication only if it belongs to the signed-in user. null for an id that can't exist (answered as 404).
@@ -97,7 +99,7 @@ router.get("/adherence", asyncRoute(async (req, res) => {
   const takenIds = new Set(logs.map((log) => String(log.medicationId)));
   return res.json({ date: day, medications: medications.map((medication) => ({
     id: String(medication._id), name: medication.name, dose: medication.dose, unit: medication.unit,
-    form: medication.form, frequency: medication.frequency, taken: takenIds.has(String(medication._id)),
+    form: medication.form, frequency: medication.frequency, times: medication.times || [], taken: takenIds.has(String(medication._id)),
   })) });
 }));
 

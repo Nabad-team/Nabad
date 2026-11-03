@@ -25,7 +25,7 @@ import { formatDate, todayString } from "../lib/dates";
 // Same limits as the backend (models/Medication.js), so the browser stops overlong text before sending it.
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
 const FORM_LABELS = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
-const emptyFields = () => ({ name: "", dose: "", unit: "", form: "tablet", frequency: "", startDate: todayString(), endDate: "", notes: "" });
+const emptyFields = () => ({ name: "", dose: "", unit: "", form: "tablet", frequency: "", timesText: "", startDate: todayString(), endDate: "", notes: "" });
 
 // Checks what the browser can check, in the same words as the server. Returns { field: message }.
 function findProblems(fields) {
@@ -54,7 +54,7 @@ const statusAction = (medication) => (medication.status === "active" ? "Mark as 
 
 // The add and edit form. idPrefix keeps the field ids unique when it is shown inside a list item.
 function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCancel }) {
-  const [fields, setFields] = useState(initial);
+  const [fields, setFields] = useState({ ...initial, timesText: initial.timesText ?? (initial.times || []).join(", ") });
   const [problems, setProblems] = useState({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -73,7 +73,12 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
     }
     setSaving(true);
     try {
-      await onSave({ ...fields, name: fields.name.trim() });
+      const times = fields.timesText.split(",").map(value => value.trim()).filter(Boolean);
+      if (times.some(value => !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || new Set(times).size !== times.length || times.length > 12) {
+        setProblems({ timesText: "Enter unique times as HH:MM, separated by commas." }); setSaving(false); return;
+      }
+      const { timesText, ...medicationFields } = fields;
+      await onSave({ ...medicationFields, times, name: fields.name.trim() });
     } catch (err) {
       setError(err.message || "Could not save the medication. Please try again.");
       setSaving(false);
@@ -92,6 +97,7 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
         {MEDICATION_FORMS.map((form) => <option key={form} value={form}>{FORM_LABELS[form]}</option>)}
       </Input>
       <Input id={id("frequency")} label="How often" hint="For example twice a day, or every 8 hours" value={fields.frequency} onChange={update("frequency")} maxLength={LIMITS.frequency} autoComplete="off" />
+      <Input id={id("timesText")} label="Medication times (optional)" hint="For example 08:00, 20:00. These appear on the calendar." value={fields.timesText} onChange={update("timesText")} error={problems.timesText} autoComplete="off" />
       <div className="field-pair">
         <Input id={id("startDate")} label="Start date" type="date" value={fields.startDate} onChange={update("startDate")} error={problems.startDate} required />
         <Input id={id("endDate")} label="End date (optional)" type="date" min={fields.startDate || undefined} value={fields.endDate} onChange={update("endDate")} error={problems.endDate} />
