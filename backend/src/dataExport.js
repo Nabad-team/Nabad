@@ -42,6 +42,15 @@ const TIMESTAMPS = { createdAt: "createdAt", updatedAt: "updatedAt" };
 // Health data kept per profile (the account owner's own, or a linked family profile's).
 const PROFILE_COLLECTIONS = [
   {
+    key: "visitPreparationShares", model: require("./models/VisitPrepShare"),
+    fields: {
+      _id: ["id", id], patientName: "patientName", sections: "sections", documentIds: ["documentIds", (values) => values.map(String)],
+      expiresAt: "expiresAt", revokedAt: "revokedAt", lastViewedAt: "lastViewedAt", viewCount: "viewCount",
+      confirmedAt: "confirmedAt", confirmedBy: "confirmedBy", ...TIMESTAMPS,
+    },
+    omit: { tokenHash: "Secret hash of the unguessable sharing link token." },
+  },
+  {
     key: "visitPreparation", model: require("./models/VisitPrep"), single: true,
     fields: { _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => values.map(String)], ...TIMESTAMPS },
   },

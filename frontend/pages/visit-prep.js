@@ -14,7 +14,7 @@ import { getMedicalDocuments, medicalDocumentDownloadUrl } from "../lib/medicalD
 import { formatDate } from "../lib/dates";
 import { exportVisitPrep } from "../lib/visitPrepExport";
 import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
-import { getVisitPrep, saveVisitPrep } from "../lib/visitPrepApi";
+import { createVisitPrepShare, getVisitPrep, getVisitPrepShares, revokeVisitPrepShare, saveVisitPrep } from "../lib/visitPrepApi";
 
 const CATEGORY_LABELS = {
   sex: "Sex assigned at birth", height: "Height", weight: "Weight", bloodType: "Blood type",
@@ -56,6 +56,10 @@ export default function VisitPrepPage() {
   const [sectionDrafts, setSectionDrafts] = useState({});
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [shares, setShares] = useState([]);
+  const [shareExpiry, setShareExpiry] = useState("7");
+  const [newShareUrl, setNewShareUrl] = useState("");
+  const [sharing, setSharing] = useState(false);
   const sheetRef = useRef(null);
 
   useEffect(() => {
@@ -73,14 +77,16 @@ export default function VisitPrepPage() {
     setNotice("");
     setOverrides({});
     setSectionDrafts({});
-    Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId), getVisitPrep(profileId)])
-      .then(async ([health, symptoms, sheet]) => {
+    setShares([]); setNewShareUrl("");
+    Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId), getVisitPrep(profileId), getVisitPrepShares(profileId)])
+      .then(async ([health, symptoms, sheet, shared]) => {
         let savedDocuments = null;
         if (sheet.documentIds.length) savedDocuments = await getMedicalDocuments(profileId);
         if (current) {
           setOverrides(sheet.overrides || {});
           setVisitNotes(sheet.notes || "");
           setSelectedDocumentIds(sheet.documentIds || []);
+          setShares(shared.shares || []);
           if (savedDocuments) { setDocuments(savedDocuments.documents); setDocumentsRequested(true); }
           setData({ health, symptoms });
         }
@@ -177,6 +183,31 @@ export default function VisitPrepPage() {
     finally { setSaving(false); }
   }
 
+  async function createShare() {
+    setSharing(true); setError(""); setNotice(""); setNewShareUrl("");
+    const sections = editableSections.map(([key, title]) => ({ title, text: sectionText(key) || "No information recorded." }));
+    if (visitNotes) sections.push({ title: "Notes for your clinician", text: visitNotes });
+    try {
+      const result = await createVisitPrepShare(profileId, { patientName: name, sections, documentIds: selectedDocumentIds, expiresInDays: Number(shareExpiry) });
+      if (profileRef.current !== profileId) return;
+      const url = `${window.location.origin}/visit-prep-share/${result.token}`;
+      setNewShareUrl(url); setShares((current) => [result.share, ...current]);
+      try { await navigator.clipboard.writeText(url); setNotice("Secure link created and copied. It is shown only in this browser session."); }
+      catch { setNotice("Secure link created. Copy it below now; it will not be shown again."); }
+    } catch (failure) { if (profileRef.current === profileId) setError(failure.message); }
+    finally { setSharing(false); }
+  }
+
+  async function revokeShare(share) {
+    if (!window.confirm("Revoke this link? Anyone using it will immediately lose access.")) return;
+    setSharing(true); setError("");
+    try {
+      const result = await revokeVisitPrepShare(profileId, share.id);
+      if (profileRef.current === profileId) { setShares((current) => current.map((item) => item.id === share.id ? result.share : item)); setNotice("Shared link revoked."); setNewShareUrl(""); }
+    } catch (failure) { if (profileRef.current === profileId) setError(failure.message); }
+    finally { setSharing(false); }
+  }
+
   return (
     <PageLayout title="Visit preparation" header={<ProfileHeader showPicture={false} />}>
       <PageTitle lead="A structured summary of saved symptom checks and confirmed health information." >Visit preparation</PageTitle>
@@ -190,6 +221,23 @@ export default function VisitPrepPage() {
           <Button variant="secondary" disabled={editing || exporting || saving} onClick={exportSheet}>{exporting ? "Exporting..." : "Export sheet with attachments"}</Button>
         </div>
         {notice && <p className="visit-prep__notice" role="status">{notice}</p>}
+        <Card className="section visit-prep__sharing" aria-labelledby="visit-prep-sharing-heading">
+          <h2 id="visit-prep-sharing-heading">Share securely with a doctor</h2>
+          <p className="text-muted">Create a read-only snapshot. The unguessable link expires automatically, can be revoked, and lets the clinician mark the sheet accurate.</p>
+          <div className="visit-prep__share-controls">
+            <label className="field__label" htmlFor="visit-prep-share-expiry">Link expires after</label>
+            <select id="visit-prep-share-expiry" className="input" value={shareExpiry} onChange={(event) => setShareExpiry(event.target.value)} disabled={sharing || editing}>
+              <option value="1">1 day</option><option value="7">7 days</option><option value="30">30 days</option>
+            </select>
+            <Button type="button" onClick={createShare} disabled={sharing || editing || saving}>{sharing ? "Creating..." : "Create secure link"}</Button>
+          </div>
+          {newShareUrl && <div className="stack"><label className="field__label" htmlFor="visit-prep-new-share">New secure link — copy it now</label><input id="visit-prep-new-share" className="input" readOnly value={newShareUrl} onFocus={(event) => event.target.select()} /></div>}
+          {shares.length > 0 && <ul className="visit-prep__shares" aria-label="Shared visit links">{shares.map((share) => {
+            const expired = new Date(share.expiresAt) <= new Date();
+            const inactive = Boolean(share.revokedAt) || expired;
+            return <li key={share.id}><div><strong>{share.confirmedAt ? `Confirmed by ${share.confirmedBy}` : inactive ? (share.revokedAt ? "Revoked" : "Expired") : "Awaiting clinician confirmation"}</strong><span className="text-muted">Created {formatDate(share.createdAt.slice(0, 10))} · expires {formatDate(share.expiresAt.slice(0, 10))}{share.viewCount ? ` · opened ${share.viewCount} time${share.viewCount === 1 ? "" : "s"}` : ""}</span></div>{!inactive && <Button size="small" variant="secondary" type="button" disabled={sharing} onClick={() => revokeShare(share)}>Revoke</Button>}</li>;
+          })}</ul>}
+        </Card>
         {editing && <Card className="section visit-prep__editor" aria-labelledby="visit-prep-editor-heading">
           <h2 id="visit-prep-editor-heading">Review and edit your visit sheet</h2>
           <p className="text-muted">Add or correct anything you want your clinician to know. Saved changes and document selections are kept for this profile when you return.</p>

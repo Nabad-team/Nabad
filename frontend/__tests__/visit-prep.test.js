@@ -7,9 +7,12 @@ import { getSymptomsForProfile } from "../lib/symptomApi";
 import { getMedicalDocuments } from "../lib/medicalDocumentApi";
 import * as visitPrepExport from "../lib/visitPrepExport";
 jest.mock("../lib/visitPrepExport", () => ({ exportVisitPrep: jest.fn() }));
-import { getVisitPrep, saveVisitPrep } from "../lib/visitPrepApi";
+import { createVisitPrepShare, getVisitPrep, getVisitPrepShares, revokeVisitPrepShare, saveVisitPrep } from "../lib/visitPrepApi";
 import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
-jest.mock("../lib/visitPrepApi", () => ({ getVisitPrep: jest.fn(), saveVisitPrep: jest.fn() }));
+jest.mock("../lib/visitPrepApi", () => ({
+  getVisitPrep: jest.fn(), saveVisitPrep: jest.fn(), getVisitPrepShares: jest.fn(),
+  createVisitPrepShare: jest.fn(), revokeVisitPrepShare: jest.fn(),
+}));
 jest.mock("../lib/visitPrepPdf", () => ({ exportVisitPrepPdf: jest.fn() }));
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
@@ -38,6 +41,9 @@ describe("Visit preparation page", () => {
     getMedicalDocuments.mockReset().mockResolvedValue({ documents: [] });
     getVisitPrep.mockReset().mockResolvedValue({ overrides: {}, notes: "", documentIds: [] });
     saveVisitPrep.mockReset().mockResolvedValue({});
+    getVisitPrepShares.mockReset().mockResolvedValue({ shares: [] });
+    createVisitPrepShare.mockReset();
+    revokeVisitPrepShare.mockReset();
     exportVisitPrepPdf.mockReset().mockResolvedValue(undefined);
   });
 
@@ -233,5 +239,27 @@ describe("Visit preparation page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Connection lost");
     expect(screen.getByRole("textbox", { name: "Notes for your clinician" })).toHaveValue("Unsaved note");
+  });
+
+  test("creates, displays and revokes an expiring secure doctor link", async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    createVisitPrepShare.mockResolvedValue({
+      token: "secure-token", share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 0, confirmedAt: null, revokedAt: null },
+    });
+    revokeVisitPrepShare.mockResolvedValue({ share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 0, confirmedAt: null, revokedAt: "2026-11-03T10:05:00.000Z" } });
+    window.confirm = jest.fn(() => true);
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Create secure link" }));
+    await waitFor(() => expect(createVisitPrepShare).toHaveBeenCalledWith("self", expect.objectContaining({
+      patientName: "Demo User", expiresInDays: 7, documentIds: [], sections: expect.arrayContaining([expect.objectContaining({ title: "Current medications" })]),
+    })));
+    const link = await screen.findByRole("textbox", { name: /New secure link/ });
+    expect(link.value).toMatch(/\/visit-prep-share\/secure-token$/);
+    expect(writeText).toHaveBeenCalledWith(link.value);
+    fireEvent.click(screen.getByRole("button", { name: "Revoke" }));
+    await waitFor(() => expect(revokeVisitPrepShare).toHaveBeenCalledWith("self", "share-1"));
+    expect(await screen.findByText("Revoked")).toBeInTheDocument();
   });
 });

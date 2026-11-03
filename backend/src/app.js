@@ -99,6 +99,7 @@ function createApp() {
   app.use("/api/medical-documents", require("./routes/medicalDocuments"));
   app.use("/api/emergency-card", require("./routes/emergencyCard"));
   app.use("/api/visit-prep", require("./routes/visitPrep"));
+  app.use("/api/visit-prep-shares", require("./routes/visitPrepShares"));
 
   app.use(
     express.json({

@@ -22,6 +22,7 @@ const Appointment = require("../src/models/Appointment");
 const ReportConversation = require("../src/models/ReportConversation");
 const Notification = require("../src/models/Notification");
 const MedicalDocument = require("../src/models/MedicalDocument");
+const VisitPrepShare = require("../src/models/VisitPrepShare");
 const { HydrationEntry, SleepEntry, WellbeingSettings } = require("../src/models/Wellbeing");
 const { PROFILE_MODELS } = require("../src/profileData");
 const { EXPORTED, PROFILE_COLLECTIONS, EXCLUDED_MODELS, COMMON_OMIT, FORMAT_VERSION } = require("../src/dataExport");
@@ -113,6 +114,7 @@ async function fillProfile(owner, profileId, label) {
   await Notification.create({ ...ids, type: "system", title: `${label} notice`, message: "Hello", dedupeKey: `dedupe-${label}-${crypto.randomUUID()}` });
   await MedicalDocument.create({ ...ids, filename: `${label.toLowerCase()}-lab.pdf`, mimeType: "application/pdf", size: 4, data: Buffer.from("PDF!") });
   await require("../src/models/VisitPrep").create({ ...ids, overrides: { background: `${label} history` }, notes: `${label} visit notes`, documentIds: [] });
+  await VisitPrepShare.create({ ...ids, tokenHash: crypto.createHash("sha256").update(`${label}-${crypto.randomUUID()}`).digest("hex"), patientName: `${label} patient`, sections: [{ title: "History", text: `${label} shared history` }], expiresAt: new Date(Date.now() + 86400000) });
 }
 
 // --- The registry ---

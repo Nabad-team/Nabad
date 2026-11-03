@@ -61,6 +61,8 @@ const nextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // Shared visit links contain their access token in the path. Never send that path in a Referer header.
+      { source: "/visit-prep-share/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
       { source: "/providers", headers: [{ key: "Permissions-Policy", value: permissionsPolicy("(self)") }] },
     ];
   },

@@ -3316,6 +3316,12 @@ select.input {
 .visit-prep__document-options input { margin-top: 0.2rem; }
 .visit-prep__document-options li { margin: 0; }
 .visit-prep__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.visit-prep__share-controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-3); }
+.visit-prep__share-controls .input { width: auto; min-width: 9rem; }
+.visit-prep__shares { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; gap: var(--space-3); }
+.visit-prep__shares li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.visit-prep__shares span { display: block; }
+.shared-visit-prep__text { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* Printable emergency card: no fixed height or truncation of medical information. */
 .emergency-card {
