@@ -90,7 +90,7 @@ function NavLinks({ links, path, className, simplified = false, cards = false, c
 function GroupedWorkspaceLinks({ path, simplified = false, mobile = false }) {
   return <div className={mobile ? "workspace-groups workspace-groups--mobile" : "workspace-groups"}>
     {WORKSPACE_GROUPS.map((group) => <section key={group.label} className="workspace-group" aria-labelledby={`workspace-${mobile ? "mobile-" : ""}${group.label.replace(/\s+/g, "-").toLowerCase()}`}>
-      <p id={`workspace-${mobile ? "mobile-" : ""}${group.label.replace(/\s+/g, "-").toLowerCase()}`} className="workspace-group__label">{group.label}</p>
+      <p id={`workspace-${mobile ? "mobile-" : ""}${group.label.replace(/\s+/g, "-").toLowerCase()}`} className={`workspace-group__label${mobile ? "" : " visually-hidden"}`}>{group.label}</p>
       <NavLinks links={group.links} path={path} className={mobile ? "mobile-menu__list mobile-menu__cards" : "workspace-nav__list"} simplified={simplified} cards={mobile} compact={!mobile} />
     </section>)}
   </div>;
