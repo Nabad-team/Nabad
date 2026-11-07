@@ -6,6 +6,7 @@ Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express AP
 - Backend: [backend/](../backend) (Express, Mongoose)
 - Local development: [docker.md](./docker.md)
 - Tests: [testing.md](./testing.md)
+- Database backups and restore: [backups.md](./backups.md)
 
 ## Production
 
@@ -57,7 +58,7 @@ flowchart LR
 - **Vercel** builds and hosts the web app from `frontend/` (https://nabad-psi.vercel.app). [next.config.js](../frontend/next.config.js) rewrites `/api/*` to `BACKEND_URL`; a production build without it fails on purpose.
 - **Render** runs the API from [render.yaml](../render.yaml) (`npm ci`, `npm start`, Node 24) and only routes traffic to it once `/api/health/ready` answers, which requires a working database connection. Secrets are entered in the Render dashboard, never committed.
 - **Google Gemini** currently provides the AI for the symptom check, the health assistant and report review. The API calls Gemini's OpenAI-compatible endpoint over HTTPS with an API key; `LLM_PROVIDER`, `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` are set on the Render dashboard, so Blueprint deploys never overwrite them. Symptom descriptions, questions and attached reports are sent to Google, but never the user's name, email or profile, and the API does not log them. A self-hosted Ollama server is an optional alternative for the future; see [self-hosted AI](./self-hosted-ai.md).
-- **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`.
+- **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`. The free cluster has no built-in backups, so a nightly GitHub Actions workflow backs up `nabad_production`, encrypted, to a private Backblaze B2 bucket in the EU; see [backups.md](./backups.md).
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
 - **Sentry** receives error reports from the API, the web app's server and the browser, when `SENTRY_DSN` (Render) and `NEXT_PUBLIC_SENTRY_DSN` (Vercel) are set. They never contain health or personal data; see [Error tracking](#error-tracking-sentry).
