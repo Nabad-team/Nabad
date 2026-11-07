@@ -97,12 +97,17 @@ export default function HomePage() {
         </ol>
       </section>
 
-      <Alert tone="note" title="Nabad is not a doctor." className="section prose">
-        <p>
-          It does not diagnose illness or replace advice from a medical professional. In an emergency,
-          call 140 (Lebanese Red Cross).
-        </p>
-      </Alert>
+      <a href="tel:140" className="emergency-callout section" aria-label="Emergency? Call 140 (Lebanese Red Cross) now">
+        <span className="emergency-callout__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false"><path d="M7.2 3.5 10 8 8.4 9.8c1.2 2.5 3.3 4.6 5.8 5.8L16 14l4.5 2.8-.9 3.2c-.2.7-.9 1.2-1.7 1.1C9.8 20.2 3.8 14.2 2.9 6.1c-.1-.8.4-1.5 1.1-1.7l3.2-.9Z" /></svg>
+        </span>
+        <span className="emergency-callout__copy">
+          <strong className="emergency-callout__title">Emergency? Call 140 now</strong>
+          <span>Contact the Lebanese Red Cross immediately. You do not need to sign in.</span>
+          <small>Nabad is not a doctor and does not replace professional medical advice.</small>
+        </span>
+        <span className="emergency-callout__action" aria-hidden="true">Call 140 <span>→</span></span>
+      </a>
     </PageLayout>
   );
 }
