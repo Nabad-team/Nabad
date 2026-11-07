@@ -1,0 +1,111 @@
+name: Database Backup
+
+# Nightly encrypted backup of the production database (docs/backups.md). The repository and these
+# logs are public: steps print only status, sizes, timestamps and SHA-256 (ops/backup/backup.sh).
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.repository == 'Nabad-team/Nabad'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BACKUP_WORK: ${{ runner.temp }}/nabad-backup
+      RESTORE_URI: mongodb://127.0.0.1:27017
+    services:
+      # Throwaway MongoDB for the restore check. Must match RESTORE_MONGO_IMAGE in ops/backup/versions.env.
+      restore-db:
+        image: mongo:7.0.43@sha256:1f995ad6fdb93244a1addab1b58f934a0bc2f5643c38e02f5e9d7f0c7d227a7b
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned backup tools
+        id: install-tools
+        run: ops/backup/install-tools.sh
+
+      - name: Prepare
+        id: prepare
+        run: ops/backup/backup.sh prepare
+
+      - name: Dump the production database
+        id: dump
+        env:
+          BACKUP_MONGODB_URI: ${{ secrets.BACKUP_MONGODB_URI }}
+        run: ops/backup/backup.sh dump
+
+      - name: Restore into a throwaway MongoDB and run sanity checks
+        id: restore-check
+        run: ops/backup/backup.sh restore-check
+
+      - name: Encrypt with the backup public key
+        id: encrypt
+        run: ops/backup/backup.sh encrypt
+
+      - name: Upload to Backblaze B2
+        id: upload
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+        run: ops/backup/backup.sh upload
+
+      - name: Download again and verify the checksum
+        id: verify-upload
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+        run: ops/backup/backup.sh verify-upload
+
+      - name: Apply retention (7 daily, 4 weekly)
+        id: retention
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+        run: ops/backup/backup.sh retention
+
+      - name: Write the step summary
+        id: summary
+        run: ops/backup/backup.sh summary
+
+      - name: Remove plaintext files
+        if: always()
+        run: ops/backup/backup.sh cleanup
+
+      - name: Open or update the backup-failure issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STEPS_JSON: ${{ toJSON(steps) }}
+        run: ops/backup/report-issue.sh fail "Nightly database backup failed"
+
+      - name: Close the backup-failure issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ops/backup/report-issue.sh ok "Nightly database backup failed"

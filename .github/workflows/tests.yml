@@ -103,3 +103,22 @@ jobs:
         run: npm ci
       - name: Run the triage quality test set
         run: npm run test:triage-quality
+
+  # The backup tooling in ops/backup (docs/backups.md): naming, retention, manifest and sanity-check
+  # logic, plus shellcheck for its scripts. No database or network needed.
+  backup-tooling:
+    name: Backup tooling
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Run backup tooling tests
+        run: node --test "ops/backup/tests/*.test.js"
+      - name: Shellcheck backup scripts
+        run: shellcheck --external-sources ops/backup/*.sh

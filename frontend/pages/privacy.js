@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> October 29, 2026
+        <strong>Last updated:</strong> November 7, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -300,6 +300,12 @@ export default function PrivacyPolicy() {
         removes the account and its associated stored data, including data for
         linked profiles, your care circle and your place in other people's
         care circles.
+      </p>
+
+      <p>
+        Nabad keeps encrypted nightly backups of its database with Backblaze in
+        the EU for up to about 35 days, so data from a deleted account can
+        remain in those backups until they expire.
       </p>
 
       <h2 id="download-your-data">Your right to a copy of your data</h2>

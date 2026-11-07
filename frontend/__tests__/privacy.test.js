@@ -40,11 +40,19 @@ describe("Privacy Policy Page", () => {
     ).toBeInTheDocument();
   });
 
+  test("says how long deleted account data can remain in encrypted backups", () => {
+    const { container } = render(<PrivacyPolicy />);
+
+    expect(container).toHaveTextContent(
+      "Nabad keeps encrypted nightly backups of its database with Backblaze in the EU for up to about 35 days, so data from a deleted account can remain in those backups until they expire."
+    );
+  });
+
   test("shows the last updated date", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/October 29, 2026/)
+      screen.getByText(/November 7, 2026/)
     ).toBeInTheDocument();
   });
 
