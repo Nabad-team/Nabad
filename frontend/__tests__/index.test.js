@@ -64,6 +64,14 @@ describe("Landing Page", () => {
     ).toHaveAttribute("href", "/signup");
   });
 
+  test("lets anyone call the Lebanese Red Cross before signing in", () => {
+    render(<HomePage />);
+
+    const emergencyCall = screen.getByRole("link", { name: "Emergency? Call 140 (Lebanese Red Cross) now" });
+    expect(emergencyCall).toHaveAttribute("href", "tel:140");
+    expect(emergencyCall).toHaveTextContent("You do not need to sign in");
+  });
+
   test("marks only the features that are not ready yet as coming soon", () => {
     render(<HomePage />);
 

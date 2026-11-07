@@ -1713,6 +1713,65 @@ select.input {
   font-weight: var(--weight-semibold);
 }
 
+.emergency-callout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 0.125rem solid var(--color-danger);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-danger-soft), var(--color-surface));
+  color: var(--color-danger-strong);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
+}
+
+.emergency-callout:hover {
+  border-color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
+  text-decoration: none;
+  box-shadow: var(--shadow-overlay);
+  transform: translateY(-0.125rem);
+}
+
+.emergency-callout__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.emergency-callout__icon svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
+.emergency-callout__copy { display: grid; gap: var(--space-1); }
+.emergency-callout__title { font-size: var(--text-lg); }
+.emergency-callout__copy small { color: var(--color-text-muted); font-size: var(--text-sm); }
+.emergency-callout__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-danger);
+  color: #fff;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .emergency-callout { grid-template-columns: auto minmax(0, 1fr); }
+  .emergency-callout__action { grid-column: 1 / -1; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emergency-callout:hover { transform: none; }
+}
+
 /* ---------- Sign-in pages ---------- */
 
 .page-shell--auth .page-main {
