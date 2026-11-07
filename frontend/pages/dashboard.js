@@ -53,6 +53,7 @@ function MicrophoneIcon() {
 export default function DashboardPage() {
   // The active profile can be the user or a linked dependent.
   const { activeProfile, error, loading } = useActiveProfile();
+  const actionFor = activeProfile?.isSelf === false ? ` for ${firstName(activeProfile.fullName)}` : "";
 
   const { preferences } = useAccessibility();
 
@@ -117,6 +118,20 @@ export default function DashboardPage() {
       </section>
 
       {activeProfile && <ProgressSummary />}
+
+      <section className="quick-actions section" aria-labelledby="quick-actions-heading">
+        <h2 id="quick-actions-heading">Quick actions</h2>
+        <p className="text-muted">Go straight to something you want to update.</p>
+        <nav aria-label="Quick actions">
+          <ul className="quick-actions__list">
+            <li><Button href="/vitals" variant="secondary">Log vitals{actionFor}</Button></li>
+            <li><Button href="/medications" variant="secondary">Add medication{actionFor}</Button></li>
+            <li><Button href="/appointments" variant="secondary">Add appointment{actionFor}</Button></li>
+            <li><Button href="/medical-documents" variant="secondary">Upload document{actionFor}</Button></li>
+            <li><Button href="/visit-prep" variant="secondary">Prepare for a visit{actionFor}</Button></li>
+          </ul>
+        </nav>
+      </section>
 
       <section className="dashboard-navigation section" aria-label="Dashboard sections">
         <h2>Explore your health space</h2>

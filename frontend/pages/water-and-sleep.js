@@ -464,9 +464,6 @@ export default function WaterAndSleepPage() {
         </div>
       )}
 
-      <p className="section">
-        <a href="/dashboard">Back to dashboard</a>
-      </p>
     </PageLayout>
   );
 }

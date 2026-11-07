@@ -376,7 +376,6 @@ export default function VisitPrepPage() {
             </div>
           </Card>
           <p className="text-muted">Based on information saved in Nabad. Please review it with your clinician; it may not include everything you want to discuss.</p>
-          <p className="visit-prep__back"><a href="/dashboard">Back to dashboard</a></p>
         </div>
         </>
       )}

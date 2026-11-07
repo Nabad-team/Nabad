@@ -65,8 +65,8 @@ function renderPage() {
     </ActiveProfileProvider>
   );
 }
-const list = () => screen.findByRole("list", { name: "Your medications" });
-const item = async (name) => within(await list()).getByRole("heading", { name }).closest("li");
+const list = () => screen.findByRole("list", { name: "Active medications" });
+const item = async (name) => (await screen.findByRole("heading", { name })).closest("li");
 
 describe("Medications page", () => {
   beforeEach(() => {
@@ -89,8 +89,8 @@ describe("Medications page", () => {
     seed({ name: "Paracetamol", notes: "After food" });
     renderPage();
 
-    const names = within(await list()).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(names).toEqual(["Paracetamol", "Ventolin"]);
+    expect(within(await list()).getByRole("heading", { name: "Paracetamol" })).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Discontinued medications" })).getByRole("heading", { name: "Ventolin" })).toBeInTheDocument();
 
     const paracetamol = await item("Paracetamol");
     expect(within(paracetamol).getByText("500 mg tablet · twice a day")).toBeInTheDocument();
@@ -264,8 +264,8 @@ describe("Medications for a family member", () => {
     seed({ name: "Sami syrup", form: "syrup", dose: "5", unit: "ml", profileId: childId });
   });
   const actAsChild = () => localStorage.setItem("nabad-active-profile-id", childId);
-  const childList = () => screen.findByRole("list", { name: "Medications for Sami Haddad" });
-  const childItem = async (name) => within(await childList()).getByRole("heading", { name }).closest("li");
+  const childList = () => screen.findByRole("list", { name: "Active medications for Sami Haddad" });
+  const childItem = async (name) => (await screen.findByRole("heading", { name })).closest("li");
 
   test("shows the family member's list with their name, and the Acting as banner", async () => {
     actAsChild();
@@ -284,7 +284,7 @@ describe("Medications for a family member", () => {
     actAsChild();
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click(await screen.findByRole("button", { name: "Add medication for Sami Haddad" }));
     await user.type(screen.getByLabelText("Medication name"), "Ventolin");
     await user.click(screen.getByRole("button", { name: "Save medication" }));
     expect(await screen.findByText("Ventolin was added to Sami Haddad's list.")).toBeInTheDocument();

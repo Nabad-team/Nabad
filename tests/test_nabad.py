@@ -633,16 +633,21 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             if added:
                 self.assertEqual(self.fetch_json("DELETE", "/api/profile/emergency-contact"), 204)
 
-    def medication_item(self, name, list_label="Your medications"):
+    def medication_item(self, name):
         return (
             By.XPATH,
-            f"//ul[@aria-label={xpath_string(list_label)}]/li[.//h3[normalize-space()={xpath_string(name)}]]",
+            f"//ul[contains(concat(' ', normalize-space(@class), ' '), ' medication-list ')]/li[.//h3[normalize-space()={xpath_string(name)}]]",
         )
 
     def add_medication(self, name, dose="10", unit="mg", frequency="once a day"):
-        self.wait.until(lambda d: d.find_elements(*self.button("Add medication")) or d.find_elements(By.ID, "new-name"))
+        add_button = (
+            By.XPATH,
+            "//button[starts-with(@aria-label, 'Add medication') or "
+            "(not(@aria-label) and starts-with(normalize-space(), 'Add medication'))]",
+        )
+        self.wait.until(lambda d: d.find_elements(*add_button) or d.find_elements(By.ID, "new-name"))
         if not self.driver.find_elements(By.ID, "new-name"):
-            self.click(self.button("Add medication"))
+            self.click(add_button)
         self.type_into("new-name", name)
         self.type_into("new-dose", dose)
         self.type_into("new-unit", unit)
@@ -749,7 +754,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/medications")
         self.wait_for_text(f"Medications for {member}", (By.TAG_NAME, "h1"))
         self.add_medication(medicine, dose="5", unit="ml", frequency="twice a day")
-        self.visible(self.medication_item(medicine, f"Medications for {member}"))
+        self.visible(self.medication_item(medicine))
 
         # Back to the user's own list: the family member's medication is not there.
         self.switch_profile(f"{RunAccount.name} (you)")
