@@ -121,7 +121,7 @@ function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCanc
   );
 }
 
-function Calendar({ month, appointments, medications, onMonthChange, onDateDoubleClick }) {
+function Calendar({ month, appointments, medications, onMonthChange, onDateSelect, onDateDoubleClick }) {
   const days = monthDays(month);
   const appointmentsByDate = appointments.reduce((groups, appointment) => {
     groups[appointment.appointmentDate] = (groups[appointment.appointmentDate] || []).concat(appointment);
@@ -151,6 +151,7 @@ function Calendar({ month, appointments, medications, onMonthChange, onDateDoubl
               type="button"
               key={key}
               className={`calendar__day${inMonth ? "" : " calendar__day--outside"}${key === today ? " calendar__day--today" : ""}`}
+              onClick={() => onDateSelect(key)}
               onDoubleClick={() => onDateDoubleClick(key)}
               aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}${medicineEvents.length ? `, ${medicineEvents.length} medication time${medicineEvents.length === 1 ? "" : "s"}` : ""}`}
             >
@@ -181,6 +182,7 @@ export default function AppointmentsPage() {
   const [now, setNow] = useState(() => new Date());
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [newAppointmentFields, setNewAppointmentFields] = useState(emptyFields);
+  const [selectedDate, setSelectedDate] = useState("");
   const profileId = activeProfile?.id;
   const profileRef = useRef(profileId);
   const notifiedRef = useRef(new Map());
@@ -271,6 +273,8 @@ export default function AppointmentsPage() {
   }
 
   const listName = forSelf ? "Your appointments" : `Appointments for ${name}`;
+  const selectedAppointments = selectedDate ? appointments?.filter((appointment) => appointment.appointmentDate === selectedDate) || [] : [];
+  const selectedMedications = selectedDate ? medicationEventsForDate(medications, selectedDate) : [];
   return (
     <PageLayout title="Appointments" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>{simplified ? "Calendar" : listName}</PageTitle>
@@ -290,12 +294,20 @@ export default function AppointmentsPage() {
             appointments={appointments}
             medications={medications}
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
+            onDateSelect={setSelectedDate}
             onDateDoubleClick={openNewAppointment}
           />
+          {selectedDate && <section className="calendar-details" aria-labelledby="calendar-details-heading">
+            <div className="calendar-details__heading"><h2 id="calendar-details-heading">{formatDate(selectedDate)}</h2><Button variant="secondary" size="small" onClick={() => setSelectedDate("")}>Close</Button></div>
+            {!selectedAppointments.length && !selectedMedications.length && <p className="text-muted">Nothing scheduled for this day.</p>}
+            {selectedAppointments.map((appointment) => <div key={appointment.id} className="calendar-details__item"><strong>{appointment.appointmentTime} · {appointment.title}</strong><span>{appointment.hospital}</span><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)}>Edit appointment</Button></div>)}
+            {selectedMedications.map((medication) => <div key={medication.id} className="calendar-details__item"><strong>{medication.time} · {medication.name}</strong><span>Medication</span></div>)}
+            <Button size="small" onClick={() => openNewAppointment(selectedDate)}>Add appointment for this day</Button>
+          </section>}
           {editing === "add" ? (
             <AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} />
           ) : (
-            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>Add appointment</Button></div>
+            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button></div>
           )}
           {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet.">Add your next doctor's visit so Nabad can remind you.</EmptyState>}
           {appointments.length > 0 && (

@@ -520,9 +520,6 @@ export default function MyHealthPage() {
         </div>
       )}
 
-      <p className="section">
-        <a href="/dashboard">Back to dashboard</a>
-      </p>
     </PageLayout>
   );
 }

@@ -481,9 +481,6 @@ export default function ProfilePage() {
         </Dialog>
       )}
 
-      <p className="section">
-        <a href="/dashboard">Back to dashboard</a>
-      </p>
     </PageLayout>
   );
 }
