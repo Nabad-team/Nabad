@@ -173,3 +173,19 @@ The tests that sign up, add or delete anything refuse to run when `NABAD_BASE_UR
 ### In CI
 
 [e2e.yml](../.github/workflows/e2e.yml) runs the suite on every pull request: `docker compose up -d --build`, wait until the frontend and `/api/health/ready` answer, install Python and `tests/requirements.txt`, run the suite in headless Chrome, upload the failure screenshots and the Docker Compose logs as the `e2e-artifacts` artifact, then `docker compose down -v`.
+
+## Branch rules and merging
+
+`main` is protected, for everyone including repository admins:
+
+- **No direct pushes.** Every change goes through a pull request. Force pushes and deleting `main` are blocked.
+- **Required checks.** A pull request can only be merged when these pass: `backend-tests`, `frontend-tests`, `docker-build`, `selenium` (the end-to-end suite), `Backup tooling` and `Vercel` (the preview deploy). They don't have to be re-run when `main` moves on.
+- **Resolved conversations.** Every review comment thread must be resolved before merging.
+- **No approval needed.** Reviews are welcome but not required (0 approving reviews), so nobody is blocked waiting.
+
+How we merge:
+
+1. Branch off an up-to-date `main` (`feature/…`, `fix/…`, `docs/…`).
+2. Run the backend and frontend tests and the frontend build locally, then open a pull request and fill in the template, including the Definition of Done.
+3. Wait for every check, including the end-to-end suite, and try the change on the Vercel preview link.
+4. Merge with **Create a merge commit** (we keep merge commits; no squash or rebase needed) and delete the branch.
