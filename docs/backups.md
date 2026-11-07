@@ -97,16 +97,88 @@ Restore into a **new** database first, check it, and only then replace productio
    5. Resume the API on Render, check that https://nabad-psi.vercel.app/api/health/ready says ready, and sign in.
    6. Drop `nabad_restore` and delete the decrypted files.
 
-**Versions.** Atlas runs MongoDB 8.0, but the nightly restore check uses MongoDB 7.0 (the version our `docker-compose.yml` uses), because GitHub's runners can't run 8.0. MongoDB calls restoring an 8.0 dump into 7.0 "unsupported" and `mongorestore` warns about it. Our checks pass, and we tested it with collections that use unique, compound, 2dsphere, text, TTL, partial, sparse and collation indexes. Still, the nightly check proves the dump is complete and readable, not that every 8.0 detail survives a 7.0 server. A real restore goes back into Atlas, which is 8.0, so it doesn't have this gap. The monthly drill below restores into Atlas.
+**Versions.** Atlas runs MongoDB 8.0, but the nightly restore check uses MongoDB 7.0 (the version our `docker-compose.yml` uses), because GitHub's runners can't run 8.0. MongoDB calls restoring an 8.0 dump into 7.0 "unsupported" and `mongorestore` warns about it. Our checks pass, and we tested it with collections that use unique, compound, 2dsphere, text, TTL, partial, sparse and collation indexes. Still, the nightly check proves the dump is complete and readable, not that every 8.0 detail survives a 7.0 server. A real restore goes back into Atlas, which is 8.0, so it doesn't have this gap. The monthly drill below restores into MongoDB 8.0 as well, in a local container.
 
 ## Monthly decryption drill
 
-A backup we've never decrypted isn't a backup. Once a month, Gerges (or someone sitting with Gerges, since it needs the private key):
+A backup we've never decrypted isn't a backup. Once a month, Gerges (or someone sitting with Gerges, since it needs the private key) restores the newest backup on the key holder's own computer, into a throwaway MongoDB 8.0 container. **The drill never touches the production Atlas cluster:** no connection string, no Atlas user, nothing is written there.
 
-1. Runs steps 1–5 of the restore above with the newest `daily/` backup, into `nabad_restore` on Atlas.
-2. Checks that every count matches the decrypted counts file and that the newest data is from the night before.
-3. Drops `nabad_restore` and deletes every decrypted file.
-4. Notes the date and the backup timestamp in the sprint notes. If anything failed, opens an issue (without data) and fixes it before the next drill.
+You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) running, [age](https://github.com/FiloSottile/age/releases) (`winget install FiloSottile.age`) and the private key file. The MongoDB tools come with the container image, so nothing else needs installing. The commands are for PowerShell.
+
+1. **Make a working folder** outside any git repository, so decrypted data can never be committed:
+
+   ```powershell
+   $Drill = "$HOME\nabad-drill"
+   New-Item -ItemType Directory -Force $Drill | Out-Null
+   ```
+
+2. **Download the newest backup.** In the Backblaze web UI, open the bucket (Buckets → Browse Files) and the `daily/` folder. Pick the newest timestamp and download its three files: `nabad-<timestamp>.archive.gz.age`, `nabad-<timestamp>.counts.json.age` and `nabad-<timestamp>.manifest.json`. Move them from your Downloads folder into `$Drill`.
+
+3. **Check the SHA-256** against the manifest. The manifest is plain JSON:
+
+   ```powershell
+   $Stamp = "20261108T010007Z"   # the timestamp you downloaded
+   $Manifest = Get-Content "$Drill\nabad-$Stamp.manifest.json" -Raw | ConvertFrom-Json
+   $Hash = (Get-FileHash "$Drill\nabad-$Stamp.archive.gz.age" -Algorithm SHA256).Hash.ToLower()
+   if ($Hash -ne $Manifest.sha256) { throw "SHA-256 does not match the manifest: stop and open an issue" }
+   "SHA-256 OK, backup taken $($Manifest.createdAt)"
+   ```
+
+   `createdAt` should be from last night.
+
+4. **Decrypt** the backup and its counts file with the private key:
+
+   ```powershell
+   age -d -i C:\path\to\nabad-backup-key.txt -o "$Drill\nabad.archive.gz" "$Drill\nabad-$Stamp.archive.gz.age"
+   age -d -i C:\path\to\nabad-backup-key.txt -o "$Drill\counts.json" "$Drill\nabad-$Stamp.counts.json.age"
+   ```
+
+5. **Start a throwaway MongoDB 8.0** (the same pinned image as our local rehearsal). It publishes no ports, so nothing outside the container can reach it, and `$Drill` is mounted read-only:
+
+   ```powershell
+   docker run -d --name nabad-drill -v "${Drill}:/drill:ro" mongo:8.0.32
+   do { Start-Sleep 2; $Ready = docker exec nabad-drill mongosh --quiet --eval "db.runCommand({ ping: 1 }).ok" 2>$null } until ($Ready -eq "1")
+   ```
+
+6. **Restore** the archive into the container:
+
+   ```powershell
+   docker exec nabad-drill mongorestore --archive=/drill/nabad.archive.gz --gzip --nsInclude="nabad_production.*" --nsFrom="nabad_production.*" --nsTo="nabad_restore.*" --stopOnError
+   ```
+
+   It must end with `0 document(s) failed to restore`. If an index can't be built, mongorestore stops with an error.
+
+7. **Run the sanity checks** that the nightly workflow runs: the same collections as the counts file, exactly the same number of documents in each, indexes restored, and `users` present and not empty. This writes a small check script into `$Drill` and runs it in the container:
+
+   ```powershell
+   @'
+   const expected = JSON.parse(require("fs").readFileSync("/drill/counts.json", "utf8")).collections;
+   const r = db.getSiblingDB("nabad_restore");
+   const restored = r.getCollectionNames().filter((c) => !c.startsWith("system.")).sort();
+   const problems = [];
+   if (JSON.stringify(restored) !== JSON.stringify(Object.keys(expected).sort())) problems.push("the collection list differs from the counts file");
+   for (const c of Object.keys(expected).sort()) {
+     const n = r.getCollection(c).countDocuments({});
+     const indexes = r.getCollection(c).getIndexes().map((i) => i.name);
+     print(`${c}: ${n} documents (counts file: ${expected[c]}), indexes: ${indexes.join(", ")}`);
+     if (n !== expected[c]) problems.push(`${c}: document count differs`);
+   }
+   if (!(r.getCollection("users").countDocuments({}) > 0)) problems.push("users is missing or empty");
+   print(problems.length ? "DRILL FAILED:\n- " + problems.join("\n- ") : "DRILL PASSED");
+   '@ | Set-Content "$Drill\check.js" -Encoding ascii
+   docker exec nabad-drill mongosh --quiet /drill/check.js
+   ```
+
+   It must print `DRILL PASSED`. Look over the index names too: every collection should have the indexes its model defines, not just `_id_`. This output names collections and shows counts, so keep it on your screen. Never paste it into an issue, chat or sprint notes.
+
+8. **Clean up.** Remove the container together with its data volume, then delete the folder with every decrypted and downloaded file:
+
+   ```powershell
+   docker rm -f -v nabad-drill
+   Remove-Item -Recurse -Force $Drill
+   ```
+
+9. **Write it down.** Note the date, the backup timestamp and "passed" in the sprint notes. If anything failed, open an issue saying which step failed (no data, counts or collection names) and fix it before the next drill.
 
 ## When a backup-failure issue opens
 
