@@ -33,6 +33,14 @@ test("backup workflows run only on schedule or by hand, only in the team reposit
   assert.match(workflows[1].text, /cron: "0 6 \* \* 1"/);
 });
 
+test("job-level settings only use contexts GitHub allows there", () => {
+  // The runner context only exists inside steps; using it in job env makes GitHub reject the workflow.
+  for (const { name, text } of workflows) {
+    const beforeSteps = text.slice(0, text.indexOf("\n    steps:"));
+    assert.doesNotMatch(beforeSteps, /\$\{\{\s*(runner|steps|job)\./, name);
+  }
+});
+
 test("every action is pinned to a full commit SHA with a version comment", () => {
   for (const { name, text } of workflows) {
     const uses = [...text.matchAll(/uses: (\S+)(.*)/g)];

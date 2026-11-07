@@ -122,3 +122,9 @@ jobs:
         run: node --test "ops/backup/tests/*.test.js"
       - name: Shellcheck backup scripts
         run: shellcheck --external-sources ops/backup/*.sh
+      # The backup workflows only run on a schedule or by hand, never on a pull request, so lint them here.
+      - name: Lint backup workflows (actionlint 1.7.7)
+        run: >-
+          docker run --rm -v "$PWD:/repo:ro" -w /repo
+          rhysd/actionlint@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9
+          -no-color .github/workflows/db-backup.yml .github/workflows/db-backup-verify.yml

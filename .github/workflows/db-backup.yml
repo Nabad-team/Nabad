@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      BACKUP_WORK: ${{ runner.temp }}/nabad-backup
       RESTORE_URI: mongodb://127.0.0.1:27017
     services:
       # Throwaway MongoDB for the restore check. Must match RESTORE_MONGO_IMAGE in ops/backup/versions.env.
