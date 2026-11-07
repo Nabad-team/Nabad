@@ -18,7 +18,8 @@ test("shows history, units and accessible trend charts", async () => {
   expect(await screen.findByText("120/80 mmHg")).toBeInTheDocument();
   expect(screen.getByText("72 bpm")).toBeInTheDocument();
   expect(screen.getByText("36.7°C")).toBeInTheDocument();
-  expect(screen.getByRole("img", { name: /Blood pressure values/ })).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: /Blood pressure values/ })).toBeInTheDocument();
+  expect(screen.getByRole("img", { name: /Systolic: 120 mmHg/ })).toHaveAttribute("tabindex", "0");
   expect(listVitals).toHaveBeenCalledWith("self", "30");
 });
 

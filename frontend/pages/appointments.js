@@ -121,13 +121,24 @@ function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCanc
   );
 }
 
-function Calendar({ month, appointments, medications, onMonthChange, onDateSelect, onDateDoubleClick }) {
+function Calendar({ month, appointments, medications, selectedDate, onMonthChange, onDateSelect, onDateDoubleClick }) {
   const days = monthDays(month);
   const appointmentsByDate = appointments.reduce((groups, appointment) => {
     groups[appointment.appointmentDate] = (groups[appointment.appointmentDate] || []).concat(appointment);
     return groups;
   }, {});
   const today = todayString();
+
+  function moveBetweenDates(event) {
+    const offsets = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+    if (!(event.key in offsets) && event.key !== "Home" && event.key !== "End") return;
+    const dates = [...event.currentTarget.querySelectorAll(".calendar__day")];
+    const current = dates.indexOf(document.activeElement);
+    if (current < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? current - (current % 7) : event.key === "End" ? current + (6 - current % 7) : current + offsets[event.key];
+    dates[Math.max(0, Math.min(dates.length - 1, next))]?.focus();
+  }
 
   return (
     <section className="calendar" aria-label="Appointment calendar">
@@ -136,11 +147,12 @@ function Calendar({ month, appointments, medications, onMonthChange, onDateSelec
         <h2>{monthLabel(month)}</h2>
         <Button variant="secondary" size="small" onClick={() => onMonthChange(1)} aria-label="Next month">Next</Button>
       </div>
-      <p className="calendar__hint">Double-click a date to add a doctor's appointment.</p>
+      <p className="calendar__hint">Select a date to review its schedule or add an appointment. Use the arrow keys to move between dates.</p>
+      <div className="calendar__scroll" role="region" aria-label="Calendar dates" tabIndex="0">
       <div className="calendar__grid calendar__weekdays" aria-hidden="true">
         {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => <span key={day}>{day.slice(0, 3)}</span>)}
       </div>
-      <div className="calendar__grid calendar__days">
+      <div className="calendar__grid calendar__days" onKeyDown={moveBetweenDates}>
         {days.map((date) => {
           const key = dateKey(date);
           const events = appointmentsByDate[key] || [];
@@ -153,6 +165,7 @@ function Calendar({ month, appointments, medications, onMonthChange, onDateSelec
               className={`calendar__day${inMonth ? "" : " calendar__day--outside"}${key === today ? " calendar__day--today" : ""}`}
               onClick={() => onDateSelect(key)}
               onDoubleClick={() => onDateDoubleClick(key)}
+              aria-pressed={selectedDate === key}
               aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}${medicineEvents.length ? `, ${medicineEvents.length} medication time${medicineEvents.length === 1 ? "" : "s"}` : ""}`}
             >
               <span className="calendar__number">{date.getDate()}</span>
@@ -161,6 +174,7 @@ function Calendar({ month, appointments, medications, onMonthChange, onDateSelec
             </button>
           );
         })}
+      </div>
       </div>
     </section>
   );
@@ -293,11 +307,12 @@ export default function AppointmentsPage() {
             month={month}
             appointments={appointments}
             medications={medications}
+            selectedDate={selectedDate}
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
             onDateSelect={setSelectedDate}
             onDateDoubleClick={openNewAppointment}
           />
-          {selectedDate && <section className="calendar-details" aria-labelledby="calendar-details-heading">
+          {selectedDate && <section className="calendar-details" aria-labelledby="calendar-details-heading" aria-live="polite">
             <div className="calendar-details__heading"><h2 id="calendar-details-heading">{formatDate(selectedDate)}</h2><Button variant="secondary" size="small" onClick={() => setSelectedDate("")}>Close</Button></div>
             {!selectedAppointments.length && !selectedMedications.length && <p className="text-muted">Nothing scheduled for this day.</p>}
             {selectedAppointments.map((appointment) => <div key={appointment.id} className="calendar-details__item"><strong>{appointment.appointmentTime} · {appointment.title}</strong><span>{appointment.hospital}</span><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)}>Edit appointment</Button></div>)}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import AppointmentsPage, { medicationEventsForDate } from "../pages/appointments";
 import { getMedications } from "../lib/medicationApi";
 
@@ -36,6 +36,20 @@ describe("appointment reminder permissions", () => {
       { id: "med-1-20:00", time: "20:00", name: "Aspirin" },
     ]);
     expect(medicationEventsForDate(medications, "2026-12-01")).toEqual([]);
+  });
+
+  test("supports keyboard movement and announces the selected date", async () => {
+    const { container } = render(<AppointmentsPage />);
+    const calendar = await screen.findByRole("region", { name: "Calendar dates" });
+    const dates = within(calendar).getAllByRole("button");
+    dates[8].focus();
+    fireEvent.keyDown(dates[8], { key: "ArrowRight" });
+    expect(dates[9]).toHaveFocus();
+    fireEvent.keyDown(dates[9], { key: "ArrowDown" });
+    expect(dates[16]).toHaveFocus();
+    fireEvent.click(dates[16]);
+    expect(dates[16]).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector(".calendar-details")).toHaveAttribute("aria-live", "polite");
   });
 
   test("asks only after the user selects Enable reminders and handles a grant", async () => {
