@@ -4,6 +4,8 @@ const rateLimit = require("express-rate-limit");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile } = require("../middleware/profileAccess");
 const MedicalDocument = require("../models/MedicalDocument");
+const { notify } = require("../notifications");
+const { errorDetails, logEvent } = require("../logger");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -52,6 +54,18 @@ router.post("/", uploadLimiter, express.json({ limit: "14mb" }), resolveProfile,
   if (!data.length || data.toString("base64") !== file.data) return res.status(400).json({ error: "This file could not be read. Please choose it again." });
   if (await MedicalDocument.countDocuments({ owner: req.userId, profileId: req.profileId }) >= 500) return res.status(400).json({ error: "This profile has reached its 500 document limit." });
   const document = await MedicalDocument.create({ owner: req.userId, profileId: req.profileId, filename, mimeType, documentType, documentDate, size: data.length, data });
+  try {
+    await notify(req.userId, req.profileId, "document_ready", {
+      title: "Document ready",
+      message: "An uploaded document has finished processing and is ready to view.",
+      link: "/medical-documents",
+      dedupeKey: `document-ready:${document._id}`,
+    });
+  } catch (error) {
+    // The document is already safely stored. Do not report the upload as failed and invite a duplicate retry
+    // just because its optional in-app notification could not be written.
+    logEvent("document_ready_notification_failed", { requestId: req.requestId, ...errorDetails(error) });
+  }
   return res.status(201).json({ document: view(document) });
 }));
 

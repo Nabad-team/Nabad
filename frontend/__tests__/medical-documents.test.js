@@ -4,6 +4,7 @@ import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, addLinkedProfile } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
 import { deleteMedicalDocument, getMedicalDocuments, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { NOTIFICATIONS_CHANGED } from "../lib/notificationApi";
 
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
 jest.mock("../lib/medicalDocumentApi", () => ({
@@ -44,6 +45,8 @@ describe("Medical documents page", () => {
   });
 
   test("uploads a selected PDF and displays the returned document", async () => {
+    const notificationChanged = jest.fn();
+    window.addEventListener(NOTIFICATIONS_CHANGED, notificationChanged);
     uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-1", filename: "blood-test.pdf", documentType: "lab", documentDate: "2026-10-10", size: 2048, uploadedAt: "2026-10-12T10:00:00.000Z" } });
     renderPage();
     await screen.findByText(/No documents added yet/);
@@ -55,6 +58,8 @@ describe("Medical documents page", () => {
     expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "blood-test.pdf", mimeType: "application/pdf", data: expect.any(String) }), { documentType: "lab", documentDate: "2026-10-10" });
     expect(screen.getByRole("link", { name: "Download" })).toHaveAttribute("href", "/api/medical-documents/doc-1/download?profileId=self");
     expect(await screen.findByRole("status")).toHaveTextContent("Document uploaded.");
+    expect(notificationChanged).toHaveBeenCalledTimes(1);
+    window.removeEventListener(NOTIFICATIONS_CHANGED, notificationChanged);
   });
 
   test("uploads a DICOM X-ray file even when the browser does not identify its MIME type", async () => {

@@ -8,6 +8,7 @@ import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { announceNotificationsChanged } from "../lib/notificationApi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const DOCUMENT_TYPES = [["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab result"], ["letter", "Letter"], ["other", "Other"]];
@@ -111,6 +112,7 @@ export default function MedicalDocumentsPage() {
       for (const file of files) {
         const payload = await fileToPayload(file);
         const result = await uploadMedicalDocument(targetProfileId, payload, { documentType, documentDate });
+        announceNotificationsChanged();
         uploaded += 1;
         if (profileRef.current === targetProfileId) {
           setDocuments((current) => [result.document, ...(current || [])]);
