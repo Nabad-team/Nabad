@@ -722,6 +722,9 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         # Mark as discontinued.
         self.click(self.button(f"Mark as discontinued: {name}"))
         self.wait_for_message(f"{name} is marked as discontinued")
+        archive = (By.CSS_SELECTOR, "details.medication-archive")
+        self.click((By.CSS_SELECTOR, "details.medication-archive > summary"))
+        self.wait.until(lambda d: d.find_element(*archive).get_attribute("open") is not None)
         self.wait_for_text("Discontinued", item)
         self.visible(self.button(f"Mark as active again: {name}"))
 
@@ -824,9 +827,9 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text("120/80 mmHg", history)
         self.wait_for_text("72 bpm", history)
         self.wait_for_text("36.7°C", history)
-        self.visible((By.CSS_SELECTOR, "section[aria-label='Blood pressure trend'] svg[role='img']"))
-        self.visible((By.CSS_SELECTOR, "section[aria-label='Heart rate trend'] svg[role='img']"))
-        self.visible((By.CSS_SELECTOR, "section[aria-label='Temperature trend'] svg[role='img']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Blood pressure trend'] svg[role='group']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Heart rate trend'] svg[role='group']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Temperature trend'] svg[role='group']"))
 
     def test_authenticated_visit_prep_document_attachment_and_editing(self):
         filename = f"Selenium visit prep X-ray {secrets.token_hex(3)}.pdf"
