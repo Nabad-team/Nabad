@@ -48,7 +48,7 @@ describe("Header navigation", () => {
     expect(within(navigation).getByRole("link", { name: "Vitals" })).toHaveAttribute("href", "/vitals");
     expect(within(navigation).getByRole("link", { name: "Medical documents" })).toHaveAttribute("href", "/medical-documents");
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getAllByRole("region").map((group) => group.getAttribute("aria-label") || group.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Today"), expect.stringContaining("Health records"), expect.stringContaining("Care")]));
+    expect(within(navigation).getAllByRole("region").map((group) => group.getAttribute("aria-label") || group.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Daily care"), expect.stringContaining("Health records"), expect.stringContaining("Support")]));
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
   });
 

@@ -30,7 +30,7 @@ function TrendChart({ title, readings, lines, unit }) {
   return <section className="vitals-chart" aria-label={`${title} trend`}>
     <div className="vitals-chart__heading"><h3>{title}</h3><span>{min}–{max} {unit}</span></div>
     {change !== null && <p className="text-muted text-sm">Latest {primary.label.toLowerCase()} is {change === 0 ? "unchanged" : `${Math.abs(change)} ${unit} ${change > 0 ? "higher" : "lower"}`} than the previous reading.</p>}
-    <svg viewBox="0 0 100 100" role="img" aria-label={`${title} values from ${min} to ${max} ${unit}`} preserveAspectRatio="none">
+    <svg viewBox="0 0 100 100" role="group" aria-label={`${title} values from ${min} to ${max} ${unit}. Tab through the points for exact readings.`} preserveAspectRatio="none">
       {[16, 51, 86].map(y => <line key={y} x1="5" x2="95" y1={y} y2={y} className="vitals-chart__grid" />)}
       {lines.map(line => <path key={line.key} d={path(line.key)} className={`vitals-chart__line vitals-chart__line--${line.key}`} />)}
       {points.flatMap(({ reading, x }) => lines.filter((line) => Number.isFinite(reading[line.key])).map((line) => {

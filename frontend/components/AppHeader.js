@@ -38,9 +38,9 @@ const DOCUMENT_LINK = { href: "/medical-documents", label: "Medical documents", 
 const WORKSPACE_LINKS = [...MAIN_LINKS.slice(0, -1), DOCUMENT_LINK, MAIN_LINKS[MAIN_LINKS.length - 1]];
 const WORKSPACE_BY_HREF = new Map(WORKSPACE_LINKS.map((link) => [link.href, link]));
 export const WORKSPACE_GROUPS = [
-  { label: "Today", links: ["/dashboard", "/appointments", "/medications", "/water-and-sleep"] },
+  { label: "Daily care", links: ["/dashboard", "/appointments", "/medications", "/water-and-sleep"] },
   { label: "Health records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
-  { label: "Care", links: ["/test-results", "/providers"] },
+  { label: "Support", links: ["/test-results", "/providers"] },
 ].map((group) => ({ ...group, links: group.links.map((href) => WORKSPACE_BY_HREF.get(href)) }));
 
 // Keep the current-page indicator in sync with client-side navigation.
