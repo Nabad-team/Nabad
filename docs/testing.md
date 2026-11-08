@@ -147,6 +147,8 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 
 ### What it covers
 
+For the separate five-person usability study, use the [facilitator-ready emergency-flow kit](usability/emergency-flow/README.md). Its blank human-results sheet must not be filled with automated runs.
+
 Offline emergency snapshots, connection-loss tests and device-privacy behavior are documented in [offline-emergency-info.md](offline-emergency-info.md).
 
 Header search and its privacy/accessibility regression cases are documented in [header-search.md](header-search.md).
