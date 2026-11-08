@@ -7,8 +7,11 @@ Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express AP
 - Local development: [docker.md](./docker.md)
 - Tests: [testing.md](./testing.md)
 - Database backups and restore: [backups.md](./backups.md)
+- Staging and production, releasing and rolling back: [environments.md](./environments.md)
 
 ## Production
+
+This diagram shows production. Staging is a second copy with its own Vercel URL, Render service and Atlas database; see [environments.md](./environments.md).
 
 ```mermaid
 flowchart LR
@@ -51,8 +54,8 @@ flowchart LR
     user -. "page errors: type, stack, route" .-> sentry
 
     repo -- "pull request" --> ci
-    repo -- "auto-deploy on merge to main" --> next
-    repo -- "auto-deploy on merge to main<br/>(render.yaml Blueprint)" --> api
+    repo -- "auto-deploy on release<br/>(merge to production)" --> next
+    repo -- "auto-deploy on release<br/>(render.yaml Blueprint)" --> api
 ```
 
 - **Vercel** builds and hosts the web app from `frontend/` (https://nabad-psi.vercel.app). [next.config.js](../frontend/next.config.js) rewrites `/api/*` to `BACKEND_URL`; a production build without it fails on purpose.
@@ -62,7 +65,7 @@ flowchart LR
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
 - **Sentry** receives error reports from the API, the web app's server and the browser, when `SENTRY_DSN` (Render) and `NEXT_PUBLIC_SENTRY_DSN` (Vercel) are set. They never contain health or personal data; see [Error tracking](#error-tracking-sentry).
-- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` triggers the Vercel and Render deploys.
+- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` deploys staging; a release pull request from `main` to `production` deploys production ([environments.md](./environments.md)).
 
 ## Local development (Docker Compose)
 
@@ -257,7 +260,7 @@ The tests send real events through each SDK and check what would go out ([errorT
 1. Create two Sentry projects, Node.js (API) and Next.js (web app), preferably in Sentry's EU region.
    - In each project's **Security & Privacy** settings, turn on **Prevent Storing of IP Addresses** and keep the server-side **Data Scrubber** on, as a second line of defense.
 2. On Render, set `SENTRY_DSN` to the Node.js project's DSN (it's in [render.yaml](../render.yaml) as a secret).
-3. On Vercel, set `NEXT_PUBLIC_SENTRY_DSN` to the Next.js project's DSN, then redeploy (it is fixed at build time). Optionally set `NEXT_PUBLIC_SENTRY_ENVIRONMENT`; otherwise Vercel's environment name is used.
+3. On Vercel, set `NEXT_PUBLIC_SENTRY_DSN` to the Next.js project's DSN, then redeploy (it is fixed at build time). Optionally set `NEXT_PUBLIC_SENTRY_ENVIRONMENT`; otherwise staging and PR previews report `staging` and production reports `production`.
    - For readable browser stack traces, also set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`: source maps are then uploaded at build and deleted from the deployment.
 4. In Sentry, add alert rules, for example "a new issue is created" and "an issue happens more than 10 times in an hour", sent to the team by email.
 
@@ -274,11 +277,11 @@ The tests send real events through each SDK and check what would go out ([errorT
 | Rate limits | Per IP on sign-in, signup, codes, reset, email verification and Google; per account on health-data writes and account deletion. `TRUST_PROXY` makes them see the visitor's real IP behind Vercel and Render. After 5 wrong passwords an account is locked for 15 minutes. |
 | Password policy | One shared check ([passwordPolicy.js](../backend/src/passwordPolicy.js), mirrored in the frontend) following NIST SP 800-63B: 12 to 128 characters, any characters, no forced mixes; blocks common passwords, the user's name or email, and breached passwords (Have I Been Pwned range search, k-anonymity). |
 | Password hashing | Argon2id with OWASP parameters (19 MiB, 2 iterations). Older bcrypt hashes are replaced at the next successful sign-in. Unknown emails take the same time as wrong passwords. |
-| Origin check | Every state-changing request (not GET/HEAD/OPTIONS) must carry an `Origin` equal to `CLIENT_ORIGIN`, otherwise 403. CORS allows only that origin. |
+| Origin check | Every state-changing request (not GET/HEAD/OPTIONS) must carry an `Origin` equal to `CLIENT_ORIGIN`, otherwise 403. CORS allows only that origin. Staging alone also accepts PR previews through `PREVIEW_ORIGIN_PATTERN`; the API refuses to start if it is set anywhere else. |
 | HTTP headers and errors | `nosniff`, `X-Frame-Options: DENY`, `no-referrer`, `no-store`. Users only ever see fixed, safe messages, never library or database errors. |
 | Logging | Allowlisted fields only: no passwords, codes, tokens, email addresses or health values; connection strings are redacted. |
 | Error tracking | Sentry reports are built from an allowlist: error type, stack trace, route pattern, status, requestId and environment. No message, request data, cookies, headers, user, IP address or breadcrumbs; no session replay. See [Error tracking](#error-tracking-sentry). |
-| Configuration | With `APP_ENV=production` the API refuses to start if any required secret is missing, a secret is too short, `CLIENT_ORIGIN` isn't HTTPS, or the database name doesn't match the environment. |
+| Configuration | With `APP_ENV=production` the API refuses to start if any required secret is missing, a secret is too short, `CLIENT_ORIGIN` isn't HTTPS, or the database name doesn't match the environment. `APP_ENV=staging` has the same checks (Google sign-in optional), and also refuses `nabad_production` and a `JWT_SECRET` equal to `TWO_FACTOR_CODE_SECRET`. |
 | Database user | The API connects to Atlas with a dedicated, least-privilege user: read and write on its own environment's database only, no admin or cluster roles. Each environment has its own user and database. |
 
 ## AI triage design

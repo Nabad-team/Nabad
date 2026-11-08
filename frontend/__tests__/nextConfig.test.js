@@ -6,7 +6,8 @@
 const ORIGINAL_ENV = process.env;
 
 function loadConfig(env) {
-  process.env = { ...ORIGINAL_ENV, VERCEL: undefined, VERCEL_ENV: undefined, BACKEND_URL: undefined, NEXT_PUBLIC_SENTRY_DSN: undefined, ...env };
+  process.env = { ...ORIGINAL_ENV, VERCEL: undefined, VERCEL_ENV: undefined, BACKEND_URL: undefined, NEXT_PUBLIC_SENTRY_DSN: undefined,
+    NEXT_PUBLIC_APP_ENV: undefined, NEXT_PUBLIC_VERCEL_ENV: undefined, ...env };
   for (const key of Object.keys(process.env)) if (process.env[key] === undefined) delete process.env[key];
   let config;
   jest.isolateModules(() => { config = require("../next.config"); });
@@ -108,6 +109,22 @@ describe("next.config.js", () => {
       test("a malformed DSN fails the build, and a deployed build needs https", () => {
         expect(() => loadConfig({ NEXT_PUBLIC_SENTRY_DSN: "not a dsn" })).toThrow(/NEXT_PUBLIC_SENTRY_DSN/);
         expect(() => loadConfig({ VERCEL: "1", VERCEL_ENV: "preview", NEXT_PUBLIC_SENTRY_DSN: "http://key@o1.ingest.sentry.io/1" })).toThrow(/https/);
+      });
+    });
+
+    describe("staging noindex (X-Robots-Tag)", () => {
+      const robots = async (env) => (await headersFor("/", env))["X-Robots-Tag"];
+
+      test("staging and every preview build send noindex on all paths", async () => {
+        expect(await robots({ VERCEL: "1", VERCEL_ENV: "preview", BACKEND_URL: "https://staging.example", NEXT_PUBLIC_APP_ENV: "staging" })).toBe("noindex, nofollow");
+        expect(await robots({ VERCEL: "1", VERCEL_ENV: "preview", BACKEND_URL: "https://staging.example" })).toBe("noindex, nofollow");
+        const rules = await loadConfig({ NEXT_PUBLIC_APP_ENV: "staging" }).headers();
+        expect(rules.find((rule) => rule.source === "/:path*").headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+      });
+
+      test("production and local builds send no X-Robots-Tag", async () => {
+        expect(await robots({ VERCEL: "1", VERCEL_ENV: "production", BACKEND_URL: "https://nabad-backend-nhv5.onrender.com" })).toBeUndefined();
+        expect(await robots({})).toBeUndefined();
       });
     });
 

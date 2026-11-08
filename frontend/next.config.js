@@ -56,11 +56,17 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: permissionsPolicy("(self)") },
 ];
 
+// Staging and PR previews hold test data only: keep every page and file out of search results (docs/environments.md).
+// Production sends nothing extra.
+const { isStaging } = require("./lib/appEnvironment");
+const staging = isStaging(process.env.NEXT_PUBLIC_APP_ENV, process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.VERCEL_ENV);
+const stagingHeaders = staging ? [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] : [];
+
 const nextConfig = {
   poweredByHeader: false,
   async headers() {
     return [
-      { source: "/:path*", headers: securityHeaders },
+      { source: "/:path*", headers: [...securityHeaders, ...stagingHeaders] },
       // Shared visit links contain their access token in the path. Never send that path in a Referer header.
       { source: "/visit-prep-share/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
       { source: "/providers", headers: [{ key: "Permissions-Policy", value: permissionsPolicy("(self)") }] },

@@ -73,7 +73,7 @@ test("production config accepts a complete environment and the legacy MAIL_FROM 
   assert.doesNotThrow(()=>loadConfig(env));
   delete env.MAIL_FROM;
   assert.throws(()=>loadConfig(env),/^Error: Missing required environment variables: EMAIL_FROM$/);
-  assert.doesNotThrow(()=>loadConfig({...env,APP_ENV:"staging",MONGO_DB_NAME:"nabad_staging"}));
+  assert.doesNotThrow(()=>loadConfig({...productionEnv(),APP_ENV:"staging",MONGO_DB_NAME:"nabad_staging"}));
 });
 test("production refuses to start without TWO_FACTOR_CODE_SECRET, naming it but never a value",async()=>{
   const env=productionEnv(); delete env.TWO_FACTOR_CODE_SECRET;

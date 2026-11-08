@@ -65,8 +65,9 @@ function createApp() {
         "HEAD",
         "OPTIONS",
       ].includes(req.method) &&
-      req.get("Origin") !==
-        config.clientOrigin
+      !config.isAllowedOrigin(
+        req.get("Origin")
+      )
     ) {
       return res.status(403).json({
         error:
