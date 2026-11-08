@@ -16,6 +16,7 @@ Disallow: /visit-prep-share
 Disallow: /medical-documents
 Disallow: /test-results
 Disallow: /medications
+Disallow: /medication-overview
 Disallow: /appointments
 Disallow: /water-and-sleep
 Disallow: /symptoms

@@ -126,6 +126,7 @@ export default function DashboardPage() {
           <ul className="quick-actions__list">
             <li><Button href="/vitals" variant="secondary">Log vitals{actionFor}</Button></li>
             <li><Button href="/medications" variant="secondary">Add medication{actionFor}</Button></li>
+            <li><Button href="/medication-overview" variant="secondary">Medication overview</Button></li>
             <li><Button href="/appointments" variant="secondary">Add appointment{actionFor}</Button></li>
             <li><Button href="/medical-documents" variant="secondary">Upload document{actionFor}</Button></li>
             <li><Button href="/visit-prep" variant="secondary">Prepare for a visit{actionFor}</Button></li>

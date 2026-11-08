@@ -284,6 +284,7 @@ export default function MedicationsPage() {
             <div className="medications-actions">
               <Button onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>
               <Button variant="secondary" href="/appointments">View medication calendar</Button>
+              <Button variant="secondary" href="/medication-overview">Medication overview</Button>
             </div>
           )}
 

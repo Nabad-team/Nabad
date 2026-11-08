@@ -501,6 +501,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/symptoms",
             "/emergency-card",
             "/medications",
+            "/medication-overview",
             "/my-health",
             "/water-and-sleep",
             "/profile",
@@ -767,6 +768,46 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/medications")
         self.visible(self.button("Add medication"))
         self.assertNotIn(medicine, self.body_text())
+
+    def test_authenticated_medication_overview_shows_linked_profiles(self):
+        # SCRUM-150: a nurse's residents are linked profiles; the overview shows all their medications at once.
+        resident = f"Selenium Resident {secrets.token_hex(2)}"
+        medicine = f"Resident tablet {secrets.token_hex(3)}"
+        self.addCleanup(self.switch_back_to_self)
+
+        self.open("/profile")
+        self.click(self.button("Add dependent"))
+        self.type_into("dependentName", resident)
+        self.set_date("dependentDateOfBirth", "1941-02-03")
+        Select(self.visible((By.ID, "dependentRelationship"))).select_by_value("other")
+        self.submit_form_of("dependentName")
+        self.wait_for_text(resident, (By.CSS_SELECTOR, "section[aria-labelledby='linked-heading']"))
+
+        self.switch_profile(f"{resident} (other)")
+        self.open("/medications")
+        self.wait_for_text(f"Medications for {resident}", (By.TAG_NAME, "h1"))
+        self.add_medication(medicine, dose="5", unit="mg", frequency="every morning")
+        self.switch_profile(f"{RunAccount.name} (you)")
+
+        # Reached from the medications page, while acting as the user themself.
+        self.open("/medications")
+        self.click((By.LINK_TEXT, "Medication overview"))
+        self.wait.until(lambda d: "/medication-overview" in d.current_url)
+        self.wait_for_text("Medication overview", (By.TAG_NAME, "h1"))
+        section = (By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]")
+        self.wait_for_text(medicine, section)
+        self.assertIn("5 mg tablet · every morning", self.text(section))
+        self.assertIn("Changed in the last 7 days", self.text(section))
+
+        # The search narrows the page to that resident.
+        self.type_into("overview-search", medicine)
+        self.wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".overview-person")) == 1)
+        self.visible(section)
+
+        # Its edit link opens that resident's own medications page.
+        self.click((By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]//a[normalize-space()={xpath_string(f'Edit {resident}' + chr(39) + 's medications')}]"))
+        self.wait_for_text(f"Medications for {resident}", (By.TAG_NAME, "h1"))
+        self.visible(self.medication_item(medicine))
 
     def switch_back_to_self(self):
         self.driver.execute_script("window.localStorage.removeItem('nabad-active-profile-id');")
