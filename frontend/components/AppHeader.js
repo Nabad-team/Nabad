@@ -11,6 +11,7 @@ import { useAccessibility } from "../context/AccessibilityContext";
 import { providerText } from "../lib/providerText";
 import useDisclosure from "./useDisclosure";
 import NotificationBell from "./NotificationBell";
+import HeaderSearch from "./HeaderSearch";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 export const MAIN_LINKS = [
@@ -146,7 +147,7 @@ function ProfileSwitcher({ id, showLabel }) {
 //            with everything else.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
 export default function AppHeader() {
-  const { selfProfile } = useActiveProfile() || {};
+  const { selfProfile, activeProfile } = useActiveProfile() || {};
   const { preferences } = useAccessibility();
   const signedIn = useSignedIn();
   const path = useCurrentPath();
@@ -159,6 +160,7 @@ export default function AppHeader() {
       <div className="container container--wide app-header__bar">
         <Logo href={signedIn ? "/dashboard" : "/"} />
         {!signedIn && <nav aria-label="Public"><Link href="/providers">{providerText("title")}</Link></nav>}
+        {signedIn && <HeaderSearch key={activeProfile?.id || "pending"} profileId={activeProfile?.id} profileName={activeProfile?.fullName} />}
 
         {signedIn && (
           <div className="app-header__end">

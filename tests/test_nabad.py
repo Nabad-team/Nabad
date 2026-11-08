@@ -740,6 +740,50 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.visible(self.button("Add medication"))
         self.assertNotIn(name, self.body_text())
 
+    def test_header_search_finds_pages_and_private_records(self):
+        phrase = f"Header search test {secrets.token_hex(3)}"
+        self.open("/dashboard")
+        created = self.driver.execute_async_script(
+            "const [phrase, done] = arguments; (async () => {"
+            "const entries = [['medications', {name: phrase, startDate: '2026-01-01'}],"
+            "['appointments', {title: phrase, hospital: 'Synthetic hospital', appointmentDate: '2026-12-01', appointmentTime: '10:00', reminderMinutes: 0}],"
+            "['medical-documents', {file: {filename: phrase + '.pdf', mimeType: 'application/pdf', data: btoa('%PDF-1.4\\nsynthetic test document')}, documentType: 'other'}]];"
+            "const ids = []; for (const [path, body] of entries) {"
+            "const r = await fetch('/api/' + path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});"
+            "const data = await r.json(); if (!r.ok) throw new Error('Could not create search fixture');"
+            "ids.push({path, id:(data.medication || data.appointment || data.document).id}); } return ids;"
+            "})().then(done).catch(e => done({error:e.message}));", phrase,
+        )
+        self.assertIsInstance(created, list, created)
+        try:
+            for entry, prefix in zip(created, ("medication", "appointment", "document")):
+                self.open("/dashboard")
+                search = self.visible((By.CSS_SELECTOR, "header input[type='search']"))
+                search.send_keys(phrase)
+                results = self.visible((By.CSS_SELECTOR, ".header-search__results"))
+                link = self.wait.until(lambda _: results.find_element(By.CSS_SELECTOR, f"a[href$='#{prefix}-{entry['id']}']"))
+                link.click()
+                target = self.visible((By.ID, f"{prefix}-{entry['id']}"))
+                self.wait.until(lambda _: self.driver.switch_to.active_element == target)
+                self.assertIn(phrase, target.text)
+                self.assertNotIn(phrase, self.driver.current_url)
+            self.open("/dashboard")
+            self.visible((By.CSS_SELECTOR, "header input[type='search']")).send_keys("medications")
+            link = self.visible((By.CSS_SELECTOR, ".header-search__results a[href='/medications']"))
+            link.click()
+            self.wait.until(EC.url_contains("/medications"))
+            hospital = self.driver.execute_async_script(
+                "fetch('/api/providers?limit=10').then(r => r.json()).then(data => arguments[0](data.providers.find(p => p.type === 'hospital')));"
+            )
+            self.assertIsNotNone(hospital)
+            self.open("/dashboard")
+            self.visible((By.CSS_SELECTOR, "header input[type='search']")).send_keys(hospital["name"][:50])
+            self.click((By.CSS_SELECTOR, f".header-search__results a[href='/providers/{hospital['id']}']"))
+            self.wait.until(EC.url_contains(f"/providers/{hospital['id']}"))
+        finally:
+            for entry in created:
+                self.assertEqual(self.fetch_json("DELETE", f"/api/{entry['path']}/{entry['id']}"), 204)
+
     def test_custom_medication_reminder_times_persist_and_can_be_disabled(self):
         name = f"Reminder test medicine {secrets.token_hex(3)}"
         self.open("/medications")

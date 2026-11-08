@@ -147,6 +147,8 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 
 ### What it covers
 
+Header search and its privacy/accessibility regression cases are documented in [header-search.md](header-search.md).
+
 Custom medication reminder schedules are documented in [medication-reminders.md](medication-reminders.md), including daily times, time-zone behavior, delivery limits and regression coverage.
 
 - **Public pages:** page titles, the 404 page, wrong password, the sign-up password check, forgot password, the inactivity sign-out message, and that signed-in pages (including `/symptoms`) redirect to the login page with a `next` link back to the page.

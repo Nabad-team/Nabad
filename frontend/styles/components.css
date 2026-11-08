@@ -3926,3 +3926,19 @@ select.input {
     color: #000;
   }
 }
+
+/* Header search uses normal links and the existing keyboard focus styles. */
+.header-search { position: relative; flex: 1 1 20rem; min-width: 0; max-width: 38rem; }
+.header-search__form { display: flex; gap: var(--space-2); }
+.header-search__form .input { min-width: 0; flex: 1; }
+.header-search__results { position: absolute; top: calc(100% + var(--space-2)); inset-inline: 0; z-index: 60; max-height: min(65vh, 34rem); overflow-y: auto; padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay); overflow-wrap: anywhere; }
+.header-search__results h3 { margin-top: var(--space-3); font-size: var(--text-base); }
+.header-search__results ul { list-style: none; padding: 0; margin: 0; }
+.header-search__results li { padding-block: var(--space-2); border-bottom: 1px solid var(--color-border); }
+.header-search__results li a { display: block; padding-block: var(--space-2); }
+.header-search__results li span { display: block; }
+.medication:target, .appointment:target, .medical-documents__list > li:target { outline: 2px solid var(--color-primary); outline-offset: 4px; scroll-margin-block: var(--space-6); }
+@media (max-width: 39.99rem) {
+  .header-search { order: 3; flex-basis: 100%; max-width: none; }
+}
+@media print { .header-search { display: none; } }

@@ -107,6 +107,8 @@ function createApp() {
     })
   );
 
+  app.use("/api/search", require("./routes/search"));
+
   app.use(
     "/api/health",
     require("./routes/health")

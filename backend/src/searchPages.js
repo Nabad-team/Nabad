@@ -1,0 +1,21 @@
+// Only fixed, internal destinations. Keywords include the names people use in the UI.
+module.exports = [
+  ["Dashboard", "/dashboard", "home overview"],
+  ["My health", "/my-health", "allergies conditions history"],
+  ["Vitals", "/vitals", "blood pressure pulse temperature readings"],
+  ["Medications", "/medications", "medicine medicines reminders doses"],
+  ["Medication overview", "/medication-overview", "family residents medicines"],
+  ["Medical documents", "/medical-documents", "files uploads lab imaging reports"],
+  ["Appointments", "/appointments", "calendar visits schedule"],
+  ["Hospitals and clinics", "/providers", "healthcare providers directory hospital"],
+  ["Health assistant", "/test-results", "test results reports chat"],
+  ["Visit preparation", "/visit-prep", "doctor summary print"],
+  ["Water and sleep", "/water-and-sleep", "fluids hydration rest"],
+  ["Notifications", "/notifications", "alerts bell"],
+  ["My profile", "/profile", "account settings emergency contact"],
+  ["Security", "/security", "password two factor authentication"],
+  ["Care circle", "/care-circle", "caregiver family invitations"],
+  ["Safety check", "/symptoms", "symptoms emergency triage"],
+  ["Emergency information card", "/emergency-card", "print medical card"],
+  ["Privacy Policy", "/privacy", "personal data"],
+];

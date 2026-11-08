@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useSearchTarget from "../lib/useSearchTarget";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -76,6 +77,7 @@ export default function MedicalDocumentsPage() {
   const profileRef = useRef(profileId);
   profileRef.current = profileId;
   const [documents, setDocuments] = useState(null);
+  useSearchTarget(documents, "document");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -192,7 +194,7 @@ export default function MedicalDocumentsPage() {
             <input id="filter-document-date-to" className="input" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
           </div>
           {visibleDocuments.length ? <ul className="medical-documents__list">{visibleDocuments.map((document) => (
-            <li key={document.id}>
+            <li key={document.id} id={`document-${document.id}`} tabIndex={-1}>
               <div><strong>{document.filename}</strong><p className="text-muted">Uploaded {prettyDate(document.uploadedAt)} · {prettySize(document.size)}</p></div>
               <p>{DOCUMENT_TYPES.find(([value]) => value === (document.documentType || "other"))?.[1] || "Other"} · {dateLabel(document.documentDate)}</p>
               <a href={medicalDocumentDownloadUrl(profileId, document.id)} className="button button--secondary">Download</a>
