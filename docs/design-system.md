@@ -227,11 +227,12 @@ Use `role="alert"` for errors that need attention now and `role="status"` for ca
 
 ### Badge
 
-A small calm label next to a heading. Teal, never red: it informs, it doesn't warn.
+A small calm label next to a heading. Never red: teal informs, gray marks what is no longer current, amber asks for a second look.
 
 ```jsx
 <h3>Find hospitals and clinics <Badge>Coming soon</Badge></h3>
 <Badge tone="neutral">Discontinued</Badge>   // gray, for things no longer current
+<Badge tone="warning">Missing dose</Badge>   // amber, something worth checking (still not red)
 ```
 
 ### Card

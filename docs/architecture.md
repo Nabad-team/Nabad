@@ -101,7 +101,7 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Health checks | `routes/health.js` | `/api/health` (alive) and `/api/health/ready` (database reachable), used by Render and the Docker health checks. |
 | Authentication | `routes/auth.js`, `email.js`, `session.js`, `sessionConfig.js`, `twoFactorProtection.js`, `passwordHashing.js`, `passwordPolicy.js` | Signup with email verification, sign-in, email 2FA with trusted devices, password reset, Google sign-in, sign-out. |
 | Profiles and linked profiles | `routes/profile.js`, `routes/emergencyContact.js`, `middleware/profileAccess.js` | The user's own profile (details, picture, emergency contact), up to 10 linked profiles for people they look after (child, parent, spouse...), and account deletion. |
-| Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. |
+| Medications | `routes/medications.js`, `models/Medication.js` | Each profile's medication list: add, edit, mark discontinued, delete. The [medication overview](#medication-overview) shows every profile's list on one page. |
 | Water and sleep | `routes/wellbeing.js`, `models/Wellbeing.js` | Daily water glasses against a target, sleep hours and quality, and history. Days are the user's local calendar date. |
 | My health | `routes/healthProfile.js`, `healthProfile.js`, `models/HealthFact.js` | Health facts per profile (sex, height, weight, blood type, pregnancy, conditions, allergies, smoking), each with a source and a confirmed/suggested status, and the **AI health summary**. |
 | Notifications | `notifications.js`, `routes/notifications.js`, `models/Notification.js`, `appointmentReminders.js` | In-app notifications per profile: history, unread count, mark read, delete, and which types the user gets. Created only through `notify()`; see [Notifications](#notifications). |
@@ -114,6 +114,15 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 ### The shared ownership check
 
 All health data is stored per profile with two ids: `owner` (the account) and `profileId` (the owner's own profile, stored as the user id, or one of their linked profiles). [middleware/profileAccess.js](../backend/src/middleware/profileAccess.js) `resolveProfile` is the one place that decides whose data a request is about: it reads `?profileId=` (`self` by default), checks that a linked profile belongs to the signed-in user, and sets `req.profileId`. Medications, water and sleep, and My health all use it, and every query filters by both `owner` and `profileId`. Anything that isn't the user's (another user's dependent, a malformed id) answers **404, exactly like something that doesn't exist**, so ids can't be probed.
+
+### Medication overview
+
+The **Medication overview** page (`/medication-overview`, SCRUM-150) shows the medications of the signed-in user and **all their linked profiles** on one page, for example a nurse (Layla) checking her residents during a shift. It **reuses linked profiles**: a nurse adds each resident as a linked profile (relationship "other"), exactly like a caregiver adds a family member. There is no new sharing or permission system and no new model.
+
+- `GET /api/medications/overview` answers with one entry per profile (`self` first, then linked profiles oldest first): id, name, counts, and each medication's name, dose, unit, form, frequency, times, status, dates and `updatedAt` (not its notes). It needs no `?profileId=` and makes three queries in total, whatever the number of residents: the user, their linked profiles, and every medication with `owner` = the signed-in user whose `profileId` is one of those profiles. Another account's profiles and medications can never appear.
+- The server computes the shift flags: **no medications recorded**, an active medication **missing a dose** or **missing a schedule** (no frequency and no times), and **changed in the last 7 days** (`updatedAt`).
+- The page is read-only: search by person or medication name, "only people with active medications", "show discontinued medications", and **Print for handover**, which prints only what is on screen. Each section's edit link switches the header's active profile and opens that person's normal Medications page.
+- Limit: a nurse can link at most 10 profiles today (`MAX_LINKED_PROFILES` in `routes/profile.js`). The overview itself handles up to 100.
 
 ### Notifications
 

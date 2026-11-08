@@ -2522,6 +2522,13 @@ select.input {
   color: var(--color-text-muted);
 }
 
+/* Something worth checking, e.g. a medication without a dose. Amber, still not red (6.8:1). */
+.badge--warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
+}
+
 /* ---------- Medications ---------- */
 
 /* Two short fields side by side (dose and unit, start and end date); stacked on narrow phones. */
@@ -3672,5 +3679,159 @@ select.input {
 
   @page {
     margin: 15mm;
+  }
+}
+
+/* ---------- Medication overview (SCRUM-150) ---------- */
+/* Everyone's medications on one page: a compact, scannable list per person. */
+
+.overview-controls {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.overview-controls .field {
+  margin-bottom: 0;
+}
+
+.overview-controls__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+}
+
+.overview-no-linked p {
+  margin: var(--space-1) 0 0;
+}
+
+.overview-totals {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.overview-people {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.overview-person {
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  scroll-margin-top: var(--space-6);
+}
+
+.overview-person__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+}
+
+.overview-person__heading h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.overview-person__counts {
+  margin: 0;
+}
+
+.overview-medications {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overview-medication {
+  padding: var(--space-2) 0;
+  border-top: 0.0625rem solid var(--color-border);
+}
+
+.overview-medication p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.overview-medication__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) 0;
+}
+
+.overview-medication__main .badge:first-of-type {
+  margin-left: var(--space-2);
+}
+
+.overview-medication__main .badge + .badge {
+  margin-left: var(--space-1);
+}
+
+.overview-medication__name {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.overview-person__edit {
+  margin: var(--space-3) 0 0;
+}
+
+/* Only on paper: when it was printed and with which filters. */
+.overview-print-header {
+  display: none;
+}
+
+/* Shift handover: print exactly what is on screen, without the app around it or the controls. */
+@media print {
+  body:has(.medication-overview) #__next > :not(:has(.medication-overview)),
+  body:has(.medication-overview) .skip-link,
+  body:has(.medication-overview) .site-header,
+  body:has(.medication-overview) .profile-strip,
+  body:has(.medication-overview) .site-footer,
+  body:has(.medication-overview) .page-note,
+  body:has(.medication-overview) .page-main > :not(.medication-overview),
+  .medication-overview .page-title .lead,
+  .medication-overview .heartbeat-divider,
+  .overview-controls,
+  .overview-no-linked,
+  .overview-person__edit {
+    display: none !important;
+  }
+
+  body:has(.medication-overview) {
+    background: #fff;
+    color: #000;
+  }
+
+  body:has(.medication-overview) .page-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .overview-print-header {
+    display: block;
+    margin: 0 0 var(--space-2);
+  }
+
+  .overview-person {
+    padding: var(--space-2) 0;
+    border: 0;
+    border-top: 0.125rem solid #000;
+    border-radius: 0;
+    break-inside: avoid;
+  }
+
+  .overview-medication {
+    break-inside: avoid;
+  }
+
+  .medication-overview .badge {
+    border-color: #000;
+    background: #fff;
+    color: #000;
   }
 }
