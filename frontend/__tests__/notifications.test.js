@@ -166,7 +166,7 @@ describe("Notification preferences", () => {
       expect(box).toHaveAccessibleDescription(/can't be turned off/);
     }
     expect(screen.getAllByText("Always on")).toHaveLength(2);
-    expect(screen.getAllByRole("checkbox")).toHaveLength(5);
+    expect(screen.getAllByRole("checkbox")).toHaveLength(6);
   });
 
   test("always-on types can't be switched off by clicking or with the keyboard", async () => {

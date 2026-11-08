@@ -4,7 +4,7 @@ const { normalizePhone, validPhone } = require("./contactSchema");
 // In-app notifications (see notifications.js: notify() is the only way to create one). Per profile like health data:
 // owner is the account, profileId whose notification it is (the owner's own profile, stored as the user id, or one
 // of their linked profiles). Only a short title and message are stored, never symptom text or other health details.
-const TYPES = ["appointment_reminder", "emergency_alert", "caregiver_urgent", "document_ready", "system"];
+const TYPES = ["appointment_reminder", "medication_reminder", "emergency_alert", "caregiver_urgent", "document_ready", "system"];
 // Safety-critical types are always on: preferences can't turn them off.
 const SAFETY_TYPES = ["emergency_alert", "caregiver_urgent"];
 const MUTABLE_TYPES = TYPES.filter((type) => !SAFETY_TYPES.includes(type));

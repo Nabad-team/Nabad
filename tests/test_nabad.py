@@ -731,6 +731,32 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.visible(self.button("Add medication"))
         self.assertNotIn(name, self.body_text())
 
+    def test_custom_medication_reminder_times_persist_and_can_be_disabled(self):
+        name = f"Reminder test medicine {secrets.token_hex(3)}"
+        self.open("/medications")
+        self.add_medication(name)
+        try:
+            self.click(self.button(f"Edit {name}"))
+            self.click(self.button("Add reminder time"))
+            reminder = self.visible((By.CSS_SELECTOR, "input[type='time']"))
+            self.driver.execute_script("Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(arguments[0], '08:30'); arguments[0].dispatchEvent(new Event('input', {bubbles:true}));", reminder)
+            self.click(self.button("Save changes"))
+            self.wait_for_message(f"Your changes to {name} were saved")
+            self.open("/medications")
+            self.wait_for_text("Daily reminders: 08:30", self.medication_item(name))
+            self.click(self.button(f"Edit {name}"))
+            self.assertEqual(self.visible((By.CSS_SELECTOR, "input[type='time']")).get_attribute("value"), "08:30")
+            self.click(self.button("Remove reminder 1"))
+            self.click(self.button("Save changes"))
+            self.wait_for_message(f"Your changes to {name} were saved")
+            self.open("/medications")
+            self.assertNotIn("Daily reminders:", self.text(self.medication_item(name)))
+        finally:
+            self.open("/medications")
+            self.click(self.button(f"Delete {name}"))
+            self.click((By.XPATH, "//*[@role='dialog']//button[normalize-space()='Yes, delete']"))
+            self.wait_for_message(f"{name} was deleted")
+
     def test_authenticated_family_member_medications_are_separate(self):
         member = f"Selenium Child {secrets.token_hex(2)}"
         medicine = f"Child syrup {secrets.token_hex(3)}"

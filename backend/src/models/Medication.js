@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const FORMS = ["tablet", "syrup", "injection", "inhaler", "drops", "other"];
 const STATUSES = ["active", "discontinued"];
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
+const { DEFAULT_TIME_ZONE, MAX_TIMES, TIME } = require("../medicationSchedule");
+const { validTimeZone } = require("../appointmentReminders");
 
 const medicationSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -19,10 +21,14 @@ const medicationSchema = new mongoose.Schema({
   endDate: { type: Date, default: null },
   status: { type: String, enum: STATUSES, default: "active" },
   notes: { type: String, trim: true, maxlength: LIMITS.notes, default: "" },
+  reminderTimes: { type: [String], default: [], validate: value => value.length <= MAX_TIMES && new Set(value).size === value.length && value.every(time => TIME.test(time)) },
+  reminderTimeZone: { type: String, default: DEFAULT_TIME_ZONE, validate: validTimeZone },
+  nextReminderAt: { type: Date, default: null },
 }, { timestamps: true });
 
 // Every query filters by owner and profile; the list then sorts by status and newest first.
 medicationSchema.index({ owner: 1, profileId: 1, status: 1, createdAt: -1 });
+medicationSchema.index({ status: 1, nextReminderAt: 1 });
 
 module.exports = mongoose.model("Medication", medicationSchema);
 module.exports.FORMS = FORMS;

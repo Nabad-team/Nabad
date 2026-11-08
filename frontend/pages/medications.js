@@ -25,7 +25,8 @@ import { formatDate, todayString } from "../lib/dates";
 // Same limits as the backend (models/Medication.js), so the browser stops overlong text before sending it.
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
 const FORM_LABELS = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
-const emptyFields = () => ({ name: "", dose: "", unit: "", form: "tablet", frequency: "", startDate: todayString(), endDate: "", notes: "" });
+const emptyFields = () => ({ name: "", dose: "", unit: "", form: "tablet", frequency: "", startDate: todayString(), endDate: "", notes: "",
+  reminderTimes: [], reminderTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Beirut" });
 
 // Checks what the browser can check, in the same words as the server. Returns { field: message }.
 function findProblems(fields) {
@@ -33,6 +34,11 @@ function findProblems(fields) {
   if (!fields.name.trim()) problems.name = "Enter the medication name.";
   if (!fields.startDate) problems.startDate = "Enter a valid start date.";
   if (fields.startDate && fields.endDate && fields.endDate < fields.startDate) problems.endDate = "The end date can't be before the start date.";
+  if (fields.reminderTimes.some(time => !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time))) problems.reminderTimes = "Enter a time for every reminder, or remove the empty reminder.";
+  else if (new Set(fields.reminderTimes).size !== fields.reminderTimes.length) problems.reminderTimes = "Each reminder time must be different.";
+  try { new Intl.DateTimeFormat("en-US", { timeZone: fields.reminderTimeZone }); }
+  catch { problems.reminderTimeZone = "Choose a valid reminder time zone, such as Asia/Beirut."; }
+  if (!fields.reminderTimeZone) problems.reminderTimeZone = "Choose a valid reminder time zone, such as Asia/Beirut.";
   return problems;
 }
 
@@ -68,7 +74,8 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
     setProblems(found);
     setError("");
     if (Object.keys(found).length) {
-      document.getElementById(id(Object.keys(found)[0]))?.focus();
+      const field = Object.keys(found)[0];
+      document.getElementById(id(field === "reminderTimes" ? "reminder-0" : field))?.focus();
       return;
     }
     setSaving(true);
@@ -97,6 +104,21 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
         <Input id={id("endDate")} label="End date (optional)" type="date" min={fields.startDate || undefined} value={fields.endDate} onChange={update("endDate")} error={problems.endDate} />
       </div>
       <Input as="textarea" id={id("notes")} label="Notes (optional)" hint="For example: take with food" rows="3" value={fields.notes} onChange={update("notes")} maxLength={LIMITS.notes} />
+      <fieldset className="stack">
+        <legend>Daily reminder times (optional)</legend>
+        <p>Choose times that match your prescribed schedule. Reminders appear in Nabad's notification bell; they do not send an SMS or phone alarm.</p>
+        {fields.reminderTimes.map((time, index) => <div key={index} className="field-pair">
+          <Input id={id(`reminder-${index}`)} label={`Reminder time ${index + 1}`} type="time" value={time}
+            error={index === 0 ? problems.reminderTimes : undefined}
+            onChange={e => setFields(old => ({ ...old, reminderTimes: old.reminderTimes.map((value, i) => i === index ? e.target.value : value) }))} />
+          <Button variant="secondary" onClick={() => setFields(old => ({ ...old, reminderTimes: old.reminderTimes.filter((_, i) => i !== index) }))}>Remove reminder {index + 1}</Button>
+        </div>)}
+        <div><Button variant="secondary" disabled={fields.reminderTimes.length >= 12}
+          onClick={() => setFields(old => ({ ...old, reminderTimes: [...old.reminderTimes, ""] }))}>Add reminder time</Button></div>
+        <Input id={id("reminderTimeZone")} label="Reminder time zone" value={fields.reminderTimeZone}
+          onChange={update("reminderTimeZone")} error={problems.reminderTimeZone} hint="For example Asia/Beirut. Times stay in this zone when you travel." maxLength={64} />
+        <p>Remove all times to turn reminders off for this medication. Discontinued medications do not send reminders. You can also turn medication notifications off in your profile.</p>
+      </fieldset>
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       <div className="form-actions">
         <Button type="submit" disabled={saving}>{saving ? "Saving..." : submitLabel}</Button>
@@ -266,6 +288,7 @@ export default function MedicationsPage() {
                       </div>
                       {summary(medication) && <p className="medication__summary">{summary(medication)}</p>}
                       <p className="text-muted text-sm">{dates(medication)}</p>
+                      {medication.reminderTimes?.length > 0 && <p>Daily reminders: {medication.reminderTimes.join(", ")} ({medication.reminderTimeZone}){medication.status === "discontinued" ? " — paused" : ""}</p>}
                       {medication.notes && <p className="medication__notes"><span className="text-muted">Notes:</span> {medication.notes}</p>}
                       <div className="button-row">
                         <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>

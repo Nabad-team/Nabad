@@ -1,5 +1,5 @@
 // Automated tests for the "My medications" page.
-import { render, screen, within, waitFor } from "@testing-library/react";
+import { render, screen, within, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MedicationsPage from "../pages/medications";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
@@ -84,6 +84,65 @@ describe("Medications page", () => {
     expect(screen.getByRole("button", { name: "Add medication" })).toBeInTheDocument();
   });
 
+  test("custom daily times persist per medication and can be edited and removed", async () => {
+    seed({ name: "First", reminderTimes: ["08:00", "20:00"], reminderTimeZone: "Asia/Beirut" });
+    seed({ name: "Second", reminderTimes: ["12:15"], reminderTimeZone: "UTC" });
+    const user = userEvent.setup({ delay: null });
+    const view = renderPage();
+    expect(within(await item("First")).getByText("Daily reminders: 08:00, 20:00 (Asia/Beirut)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit First" }));
+    expect(screen.getByLabelText("Reminder time 1")).toHaveValue("08:00");
+    fireEvent.change(screen.getByLabelText("Reminder time 1"), { target: { value: "09:30" } });
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Your changes to First were saved.");
+    expect(mockApi.updateMedication).toHaveBeenCalledWith("self", "1", expect.objectContaining({ reminderTimes: ["09:30", "20:00"], reminderTimeZone: "Asia/Beirut" }));
+    view.unmount(); renderPage();
+    expect(within(await item("First")).getByText("Daily reminders: 09:30, 20:00 (Asia/Beirut)")).toBeInTheDocument();
+    expect(within(await item("Second")).getByText("Daily reminders: 12:15 (UTC)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit First" }));
+    await user.click(screen.getByRole("button", { name: "Remove reminder 2" }));
+    await user.click(screen.getByRole("button", { name: "Remove reminder 1" }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(within(screen.getByRole("heading", { name: "First" }).closest("li")).queryByText(/Daily reminders:/)).not.toBeInTheDocument());
+    expect(mockMedications.find(m => m.name === "Second").reminderTimes).toEqual(["12:15"]);
+  });
+
+  test("new medications accept multiple times and reject empty or duplicate reminders", async () => {
+    const user = userEvent.setup({ delay: null }); renderPage();
+    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.type(screen.getByLabelText("Medication name"), "Test medicine");
+    await user.click(screen.getByRole("button", { name: "Add reminder time" }));
+    await user.click(screen.getByRole("button", { name: "Save medication" }));
+    expect(screen.getByLabelText("Reminder time 1")).toHaveAccessibleDescription(/Enter a time for every reminder/);
+    expect(mockApi.addMedication).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Reminder time 1"), { target: { value: "08:00" } });
+    await user.click(screen.getByRole("button", { name: "Add reminder time" }));
+    fireEvent.change(screen.getByLabelText("Reminder time 2"), { target: { value: "08:00" } });
+    await user.click(screen.getByRole("button", { name: "Save medication" }));
+    expect(screen.getByLabelText("Reminder time 1")).toHaveAccessibleDescription("Each reminder time must be different.");
+    fireEvent.change(screen.getByLabelText("Reminder time 2"), { target: { value: "20:00" } });
+    fireEvent.change(screen.getByLabelText("Reminder time zone"), { target: { value: "Mars/Olympus" } });
+    await user.click(screen.getByRole("button", { name: "Save medication" }));
+    expect(screen.getByLabelText("Reminder time zone")).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(screen.getByLabelText("Reminder time zone"), { target: { value: "Asia/Beirut" } });
+    await user.click(screen.getByRole("button", { name: "Save medication" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Test medicine was added");
+    expect(mockApi.addMedication).toHaveBeenCalledWith("self", expect.objectContaining({ reminderTimes: ["08:00", "20:00"], reminderTimeZone: "Asia/Beirut" }));
+  });
+
+  test("failed reminder edits keep the form and saved schedule; discontinued reminders display paused", async () => {
+    seed({ status: "discontinued", reminderTimes: ["08:00"], reminderTimeZone: "Asia/Beirut" });
+    mockApi.updateMedication.mockRejectedValueOnce(new Error("Schedule could not be saved."));
+    const user = userEvent.setup({ delay: null }); renderPage();
+    expect(within(await item("Paracetamol")).getByText(/Daily reminders:.*paused/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit Paracetamol" }));
+    fireEvent.change(screen.getByLabelText("Reminder time 1"), { target: { value: "09:00" } });
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Schedule could not be saved.");
+    expect(mockMedications[0].reminderTimes).toEqual(["08:00"]);
+    expect(screen.getByLabelText("Reminder time 1")).toHaveValue("09:00");
+  });
+
   test("lists medications with dose, how often, dates and a status badge, active first", async () => {
     seed({ name: "Ventolin", dose: "2", unit: "puffs", form: "inhaler", frequency: "when needed", status: "discontinued", startDate: "2026-01-05", endDate: "2026-03-10" });
     seed({ name: "Paracetamol", notes: "After food" });
@@ -122,7 +181,7 @@ describe("Medications page", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("Amoxicillin was added to your list.");
     expect(mockApi.addMedication).toHaveBeenCalledWith("self", {
-      name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", startDate: "2026-10-01", endDate: "", notes: "",
+      name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", startDate: "2026-10-01", endDate: "", notes: "", reminderTimes: [], reminderTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(within(await item("Amoxicillin")).getByText("250 mg syrup · three times a day")).toBeInTheDocument();
     expect(screen.queryByRole("form", { name: "Add a medication" })).not.toBeInTheDocument();

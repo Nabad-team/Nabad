@@ -2,6 +2,7 @@ import { request } from "./api";
 
 // In-app notifications (backend routes/notifications.js). They are created by the server, never here.
 export const NOTIFICATION_TYPES = [
+  { type: "medication_reminder", label: "Medication reminders", hint: "At the daily times you set for each medication." },
   { type: "appointment_reminder", label: "Appointment reminders", hint: "Before a doctor's appointment, at the reminder time you chose." },
   { type: "emergency_alert", label: "Emergency alerts", hint: "When something needs urgent care." },
   { type: "caregiver_urgent", label: "Care circle alerts", hint: "When a symptom check of someone whose care circle you're in needs attention." },
