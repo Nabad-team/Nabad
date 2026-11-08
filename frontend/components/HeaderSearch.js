@@ -52,7 +52,7 @@ export default function HeaderSearch({ profileId, profileName }) {
       event.preventDefault(); setOpen(true); setAttempt(value => value + 1);
     }}>
       <label htmlFor={id} className="visually-hidden">Search Nabad</label>
-      <input id={id} ref={input} className="input" type="search" value={query} maxLength={80} autoComplete="off"
+      <input id={id} ref={input} className="input" type="search" value={query} maxLength={80} autoComplete="off" disabled={!profileId}
         placeholder="Search pages and records" aria-describedby={`${id}-hint`} aria-controls={open ? `${id}-results` : undefined}
         onClick={() => setOpen(true)} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setError(false); setOpen(true); }} />
       <Button type="submit" variant="secondary" disabled={!profileId}>Search</Button>

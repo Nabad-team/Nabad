@@ -61,7 +61,10 @@ test('switching profile clears the query/results and cancels in-flight work', as
   expect(within(screen.getByRole('region', { name: 'Search results' })).getByText(/Records for Child/)).toBeInTheDocument();
 });
 test('unmounting cancels pending searches and submission does not put text in the URL', async () => {
-  const user = userEvent.setup(); const view = render(<HeaderSearch profileId="self" />);
+  const user = userEvent.setup(); const view = render(<HeaderSearch />);
+  expect(box()).toBeDisabled(); expect(screen.getByRole('button', { name: 'Search' })).toBeDisabled();
+  expect(searchNabad).not.toHaveBeenCalled();
+  view.rerender(<HeaderSearch profileId="self" />); expect(box()).toBeEnabled();
   const location = window.location.href;
   await user.type(box(), 'example'); await screen.findByRole('link', { name: 'Example medicine' });
   await user.click(screen.getByRole('button', { name: 'Search' })); expect(window.location.href).toBe(location);

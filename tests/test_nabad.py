@@ -758,7 +758,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         try:
             for entry, prefix in zip(created, ("medication", "appointment", "document")):
                 self.open("/dashboard")
-                search = self.visible((By.CSS_SELECTOR, "header input[type='search']"))
+                search = self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
                 search.send_keys(phrase)
                 results = self.visible((By.CSS_SELECTOR, ".header-search__results"))
                 link = self.wait.until(lambda _: results.find_element(By.CSS_SELECTOR, f"a[href$='#{prefix}-{entry['id']}']"))
@@ -768,7 +768,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
                 self.assertIn(phrase, target.text)
                 self.assertNotIn(phrase, self.driver.current_url)
             self.open("/dashboard")
-            self.visible((By.CSS_SELECTOR, "header input[type='search']")).send_keys("medications")
+            self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)")).send_keys("medications")
             link = self.visible((By.CSS_SELECTOR, ".header-search__results a[href='/medications']"))
             link.click()
             self.wait.until(EC.url_contains("/medications"))
@@ -777,7 +777,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             )
             self.assertIsNotNone(hospital)
             self.open("/dashboard")
-            self.visible((By.CSS_SELECTOR, "header input[type='search']")).send_keys(hospital["name"][:50])
+            self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)")).send_keys(hospital["name"][:50])
             self.click((By.CSS_SELECTOR, f".header-search__results a[href='/providers/{hospital['id']}']"))
             self.wait.until(EC.url_contains(f"/providers/{hospital['id']}"))
         finally:
