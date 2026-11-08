@@ -11,8 +11,14 @@ export default function OfflineEmergencyCard({ card, owner }) {
   useEffect(() => { generation.current++; setMessage(""); setSaving(false); return () => { generation.current++; }; }, [card, owner]);
   useEffect(() => {
     const update = () => setSaved(offline.read());
-    update(); window.addEventListener("storage", update); window.addEventListener("nabad-offline-emergency-changed", update);
-    return () => { window.removeEventListener("storage", update); window.removeEventListener("nabad-offline-emergency-changed", update); };
+    const cancel = () => { generation.current++; setSaving(false); };
+    const storageChanged = event => {
+      if (event.key === "nabad-signout" || event.key === null || (event.key === offline.KEY && !event.newValue)) cancel();
+      update();
+    };
+    update(); window.addEventListener("storage", storageChanged); window.addEventListener("nabad-offline-emergency-changed", update);
+    window.addEventListener("nabad-signout-this-tab", cancel);
+    return () => { window.removeEventListener("storage", storageChanged); window.removeEventListener("nabad-offline-emergency-changed", update); window.removeEventListener("nabad-signout-this-tab", cancel); };
   }, []);
   async function save() {
     if (saving) return;
@@ -53,7 +59,7 @@ export default function OfflineEmergencyCard({ card, owner }) {
     <div className="button-row">
       <Button disabled={!card || !owner || saving} onClick={save}>{saving ? "Saving offline copy..." : "Save for offline use"}</Button>
       <Button variant="secondary" href="/offline.html">Open emergency help</Button>
-      {saved && <Button variant="secondary" onClick={() => { try { offline.clear(); setMessage("Saved emergency information removed."); } catch { setMessage("Could not remove the saved copy. Clear this site's data in browser settings."); } }}>Remove offline copy</Button>}
+      {saved && <Button variant="secondary" onClick={() => { generation.current++; setSaving(false); try { offline.clear(); setMessage("Saved emergency information removed."); } catch { setMessage("Could not remove the saved copy. Clear this site's data in browser settings."); } }}>Remove offline copy</Button>}
     </div>
     {message && <p role="status">{message}</p>}
   </section>;

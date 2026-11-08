@@ -67,3 +67,18 @@ test('preparation timeout never writes a late snapshot', async () => {
   await act(async()=>finish({update:async()=>{}}));expect(offline.read()).toBeNull();
  }finally{jest.useRealTimers();}
 });
+test('sign-out cancels a pending save before the component has unmounted', async () => {
+ let finish;navigator.serviceWorker.register.mockReturnValue(new Promise(resolve=>{finish=resolve;}));
+ render(<OfflineEmergencyCard card={card} owner="owner@example.test"/>);
+ fireEvent.click(screen.getByRole('button',{name:'Save for offline use'}));
+ fireEvent(window,new Event('nabad-signout-this-tab'));
+ await act(async()=>finish({update:async()=>{}}));expect(offline.read()).toBeNull();
+});
+test('removing a saved copy also cancels a pending replacement', async () => {
+ offline.save('owner@example.test',storedCard);
+ let finish;navigator.serviceWorker.register.mockReturnValue(new Promise(resolve=>{finish=resolve;}));
+ render(<OfflineEmergencyCard card={card} owner="owner@example.test"/>);
+ fireEvent.click(screen.getByRole('button',{name:'Save for offline use'}));
+ fireEvent.click(screen.getByRole('button',{name:'Remove offline copy'}));
+ await act(async()=>finish({update:async()=>{}}));expect(offline.read()).toBeNull();
+});
