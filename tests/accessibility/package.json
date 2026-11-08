@@ -1,0 +1,6 @@
+{
+  "name": "nabad-accessibility-checks",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": { "axe-core": "4.10.3" }
+}

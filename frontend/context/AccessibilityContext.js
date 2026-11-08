@@ -9,15 +9,24 @@ const DEFAULT_PREFERENCES = {
 
 const AccessibilityContext = createContext({
   preferences: DEFAULT_PREFERENCES,
+  preferencesSaved: true,
   updatePreferences: () => {},
 });
+
+function normalizePreferences(saved) {
+  return {
+    textSize: ["default", "large", "extra-large"].includes(saved?.textSize) ? saved.textSize : "default",
+    highContrast: saved?.highContrast === true,
+    simplifiedMode: saved?.simplifiedMode === true,
+  };
+}
 
 function readPreferences() {
   if (typeof window === "undefined") return DEFAULT_PREFERENCES;
 
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
-    return { ...DEFAULT_PREFERENCES, ...(saved || {}) };
+    return normalizePreferences(saved);
   } catch {
     return DEFAULT_PREFERENCES;
   }
@@ -26,6 +35,7 @@ function readPreferences() {
 export function AccessibilityProvider({ children }) {
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
   const [hydrated, setHydrated] = useState(false);
+  const [preferencesSaved, setPreferencesSaved] = useState(true);
 
   useEffect(() => {
     setPreferences(readPreferences());
@@ -37,16 +47,18 @@ export function AccessibilityProvider({ children }) {
     document.documentElement.dataset.textSize = preferences.textSize;
     document.documentElement.dataset.highContrast = preferences.highContrast ? "true" : "false";
     document.documentElement.dataset.simplifiedMode = preferences.simplifiedMode ? "true" : "false";
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    // Device storage may be blocked; the current session must still be usable.
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences)); setPreferencesSaved(true); }
+    catch { setPreferencesSaved(false); }
   }, [hydrated, preferences]);
 
   function updatePreferences(changes) {
-    setPreferences((current) => ({ ...current, ...changes }));
+    setPreferences((current) => normalizePreferences({ ...current, ...changes }));
   }
 
   const value = useMemo(
-    () => ({ preferences, updatePreferences }),
-    [preferences]
+    () => ({ preferences, preferencesSaved, updatePreferences }),
+    [preferences, preferencesSaved]
   );
 
   return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>;

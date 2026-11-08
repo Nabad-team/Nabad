@@ -37,10 +37,10 @@ export function ActiveProfileProvider({ children }) {
 
   // localStorage only exists in the browser, so the saved choice is read here and not during rendering.
   useEffect(() => {
-    const savedId = localStorage.getItem(ACTIVE_PROFILE_KEY);
-    if (savedId) {
-      setActiveProfileId(savedId);
-    }
+    try {
+      const savedId = localStorage.getItem(ACTIVE_PROFILE_KEY);
+      if (savedId) setActiveProfileId(savedId);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -53,13 +53,13 @@ export function ActiveProfileProvider({ children }) {
 
   function switchProfile(id) {
     setActiveProfileId(id);
-    localStorage.setItem(ACTIVE_PROFILE_KEY, id);
+    try { localStorage.setItem(ACTIVE_PROFILE_KEY, id); } catch {}
   }
 
   // Forgets the loaded profiles, and (after signing out or deleting the account) the saved choice.
   function forgetProfiles(forgetChoice) {
     if (forgetChoice) {
-      localStorage.removeItem(ACTIVE_PROFILE_KEY);
+      try { localStorage.removeItem(ACTIVE_PROFILE_KEY); } catch {}
       setActiveProfileId("self");
     }
     setSelfProfile(null);

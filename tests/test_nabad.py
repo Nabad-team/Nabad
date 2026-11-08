@@ -24,6 +24,8 @@ from urllib.error import URLError
 from urllib.parse import parse_qs, quote, urljoin, urlparse
 from urllib.request import urlopen
 
+from accessibility.checks import audit as audit_accessibility
+
 from selenium import webdriver
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -445,6 +447,13 @@ class PublicPageTests(NabadWebsiteTests):
     def setUp(self):
         self.sign_out_of_browser()
 
+    def test_accessibility_public_pages(self):
+        for path in ("/login", "/signup", "/forgot-password", "/providers", "/offline.html"):
+            with self.subTest(path=path):
+                self.open(path)
+                self.visible((By.TAG_NAME, "h1"))
+                audit_accessibility(self, self.driver, "public" + path.replace("/", "-"))
+
     def test_public_pages_have_titles(self):
         pages = (
             ("/", None),
@@ -521,6 +530,96 @@ class SignedInWorkflowTests(NabadWebsiteTests):
     def setUp(self):
         self.ensure_signed_in()
 
+    def test_accessibility_core_pages_and_keyboard(self):
+        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/test-results")
+        for path in pages:
+            with self.subTest(path=path):
+                self.open(path)
+                self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
+                self.visible((By.TAG_NAME, "h1"))
+                audit_accessibility(self, self.driver, "signed-in" + path.replace("/", "-"))
+        self.open("/medications")
+        self.click(self.button("Add medication"))
+        audit_accessibility(self, self.driver, "medication-add-form")
+        self.open("/appointments")
+        self.click(self.button("Add appointment"))
+        audit_accessibility(self, self.driver, "appointment-add-form")
+
+        self.open("/dashboard")
+        self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
+        skip = self.driver.find_element(By.CSS_SELECTOR, "a.skip-link")
+        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.TAB)
+        self.assertEqual(self.driver.switch_to.active_element, skip)
+        self.driver.switch_to.active_element.send_keys(Keys.ENTER)
+        self.wait.until(lambda _: self.driver.switch_to.active_element.get_attribute("id") == "main")
+        self.driver.switch_to.active_element.send_keys(Keys.TAB)
+        self.assertTrue(self.driver.execute_script("return document.querySelector('main').contains(document.activeElement)"))
+
+        for width, text_size in ((320, "100%"), (1280, "200%"), (320, "125%")):
+            self.driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {"width": width, "height": 900, "deviceScaleFactor": 1, "mobile": False})
+            try:
+                for path in ("/dashboard", "/symptoms", "/medications", "/appointments", "/profile", "/emergency-card"):
+                    self.open(path)
+                    self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
+                    self.driver.execute_script("document.documentElement.style.fontSize = arguments[0]", text_size)
+                    self.assertTrue(self.driver.execute_script("return document.documentElement.scrollWidth <= innerWidth + 1"), f"Horizontal overflow: {path}, {width}px, {text_size}")
+            finally:
+                self.driver.execute_cdp_cmd("Emulation.clearDeviceMetricsOverride", {})
+        self.open("/dashboard")
+        self.driver.execute_script("document.documentElement.dataset.highContrast='true'")
+        audit_accessibility(self, self.driver, "dashboard-high-contrast")
+        self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"features": [{"name": "forced-colors", "value": "active"}, {"name": "prefers-reduced-motion", "value": "reduce"}]})
+        try:
+            self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.TAB)
+            for selector in (".account-menu__button", ".notification-bell__button", "header input[type=search]"):
+                self.assertTrue(self.driver.execute_script("const e=document.querySelector(arguments[0]);e.focus();const s=getComputedStyle(e);return e.matches(':focus-visible') && s.outlineStyle!=='none' && parseFloat(s.outlineWidth)>0", selector))
+            duration = self.driver.execute_script("return getComputedStyle(document.querySelector('.button')).transitionDuration")
+            self.assertTrue(all(float(value.strip().rstrip('s')) <= 0.01 for value in duration.split(',')))
+        finally:
+            self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"features": []})
+
+    def test_accessibility_modals_search_and_validation(self):
+        name = f"Accessibility medicine {secrets.token_hex(3)}"
+        self.open("/medications")
+        self.click(self.button("Add medication"))
+        self.click(self.button("Save medication"))
+        self.visible((By.CSS_SELECTOR, "input[aria-invalid='true']"))
+        audit_accessibility(self, self.driver, "medication-invalid-form")
+        self.click(self.button("Cancel"))
+        self.add_medication(name)
+        med_id = self.driver.execute_async_script("fetch('/api/medications').then(r=>r.json()).then(data=>arguments[1](data.medications.find(m=>m.name===arguments[0]).id));", name)
+        try:
+            trigger = self.visible(self.button(f"Delete {name}"))
+            trigger.click()
+            dialog = self.visible((By.CSS_SELECTOR, "dialog[open][role='dialog']"))
+            self.assertTrue(self.driver.execute_script("return arguments[0].matches(':modal')", dialog))
+            audit_accessibility(self, self.driver, "medication-delete-modal")
+            self.assertFalse(self.driver.execute_script("const e=document.querySelector('header input[type=search]');e.focus();return document.activeElement===e"))
+            for _ in range(4):
+                self.driver.switch_to.active_element.send_keys(Keys.TAB)
+                self.assertTrue(self.driver.execute_script("return arguments[0].contains(document.activeElement)", dialog))
+            self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+            self.gone((By.CSS_SELECTOR, "dialog[open][role='dialog']"))
+            self.wait.until(lambda _: self.driver.switch_to.active_element == trigger)
+            search = self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
+            search.send_keys(name)
+            self.visible((By.CSS_SELECTOR, f".header-search__results a[href$='medication-{med_id}']"))
+            audit_accessibility(self, self.driver, "header-search-results")
+            search.send_keys(Keys.ARROW_DOWN)
+            self.assertEqual(self.driver.switch_to.active_element.tag_name, "a")
+            self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+            self.assertEqual(self.driver.switch_to.active_element, search)
+            self.submit_symptoms("I have chest pain", dismiss_emergency=False)
+            popup = self.visible((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
+            audit_accessibility(self, self.driver, "emergency-alert-modal")
+            self.assertFalse(self.driver.execute_script("const e=document.querySelector('header input[type=search]');e.focus();return document.activeElement===e"))
+            self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+            self.gone((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
+            self.visible((By.LINK_TEXT, "Call 140 now"))
+        finally:
+            self.open("/medications")
+            self.assertEqual(self.fetch_json("DELETE", f"/api/medications/{med_id}"), 204)
+
     def test_emergency_information_card_is_accessible_and_printable(self):
         self.open("/emergency-card")
         card = self.visible((By.CSS_SELECTOR, "article.emergency-card"))
@@ -545,9 +644,11 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/symptoms")
         self.type_into("symptoms", description)
         self.submit_form_of("symptoms")
-        heading = self.visible((By.ID, "urgency-heading"))
+        # A native emergency modal makes background content inert and may clip it
+        # below the viewport. Inspect result presence, then interact with the modal.
+        heading = self.wait.until(EC.presence_of_element_located((By.ID, "urgency-heading")))
         if dismiss_emergency:
-            if "Emergency" in heading.text:
+            if "Emergency" in heading.get_attribute("textContent"):
                 self.visible((By.CSS_SELECTOR, "dialog[open][role='alertdialog']"))
                 self.click(self.button("Close alert"))
             # Existing workflows need the stored record; the emergency popup itself
@@ -792,6 +893,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.driver.execute_cdp_cmd("Network.emulateNetworkConditions", {"offline": True, "latency": 0, "downloadThroughput": -1, "uploadThroughput": -1})
             self.open("/offline.html")
             self.wait_for_text(f"Saved emergency information: {RunAccount.name}")
+            audit_accessibility(self, self.driver, "offline-saved-card")
             self.assertEqual(self.visible((By.LINK_TEXT, "Call Lebanese Red Cross 140")).get_attribute("href"), "tel:140")
             self.assertEqual(self.visible((By.LINK_TEXT, "Call National Lifeline 1564")).get_attribute("href"), "tel:1564")
             for title in ("Medical conditions", "Allergies", "Active medications", "Emergency contact"):

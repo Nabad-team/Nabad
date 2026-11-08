@@ -335,7 +335,7 @@ export default function MedicationsPage() {
       )}
 
       {toDelete && (
-        <Dialog title={`Delete ${toDelete.name}?`}>
+        <Dialog title={`Delete ${toDelete.name}?`} onDismiss={() => setToDelete(null)}>
           <p>It will be removed from your list. This can't be undone.</p>
           <div className="button-row dialog__actions">
             <Button variant="danger" onClick={handleDelete} disabled={busyId === toDelete.id}>{busyId === toDelete.id ? "Deleting..." : "Yes, delete"}</Button>

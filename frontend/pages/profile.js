@@ -426,7 +426,7 @@ export default function ProfilePage() {
       </Card>
 
       {profileToRemove && (
-        <Dialog title="Remove linked profile">
+        <Dialog title="Remove linked profile" onDismiss={() => setProfileToRemove(null)}>
           <p>
             Remove {profileToRemove.fullName}'s profile? This deletes all of their data and cannot be undone.
           </p>
@@ -439,7 +439,7 @@ export default function ProfilePage() {
       )}
 
       {isDeletingAccount && (
-        <Dialog title="Delete your account?">
+        <Dialog title="Delete your account?" onDismiss={() => setIsDeletingAccount(false)}>
           <p className="dialog__list-intro">This permanently deletes:</p>
           <ul>
             <li>Your account</li>

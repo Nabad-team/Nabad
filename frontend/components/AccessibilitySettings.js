@@ -1,12 +1,13 @@
 import { useAccessibility } from "../context/AccessibilityContext";
 
 export default function AccessibilitySettings() {
-  const { preferences, updatePreferences } = useAccessibility();
+  const { preferences, preferencesSaved, updatePreferences } = useAccessibility();
 
   return (
     <section className="section accessibility-settings" aria-labelledby="accessibility-heading">
       <h2 id="accessibility-heading">Accessibility</h2>
       <p>Change how Nabad looks and reads. Your choices are saved on this device.</p>
+      {preferencesSaved === false && <p role="status">Your changes apply for this session, but couldn't be saved on this device.</p>}
 
       <div className="form">
         <div className="field">

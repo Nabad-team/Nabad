@@ -277,7 +277,7 @@ export default function TestResultsPage() {
             <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
             <p>Ask in English or Arabic, or attach an English or Arabic written test report. The assistant replies in English.</p>
-            <div className="assistant-chat__suggestions" aria-label="Suggested questions">
+            <div className="assistant-chat__suggestions" role="group" aria-label="Suggested questions">
               {["What does a high cholesterol result mean?", "How can I prepare for a blood test?", "What should I ask my doctor about a new medicine?"].map((suggestion) => (
                 <button className="assistant-chat__suggestion" key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>
               ))}
