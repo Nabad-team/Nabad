@@ -122,7 +122,7 @@ test("preferences are respected, and safety-critical types are always on", async
   const initial = await request("GET", "/notifications/preferences", { cookie });
   assert.equal(initial.status, 200);
   assert.deepEqual(initial.body.preferences.map(({ type, enabled, alwaysOn }) => [type, enabled, alwaysOn]), [
-    ["appointment_reminder", true, false], ["emergency_alert", true, true], ["caregiver_urgent", true, true],
+    ["appointment_reminder", true, false], ["medication_reminder", true, false], ["emergency_alert", true, true], ["caregiver_urgent", true, true],
     ["document_ready", true, false], ["system", true, false],
   ]);
   const off = await request("PUT", "/notifications/preferences", { cookie, body: { appointment_reminder: false, system: false } });

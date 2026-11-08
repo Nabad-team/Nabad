@@ -39,6 +39,7 @@ async function start() {
   await reminders.backfillReminderSchedules()
     .catch((error) => logEvent("reminder_backfill_failed", { errorType: error.name }));
   reminders.startReminderJob();
+  require("./medicationReminders").startMedicationReminderJob();
   return applyServerTimeouts(app.listen(process.env.PORT || 5000, () => logEvent("server_started", {
     environment: process.env.APP_ENV || process.env.NODE_ENV || "development",
   })));

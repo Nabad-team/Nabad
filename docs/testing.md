@@ -147,6 +147,8 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 
 ### What it covers
 
+Custom medication reminder schedules are documented in [medication-reminders.md](medication-reminders.md), including daily times, time-zone behavior, delivery limits and regression coverage.
+
 - **Public pages:** page titles, the 404 page, wrong password, the sign-up password check, forgot password, the inactivity sign-out message, and that signed-in pages (including `/symptoms`) redirect to the login page with a `next` link back to the page.
 - **Account:** sign-up, email verification, sign-out, sign-in with an emailed 2FA code and a remembered device, and account deletion.
 - **Dashboard:** the greeting and the links to symptoms, My health, Medications, Water and sleep, and My profile (in the account menu).

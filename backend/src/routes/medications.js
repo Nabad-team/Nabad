@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 const Medication = require("../models/Medication");
 const MedicationAdherence = require("../models/MedicationAdherence");
+const { readReminder, nextReminder } = require("../medicationSchedule");
 const { FORMS, STATUSES, LIMITS } = Medication;
 const { requireAuth } = require("../middleware/authMiddleware");
 const User = require("../models/User");
@@ -103,6 +104,7 @@ const view = (medication) => ({
   name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form, frequency: medication.frequency, times: medication.times || [],
   startDate: dateString(medication.startDate), endDate: dateString(medication.endDate),
   status: medication.status, notes: medication.notes,
+  reminderTimes: medication.reminderTimes || [], reminderTimeZone: medication.reminderTimeZone || "Asia/Beirut",
   createdAt: medication.createdAt, updatedAt: medication.updatedAt,
 });
 
@@ -150,7 +152,9 @@ function readMedication(body) {
     else if (startDate && endDate < startDate) errors.push("The end date can't be before the start date.");
   }
   if (errors.length) return { error: errors[0] };
-  return { medication: { name, dose, unit, form, frequency, times: [...times].sort(), startDate, endDate, notes } };
+  const reminder = readReminder(body);
+  if (reminder.error) return reminder;
+  return { medication: { name, dose, unit, form, frequency, times: [...times].sort(), startDate, endDate, notes, ...reminder } };
 }
 
 // Matches the medication only if it belongs to the signed-in user. null for an id that can't exist (answered as 404).
@@ -204,7 +208,8 @@ router.post("/", writeLimiter, asyncRoute(async (req, res) => {
   if (await Medication.countDocuments({ owner: req.userId, profileId: req.profileId }) >= MAX_MEDICATIONS) {
     return res.status(400).json({ error: `You can keep up to ${MAX_MEDICATIONS} medications. Delete the ones you no longer need first.` });
   }
-  const created = await Medication.create({ ...medication, owner: req.userId, profileId: req.profileId });
+  const created = await Medication.create({ ...medication, owner: req.userId, profileId: req.profileId,
+    nextReminderAt: nextReminder({ ...medication, status: "active" }) });
   return res.status(201).json({ medication: view(created) });
 }));
 
@@ -213,8 +218,15 @@ router.put("/:id", writeLimiter, asyncRoute(async (req, res) => {
   if (!filter) return res.status(404).json(NOT_FOUND);
   const { medication, error } = readMedication(req.body);
   if (error) return res.status(400).json({ error });
-  const updated = await Medication.findOneAndUpdate(filter, { $set: medication }, { new: true, runValidators: true });
-  if (!updated) return res.status(404).json(NOT_FOUND);
+  const existing = await Medication.findOne(filter);
+  if (!existing) return res.status(404).json(NOT_FOUND);
+  // Older clients do not know about reminders; ordinary edits must preserve them.
+  if (req.body.reminderTimes === undefined) medication.reminderTimes = existing.reminderTimes;
+  if (req.body.reminderTimeZone === undefined) medication.reminderTimeZone = existing.reminderTimeZone;
+  const updated = await Medication.findOneAndUpdate({ ...filter, updatedAt: existing.updatedAt }, { $set: {
+    ...medication, nextReminderAt: nextReminder({ ...medication, status: existing.status }),
+  } }, { new: true, runValidators: true });
+  if (!updated) return res.status(409).json({ error: "This medication changed. Reload the list and try again." });
   return res.json({ medication: view(updated) });
 }));
 
@@ -223,8 +235,12 @@ router.patch("/:id/status", writeLimiter, asyncRoute(async (req, res) => {
   if (!filter) return res.status(404).json(NOT_FOUND);
   const { status } = req.body || {};
   if (!STATUSES.includes(status)) return res.status(400).json({ error: "Status must be active or discontinued." });
-  const updated = await Medication.findOneAndUpdate(filter, { $set: { status } }, { new: true });
-  if (!updated) return res.status(404).json(NOT_FOUND);
+  const existing = await Medication.findOne(filter);
+  if (!existing) return res.status(404).json(NOT_FOUND);
+  const updated = await Medication.findOneAndUpdate({ ...filter, updatedAt: existing.updatedAt }, { $set: {
+    status, nextReminderAt: nextReminder({ ...existing.toObject(), status }),
+  } }, { new: true });
+  if (!updated) return res.status(409).json({ error: "This medication changed. Reload the list and try again." });
   return res.json({ medication: view(updated) });
 }));
 

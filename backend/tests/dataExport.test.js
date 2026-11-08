@@ -103,7 +103,7 @@ async function download(who) {
 // One record in every per-profile collection, with text that names the profile.
 async function fillProfile(owner, profileId, label) {
   const ids = { owner, profileId };
-  const medication = await Medication.create({ ...ids, name: `${label} medication`, dose: "5", unit: "mg", startDate: new Date("2026-01-02") });
+  const medication = await Medication.create({ ...ids, name: `${label} medication`, dose: "5", unit: "mg", startDate: new Date("2026-01-02"), reminderTimes: ["08:30", "20:30"], reminderTimeZone: "Asia/Beirut" });
   await MedicationAdherence.create({ ...ids, medicationId: medication._id, date: "2026-10-20" });
   await HealthFact.create({ ...ids, category: "allergy", value: { name: `${label} allergy` } });
   await VitalReading.create({ ...ids, recordedAt: new Date("2026-10-20T08:30:00Z"), systolic: 120, diastolic: 80, heartRate: 72, temperature: 36.7 });
@@ -193,6 +193,9 @@ test("the file has every registered collection for the user's own and linked pro
       else assert.equal(entry[key].length, 1, `${label}: ${key} should have one record`);
     }
     assert.equal(entry.medications[0].name, `${label} medication`);
+    assert.deepEqual(entry.medications[0].reminderTimes, ["08:30", "20:30"]);
+    assert.equal(entry.medications[0].reminderTimeZone, "Asia/Beirut");
+    assert.ok(!("nextReminderAt" in entry.medications[0]));
     assert.equal(entry.medicationCheckIns[0].medicationId, entry.medications[0].id);
     assert.deepEqual(entry.myHealthFacts[0].value, { name: `${label} allergy` });
     assert.deepEqual({ systolic: entry.vitalReadings[0].systolic, diastolic: entry.vitalReadings[0].diastolic, heartRate: entry.vitalReadings[0].heartRate, temperature: entry.vitalReadings[0].temperature }, { systolic: 120, diastolic: 80, heartRate: 72, temperature: 36.7 });

@@ -73,7 +73,7 @@ test("creates a medication for my own profile, ignoring owner, profile and statu
   assert.equal(created.status, 201);
   const { id, createdAt, updatedAt, ...fields } = created.body.medication;
   assert.ok(id && createdAt && updatedAt);
-  assert.deepEqual(fields, { profileId: "self", name: "Paracetamol", dose: "500", unit: "mg", form: "tablet", frequency: "twice a day", times: [], startDate: "2026-09-01", endDate: "", status: "active", notes: "After food" });
+  assert.deepEqual(fields, { profileId: "self", name: "Paracetamol", dose: "500", unit: "mg", form: "tablet", frequency: "twice a day", times: [], startDate: "2026-09-01", endDate: "", status: "active", notes: "After food", reminderTimes: [], reminderTimeZone: "Asia/Beirut" });
   const stored = await Medication.findById(id);
   assert.equal(String(stored.owner), String(account._id));
   assert.equal(String(stored.profileId), String(account._id));

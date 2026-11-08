@@ -57,7 +57,8 @@ const PROFILE_COLLECTIONS = [
   {
     key: "medications",
     model: Medication,
-    fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", times: "times", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", ...TIMESTAMPS },
+    omit: { nextReminderAt: "Internal scheduler cursor; the user-selected times and time zone are exported." },
+    fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", times: "times", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", reminderTimes: "reminderTimes", reminderTimeZone: "reminderTimeZone", ...TIMESTAMPS },
   },
   {
     key: "medicationCheckIns",
