@@ -88,6 +88,9 @@ jobs:
       - name: Install test requirements
         run: pip install -r tests/requirements.txt
 
+      - name: Verify usability study call and SMS guard
+        run: python tests/usability/emergency_study.py --check
+
       # The runner's preinstalled Google Chrome; Selenium Manager downloads the matching ChromeDriver.
       - name: Run Selenium suite
         run: python tests/test_nabad.py
