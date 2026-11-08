@@ -179,7 +179,8 @@ The tests that sign up, add or delete anything refuse to run when `NABAD_BASE_UR
 `main` is protected, for everyone including repository admins:
 
 - **No direct pushes.** Every change goes through a pull request. Force pushes and deleting `main` are blocked.
-- **Required checks.** A pull request can only be merged when these pass: `backend-tests`, `frontend-tests`, `docker-build`, `selenium` (the end-to-end suite), `Backup tooling` and `Vercel` (the preview deploy). They don't have to be re-run when `main` moves on.
+- **Required checks.** A pull request can only be merged when these 7 pass: `backend-tests`, `frontend-tests`, `docker-build`, `selenium` (the end-to-end suite), `Backup tooling`, `Medical report safety gate` and `Vercel` (the preview deploy). They don't have to be re-run when `main` moves on.
+- **Vercel's Ignored Build Step.** If that Vercel setting is ever turned on, remove `Vercel` from the required checks first: a skipped build posts no status, so every PR would hang waiting for it.
 - **Resolved conversations.** Every review comment thread must be resolved before merging.
 - **No approval needed.** Reviews are welcome but not required (0 approving reviews), so nobody is blocked waiting.
 
