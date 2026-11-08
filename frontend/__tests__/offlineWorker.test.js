@@ -14,11 +14,12 @@ function worker(fetcher=jest.fn().mockRejectedValue(new Error("offline"))){
  };
  return {handlers,caches,cache,self,navigate,fetcher};
 }
-test("installation stores only the public help document and cleanup touches only its own cache",async()=>{
+test("installation stores only the public help document and its public renderer and cleanup touches only its own cache",async()=>{
  const w=worker();let installing,activating;
  w.handlers.install({waitUntil:p=>installing=p});await installing;
- expect(w.cache.add).toHaveBeenCalledTimes(1);
+ expect(w.cache.add).toHaveBeenCalledTimes(2);
  const request=w.cache.add.mock.calls[0][0];expect(request.url).toBe("https://nabad.test/offline.html");expect(request.credentials).toBe("omit");
+ expect(w.cache.add.mock.calls[1][0].url).toBe("https://nabad.test/offline-emergency.js");
  w.handlers.activate({waitUntil:p=>activating=p});await activating;
  expect(w.caches.delete.mock.calls).toEqual([["nabad-public-help-v0"]]);
 });
@@ -33,6 +34,12 @@ test("API requests, writes, assets and other origins are never intercepted",()=>
  for(const event of [w.navigate("/api/profile/me"),w.navigate("/api"),w.navigate("/profile",{method:"POST"}),w.navigate("/_next/data/test.json",{mode:"cors"}),w.navigate("https://other.test")])
   expect(event.respondWith).not.toHaveBeenCalled();
  expect(w.fetcher).not.toHaveBeenCalled();
+});
+test("the allowlisted public renderer is available from cache without a network request",async()=>{
+ const w=worker();w.cache.match.mockResolvedValueOnce(new Response("public renderer"));
+ const event=w.navigate("/offline-emergency.js",{mode:"cors"});
+ expect(await (await event.respondWith.mock.calls[0][0]).text()).toBe("public renderer");
+ expect(w.fetcher).not.toHaveBeenCalled();expect(w.cache.add).not.toHaveBeenCalled();
 });
 test("server errors receive help while authentication errors keep their original response",async()=>{
  const fetcher=jest.fn().mockResolvedValueOnce(new Response("outage",{status:503})).mockResolvedValueOnce(new Response("sign in",{status:401}));

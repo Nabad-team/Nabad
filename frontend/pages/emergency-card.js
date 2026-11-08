@@ -8,13 +8,14 @@ import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import OfflineEmergencyCard from "../components/OfflineEmergencyCard";
 
 const allergyTypes = { medication: "Medication", food: "Food", other: "Other" };
 const medicationForms = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
 const birthDate = value => value ? new Date(`${value}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }) : "Not recorded";
 
 export default function EmergencyCardPage() {
-  const { activeProfile } = useActiveProfile();
+  const { activeProfile, selfProfile } = useActiveProfile();
   const profileId = activeProfile?.id;
   const [state, setState] = useState(null);
   const [refresh, setRefresh] = useState(0);
@@ -45,6 +46,7 @@ export default function EmergencyCardPage() {
         <Button variant="secondary" href="/medications">Update medications</Button>
         {profileId === "self" && <Button variant="secondary" href="/profile">Update emergency contact</Button>}
       </div>
+      <OfflineEmergencyCard card={card} owner={selfProfile?.email} />
       {!profileId ? <p>Select a profile to prepare its emergency card.</p>
         : error ? <Alert tone="danger" role="alert">{error}</Alert>
           : !card ? <HeartbeatLoader label="Preparing emergency card..." /> : null}

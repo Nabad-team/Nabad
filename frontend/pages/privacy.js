@@ -263,8 +263,14 @@ export default function PrivacyPolicy() {
         After a successful online visit, a public emergency-help page may be
         stored on your device for connection failures. It contains no personal
         or medical information. Nabad does not cache your account pages, health
-        records or API responses for offline use. Internet access is still
-        required to load or save your information and run symptom checks.
+        records or API responses automatically. You can explicitly save one emergency
+        card in this browser for offline access. It includes the displayed identity,
+        conditions, allergies, medications and emergency contact, plus the account
+        email used to prevent mixing accounts. Anyone using this browser can view
+        the copy without signing in; use a trusted device. Updates are not automatic.
+        Remove it from the emergency card or offline help page, sign out, or clear
+        site data to delete it. Session sign-out and account changes also clear it.
+        Internet access is required to refresh the copy or run new symptom checks.
       </p>
 
       <h2>Account security</h2>

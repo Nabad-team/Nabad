@@ -4,6 +4,7 @@
 
 import Router from "next/router";
 import { logout } from "./api";
+import offlineEmergency from "../public/offline-emergency";
 
 export const LAST_ACTIVITY_KEY = "nabad-last-activity";
 export const SIGN_OUT_KEY = "nabad-signout";
@@ -59,6 +60,7 @@ export function lastActivity() {
 // Ends the session on the server (which also invalidates the cookie for every tab),
 // tells this tab and the other tabs, then goes to the login page.
 export async function signOut(url = "/login") {
+  try { offlineEmergency.clear(); } catch {}
   // "storage" events only reach the other tabs, so this tab is told with its own event.
   // It comes first so pages that need sign-in hide their content straight away.
   window.dispatchEvent(new Event(THIS_TAB_SIGN_OUT_EVENT));

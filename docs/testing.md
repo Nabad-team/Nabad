@@ -147,6 +147,8 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 
 ### What it covers
 
+Offline emergency snapshots, connection-loss tests and device-privacy behavior are documented in [offline-emergency-info.md](offline-emergency-info.md).
+
 Header search and its privacy/accessibility regression cases are documented in [header-search.md](header-search.md).
 
 Custom medication reminder schedules are documented in [medication-reminders.md](medication-reminders.md), including daily times, time-zone behavior, delivery limits and regression coverage.

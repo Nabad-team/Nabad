@@ -1,9 +1,9 @@
 // SCRUM-198: network-first navigation fallback. Never cache account pages or API responses.
-const CACHE = "nabad-public-help-v1";
+const CACHE = "nabad-public-help-v2";
 const OFFLINE = "/offline.html";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache =>
-    cache.add(new Request(OFFLINE,{credentials:"omit",cache:"reload"}))).then(()=>self.skipWaiting()));
+    Promise.all([OFFLINE,"/offline-emergency.js"].map(path => cache.add(new Request(path,{credentials:"omit",cache:"reload"}))))).then(()=>self.skipWaiting()));
 });
 self.addEventListener("activate", event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(
@@ -17,6 +17,10 @@ async function fallback() {
 }
 self.addEventListener("fetch", event => {
   const url=new URL(event.request.url);
+  if (event.request.method === "GET" && url.origin === self.location.origin && [OFFLINE, "/offline-emergency.js"].includes(url.pathname) && !url.search) {
+    event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(url.pathname)) || fetch(event.request)));
+    return;
+  }
   if(event.request.method!=="GET" || event.request.mode!=="navigate" ||
     url.origin!==self.location.origin || url.pathname==="/api" || url.pathname.startsWith("/api/"))return;
   event.respondWith((async()=>{

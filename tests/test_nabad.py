@@ -784,6 +784,30 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             for entry in created:
                 self.assertEqual(self.fetch_json("DELETE", f"/api/{entry['path']}/{entry['id']}"), 204)
 
+    def test_offline_emergency_card_and_numbers_survive_network_loss(self):
+        self.open("/emergency-card")
+        self.click(self.button("Save for offline use"))
+        self.wait_for_message("Emergency information saved for offline use")
+        try:
+            self.driver.execute_cdp_cmd("Network.emulateNetworkConditions", {"offline": True, "latency": 0, "downloadThroughput": -1, "uploadThroughput": -1})
+            self.open("/offline.html")
+            self.wait_for_text(f"Saved emergency information: {RunAccount.name}")
+            self.assertEqual(self.visible((By.LINK_TEXT, "Call Lebanese Red Cross 140")).get_attribute("href"), "tel:140")
+            self.assertEqual(self.visible((By.LINK_TEXT, "Call National Lifeline 1564")).get_attribute("href"), "tel:1564")
+            for title in ("Medical conditions", "Allergies", "Active medications", "Emergency contact"):
+                self.assertIn(title, self.body_text())
+            self.driver.refresh()
+            self.wait_for_text(f"Saved emergency information: {RunAccount.name}")
+            self.click(self.button("Remove saved emergency information"))
+            self.wait_for_text("No emergency card is saved")
+            self.driver.refresh()
+            self.wait_for_text("No emergency card is saved")
+            self.assertNotIn(RunAccount.name, self.body_text())
+            self.visible((By.LINK_TEXT, "Call Lebanese Red Cross 140"))
+        finally:
+            self.driver.execute_cdp_cmd("Network.emulateNetworkConditions", {"offline": False, "latency": 0, "downloadThroughput": -1, "uploadThroughput": -1})
+            self.open("/dashboard")
+
     def test_custom_medication_reminder_times_persist_and_can_be_disabled(self):
         name = f"Reminder test medicine {secrets.token_hex(3)}"
         self.open("/medications")
