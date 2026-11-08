@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useSearchTarget from "../lib/useSearchTarget";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -185,6 +186,7 @@ export default function AppointmentsPage() {
   const { preferences } = useAccessibility();
   const simplified = preferences.simplifiedMode;
   const [appointments, setAppointments] = useState(null);
+  useSearchTarget(appointments, "appointment");
   const [medications, setMedications] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loadError, setLoadError] = useState("");
@@ -328,7 +330,7 @@ export default function AppointmentsPage() {
           {appointments.length > 0 && (
             <ul className="appointment-list" aria-label={listName}>
               {appointments.map((appointment) => (
-                <li key={appointment.id} className={`appointment${reminderDue(appointment, now) ? " appointment--reminder" : ""}`}>
+                <li key={appointment.id} id={`appointment-${appointment.id}`} tabIndex={-1} className={`appointment${reminderDue(appointment, now) ? " appointment--reminder" : ""}`}>
                   {editing === appointment.id ? (
                     <AppointmentForm idPrefix={`edit-${appointment.id}`} initial={appointment} title={`Edit ${appointment.title}`} submitLabel="Save changes" onSave={save} onCancel={() => setEditing(null)} />
                   ) : (

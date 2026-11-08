@@ -21,6 +21,7 @@ import {
   deleteMedication,
 } from "../lib/medicationApi";
 import { formatDate, todayString } from "../lib/dates";
+import useSearchTarget from "../lib/useSearchTarget";
 
 // Same limits as the backend (models/Medication.js), so the browser stops overlong text before sending it.
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
@@ -139,6 +140,7 @@ export default function MedicationsPage() {
   const { preferences } = useAccessibility();
   const simplified = preferences.simplifiedMode;
   const [medications, setMedications] = useState(null);
+  useSearchTarget(medications, "medication");
   const [loadError, setLoadError] = useState("");
   // null, "add", or the id of the medication being edited. Only one form is open at a time.
   const [editing, setEditing] = useState(null);
@@ -251,7 +253,7 @@ export default function MedicationsPage() {
     [medication.name, medication.dose, medication.form, medication.notes].some((value) => String(value || "").toLowerCase().includes(query.trim().toLowerCase())));
   const activeMedications = matching.filter((medication) => medication.status === "active");
   const discontinuedMedications = matching.filter((medication) => medication.status !== "active");
-  const medicationRow = (medication) => <li key={medication.id} className="medication">
+  const medicationRow = (medication) => <li key={medication.id} id={`medication-${medication.id}`} tabIndex={-1} className="medication">
     {editing === medication.id ? <MedicationForm
       idPrefix={`edit-${medication.id}`}
       initial={{ ...emptyFields(), ...medication }}
