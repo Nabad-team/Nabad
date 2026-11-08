@@ -19,3 +19,14 @@ test("keeps keyboard focus inside and restores it when closed", async () => {
   rerender(<Example open={false} />);
   expect(trigger).toHaveFocus();
 });
+
+test('uses the native modal top layer and keeps controlled Escape dismissal in sync', () => {
+  const dismiss=jest.fn();
+  const {unmount}=render(<Dialog title="Delete record?" onDismiss={dismiss}><button>Cancel</button></Dialog>);
+  const dialog=screen.getByRole('dialog',{name:'Delete record?'});
+  expect(dialog.tagName).toBe('DIALOG');expect(dialog).toHaveAttribute('open');
+  expect(document.body.style.overflow).toBe('hidden');
+  const event=new Event('cancel',{bubbles:true,cancelable:true});dialog.dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);expect(dismiss).toHaveBeenCalledTimes(1);
+  unmount();expect(document.body.style.overflow).not.toBe('hidden');
+});

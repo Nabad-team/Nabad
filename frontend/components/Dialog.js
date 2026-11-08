@@ -1,18 +1,24 @@
 import { useEffect, useId, useRef } from "react";
 
-// A simple in-page pop-up: a dimmed overlay covering the page with a box in the middle.
-// role="dialog" and aria-modal tell screen readers (and our tests) that this is a dialog.
-// Styles: .dialog-overlay and .dialog in styles/components.css.
-export default function Dialog({ title, children }) {
+// The native top layer makes the background inert to pointer, keyboard and AT.
+// Controlled dismissal keeps component state and the browser's open state in sync.
+export default function Dialog({ title, children, onDismiss }) {
   const dialogRef = useRef(null);
   const titleId = useId();
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
     const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
     const focusable = dialog?.querySelector("button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])");
     if (dialog && !dialog.contains(document.activeElement)) (focusable || dialog).focus();
-    return () => previouslyFocused?.focus?.();
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
   }, []);
 
   function containFocus(event) {
@@ -25,11 +31,10 @@ export default function Dialog({ title, children }) {
   }
 
   return (
-    <div className="dialog-overlay">
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="dialog" tabIndex="-1" onKeyDown={containFocus}>
-        <h2 id={titleId}>{title}</h2>
-        {children}
-      </div>
-    </div>
+    <dialog ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="dialog app-dialog" tabIndex="-1" onKeyDown={containFocus}
+      onCancel={event => { event.preventDefault(); onDismiss?.(); }}>
+      <h2 id={titleId}>{title}</h2>
+      {children}
+    </dialog>
   );
 }

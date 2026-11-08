@@ -17,6 +17,13 @@ describe("PageLayout", () => {
     expect(pageTitle()).toBe("Nabad: know where to go when it matters");
   });
 
+  test("skip link targets a programmatically focusable main landmark without adding a tab stop", () => {
+    render(<PageLayout title="Test">Main content</PageLayout>);
+    expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main");
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main");
+    expect(screen.getByRole("main")).toHaveAttribute("tabindex", "-1");
+  });
+
   test("sets the tab title, description and Open Graph preview", () => {
     render(<PageLayout title="Dashboard">content</PageLayout>);
 

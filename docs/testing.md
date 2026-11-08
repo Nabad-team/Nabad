@@ -147,6 +147,8 @@ Every failure saves a screenshot and the page URL to `NABAD_ARTIFACTS_DIR`. The 
 
 ### What it covers
 
+The [accessibility target, browser audit and manual assistive-technology checklist](accessibility.md) describe WCAG 2.2 AA work and its verification limits. Install `tests/accessibility` with `npm ci --prefix tests/accessibility --ignore-scripts` before running the Selenium suite locally.
+
 For the separate five-person usability study, use the [facilitator-ready emergency-flow kit](usability/emergency-flow/README.md). Its blank human-results sheet must not be filled with automated runs.
 
 Offline emergency snapshots, connection-loss tests and device-privacy behavior are documented in [offline-emergency-info.md](offline-emergency-info.md).

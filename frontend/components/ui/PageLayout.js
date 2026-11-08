@@ -43,7 +43,7 @@ export default function PageLayout({ title, header, width = "content", variant, 
       </Head>
       <a href="#main" className="skip-link">Skip to main content</a>
       {header === undefined ? <SiteHeader width={width} /> : header}
-      <main id="main" className={`${container} page-main`}>
+      <main id="main" tabIndex={-1} className={`${container} page-main`}>
         {children}
       </main>
       {footer && <div className={`${container} page-note`}>{footer}</div>}
