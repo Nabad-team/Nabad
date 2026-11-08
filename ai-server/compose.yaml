@@ -2,7 +2,7 @@ name: nabad-ai
 
 services:
   ollama:
-    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0}
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba}
     restart: unless-stopped
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
@@ -18,7 +18,7 @@ services:
     networks: [ai-private]
 
   model-pull:
-    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0}
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba}
     restart: "no"
     entrypoint: ["ollama"]
     command: ["pull", "${OLLAMA_MODEL:-qwen3.5:9b}"]
@@ -32,7 +32,7 @@ services:
         condition: service_healthy
 
   gateway:
-    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    image: ${CADDY_IMAGE:-caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5}
     restart: unless-stopped
     environment:
       OLLAMA_DOMAIN: ${OLLAMA_DOMAIN:?Set OLLAMA_DOMAIN in .env}

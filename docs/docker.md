@@ -53,8 +53,8 @@ Google sign-in is off locally unless you add your own OAuth client (see Configur
 | --- | --- | --- |
 | `frontend` | built from [frontend/Dockerfile](../frontend/Dockerfile) | Next.js app on port 3000. Its `/api/*` rewrite forwards to `http://backend:5000`, set at build time through the `BACKEND_URL` build argument. |
 | `backend` | built from [backend/Dockerfile](../backend/Dockerfile) | Node/Express API on port 5000, in `APP_ENV=development`. Starts after MongoDB is healthy and the model pull job succeeds. |
-| `mongo` | `mongo:7.0` | Database `nabad_development`, stored in the `mongo7-data` volume. MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)), which GitHub's runners use, so the stack uses 7.0. 7.0 can't read data written by 8.0, so it starts with a new, empty volume; the old `mongo-data` volume can be removed with `docker volume rm nabad_mongo-data`. |
-| `mailpit` | `axllent/mailpit` | Catches all email (SMTP on 1025, inside the network only) and shows it at port 8025. |
+| `mongo` | `mongo:7.0.43` | Database `nabad_development`, stored in the `mongo7-data` volume. MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)), which GitHub's runners use, so the stack uses 7.0. 7.0 can't read data written by 8.0, so it starts with a new, empty volume; the old `mongo-data` volume can be removed with `docker volume rm nabad_mongo-data`. |
+| `mailpit` | `axllent/mailpit:v1.27.11` | Catches all email (SMTP on 1025, inside the network only) and shows it at port 8025. |
 | `ollama` + `ollama-model-pull` | Optional: `docker-compose.ai.yml` | Runs the self-hosted Qwen model and pulls it into the `ollama-models` volume. The inference port is private to Compose. |
 
 The services talk to each other by name on a private Compose network. Both app images run as the unprivileged `node` user. See [architecture.md](./architecture.md#local-development-docker-compose) for a diagram.
@@ -85,6 +85,42 @@ docker compose up
 ```
 
 `-v` removes the `mongo7-data` volume. To empty only the Mailpit inbox, use "Delete all" in the Mailpit web page (it is also emptied whenever the `mailpit` container is recreated).
+
+## Updating an image
+
+Every container image is pinned by an exact version tag **and** a digest, for example
+`node:24.22.1-slim@sha256:be82...605c`: the Dockerfiles' `FROM` lines, the compose files (including `ai-server/` and its `.env.example`), the workflow service containers, the BuildKit image in the Selenium job, the actionlint image and the backup restore image (`ops/backup/versions.env`). The tag says which version it is; the digest makes sure every build gets exactly the same bytes, even if someone re-pushes the tag. The full digests are in the files themselves.
+
+To move to a newer version:
+
+1. **Pick an exact version released at least about two weeks ago.** Check the project's release notes for the release date. Never use floating tags such as `latest`, `24-slim`, `2-alpine` or `v1.27`; the tag must contain a full `x.y.z` version.
+2. **Look up its digest** (the multi-platform index, so the image works on Intel and Apple Silicon machines alike):
+
+   ```bash
+   docker buildx imagetools inspect node:24.22.1-slim --format '{{json .Manifest}}'
+   ```
+
+   Use the `"digest"` value (`sha256:` + 64 hex characters), not the digest of one platform.
+3. **Replace both the tag and the digest** everywhere the image appears (`git grep "node:24"`). The MongoDB restore image must stay the same in `.github/workflows/db-backup.yml` and `ops/backup/versions.env`.
+4. **Run the check and the build**:
+
+   ```bash
+   node --test ops/docker/tests/image-pins.test.js   # also run by the docker-build CI check
+   docker compose build
+   ```
+
+The check fails on any image in a Dockerfile, compose file, workflow or `*_IMAGE=` env default that lacks an exact version tag plus digest. Images built here (services with `build:`, such as `nabad-backend:e2e`) are skipped.
+
+### Docker Hub login in CI
+
+Anonymous Docker Hub pulls are rate-limited per IP address, and GitHub's runners share IP addresses, so CI logs in with a **read-only** Docker Hub token (repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`):
+
+- Jobs that pull in a step (`docker-build`, `selenium`, `Backup tooling`) run `docker/login-action`, pinned by commit SHA, before their first pull.
+- Service containers start before any step, so the `db-backup` MongoDB service uses the `credentials:` field instead.
+- Pull requests from forks and Dependabot don't receive repository secrets. Then the login step is skipped (and the runner skips service credentials), and those jobs pull anonymously, so their pull requests still work.
+- The token is only ever passed as the login password; it is never put in a shell command or printed. The tests in `ops/docker/tests` enforce all of this.
+
+If the token expires or is revoked, the login step fails with an authentication error: create a new read-only token on Docker Hub and update the `DOCKERHUB_TOKEN` secret.
 
 ## Troubleshooting
 

@@ -136,7 +136,7 @@ You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) runni
 5. **Start a throwaway MongoDB 8.0** (the same pinned image as our local rehearsal). It publishes no ports, so nothing outside the container can reach it, and `$Drill` is mounted read-only:
 
    ```powershell
-   docker run -d --name nabad-drill -v "${Drill}:/drill:ro" mongo:8.0.32
+   docker run -d --name nabad-drill -v "${Drill}:/drill:ro" mongo:8.0.32@sha256:d0d926f94df099bff534b7ee5b5986458131a22489dfff8664509af0c1e2ca9c
    do { Start-Sleep 2; $Ready = docker exec nabad-drill mongosh --quiet --eval "db.runCommand({ ping: 1 }).ok" 2>$null } until ($Ready -eq "1")
    ```
 
