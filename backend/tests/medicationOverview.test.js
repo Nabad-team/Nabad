@@ -162,15 +162,44 @@ test("works for a nurse with many residents in a fixed number of queries", async
   const residents = await LinkedProfile.insertMany(Array.from({ length: 30 }, (_, i) => ({ owner: layla._id, fullName: `Resident ${String(i).padStart(2, "0")}`, dateOfBirth: new Date("1940-01-01"), relationship: "other" })));
   await Medication.collection.insertMany(residents.flatMap((r) => [1, 2, 3].map((n) => ({ owner: layla._id, profileId: r._id, name: `Med ${n}`, dose: "1", frequency: "daily", times: [], status: "active", startDate: new Date(), createdAt: new Date(), updatedAt: new Date() }))));
 
-  let queries = 0;
-  const count = () => { queries++; };
-  mongoose.set("debug", count);
+  // Reads only: other models may build their indexes in the background meanwhile (createIndex), which isn't this route.
+  const reads = [];
+  mongoose.set("debug", (collection, method) => { if (/^find/.test(method)) reads.push(`${collection}.${method}`); });
   let body;
   try {
     ({ body } = await request("GET", "/medications/overview", { cookie: token(layla) }));
   } finally { mongoose.set("debug", false); }
   assert.equal(body.profiles.length, 31);
   assert.ok(body.profiles.slice(1).every((p) => p.medications.length === 3));
-  // requireAuth's user lookup + user + linked profiles + medications; independent of the number of residents.
-  assert.ok(queries >= 3 && queries <= 5, `${queries} queries`);
+  // One query for all 30 residents' profiles and one for all their medications, never one per resident.
+  const count = (collection) => reads.filter((read) => read.startsWith(`${collection}.`)).length;
+  assert.equal(count("linkedprofiles"), 1, reads.join(", "));
+  assert.equal(count("medications"), 1, reads.join(", "));
+  assert.ok(reads.length <= 4, reads.join(", ")); // + requireAuth's and the route's user lookups
+});
+
+test("returns existing profile details that tell two people with the same name apart", async () => {
+  const layla = await user("Layla", "layla@example.test");
+  await User.updateOne({ _id: layla._id }, { dateOfBirth: new Date("1990-04-05") });
+  const first = await LinkedProfile.create({ owner: layla._id, fullName: "Amal Haddad", dateOfBirth: new Date("1941-02-03"), relationship: "other", createdAt: new Date("2026-10-01T08:00:00Z") });
+  const second = await LinkedProfile.create({ owner: layla._id, fullName: "Amal Haddad", dateOfBirth: new Date("1950-07-08"), relationship: "parent", createdAt: new Date("2026-10-02T08:00:00Z") });
+  const { body } = await request("GET", "/medications/overview", { cookie: token(layla) });
+  assert.deepEqual(body.profiles.map(({ id, name, relationship, dateOfBirth, addedOn }) => ({ id, name, relationship, dateOfBirth, addedOn })), [
+    { id: "self", name: "Layla", relationship: null, dateOfBirth: "1990-04-05", addedOn: body.profiles[0].addedOn },
+    { id: String(first._id), name: "Amal Haddad", relationship: "other", dateOfBirth: "1941-02-03", addedOn: "2026-10-01" },
+    { id: String(second._id), name: "Amal Haddad", relationship: "parent", dateOfBirth: "1950-07-08", addedOn: "2026-10-02" },
+  ]);
+  assert.match(body.profiles[0].addedOn, /^\d{4}-\d{2}-\d{2}$/);
+
+  // No date of birth saved on the account: empty, never made up.
+  const other = await user("Rana", "rana@example.test");
+  const view = await request("GET", "/medications/overview", { cookie: token(other) });
+  assert.equal(view.body.profiles[0].dateOfBirth, "");
+});
+
+test("sorts medication names naturally, so 2 comes before 10", async () => {
+  const layla = await user("Layla", "layla@example.test");
+  for (const name of ["Med 10", "med 2", "Med 1"]) await medication(layla, layla._id, { name });
+  const { body } = await request("GET", "/medications/overview", { cookie: token(layla) });
+  assert.deepEqual(body.profiles[0].medications.map((m) => m.name), ["Med 1", "med 2", "Med 10"]);
 });

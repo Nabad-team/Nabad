@@ -44,7 +44,7 @@ describe("profileApi", () => {
 
   test("keeps the constants the pages use", () => {
     expect(RELATIONSHIPS).toEqual(["child", "parent", "spouse", "other"]);
-    expect(MAX_LINKED_PROFILES).toBe(10);
+    expect(MAX_LINKED_PROFILES).toBe(30);
   });
 
   test("getMyProfile loads the signed-in user's profile with the login cookie", async () => {
@@ -84,9 +84,9 @@ describe("profileApi", () => {
   });
 
   test("addLinkedProfile passes on the backend's error message", async () => {
-    answer(400, { error: "You can link up to 10 dependents." });
+    answer(400, { error: "You can link up to 30 dependents." });
 
-    await expect(addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" })).rejects.toThrow("You can link up to 10 dependents.");
+    await expect(addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" })).rejects.toThrow("You can link up to 30 dependents.");
   });
 
   test("removeLinkedProfile deletes by id", async () => {

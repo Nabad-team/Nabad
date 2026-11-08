@@ -34,7 +34,7 @@ const dateString = (date) => (date ? date.toISOString().slice(0, 10) : "");
 const OVERVIEW_PROFILE_LIMIT = 100; // well above MAX_LINKED_PROFILES (routes/profile.js), so the page keeps working if that grows
 const RECENT_CHANGE_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const byName = (a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }) || String(a._id).localeCompare(String(b._id));
+const byName = (a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base", numeric: true }) || String(a._id).localeCompare(String(b._id));
 
 // Shift flags. Missing dose/schedule only matter for medications still being given.
 function overviewMedication(medication, now) {
@@ -53,11 +53,13 @@ function overviewMedication(medication, now) {
   };
 }
 
-function overviewProfile(id, name, relationship, medications, now) {
+// details: existing profile fields that tell two people with the same name apart (dateOfBirth, addedOn).
+function overviewProfile(id, name, relationship, details, medications, now) {
   const items = medications.sort((a, b) => (a.status === b.status ? byName(a, b) : a.status === "active" ? -1 : 1)).map((m) => overviewMedication(m, now));
   const active = items.filter((m) => m.status === "active");
   return {
     id, name, relationship, isSelf: id === "self",
+    dateOfBirth: dateString(details.dateOfBirth), addedOn: dateString(details.createdAt),
     medications: items,
     counts: { active: active.length, discontinued: items.length - active.length },
     flags: {
@@ -70,8 +72,8 @@ function overviewProfile(id, name, relationship, medications, now) {
 
 router.get("/overview", asyncRoute(async (req, res) => {
   const [user, linked] = await Promise.all([
-    User.findById(req.userId).select("name").lean(),
-    LinkedProfile.find({ owner: req.userId }).select("fullName relationship").sort({ createdAt: 1, _id: 1 }).limit(OVERVIEW_PROFILE_LIMIT).lean(),
+    User.findById(req.userId).select("name dateOfBirth createdAt").lean(),
+    LinkedProfile.find({ owner: req.userId }).select("fullName relationship dateOfBirth createdAt").sort({ createdAt: 1, _id: 1 }).limit(OVERVIEW_PROFILE_LIMIT).lean(),
   ]);
   if (!user) return res.status(404).json(PROFILE_NOT_FOUND);
   const selfId = String(req.userId);
@@ -88,8 +90,8 @@ router.get("/overview", asyncRoute(async (req, res) => {
     generatedAt: new Date(now).toISOString(),
     recentChangeDays: RECENT_CHANGE_DAYS,
     profiles: [
-      overviewProfile("self", user.name, null, byProfile.get(selfId), now),
-      ...linked.map((p) => overviewProfile(String(p._id), p.fullName, p.relationship, byProfile.get(String(p._id)), now)),
+      overviewProfile("self", user.name, null, user, byProfile.get(selfId), now),
+      ...linked.map((p) => overviewProfile(String(p._id), p.fullName, p.relationship, p, byProfile.get(String(p._id)), now)),
     ],
   });
 }));

@@ -796,7 +796,14 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text("Medication overview", (By.TAG_NAME, "h1"))
         section = (By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]")
         self.wait_for_text(medicine, section)
-        self.assertIn("5 mg tablet · every morning", self.text(section))
+        # Every value is labelled (Dose, Route / form, Frequency...), never a bare number.
+        for label, value in (("Dose", "5 mg"), ("Route / form", "Tablet"), ("Frequency", "every morning")):
+            detail = (By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]//dt[normalize-space()={xpath_string(label)}]/following-sibling::dd[1]")
+            self.assertEqual(self.text(detail), value)
+        # The confidentiality footer is in the page for printing, but not shown on screen.
+        footer = self.driver.find_element(By.CSS_SELECTOR, ".overview-print-footer")
+        self.assertFalse(footer.is_displayed())
+        self.assertEqual(footer.get_attribute("textContent"), "Confidential health information. Do not leave unattended.")
         self.assertIn("Changed in the last 7 days", self.text(section))
 
         # The search narrows the page to that resident.

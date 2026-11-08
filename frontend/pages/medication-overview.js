@@ -11,12 +11,13 @@ import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { formatDate } from "../lib/dates";
 import {
   getMedicationOverview,
   filterOverview,
-  medicationSummary,
+  medicationDetails,
   medicationFlags,
+  sameNameDetails,
+  SAME_NAME_NOTE,
   overviewTotals,
   totalsSentence,
   formatDateTime,
@@ -30,7 +31,6 @@ import {
 const sectionId = (profile) => `overview-${profile.id}`;
 
 function MedicationRow({ medication, recentChangeDays }) {
-  const summary = medicationSummary(medication);
   const flags = medicationFlags(medication, recentChangeDays);
   return (
     <li className="overview-medication">
@@ -39,27 +39,37 @@ function MedicationRow({ medication, recentChangeDays }) {
         {medication.status !== "active" && <Badge tone="neutral">Discontinued</Badge>}
         {flags.map((flag) => <Badge key={flag.key} tone={flag.tone}>{flag.label}</Badge>)}
       </div>
-      {summary && <p className="overview-medication__summary">{summary}</p>}
-      <p className="text-muted text-sm">
-        {medication.endDate ? `${formatDate(medication.startDate)} to ${formatDate(medication.endDate)}` : `Since ${formatDate(medication.startDate)}`}
-        {" · "}Last updated {formatDateTime(medication.updatedAt)}
-      </p>
+      {/* Every value has its label, on screen and on paper. */}
+      <dl className="overview-medication__details">
+        {medicationDetails(medication).map((detail) => (
+          <div key={detail.key} className={`overview-medication__detail overview-medication__detail--${detail.key}`}>
+            <dt>{detail.label}</dt>
+            <dd>{detail.value}</dd>
+          </div>
+        ))}
+      </dl>
     </li>
   );
 }
 
-function PersonSection({ profile, medications, showDiscontinued, recentChangeDays, onEdit }) {
+function PersonSection({ profile, medications, showDiscontinued, recentChangeDays, sameNameDetail, onEdit }) {
   const headingId = `${sectionId(profile)}-heading`;
   const who = profile.isSelf ? "your" : `${profile.name}'s`;
   const hiddenDiscontinued = !showDiscontinued && profile.counts.discontinued > 0;
   return (
     <section className="overview-person" aria-labelledby={headingId} id={sectionId(profile)}>
       <div className="overview-person__heading">
-        <h2 id={headingId}>{profile.name}{profile.isSelf && <span className="text-muted"> (you)</span>}</h2>
+        {/* The distinguishing detail is part of the heading, so two people with the same name also sound different to screen readers. */}
+        <h2 id={headingId}>
+          {profile.name}
+          {profile.isSelf && !sameNameDetail && <span className="text-muted"> (you)</span>}
+          {sameNameDetail && <span className="overview-person__detail"> ({sameNameDetail})</span>}
+        </h2>
         <p className="text-muted text-sm overview-person__counts">
           {profile.counts.active} active{profile.counts.discontinued ? `, ${profile.counts.discontinued} discontinued` : ""}
         </p>
       </div>
+      {sameNameDetail && <p className="overview-person__same-name"><Badge tone="warning">{SAME_NAME_NOTE}</Badge></p>}
       {profile.flags.noMedications && <p><Badge tone="warning">No medications recorded</Badge></p>}
       {!profile.flags.noMedications && medications.length === 0 && (
         <p className="text-muted">{hiddenDiscontinued ? "No active medications. Turn on “Show discontinued medications” to see the others." : "No medications match your search."}</p>
@@ -111,6 +121,8 @@ export default function MedicationOverviewPage() {
   const totals = overviewTotals(visible);
   const recentChangeDays = overview?.recentChangeDays || 7;
   const filtered = Boolean(query.trim()) || onlyActive;
+  // Based on everyone, not only who is on screen: a namesake hidden by a filter still exists.
+  const sameNames = sameNameDetails(profiles);
 
   return (
     <PageLayout title="Medication overview" header={<ProfileHeader showPicture={false} />}>
@@ -188,11 +200,15 @@ export default function MedicationOverviewPage() {
                     medications={medications}
                     showDiscontinued={showDiscontinued}
                     recentChangeDays={recentChangeDays}
+                    sameNameDetail={sameNames.get(profile.id)}
                     onEdit={(id) => switchProfile?.(id)}
                   />
                 ))}
               </div>
             )}
+
+            {/* Only on paper (see components.css). */}
+            <p className="overview-print-footer">Confidential health information. Do not leave unattended.</p>
           </>
         )}
       </div>

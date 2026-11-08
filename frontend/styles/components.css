@@ -3780,12 +3780,71 @@ select.input {
   margin: var(--space-3) 0 0;
 }
 
-/* Only on paper: when it was printed and with which filters. */
-.overview-print-header {
+/* Who this is when two people share a name (relationship, date of birth): part of the h2. */
+.overview-person__detail {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
+}
+
+.overview-person__same-name {
+  margin: var(--space-2) 0 0;
+}
+
+.overview-person__same-name .badge {
+  margin-left: 0;
+  white-space: normal;
+}
+
+/* Label-value pairs ("Dose 487 mg"), wrapping on narrow phones. */
+.overview-medication__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-1) 0 0;
+}
+
+.overview-medication__detail {
+  display: flex;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.overview-medication__detail dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.overview-medication__detail dt::after {
+  content: ":";
+}
+
+.overview-medication__detail dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Only on paper: when it was printed and with which filters, and the confidentiality footer. */
+.overview-print-header,
+.overview-print-footer {
   display: none;
 }
 
 /* Shift handover: print exactly what is on screen, without the app around it or the controls. */
+@page medication-overview {
+  margin: 1.5cm 1.5cm 2.2cm;
+
+  @bottom-center {
+    content: "Confidential health information. Do not leave unattended.";
+    border-top: 0.0625rem solid #000;
+    color: #000;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+}
+
 @media print {
   body:has(.medication-overview) #__next > :not(:has(.medication-overview)),
   body:has(.medication-overview) .skip-link,
@@ -3817,12 +3876,44 @@ select.input {
     margin: 0 0 var(--space-2);
   }
 
+  /* The confidentiality footer, twice over: the page margin box below repeats it at the bottom of every
+     printed page (Chrome and Edge 131+) without ever covering the list; this in-page copy closes the
+     printout in every browser, including those without margin boxes. (A position: fixed footer was tried
+     and prints on top of the last rows of each page.) */
+  .overview-print-footer {
+    display: block;
+    margin: var(--space-4) 0 0;
+    padding-top: var(--space-1);
+    border-top: 0.0625rem solid #000;
+    color: #000;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-align: center;
+  }
+
+  /* On the body, not only the overview: anything else left in the document (such as Next's route
+     announcer) would otherwise start a new, blank page of another type after the list. */
+  body:has(.medication-overview),
+  .medication-overview {
+    page: medication-overview;
+  }
+
+  .overview-medication__detail dt {
+    color: #000;
+  }
+
   .overview-person {
     padding: var(--space-2) 0;
     border: 0;
     border-top: 0.125rem solid #000;
     border-radius: 0;
-    break-inside: avoid;
+  }
+
+  /* A long list may continue on the next page, but a person's heading and note never end a page
+     on their own, and one medication is never split. */
+  .overview-person__heading,
+  .overview-person__same-name {
+    break-after: avoid;
   }
 
   .overview-medication {
