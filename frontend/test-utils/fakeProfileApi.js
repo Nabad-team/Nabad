@@ -6,7 +6,7 @@
 // and call resetFakeProfiles() in beforeEach.
 
 export const RELATIONSHIPS = ["child", "parent", "spouse", "other"];
-export const MAX_LINKED_PROFILES = 10;
+export const MAX_LINKED_PROFILES = 30;
 
 // The demo account's password, for the delete-account tests.
 export const FAKE_PASSWORD = "demo1234";

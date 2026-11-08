@@ -21,7 +21,7 @@ class LlmError extends Error {
   constructor(code, status) {
     super(`LLM request failed: ${code}`);
     this.name = "LlmError";
-    this.code = code; // "timeout" | "network" | "http_error" | "bad_response"
+    this.code = code; // Fixed categories only; never provider text or health data.
     if (status !== undefined) this.status = status;
   }
 }
@@ -42,7 +42,7 @@ function readLlmConfig(env = process.env) {
   const local = url.protocol === "http:" && LOCAL_HOSTS.includes(url.hostname);
   const privateOllama = url.protocol === "http:" && url.hostname === "ollama" && url.port === "11434" && env.LLM_ALLOW_INSECURE_HTTP === "true";
   if (url.protocol !== "https:" && !local && !privateOllama) return { configured: false, problem: "insecure_url" };
-  if (url.username || url.password) return { configured: false, problem: "invalid_url" };
+  if (url.username || url.password || url.search || url.hash) return { configured: false, problem: "invalid_url" };
   const provider = present(env.LLM_PROVIDER) ? env.LLM_PROVIDER.trim().toLowerCase() : "openai-compatible";
   if (!["ollama", "openai-compatible"].includes(provider)) return { configured: false, problem: "invalid_provider" };
 
@@ -53,7 +53,11 @@ function readLlmConfig(env = process.env) {
   }
   return {
     configured: true,
-    endpoint: url.href.replace(/\/+$/, "") + (provider === "ollama" ? "/api/chat" : "/chat/completions"),
+    endpoint: (() => {
+      const base = url.href.replace(/\/+$/, "");
+      const suffix = provider === "ollama" ? "/api/chat" : "/chat/completions";
+      return base.endsWith(suffix) ? base : base + suffix;
+    })(),
     provider,
     apiKey: present(env.LLM_API_KEY) ? env.LLM_API_KEY.trim() : null,
     model: env.LLM_MODEL.trim(),
@@ -65,21 +69,28 @@ function readLlmConfig(env = process.env) {
 function createLlmClient(config, fetchImpl = globalThis.fetch) {
   if (!config?.configured) throw new Error("createLlmClient needs a configured LLM config.");
 
-  async function complete(messages, { maxTokens = 600, reasoningEffort } = {}) {
+  async function complete(messages, { maxTokens = 600, reasoningEffort, maxReplyChars = MAX_REPLY_CHARS, timeoutMs } = {}) {
+    if (!Number.isInteger(maxReplyChars) || maxReplyChars < 1 || maxReplyChars > 32000) throw new TypeError("Invalid reply limit");
+    const requestTimeoutMs = timeoutMs === undefined ? config.timeoutMs : Math.min(config.timeoutMs, Math.max(1000, Math.floor(timeoutMs)));
     // The timeout covers the whole exchange, including reading the reply body.
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
     try {
-      return await send(messages, controller.signal, maxTokens, reasoningEffort);
+      return await send(messages, controller.signal, maxTokens, reasoningEffort, maxReplyChars);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  async function send(messages, signal, maxTokens, reasoningEffort) {
+  async function send(messages, signal, maxTokens, reasoningEffort, maxReplyChars) {
     let requestBody;
     try {
       const geminiThree = config.provider === "openai-compatible" && /^gemini-3(?:\.|-)/i.test(config.model);
+      // Gemini's output limit also pays for internal thinking. Reserve room for
+      // it rather than letting the small visible-answer limit exhaust the request.
+      const thinkingModel = /^gemini-(?:2\.5|[3-9](?:\.|-))/i.test(config.model);
+      const thinkingReserve = reasoningEffort === "high" ? 24576 : reasoningEffort === "low" ? 4096 : 8192;
+      const tokenLimit = thinkingModel ? Math.max(maxTokens, Math.min(32768, maxTokens + thinkingReserve)) : maxTokens;
       requestBody = config.provider === "ollama"
         ? { model: config.model, messages: toOllamaMessages(messages), stream: false, format: "json", options: { temperature: 0, num_predict: maxTokens } }
         : {
@@ -87,7 +98,7 @@ function createLlmClient(config, fetchImpl = globalThis.fetch) {
           messages,
           ...(!geminiThree ? { temperature: 0 } : {}),
           ...(geminiThree && ["low", "medium", "high"].includes(reasoningEffort) ? { reasoning_effort: reasoningEffort } : {}),
-          max_tokens: maxTokens,
+          max_tokens: tokenLimit,
           response_format: { type: "json_object" },
         };
     } catch {
@@ -117,7 +128,10 @@ function createLlmClient(config, fetchImpl = globalThis.fetch) {
       throw new LlmError(signal.aborted ? "timeout" : "bad_response");
     }
     const content = config.provider === "ollama" ? data?.message?.content : data?.choices?.[0]?.message?.content;
-    if (typeof content !== "string" || !content.trim() || content.length > MAX_REPLY_CHARS) {
+    const finishReason = config.provider === "ollama" ? data?.done_reason : data?.choices?.[0]?.finish_reason;
+    if (["content_filter", "safety", "SAFETY"].includes(finishReason) || data?.choices?.[0]?.message?.refusal) throw new LlmError("provider_blocked");
+    if (["length", "max_tokens", "MAX_TOKENS"].includes(finishReason)) throw new LlmError("incomplete_response");
+    if (typeof content !== "string" || !content.trim() || content.length > maxReplyChars) {
       throw new LlmError("bad_response");
     }
     return content;

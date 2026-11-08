@@ -74,6 +74,12 @@ describe("LLM client: configuration", () => {
     assert.equal(config.provider, "ollama");
   });
 
+  test("accepts a complete endpoint without duplicating its suffix", () => {
+    assert.equal(readLlmConfig({ ...CONFIG_ENV, LLM_API_URL: "https://llm.example.test/v1/chat/completions/" }).endpoint, "https://llm.example.test/v1/chat/completions");
+    assert.equal(readLlmConfig({ ...CONFIG_ENV, LLM_PROVIDER: "ollama", LLM_API_URL: "http://localhost:11434/api/chat" }).endpoint, "http://localhost:11434/api/chat");
+    for (const suffix of ["?key=private", "#private"]) assert.equal(readLlmConfig({ ...CONFIG_ENV, LLM_API_URL: "https://llm.example.test/v1" + suffix }).problem, "invalid_url");
+  });
+
   test("refuses plain HTTP to another machine, because symptoms are health data", () => {
     assert.deepEqual(readLlmConfig({ ...CONFIG_ENV, LLM_API_URL: "http://llm.example.test/v1" }), { configured: false, problem: "insecure_url" });
   });
@@ -140,6 +146,49 @@ describe("LLM client: requests and errors", () => {
     const { fetchImpl, requests } = fakeFetch(() => completion("{}"));
     await createLlmClient(readLlmConfig({ LLM_API_URL: "http://localhost:11434/v1", LLM_MODEL: "llama3" }), fetchImpl).complete([]);
     assert.equal(requests[0].options.headers.Authorization, undefined);
+  });
+
+  test("Gemini thinking receives room for reasoning as well as the visible answer", async () => {
+    for (const model of ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-3.1-pro-preview"]) {
+      const { fetchImpl, requests } = fakeFetch(() => completion("{}"));
+      await createLlmClient(readLlmConfig({ ...CONFIG_ENV, LLM_MODEL: model }), fetchImpl).complete([], { maxTokens: 1600, reasoningEffort: "medium" });
+      assert.equal(requests[0].body.max_tokens, 9792);
+      assert.deepEqual(requests[0].body.response_format, { type: "json_object" });
+    }
+  });
+
+  test("low reasoning uses a smaller thinking reserve for faster structured replies", async () => {
+    const { fetchImpl, requests } = fakeFetch(() => completion("{}"));
+    await createLlmClient(readLlmConfig({ ...CONFIG_ENV, LLM_MODEL: "gemini-2.5-flash" }), fetchImpl)
+      .complete([], { maxTokens: 2200, reasoningEffort: "low" });
+    assert.equal(requests[0].body.max_tokens, 6296);
+  });
+
+  test("truncated outputs are rejected even when the partial JSON happens to parse", async () => {
+    for (const content of [null, "", '{"answer":"cut off"}']) {
+      const fetchImpl = async () => jsonResponse(200, { choices: [{ finish_reason: "length", message: { content } }] });
+      await assert.rejects(createLlmClient(readLlmConfig(CONFIG_ENV), fetchImpl).complete([]), error => error.code === "incomplete_response");
+    }
+    const fetchImpl = async () => jsonResponse(200, { done_reason: "length", message: { content: "{}" } });
+    await assert.rejects(createLlmClient(readLlmConfig({ ...CONFIG_ENV, LLM_PROVIDER: "ollama" }), fetchImpl).complete([]), error => error.code === "incomplete_response");
+  });
+
+  test("provider safety refusals stay blocked without exposing the refusal text", async () => {
+    for (const reply of [
+      { finish_reason: "content_filter", message: { content: "private response" } },
+      { message: { content: null, refusal: "private refusal" } },
+    ]) {
+      const fetchImpl = async () => jsonResponse(200, { choices: [reply] });
+      await assert.rejects(createLlmClient(readLlmConfig(CONFIG_ENV), fetchImpl).complete([]), error => error.code === "provider_blocked" && !/private/.test(error.message));
+    }
+  });
+
+  test("report-size replies can use an explicit bounded limit while ordinary chat stays small", async () => {
+    const value = JSON.stringify({ explanation: "a".repeat(9000) });
+    const client = createLlmClient(readLlmConfig(CONFIG_ENV), async () => completion(value));
+    await assert.rejects(client.complete([]), error => error.code === "bad_response");
+    assert.equal(await client.complete([], { maxReplyChars: 20000 }), value);
+    await assert.rejects(client.complete([], { maxReplyChars: 32001 }), TypeError);
   });
 
   test("a provider error status becomes an http_error that keeps the status but not the body", async () => {

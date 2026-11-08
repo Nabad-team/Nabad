@@ -4,6 +4,11 @@ const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const MAX_PDF_PAGES = 25;
 const MAX_REPORT_TEXT = 30000;
 const MAX_DOCX_XML_BYTES = 2 * 1024 * 1024;
+// Count letters and digits rather than layout whitespace. A completely blank or
+// image-only page usually has zero; short table fragments remain "sparse" so
+// they are not mistaken for fully unreadable pages.
+const MIN_READABLE_PAGE_CHARS = 5;
+const MIN_SUBSTANTIAL_PAGE_CHARS = 30;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const TEXT_TYPES = new Set(["text/plain", "text/csv", "application/vnd.ms-excel"]);
 
@@ -109,6 +114,35 @@ function extractPlainText(buffer, extension) {
   return { kind: "text", text, partial: partial || extension === "csv" && text.split("\n").length > 1000 };
 }
 
+function assessPdfCoverage(pageTexts, pageLabels = null, { truncated = false, expectedPageCount = pageTexts.length } = {}) {
+  const pages = pageTexts.map((text, index) => {
+    const readableChars = String(text || "").replace(/[^\p{L}\p{N}]/gu, "").length;
+    const status = readableChars < MIN_READABLE_PAGE_CHARS ? "unreadable" : readableChars < MIN_SUBSTANTIAL_PAGE_CHARS ? "sparse" : "readable";
+    return { pageNumber: index + 1, label: pageLabels?.[index] || null, readableChars, status };
+  });
+  const unreadablePages = pages.filter((page) => page.status === "unreadable").map((page) => page.pageNumber);
+  const sparsePages = pages.filter((page) => page.status === "sparse").map((page) => page.pageNumber);
+  const issues = [];
+  if (unreadablePages.length) issues.push(`No useful selectable text was extracted from page${unreadablePages.length === 1 ? "" : "s"} ${unreadablePages.join(", ")}. Those pages may be blank, scanned, or unreadable.`);
+  if (pages.length > 1 && sparsePages.length && sparsePages.length / pages.length >= 0.25) issues.push(`Very little selectable text was extracted from page${sparsePages.length === 1 ? "" : "s"} ${sparsePages.join(", ")}; table rows or findings may be incomplete.`);
+  const numericLabels = Array.isArray(pageLabels) && pageLabels.length === pages.length && pageLabels.every((label) => /^\d+$/.test(label))
+    ? pageLabels.map(Number) : null;
+  if (numericLabels && numericLabels.some((label, index) => index > 0 && label !== numericLabels[index - 1] + 1)) {
+    issues.push("The PDF page labels are not sequential; one or more pages may be missing or duplicated.");
+  }
+  if (truncated) issues.push("The extracted report text exceeded the analysis limit, so later content was not processed.");
+  return {
+    pageCount: expectedPageCount,
+    processedPages: pages.length,
+    readablePages: pages.filter((page) => page.status === "readable").length,
+    sparsePages,
+    unreadablePages,
+    pages,
+    issues,
+    status: issues.length ? "uncertain" : "complete",
+  };
+}
+
 async function extractPdfText(buffer) {
   if (buffer.length < 8 || buffer.toString("ascii", 0, 5) !== "%PDF-") {
     throw new ReportInputError("This file does not appear to be a valid PDF.");
@@ -136,7 +170,9 @@ async function extractPdfText(buffer) {
     throw new ReportInputError(`Choose a PDF with ${MAX_PDF_PAGES} pages or fewer.`);
   }
   const pages = [];
+  let pageLabels = null;
   try {
+    pageLabels = await pdf.getPageLabels().catch(() => null);
     for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
@@ -149,12 +185,14 @@ async function extractPdfText(buffer) {
     await loadingTask.destroy().catch(() => {});
   }
   const fullText = pages.join("\n").replace(/\s+/g, " ").trim();
-  const partial = fullText.length > MAX_REPORT_TEXT || pages.length < pageCount;
+  const truncated = fullText.length > MAX_REPORT_TEXT || pages.length < pageCount;
+  const extraction = assessPdfCoverage(pages, pageLabels, { truncated, expectedPageCount: pageCount });
+  const partial = truncated || extraction.status !== "complete";
   const text = fullText.slice(0, MAX_REPORT_TEXT);
   if (text.length < 40) {
-    throw new ReportInputError("This PDF has no readable text. Try a clear photo of the written report instead.", 422);
+    throw new ReportInputError("This PDF has no usable selectable text and may be a scanned document. Upload a clear photo of the written report or a searchable PDF instead.", 422);
   }
-  return { kind: "text", text, partial };
+  return { kind: "text", text, partial, extraction };
 }
 
 async function extractReport(file) {
@@ -172,4 +210,4 @@ async function extractReport(file) {
   return { kind: "image", mimeType, dataUrl: `data:${mimeType};base64,${buffer.toString("base64")}` };
 }
 
-module.exports = { extractReport, decodeUpload, extractPdfText, extractDocxText, extractPlainText, ReportInputError, MAX_FILE_BYTES, MAX_PDF_PAGES, MAX_REPORT_TEXT };
+module.exports = { extractReport, decodeUpload, extractPdfText, extractDocxText, extractPlainText, assessPdfCoverage, ReportInputError, MAX_FILE_BYTES, MAX_PDF_PAGES, MAX_REPORT_TEXT };

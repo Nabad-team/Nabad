@@ -123,15 +123,15 @@ test("deleting a linked profile removes only its appointments", async () => {
   assert.ok(await ReportConversation.findById(selfChat._id));
 });
 
-test("rejects invalid linked profiles and more than 10", async () => {
+test("rejects invalid linked profiles and more than 30", async () => {
   const cookie = token(await user());
   for (const fields of [{ fullName: "" }, { dateOfBirth: "" }, { dateOfBirth: "2999-01-01" }, { relationship: "self" }, { relationship: "friend" }]) {
     assert.equal((await addDependent(cookie, fields)).status, 400, JSON.stringify(fields));
   }
-  for (let i = 0; i < 10; i++) assert.equal((await addDependent(cookie, { fullName: `Child ${i}` })).status, 201);
-  const eleventh = await addDependent(cookie);
-  assert.equal(eleventh.status, 400); assert.equal(eleventh.body.error, "You can link up to 10 dependents.");
-  assert.equal(await LinkedProfile.countDocuments(), 10);
+  for (let i = 0; i < 30; i++) assert.equal((await addDependent(cookie, { fullName: `Resident ${i}` })).status, 201, `profile ${i + 1}`);
+  const thirtyFirst = await addDependent(cookie);
+  assert.equal(thirtyFirst.status, 400); assert.equal(thirtyFirst.body.error, "You can link up to 30 dependents.");
+  assert.equal(await LinkedProfile.countDocuments(), 30);
 });
 
 test("another user's linked profiles can't be seen, deleted or changed", async () => {

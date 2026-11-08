@@ -18,6 +18,31 @@
   border: 0;
 }
 
+/* ---------- Vitals ---------- */
+.vitals-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-4); align-items: end; }
+.vitals-history__heading { display: flex; align-items: end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.vitals-history__heading .field__label { min-width: 11rem; }
+.vitals-history__heading select { display: block; margin-top: var(--space-2); }
+.vitals-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: var(--space-4); margin: var(--space-5) 0; }
+.vitals-chart { padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.vitals-chart__heading { display: flex; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
+.vitals-chart__heading h3 { margin: 0; }
+.vitals-chart svg { width: 100%; height: 10rem; margin-top: var(--space-3); overflow: visible; }
+.vitals-chart__grid { stroke: var(--color-border); stroke-width: .5; }
+.vitals-chart__line { fill: none; stroke: var(--color-primary); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.vitals-chart__line--diastolic { stroke: #d36b42; }
+.vitals-chart__line--heartRate { stroke: #9b3f66; }
+.vitals-chart__line--temperature { stroke: #d36b42; }
+.vitals-chart__legend { display: flex; gap: var(--space-4); font-size: var(--text-sm); }
+.vitals-chart__key::before { content: ""; display: inline-block; width: .8rem; height: .2rem; margin-right: .35rem; vertical-align: middle; background: var(--color-primary); }
+.vitals-chart__key--diastolic::before { background: #d36b42; }
+.vitals-table-wrap { overflow-x: auto; }
+.vitals-table { width: 100%; border-collapse: collapse; }
+.vitals-table caption { text-align: left; font-weight: 700; margin-bottom: var(--space-2); }
+.vitals-table th, .vitals-table td { padding: var(--space-3); border-bottom: 1px solid var(--color-border); text-align: left; white-space: nowrap; }
+.vitals-empty { padding: var(--space-6); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); }
+.calendar__event--medication { background: #e8f4ef; color: #185b48; border-left: 3px solid #27866b; }
+
 .text-muted {
   color: var(--color-text-muted);
 }
@@ -384,7 +409,9 @@
 }
 
 .button:disabled {
-  opacity: 0.5;
+  color: var(--color-text-muted);
+  background: var(--color-sunken);
+  border-color: var(--color-border-strong);
   cursor: not-allowed;
 }
 
@@ -714,8 +741,48 @@ select.input {
 .emergency-location .input { width: 100%; margin-top: var(--space-2); }
 .emergency-location p { overflow-wrap: anywhere; }
 .emergency-location .button { max-width: 100%; overflow-wrap: anywhere; }
-.wellbeing-support-number { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
-.wellbeing-support-number h4 { margin-bottom: var(--space-2); }
+.wellbeing-corner { overflow: hidden; }
+.wellbeing-corner__heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); }
+.wellbeing-corner__heading h2, .wellbeing-support__heading h3 { margin: 0; }
+.wellbeing-corner__eyebrow { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: var(--text-sm); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.wellbeing-corner__heart { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; color: var(--color-primary); background: var(--color-primary-soft); font-size: 1.35rem; }
+.wellbeing-message { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5); border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border)); border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--color-primary-soft), var(--color-surface)); }
+.wellbeing-message > span { display: grid; place-items: center; flex: 0 0 3rem; height: 3rem; border-radius: 50%; background: var(--color-surface); color: #b46b00; font-size: 1.45rem; box-shadow: var(--shadow-sm); }
+.wellbeing-message h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
+.wellbeing-message p { margin: 0; font-size: var(--text-lg); }
+.wellbeing-tips { margin-top: var(--space-6); }
+.wellbeing-tips ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.wellbeing-tips li { display: flex; align-items: center; gap: var(--space-3); min-height: 4rem; margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-sunken); }
+.wellbeing-tips li span { display: grid; place-items: center; flex: 0 0 2rem; height: 2rem; border-radius: 50%; color: var(--color-primary); background: var(--color-primary-soft); font-weight: 700; }
+.wellbeing-support { margin-top: var(--space-7); padding-top: var(--space-6); border-top: 1px solid var(--color-border); }
+.wellbeing-support__heading { display: flex; align-items: end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+.wellbeing-support__heading > span { color: var(--color-text-muted); font-size: var(--text-sm); }
+.wellbeing-support__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.wellbeing-support-number { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-5); border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border)); border-radius: var(--radius-lg); background: linear-gradient(145deg, var(--color-primary-soft), var(--color-surface) 55%); }
+.wellbeing-support-number--emergency { border-color: color-mix(in srgb, var(--color-danger) 38%, var(--color-border)); background: linear-gradient(145deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-surface)), var(--color-surface) 55%); }
+.wellbeing-support-number__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md); color: var(--color-primary); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wellbeing-support-number--emergency .wellbeing-support-number__icon { color: var(--color-danger); }
+.wellbeing-support-number__icon svg { width: 1.5rem; height: 1.5rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.wellbeing-support-number--emergency .wellbeing-support-number__icon svg { fill: currentColor; stroke: none; }
+.wellbeing-support-number__label { margin: 0 0 var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: 600; }
+.wellbeing-support-number h4 { margin: 0 0 var(--space-2); font-size: var(--text-lg); }
+.wellbeing-support-number__content > p:not(.wellbeing-support-number__label) { margin: 0 0 var(--space-4); }
+.wellbeing-support-number__call { width: 100%; justify-content: center; gap: var(--space-3); padding-block: var(--space-3); }
+.wellbeing-support-number__call svg { width: 1.4rem; height: 1.4rem; fill: currentColor; }
+.wellbeing-support-number__call span { display: grid; text-align: left; font-size: var(--text-lg); line-height: 1.05; }
+.wellbeing-support-number__call small { font-size: .72rem; font-weight: 600; opacity: .85; }
+.wellbeing-support-number__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--text-sm); }
+.wellbeing-support-number__meta a { display: inline-flex; align-items: center; gap: .25rem; font-weight: 600; }
+.wellbeing-support-number__meta a svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.wellbeing-support__note { margin: var(--space-4) 0 0; }
+@media (max-width: 46rem) {
+  .wellbeing-tips ul, .wellbeing-support__grid { grid-template-columns: 1fr; }
+  .wellbeing-support__heading { align-items: start; flex-direction: column; }
+}
+@media (max-width: 30rem) {
+  .wellbeing-message { align-items: flex-start; padding: var(--space-4); }
+  .wellbeing-support-number { grid-template-columns: 1fr; padding: var(--space-4); }
+}
 @media print {
   .emergency-popup { display: none; }
 }
@@ -769,13 +836,33 @@ select.input {
   padding-block: var(--space-4);
 }
 
-/* Consistent section access on every desktop page; phones use the disclosure. */
+/* Consistent, task-grouped section access on every desktop page; phones use the disclosure. */
+.workspace-groups {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  padding-bottom: var(--space-3);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.workspace-group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: 0;
+}
+.workspace-group + .workspace-group {
+  margin-left: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-border-strong);
+}
 .workspace-nav__list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
   list-style: none;
-  padding: 0 0 var(--space-3);
+  padding: 0;
   margin: 0;
 }
 .workspace-nav__list > li { margin: 0; }
@@ -794,15 +881,30 @@ select.input {
   transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 .workspace-nav__list .app-nav__icon { width: 1.125rem; height: 1.125rem; flex-basis: 1.125rem; }
-.workspace-nav__list a:hover { background: var(--color-sunken); color: var(--color-primary-strong); }
+.workspace-nav__list a:hover { background: var(--color-primary-soft); color: var(--color-primary-strong); }
 .workspace-nav__list a[aria-current="page"] {
-  background: var(--color-primary-soft);
+  background: var(--color-surface);
   border-color: var(--color-primary-line);
   color: var(--color-primary-strong);
   box-shadow: inset 0 -2px 0 var(--color-primary);
 }
 @media (max-width: 39.99rem) {
   .workspace-nav { display: none; }
+}
+@media (min-width: 40rem) and (max-width: 70rem) {
+  .workspace-nav__list a { padding-inline: var(--space-2); }
+}
+
+.workspace-groups--mobile { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
+.workspace-groups--mobile .workspace-group { display: block; margin-left: 0; padding: 0; border: 0; background: transparent; }
+.workspace-groups--mobile .workspace-group__label {
+  display: block;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--color-primary-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
 }
 
 .app-header__end {
@@ -1611,6 +1713,65 @@ select.input {
   font-weight: var(--weight-semibold);
 }
 
+.emergency-callout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 0.125rem solid var(--color-danger);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-danger-soft), var(--color-surface));
+  color: var(--color-danger-strong);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
+}
+
+.emergency-callout:hover {
+  border-color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
+  text-decoration: none;
+  box-shadow: var(--shadow-overlay);
+  transform: translateY(-0.125rem);
+}
+
+.emergency-callout__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.emergency-callout__icon svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
+.emergency-callout__copy { display: grid; gap: var(--space-1); }
+.emergency-callout__title { font-size: var(--text-lg); }
+.emergency-callout__copy small { color: var(--color-text-muted); font-size: var(--text-sm); }
+.emergency-callout__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-danger);
+  color: #fff;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .emergency-callout { grid-template-columns: auto minmax(0, 1fr); }
+  .emergency-callout__action { grid-column: 1 / -1; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emergency-callout:hover { transform: none; }
+}
+
 /* ---------- Sign-in pages ---------- */
 
 .page-shell--auth .page-main {
@@ -1639,6 +1800,68 @@ select.input {
 .dashboard-navigation {
   margin-bottom: var(--space-6);
 }
+
+.quick-actions__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-actions__list .button {
+  width: 100%;
+  min-height: 3.5rem;
+  justify-content: flex-start;
+}
+
+.vitals-chart__point {
+  fill: var(--color-surface);
+  stroke: var(--color-primary);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.vitals-chart__point:focus { outline: none; }
+.vitals-chart__point:focus-visible { fill: var(--color-surface); stroke: var(--color-primary-strong); stroke-width: 3; }
+.vitals-chart__point--diastolic { stroke: var(--color-accent); }
+
+.action-toast {
+  position: sticky;
+  z-index: 8;
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: 42rem;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-success);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.medication-browser { display: grid; gap: var(--space-4); }
+.medication-archive { border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
+.medication-archive > summary { display: flex; align-items: center; min-height: var(--tap-target); cursor: pointer; font-weight: 700; padding: var(--space-2) 0; }
+.medication-archive[open] > summary { margin-bottom: var(--space-3); }
+
+.calendar-details {
+  display: grid;
+  gap: var(--space-3);
+  margin-block: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-primary-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-soft);
+}
+.calendar-details__heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.calendar-details__heading h2, .calendar-details p { margin: 0; }
+.calendar-details__item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding-block: var(--space-2); border-bottom: 1px solid var(--color-primary-line); }
+.calendar-details__item span { color: var(--color-text-muted); }
 
 .dashboard-navigation .app-nav__list {
   display: grid;
@@ -1827,6 +2050,9 @@ select.input {
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }
+.report-chat__sources { margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.report-chat__sources ul { margin: var(--space-1) 0 0; padding-left: var(--space-5); }
+.report-chat__sources a { overflow-wrap: anywhere; }
 
 .assistant-chat {
   display: grid;
@@ -2200,6 +2426,17 @@ select.input {
   gap: var(--space-3);
 }
 
+.report-finding-group + .report-finding-group {
+  margin-top: var(--space-5);
+}
+
+.report-finding-group > h4 {
+  margin-bottom: var(--space-3);
+}
+
+.report-finding-group--urgent > h4 { color: var(--color-danger, #a61b1b); }
+.report-finding-group--abnormal > h4 { color: var(--color-warning-text, #7a4300); }
+
 .report-finding {
   padding: var(--space-4);
   background: var(--color-bg);
@@ -2207,7 +2444,7 @@ select.input {
   border-radius: var(--radius-md);
 }
 
-.report-finding h4 {
+.report-finding h5 {
   margin-bottom: var(--space-2);
 }
 
@@ -2283,6 +2520,13 @@ select.input {
   border-color: var(--color-border);
   background: var(--color-sunken);
   color: var(--color-text-muted);
+}
+
+/* Something worth checking, e.g. a medication without a dose. Amber, still not red (6.8:1). */
+.badge--warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
 }
 
 /* ---------- Medications ---------- */
@@ -2386,7 +2630,11 @@ select.input {
 .calendar__grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-width: 35rem;
 }
+
+.calendar__scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
+.calendar__scroll:focus-visible { outline-offset: -0.1875rem; }
 
 .calendar__weekdays {
   padding: 0 var(--space-2);
@@ -2420,6 +2668,11 @@ select.input {
 .calendar__day:hover,
 .calendar__day:focus-visible {
   background: var(--color-primary-soft);
+}
+
+.calendar__day[aria-pressed="true"] {
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 0.125rem var(--color-primary);
 }
 
 .calendar__day--outside {
@@ -3302,6 +3555,24 @@ select.input {
 .visit-prep__document-options input { margin-top: 0.2rem; }
 .visit-prep__document-options li { margin: 0; }
 .visit-prep__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.visit-prep__share-controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-3); }
+.visit-prep__share-controls .input { width: auto; min-width: 9rem; }
+.visit-prep__new-share { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.visit-prep__copy-row { display: flex; align-items: stretch; gap: var(--space-2); }
+.visit-prep__copy-row .input { min-width: 0; }
+.visit-prep__copy-row .button { flex: 0 0 auto; gap: var(--space-2); }
+.visit-prep__copy-row svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.visit-prep__status-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
+.visit-prep__status-heading p { margin: 0; }
+.visit-prep__shares { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; gap: var(--space-3); }
+.visit-prep__shares li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.visit-prep__shares span { display: block; }
+.visit-prep__shares .visit-prep__share--confirmed { border-color: var(--color-success); background: var(--color-success-soft); }
+@media (max-width: 36rem) {
+  .visit-prep__copy-row, .visit-prep__status-heading { align-items: stretch; flex-direction: column; }
+  .visit-prep__copy-row .button { width: 100%; }
+}
+.shared-visit-prep__text { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* Printable emergency card: no fixed height or truncation of medical information. */
 .emergency-card {
@@ -3408,5 +3679,250 @@ select.input {
 
   @page {
     margin: 15mm;
+  }
+}
+
+/* ---------- Medication overview (SCRUM-150) ---------- */
+/* Everyone's medications on one page: a compact, scannable list per person. */
+
+.overview-controls {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.overview-controls .field {
+  margin-bottom: 0;
+}
+
+.overview-controls__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+}
+
+.overview-no-linked p {
+  margin: var(--space-1) 0 0;
+}
+
+.overview-totals {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.overview-people {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.overview-person {
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  scroll-margin-top: var(--space-6);
+}
+
+.overview-person__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+}
+
+.overview-person__heading h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.overview-person__counts {
+  margin: 0;
+}
+
+.overview-medications {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overview-medication {
+  padding: var(--space-2) 0;
+  border-top: 0.0625rem solid var(--color-border);
+}
+
+.overview-medication p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.overview-medication__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) 0;
+}
+
+.overview-medication__main .badge:first-of-type {
+  margin-left: var(--space-2);
+}
+
+.overview-medication__main .badge + .badge {
+  margin-left: var(--space-1);
+}
+
+.overview-medication__name {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.overview-person__edit {
+  margin: var(--space-3) 0 0;
+}
+
+/* Who this is when two people share a name (relationship, date of birth): part of the h2. */
+.overview-person__detail {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
+}
+
+.overview-person__same-name {
+  margin: var(--space-2) 0 0;
+}
+
+.overview-person__same-name .badge {
+  margin-left: 0;
+  white-space: normal;
+}
+
+/* Label-value pairs ("Dose 487 mg"), wrapping on narrow phones. */
+.overview-medication__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-1) 0 0;
+}
+
+.overview-medication__detail {
+  display: flex;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.overview-medication__detail dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.overview-medication__detail dt::after {
+  content: ":";
+}
+
+.overview-medication__detail dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Only on paper: when it was printed and with which filters, and the confidentiality footer. */
+.overview-print-header,
+.overview-print-footer {
+  display: none;
+}
+
+/* Shift handover: print exactly what is on screen, without the app around it or the controls. */
+@page medication-overview {
+  margin: 1.5cm 1.5cm 2.2cm;
+
+  @bottom-center {
+    content: "Confidential health information. Do not leave unattended.";
+    border-top: 0.0625rem solid #000;
+    color: #000;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+}
+
+@media print {
+  body:has(.medication-overview) #__next > :not(:has(.medication-overview)),
+  body:has(.medication-overview) .skip-link,
+  body:has(.medication-overview) .site-header,
+  body:has(.medication-overview) .profile-strip,
+  body:has(.medication-overview) .site-footer,
+  body:has(.medication-overview) .page-note,
+  body:has(.medication-overview) .page-main > :not(.medication-overview),
+  .medication-overview .page-title .lead,
+  .medication-overview .heartbeat-divider,
+  .overview-controls,
+  .overview-no-linked,
+  .overview-person__edit {
+    display: none !important;
+  }
+
+  body:has(.medication-overview) {
+    background: #fff;
+    color: #000;
+  }
+
+  body:has(.medication-overview) .page-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .overview-print-header {
+    display: block;
+    margin: 0 0 var(--space-2);
+  }
+
+  /* The confidentiality footer, twice over: the page margin box below repeats it at the bottom of every
+     printed page (Chrome and Edge 131+) without ever covering the list; this in-page copy closes the
+     printout in every browser, including those without margin boxes. (A position: fixed footer was tried
+     and prints on top of the last rows of each page.) */
+  .overview-print-footer {
+    display: block;
+    margin: var(--space-4) 0 0;
+    padding-top: var(--space-1);
+    border-top: 0.0625rem solid #000;
+    color: #000;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-align: center;
+  }
+
+  /* On the body, not only the overview: anything else left in the document (such as Next's route
+     announcer) would otherwise start a new, blank page of another type after the list. */
+  body:has(.medication-overview),
+  .medication-overview {
+    page: medication-overview;
+  }
+
+  .overview-medication__detail dt {
+    color: #000;
+  }
+
+  .overview-person {
+    padding: var(--space-2) 0;
+    border: 0;
+    border-top: 0.125rem solid #000;
+    border-radius: 0;
+  }
+
+  /* A long list may continue on the next page, but a person's heading and note never end a page
+     on their own, and one medication is never split. */
+  .overview-person__heading,
+  .overview-person__same-name {
+    break-after: avoid;
+  }
+
+  .overview-medication {
+    break-inside: avoid;
+  }
+
+  .medication-overview .badge {
+    border-color: #000;
+    background: #fff;
+    color: #000;
   }
 }

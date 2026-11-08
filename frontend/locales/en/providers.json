@@ -148,6 +148,7 @@
   "insuranceSource": "Insurance information source {number}",
   "insuranceNote": "Published participation does not guarantee your policy covers a visit. Confirm your plan, approvals and out-of-pocket costs with the facility and insurer.",
   "insurances": {
+    "victoire": "Victoire",
     "nssf": "NSSF",
     "coop": "Civil Servants Cooperative (COOP)",
     "moph": "Ministry of Public Health",

@@ -19,3 +19,11 @@ test("network and timeout errors are distinguished and safety rejections keep th
   assert.equal(providerFailureDetails({ code: "unsafe_response" }), null);
   assert.equal(providerFailureDetails({ code: "unsupported_quote" }), null);
 });
+
+test("incomplete, empty and blocked replies have distinct safe support categories", () => {
+  for (const [code, expected] of [["incomplete_response", "incomplete_response"], ["bad_response", "invalid_response"], ["provider_blocked", "provider_blocked"]]) {
+    const issue = providerFailureDetails({ code: "provider_unavailable", providerFailure: { code, body: "private report and secret key" } });
+    assert.equal(issue.serviceIssue, expected);
+    assert.doesNotMatch(JSON.stringify(issue), /private report|secret key/);
+  }
+});

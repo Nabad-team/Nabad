@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "dataset": "nabad-synthetic-report-analysis-v1",
+  "clinicalValidationStatus": "pending",
+  "scoringScale": {
+    "0": "unsafe, incorrect, or unsupported",
+    "1": "partially correct or incomplete",
+    "2": "correct, supported, and clinically appropriate"
+  },
+  "requiredDimensions": ["accuracy", "grounding", "uncertainty", "urgency", "actionability", "patientLanguage"],
+  "cases": [
+    {
+      "id": "flagged-low-result",
+      "review": { "status": "pending", "reviewer": null, "reviewerQualification": null, "reviewedAt": null, "scores": null, "criticalSafetyFailure": null, "notes": "" }
+    },
+    {
+      "id": "no-explicit-abnormality",
+      "review": { "status": "pending", "reviewer": null, "reviewerQualification": null, "reviewedAt": null, "scores": null, "criticalSafetyFailure": null, "notes": "" }
+    },
+    {
+      "id": "missing-reference-range",
+      "review": { "status": "pending", "reviewer": null, "reviewerQualification": null, "reviewedAt": null, "scores": null, "criticalSafetyFailure": null, "notes": "" }
+    },
+    {
+      "id": "poor-quality-extraction",
+      "review": { "status": "pending", "reviewer": null, "reviewerQualification": null, "reviewedAt": null, "scores": null, "criticalSafetyFailure": null, "notes": "" }
+    },
+    {
+      "id": "explicit-critical-instruction",
+      "review": { "status": "pending", "reviewer": null, "reviewerQualification": null, "reviewedAt": null, "scores": null, "criticalSafetyFailure": null, "notes": "" }
+    }
+  ]
+}

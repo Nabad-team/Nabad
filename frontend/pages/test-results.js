@@ -45,10 +45,17 @@ export default function TestResultsPage() {
   const [consent, setConsent] = useState(false);
   const profileId = activeProfile?.id || "self";
   const profileRef = useRef(profileId);
+  const pendingRequest = useRef(null);
   profileRef.current = profileId;
 
   useEffect(() => {
     let current = true;
+    pendingRequest.current?.controller.abort();
+    pendingRequest.current = null;
+    setBusy(false);
+    setQuestion("");
+    setConsent(false);
+    setError("");
     setConversations([]);
     setConversationId(null);
     setMessages([]);
@@ -58,15 +65,20 @@ export default function TestResultsPage() {
     getReportConversations(profileId)
       .then((data) => { if (current && profileRef.current === profileId) setConversations(data.conversations); })
       .catch(() => { if (current && profileRef.current === profileId) setHistoryError("Saved conversations could not be loaded."); });
-    return () => { current = false; };
+    const input = document.getElementById("test-report-file");
+    if (input) input.value = "";
+    return () => { current = false; pendingRequest.current?.controller.abort(); pendingRequest.current = null; };
   }, [profileId]);
 
-  async function refreshConversations() {
+  async function refreshConversations(operation) {
     try {
       const data = await getReportConversations(profileId);
-      if (profileRef.current === profileId) setConversations(data.conversations);
+      if (profileRef.current === profileId && pendingRequest.current === operation) {
+        setConversations(data.conversations);
+        setHistoryError("");
+      }
     } catch {
-      setHistoryError("Your new conversation was saved, but the history list could not be refreshed.");
+      if (profileRef.current === profileId && pendingRequest.current === operation) setHistoryError("Your new conversation was saved, but the history list could not be refreshed.");
     }
   }
 
@@ -97,7 +109,9 @@ export default function TestResultsPage() {
 
   async function sendMessage(event) {
     event.preventDefault();
-    if (!question.trim() || !consent || busy) return;
+    if (!question.trim() || !consent || busy || pendingRequest.current) return;
+    const operation = { controller: new AbortController() };
+    pendingRequest.current = operation;
     const currentQuestion = question.trim();
     const requestedProfileId = profileId;
     const previousMessages = messages.slice(-8);
@@ -107,6 +121,7 @@ export default function TestResultsPage() {
       let upload = null;
       if (file) {
         const bytes = new Uint8Array(await file.arrayBuffer());
+        if (operation.controller.signal.aborted || profileRef.current !== requestedProfileId) return;
         let binary = "";
         for (let offset = 0; offset < bytes.length; offset += 0x8000) {
           binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
@@ -118,27 +133,34 @@ export default function TestResultsPage() {
       if (file && !result) {
         const analysis = await request(`/reports/analyze?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
+          signal: operation.controller.signal,
           body: JSON.stringify({ file: upload, question: currentQuestion, consent: true }),
         });
-        if (profileRef.current !== requestedProfileId) return;
+        if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
         setResult(analysis);
         setConversationId(analysis.conversationId);
-        const explanation = [analysis.summary, ...analysis.findings.map((finding) => `${finding.name}: ${finding.explanation} Next step: ${finding.followUp}`), analysis.nextStep].join("\n").slice(0, 1200);
-        setMessages([...messages, { role: "user", content: currentQuestion }, { role: "assistant", content: explanation, disclaimer: analysis.disclaimer }].slice(-20));
-        await refreshConversations();
+        // The structured review below is the authoritative first response.
+        // Follow-up chat messages are displayed separately instead of duplicating it.
+        setMessages([]);
+        await refreshConversations(operation);
       } else {
         const answer = await request(`/reports/chat?profileId=${encodeURIComponent(profileId)}`, {
           method: "POST",
+          signal: operation.controller.signal,
           body: JSON.stringify({ file: upload, question: currentQuestion, history: previousMessages, ...(conversationId ? { conversationId } : {}), consent: true }),
         });
-        if (profileRef.current !== requestedProfileId) return;
+        if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
         setConversationId(answer.conversationId);
-        setMessages([...messages, { role: "user", content: currentQuestion }, { role: "assistant", content: answer.answer, evidence: answer.evidence, disclaimer: answer.disclaimer }].slice(-20));
-        await refreshConversations();
+        setMessages([
+          ...messages,
+          { role: "user", content: currentQuestion },
+          { role: "assistant", content: answer.answer, evidence: answer.evidence, citations: answer.citations, disclaimer: answer.disclaimer },
+        ].slice(-20));
+        await refreshConversations(operation);
       }
-      setQuestion("");
+      if (profileRef.current === requestedProfileId && pendingRequest.current === operation) setQuestion("");
     } catch (err) {
-      if (profileRef.current !== requestedProfileId) return;
+      if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
       if (err.status === 404 && conversationId) {
         setConversationId(null);
         setConversations((items) => items.filter((item) => item.id !== conversationId));
@@ -151,7 +173,10 @@ export default function TestResultsPage() {
       const message = err.message || "The report could not be safely analyzed. Please try again or ask your clinician.";
       setError(err.requestId ? `${message} (Reference: ${err.requestId})` : message);
     } finally {
-      setBusy(false);
+      if (pendingRequest.current === operation) {
+        pendingRequest.current = null;
+        setBusy(false);
+      }
     }
   }
 
@@ -176,7 +201,7 @@ export default function TestResultsPage() {
   function openConversation(conversation) {
     setFile(null);
     setResult(conversation.reportResult || null);
-    setMessages(conversation.messages || []);
+    setMessages(conversation.reportResult ? (conversation.messages || []).slice(2) : (conversation.messages || []));
     setConversationId(conversation.id);
     setQuestion("");
     setConsent(false);
@@ -187,12 +212,14 @@ export default function TestResultsPage() {
 
   async function removeConversation(conversation) {
     if (!window.confirm(`Delete the saved conversation “${conversation.title}”?`)) return;
+    const requestedProfileId = profileId;
     try {
       await deleteReportConversation(profileId, conversation.id);
+      if (profileRef.current !== requestedProfileId) return;
       setConversations((items) => items.filter((item) => item.id !== conversation.id));
       if (conversationId === conversation.id) newConversation();
     } catch {
-      setError("Could not delete this saved conversation. Please try again.");
+      if (profileRef.current === requestedProfileId) setError("Could not delete this saved conversation. Please try again.");
     }
   }
 
@@ -226,7 +253,7 @@ export default function TestResultsPage() {
             <span className="assistant-chat__status">Health assistant</span>
             {activeProfile?.fullName && <p>Conversation for <strong>{activeProfile.fullName}</strong></p>}
           </div>
-          {messages.length > 0 && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
+          {(messages.length > 0 || result) && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
         </header>
         {messages.length > 0 && historyError && <Alert tone="danger" role="alert">{historyError}</Alert>}
         {messages.length > 0 ? (
@@ -236,16 +263,20 @@ export default function TestResultsPage() {
                 <h3>{message.role === "user" ? "You" : "Nabad assistant"}</h3>
                 <p>{message.content}</p>
                 {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
+                {message.citations?.length > 0 && <div className="report-chat__sources">
+                  <strong>Reviewed sources:</strong>
+                  <ul>{message.citations.map((source) => <li key={`${source.id}-${source.version || "legacy"}`}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}{source.version && ` · version ${source.version}`}{source.reviewedAt && ` · reviewed ${new Date(source.reviewedAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}`}</li>)}</ul>
+                </div>}
                 {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
               </article>
             ))}
             {busy && <div className="assistant-chat__typing" role="status"><span /><span /><span /><span className="sr-only">The assistant is preparing a response</span></div>}
           </section>
-        ) : (
+        ) : !result ? (
           <section className="assistant-chat__welcome" aria-labelledby="assistant-welcome-title">
             <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
-            <p>Ask a health question or get help understanding a written test report.</p>
+            <p>Ask in English or Arabic, or attach an English or Arabic written test report. The assistant replies in English.</p>
             <div className="assistant-chat__suggestions" aria-label="Suggested questions">
               {["What does a high cholesterol result mean?", "How can I prepare for a blood test?", "What should I ask my doctor about a new medicine?"].map((suggestion) => (
                 <button className="assistant-chat__suggestion" key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>
@@ -253,10 +284,11 @@ export default function TestResultsPage() {
             </div>
             {busy && <div className="assistant-chat__typing" role="status"><span /><span /><span /><span className="sr-only">The assistant is preparing a response</span></div>}
           </section>
-        )}
+        ) : null}
 
       <form className="assistant-composer" onSubmit={sendMessage}>
-        {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>{file.name}</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
+        {result && !file && <p className="report-privacy-note" role="note">Follow-up questions use the saved AI explanation. Attach the original report again to verify its wording, values, or completeness.</p>}
+        {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>Report attached ({file.name.split(".").pop()?.toLowerCase() || "file"})</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         <label className="sr-only" htmlFor="report-question">Your message</label>
         <textarea
@@ -283,29 +315,50 @@ export default function TestResultsPage() {
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
           I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
         </label>
-        <p className="report-privacy-note">Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
+        <p className="report-privacy-note">Questions and written reports may be in English or Arabic; assistant replies are in English. Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
       </form>
 
       {result && (
         <section className={`report-result report-result--${result.urgency}`} aria-labelledby="report-result-heading" aria-live="polite">
           <p className="report-result__eyebrow">AI explanation · not reviewed by a clinician</p>
           <p className="report-result__meta">Prepared for {activeProfile?.fullName || "the selected profile"}</p>
+          {result.reportCoverage === "partial_text" && (
+            <Alert tone="warning" role="status">
+              The complete report could not be verified as readable. Pages or findings may be missing.
+              {result.extractionCoverage && (
+                <> Processed coverage: {result.extractionCoverage.readablePages} readable of {result.extractionCoverage.pageCount} PDF pages
+                  {result.extractionCoverage.unreadablePages?.length > 0 && `; unreadable pages: ${result.extractionCoverage.unreadablePages.join(", ")}`}
+                  {result.extractionCoverage.sparsePages?.length > 0 && `; low-text pages: ${result.extractionCoverage.sparsePages.join(", ")}`}.</>
+              )}
+            </Alert>
+          )}
+          {result.reportCoverage === "complete_text" && <p className="report-result__coverage">The readable text of the uploaded report was processed.</p>}
           <h2 id="report-result-heading">{URGENCY_LABELS[result.urgency] || URGENCY_LABELS.unclear}</h2>
           <p>{result.summary}</p>
 
           {result.findings.length > 0 ? (
             <div className="report-findings">
-              <h3>Important findings</h3>
-              {result.findings.map((finding, index) => (
-                <article className="report-finding" key={`${finding.name}-${index}`}>
-                  <h4>{finding.name}</h4>
-                  <p><strong>In the report:</strong> {finding.sourceQuote}</p>
-                  <p><strong>Reported result:</strong> {finding.result}</p>
-                  <p><strong>In simpler words:</strong> {finding.explanation}</p>
-                  {finding.reference && <p><strong>Reference:</strong> {finding.reference}</p>}
-                  <p><strong>Next step:</strong> {finding.followUp}</p>
-                </article>
-              ))}
+              <h3>Report findings</h3>
+              {["urgent", "abnormal", "borderline", "normal", "unclear"].map((category) => {
+                const categoryFindings = result.findings.filter((finding) => (finding.category || "unclear") === category);
+                if (!categoryFindings.length) return null;
+                const labels = { urgent: "Urgent findings", abnormal: "Abnormal findings", borderline: "Borderline findings", normal: "Results marked normal", unclear: "Findings needing clarification" };
+                return (
+                  <section className={`report-finding-group report-finding-group--${category}`} key={category} aria-labelledby={`finding-group-${category}`}>
+                    <h4 id={`finding-group-${category}`}>{labels[category]}</h4>
+                    {categoryFindings.map((finding, index) => (
+                      <article className="report-finding" key={`${finding.name}-${index}`}>
+                        <h5>{finding.name}</h5>
+                        <p><strong>In the report:</strong> {finding.sourceQuote}</p>
+                        <p><strong>Reported result:</strong> {finding.result}</p>
+                        <p><strong>In simpler words:</strong> {finding.explanation}</p>
+                        {finding.reference && <p><strong>Reference:</strong> {finding.reference}</p>}
+                        <p><strong>Next step:</strong> {finding.followUp}</p>
+                      </article>
+                    ))}
+                  </section>
+                );
+              })}
             </div>
           ) : <p>No clearly marked abnormal findings were identified in what the AI could read. This does not confirm that everything is normal.</p>}
 

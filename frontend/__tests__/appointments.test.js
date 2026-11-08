@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import AppointmentsPage from "../pages/appointments";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import AppointmentsPage, { medicationEventsForDate } from "../pages/appointments";
+import { getMedications } from "../lib/medicationApi";
 
 jest.mock("../components/ProfileHeader", () => () => <div />);
 jest.mock("../context/ActiveProfileContext", () => ({
@@ -15,6 +16,7 @@ jest.mock("../lib/appointmentApi", () => ({
   updateAppointment: jest.fn(),
   deleteAppointment: jest.fn(),
 }));
+jest.mock("../lib/medicationApi", () => ({ getMedications: jest.fn().mockResolvedValue([]) }));
 
 function setPermission(permission, requestPermission = jest.fn().mockResolvedValue(permission)) {
   Object.defineProperty(window, "Notification", {
@@ -25,7 +27,31 @@ function setPermission(permission, requestPermission = jest.fn().mockResolvedVal
 }
 
 describe("appointment reminder permissions", () => {
-  beforeEach(() => setPermission("default"));
+  beforeEach(() => { setPermission("default"); getMedications.mockReset().mockResolvedValue([]); });
+  afterEach(() => { jest.useRealTimers(); });
+
+  test("builds calendar events only for active medication dates", () => {
+    const medications = [{ id: "med-1", name: "Aspirin", status: "active", startDate: "2026-11-01", endDate: "2026-11-30", times: ["08:00", "20:00"] }];
+    expect(medicationEventsForDate(medications, "2026-11-03")).toEqual([
+      { id: "med-1-08:00", time: "08:00", name: "Aspirin" },
+      { id: "med-1-20:00", time: "20:00", name: "Aspirin" },
+    ]);
+    expect(medicationEventsForDate(medications, "2026-12-01")).toEqual([]);
+  });
+
+  test("supports keyboard movement and announces the selected date", async () => {
+    const { container } = render(<AppointmentsPage />);
+    const calendar = await screen.findByRole("region", { name: "Calendar dates" });
+    const dates = within(calendar).getAllByRole("button");
+    dates[8].focus();
+    fireEvent.keyDown(dates[8], { key: "ArrowRight" });
+    expect(dates[9]).toHaveFocus();
+    fireEvent.keyDown(dates[9], { key: "ArrowDown" });
+    expect(dates[16]).toHaveFocus();
+    fireEvent.click(dates[16]);
+    expect(dates[16]).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector(".calendar-details")).toHaveAttribute("aria-live", "polite");
+  });
 
   test("asks only after the user selects Enable reminders and handles a grant", async () => {
     const requestPermission = setPermission("default", jest.fn().mockResolvedValue("granted"));
@@ -61,18 +87,21 @@ describe("appointment reminder permissions", () => {
   });
 
   test("a rescheduled appointment can fire a new reminder with the same id", async () => {
-    const now = new Date();
-    const appointmentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const timeInMinutes = (offset) => {
-      const value = new Date(now.getTime() + offset * 60000);
-      return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
-    };
+    // A fixed local clock, so the reminder times can't roll past midnight. With "now + 80 minutes" this
+    // test failed whenever it ran after about 22:40. Only Date is faked: timers stay real for React and
+    // Testing Library, and the clock stays at 10:00 for the whole test.
+    jest.useFakeTimers({
+      now: new Date(2026, 10, 9, 10, 0, 0),
+      doNotFake: ["hrtime", "nextTick", "performance", "queueMicrotask", "requestAnimationFrame", "cancelAnimationFrame",
+        "requestIdleCallback", "cancelIdleCallback", "setImmediate", "clearImmediate", "setInterval", "clearInterval",
+        "setTimeout", "clearTimeout"],
+    });
     const appointment = {
       id: "visit-1", title: "Check-up", hospital: "Clinic", location: "", notes: "",
-      appointmentDate, appointmentTime: timeInMinutes(10), reminderMinutes: 15,
+      appointmentDate: "2026-11-09", appointmentTime: "10:10", reminderMinutes: 15,
       updatedAt: "2026-10-01T00:00:00.000Z",
     };
-    const rescheduled = { ...appointment, appointmentTime: timeInMinutes(80), reminderMinutes: 90, updatedAt: new Date().toISOString() };
+    const rescheduled = { ...appointment, appointmentTime: "11:20", reminderMinutes: 90, updatedAt: "2026-11-09T08:00:00.000Z" };
     const getAppointments = require("../lib/appointmentApi").getAppointments;
     getAppointments.mockReset().mockResolvedValueOnce([appointment]).mockResolvedValueOnce([rescheduled]);
     const updateAppointment = require("../lib/appointmentApi").updateAppointment;

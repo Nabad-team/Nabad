@@ -43,6 +43,7 @@ const {
 
 const PROFILE_MODELS = [
   require("./models/VisitPrep"),
+  require("./models/VisitPrepShare"),
   Medication,
   MedicationAdherence,
   SymptomRecord,
@@ -54,6 +55,7 @@ const PROFILE_MODELS = [
   HealthFact,
   Notification,
   MedicalDocument,
+  require("./models/VitalReading"),
 ];
 
 // Deletes the health data of one profile.

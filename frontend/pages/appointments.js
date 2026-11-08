@@ -17,6 +17,7 @@ import {
   updateAppointment,
   deleteAppointment,
 } from "../lib/appointmentApi";
+import { getMedications } from "../lib/medicationApi";
 
 const emptyFields = () => ({
   title: "", hospital: "", location: "", appointmentDate: todayString(),
@@ -60,6 +61,11 @@ function reminderDue(appointment, now) {
 
 function reminderSignature(appointment) {
   return `${appointment.appointmentDate}|${appointment.appointmentTime}|${appointment.reminderMinutes}`;
+}
+
+export function medicationEventsForDate(medications, date) {
+  return medications.flatMap(medication => medication.status === "active" && medication.startDate <= date && (!medication.endDate || medication.endDate >= date)
+    ? (medication.times || []).map(time => ({ id: `${medication.id}-${time}`, time, name: medication.name })) : []);
 }
 
 function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCancel }) {
@@ -115,13 +121,24 @@ function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCanc
   );
 }
 
-function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
+function Calendar({ month, appointments, medications, selectedDate, onMonthChange, onDateSelect, onDateDoubleClick }) {
   const days = monthDays(month);
   const appointmentsByDate = appointments.reduce((groups, appointment) => {
     groups[appointment.appointmentDate] = (groups[appointment.appointmentDate] || []).concat(appointment);
     return groups;
   }, {});
   const today = todayString();
+
+  function moveBetweenDates(event) {
+    const offsets = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+    if (!(event.key in offsets) && event.key !== "Home" && event.key !== "End") return;
+    const dates = [...event.currentTarget.querySelectorAll(".calendar__day")];
+    const current = dates.indexOf(document.activeElement);
+    if (current < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? current - (current % 7) : event.key === "End" ? current + (6 - current % 7) : current + offsets[event.key];
+    dates[Math.max(0, Math.min(dates.length - 1, next))]?.focus();
+  }
 
   return (
     <section className="calendar" aria-label="Appointment calendar">
@@ -130,28 +147,34 @@ function Calendar({ month, appointments, onMonthChange, onDateDoubleClick }) {
         <h2>{monthLabel(month)}</h2>
         <Button variant="secondary" size="small" onClick={() => onMonthChange(1)} aria-label="Next month">Next</Button>
       </div>
-      <p className="calendar__hint">Double-click a date to add a doctor's appointment.</p>
+      <p className="calendar__hint">Select a date to review its schedule or add an appointment. Use the arrow keys to move between dates.</p>
+      <div className="calendar__scroll" role="region" aria-label="Calendar dates" tabIndex="0">
       <div className="calendar__grid calendar__weekdays" aria-hidden="true">
         {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => <span key={day}>{day.slice(0, 3)}</span>)}
       </div>
-      <div className="calendar__grid calendar__days">
+      <div className="calendar__grid calendar__days" onKeyDown={moveBetweenDates}>
         {days.map((date) => {
           const key = dateKey(date);
           const events = appointmentsByDate[key] || [];
+          const medicineEvents = medicationEventsForDate(medications, key);
           const inMonth = date.getMonth() === month.getMonth();
           return (
             <button
               type="button"
               key={key}
               className={`calendar__day${inMonth ? "" : " calendar__day--outside"}${key === today ? " calendar__day--today" : ""}`}
+              onClick={() => onDateSelect(key)}
               onDoubleClick={() => onDateDoubleClick(key)}
-              aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}`}
+              aria-pressed={selectedDate === key}
+              aria-label={`${date.toLocaleDateString("en-GB", { month: "long", day: "numeric", year: "numeric" })}${events.length ? `, ${events.length} appointment${events.length === 1 ? "" : "s"}` : ""}${medicineEvents.length ? `, ${medicineEvents.length} medication time${medicineEvents.length === 1 ? "" : "s"}` : ""}`}
             >
               <span className="calendar__number">{date.getDate()}</span>
               {events.map((appointment) => <span className="calendar__event" key={appointment.id}>{appointment.appointmentTime} {appointment.title}</span>)}
+              {medicineEvents.map(item => <span className="calendar__event calendar__event--medication" key={item.id}>{item.time} 💊 {item.name}</span>)}
             </button>
           );
         })}
+      </div>
       </div>
     </section>
   );
@@ -162,6 +185,7 @@ export default function AppointmentsPage() {
   const { preferences } = useAccessibility();
   const simplified = preferences.simplifiedMode;
   const [appointments, setAppointments] = useState(null);
+  const [medications, setMedications] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
@@ -172,6 +196,7 @@ export default function AppointmentsPage() {
   const [now, setNow] = useState(() => new Date());
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [newAppointmentFields, setNewAppointmentFields] = useState(emptyFields);
+  const [selectedDate, setSelectedDate] = useState("");
   const profileId = activeProfile?.id;
   const profileRef = useRef(profileId);
   const notifiedRef = useRef(new Map());
@@ -184,8 +209,8 @@ export default function AppointmentsPage() {
     const requested = profileRef.current;
     setLoadError("");
     try {
-      const list = await getAppointments(requested);
-      if (profileRef.current === requested) setAppointments(list);
+      const [list, medicineList] = await Promise.all([getAppointments(requested), getMedications(requested)]);
+      if (profileRef.current === requested) { setAppointments(list); setMedications(medicineList); }
     } catch {
       if (profileRef.current === requested) setLoadError(`We couldn't load ${forSelf ? "your" : `${name}'s`} appointments. Please check your connection and try again.`);
     }
@@ -262,6 +287,8 @@ export default function AppointmentsPage() {
   }
 
   const listName = forSelf ? "Your appointments" : `Appointments for ${name}`;
+  const selectedAppointments = selectedDate ? appointments?.filter((appointment) => appointment.appointmentDate === selectedDate) || [] : [];
+  const selectedMedications = selectedDate ? medicationEventsForDate(medications, selectedDate) : [];
   return (
     <PageLayout title="Appointments" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>{simplified ? "Calendar" : listName}</PageTitle>
@@ -279,13 +306,23 @@ export default function AppointmentsPage() {
           <Calendar
             month={month}
             appointments={appointments}
+            medications={medications}
+            selectedDate={selectedDate}
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
+            onDateSelect={setSelectedDate}
             onDateDoubleClick={openNewAppointment}
           />
+          {selectedDate && <section className="calendar-details" aria-labelledby="calendar-details-heading" aria-live="polite">
+            <div className="calendar-details__heading"><h2 id="calendar-details-heading">{formatDate(selectedDate)}</h2><Button variant="secondary" size="small" onClick={() => setSelectedDate("")}>Close</Button></div>
+            {!selectedAppointments.length && !selectedMedications.length && <p className="text-muted">Nothing scheduled for this day.</p>}
+            {selectedAppointments.map((appointment) => <div key={appointment.id} className="calendar-details__item"><strong>{appointment.appointmentTime} · {appointment.title}</strong><span>{appointment.hospital}</span><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)}>Edit appointment</Button></div>)}
+            {selectedMedications.map((medication) => <div key={medication.id} className="calendar-details__item"><strong>{medication.time} · {medication.name}</strong><span>Medication</span></div>)}
+            <Button size="small" onClick={() => openNewAppointment(selectedDate)}>Add appointment for this day</Button>
+          </section>}
           {editing === "add" ? (
             <AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} />
           ) : (
-            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>Add appointment</Button></div>
+            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button></div>
           )}
           {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet.">Add your next doctor's visit so Nabad can remind you.</EmptyState>}
           {appointments.length > 0 && (

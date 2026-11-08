@@ -1,2 +1,4 @@
 # Generated JMeter HTML dashboards: exclude from GitHub language stats and collapse in diffs
 loadtest/jmeter/reports/** linguist-generated
+# Backup scripts run on Linux runners: keep LF line endings on every checkout
+ops/backup/** text eol=lf

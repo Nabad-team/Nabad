@@ -65,8 +65,8 @@ function renderPage() {
     </ActiveProfileProvider>
   );
 }
-const list = () => screen.findByRole("list", { name: "Your medications" });
-const item = async (name) => within(await list()).getByRole("heading", { name }).closest("li");
+const list = () => screen.findByRole("list", { name: "Active medications" });
+const item = async (name) => (await screen.findByRole("heading", { name })).closest("li");
 
 describe("Medications page", () => {
   beforeEach(() => {
@@ -85,17 +85,19 @@ describe("Medications page", () => {
   });
 
   test("custom daily times persist per medication and can be edited and removed", async () => {
-    seed({ name: "First", reminderTimes: ["08:00", "20:00"], reminderTimeZone: "Asia/Beirut" });
+    seed({ name: "First", times: ["07:00"], reminderTimes: ["08:00", "20:00"], reminderTimeZone: "Asia/Beirut" });
     seed({ name: "Second", reminderTimes: ["12:15"], reminderTimeZone: "UTC" });
     const user = userEvent.setup({ delay: null });
     const view = renderPage();
     expect(within(await item("First")).getByText("Daily reminders: 08:00, 20:00 (Asia/Beirut)")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Edit First" }));
+    expect(screen.getByLabelText("Medication times (optional)")).toHaveValue("07:00");
     expect(screen.getByLabelText("Reminder time 1")).toHaveValue("08:00");
     fireEvent.change(screen.getByLabelText("Reminder time 1"), { target: { value: "09:30" } });
     await user.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Your changes to First were saved.");
     expect(mockApi.updateMedication).toHaveBeenCalledWith("self", "1", expect.objectContaining({ reminderTimes: ["09:30", "20:00"], reminderTimeZone: "Asia/Beirut" }));
+    expect(mockMedications.find(m => m.name === "First").times).toEqual(["07:00"]);
     view.unmount(); renderPage();
     expect(within(await item("First")).getByText("Daily reminders: 09:30, 20:00 (Asia/Beirut)")).toBeInTheDocument();
     expect(within(await item("Second")).getByText("Daily reminders: 12:15 (UTC)")).toBeInTheDocument();
@@ -148,8 +150,8 @@ describe("Medications page", () => {
     seed({ name: "Paracetamol", notes: "After food" });
     renderPage();
 
-    const names = within(await list()).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(names).toEqual(["Paracetamol", "Ventolin"]);
+    expect(within(await list()).getByRole("heading", { name: "Paracetamol" })).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Discontinued medications" })).getByRole("heading", { name: "Ventolin" })).toBeInTheDocument();
 
     const paracetamol = await item("Paracetamol");
     expect(within(paracetamol).getByText("500 mg tablet · twice a day")).toBeInTheDocument();
@@ -181,7 +183,7 @@ describe("Medications page", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("Amoxicillin was added to your list.");
     expect(mockApi.addMedication).toHaveBeenCalledWith("self", {
-      name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", startDate: "2026-10-01", endDate: "", notes: "", reminderTimes: [], reminderTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      name: "Amoxicillin", dose: "250", unit: "mg", form: "syrup", frequency: "three times a day", times: [], startDate: "2026-10-01", endDate: "", notes: "", reminderTimes: [], reminderTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(within(await item("Amoxicillin")).getByText("250 mg syrup · three times a day")).toBeInTheDocument();
     expect(screen.queryByRole("form", { name: "Add a medication" })).not.toBeInTheDocument();
@@ -323,8 +325,8 @@ describe("Medications for a family member", () => {
     seed({ name: "Sami syrup", form: "syrup", dose: "5", unit: "ml", profileId: childId });
   });
   const actAsChild = () => localStorage.setItem("nabad-active-profile-id", childId);
-  const childList = () => screen.findByRole("list", { name: "Medications for Sami Haddad" });
-  const childItem = async (name) => within(await childList()).getByRole("heading", { name }).closest("li");
+  const childList = () => screen.findByRole("list", { name: "Active medications for Sami Haddad" });
+  const childItem = async (name) => (await screen.findByRole("heading", { name })).closest("li");
 
   test("shows the family member's list with their name, and the Acting as banner", async () => {
     actAsChild();
@@ -343,7 +345,7 @@ describe("Medications for a family member", () => {
     actAsChild();
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click(await screen.findByRole("button", { name: "Add medication for Sami Haddad" }));
     await user.type(screen.getByLabelText("Medication name"), "Ventolin");
     await user.click(screen.getByRole("button", { name: "Save medication" }));
     expect(await screen.findByText("Ventolin was added to Sami Haddad's list.")).toBeInTheDocument();

@@ -2,7 +2,7 @@
 # Production still deploys to Vercel, not from this image.
 
 # ---- Build stage: install everything and run `next build` ----
-FROM node:24-slim AS build
+FROM node:24.22.1-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -18,7 +18,7 @@ ENV BACKEND_URL=$BACKEND_URL \
 RUN npm run build
 
 # ---- Runtime stage: only Next's standalone server, the static files and public/ ----
-FROM node:24-slim AS runtime
+FROM node:24.22.1-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

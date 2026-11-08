@@ -76,6 +76,17 @@ describe("Dashboard Page", () => {
     expect(within(sections).getByRole("link", { name: "Medical documents" })).toHaveAttribute("href", "/medical-documents");
   });
 
+  test("offers direct quick actions for common health tasks", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo");
+    const quickActions = screen.getByRole("navigation", { name: "Quick actions" });
+    expect(within(quickActions).getByRole("link", { name: "Log vitals" })).toHaveAttribute("href", "/vitals");
+    expect(within(quickActions).getByRole("link", { name: "Add medication" })).toHaveAttribute("href", "/medications");
+    expect(within(quickActions).getByRole("link", { name: "Add appointment" })).toHaveAttribute("href", "/appointments");
+    expect(within(quickActions).getByRole("link", { name: "Upload document" })).toHaveAttribute("href", "/medical-documents");
+    expect(within(quickActions).getByRole("link", { name: "Prepare for a visit" })).toHaveAttribute("href", "/visit-prep");
+  });
+
   test("welcomes the user by their saved name", async () => {
     const profile = await getMyProfile();
     await updateMyProfile({ ...profile, fullName: "Layla Haddad" });
@@ -215,7 +226,6 @@ describe("Dashboard Page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     const accountMenu = document.getElementById("account-menu");
     expect(within(accountMenu).getByRole("link", { name: "Safety check" })).toHaveTextContent("Safety");
-    expect(within(accountMenu).getByRole("link", { name: "Medications" })).toHaveTextContent("Medicines");
     expect(within(accountMenu).getByRole("link", { name: "My profile" })).toHaveTextContent("Profile");
   });
 

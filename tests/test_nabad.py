@@ -501,6 +501,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/symptoms",
             "/emergency-card",
             "/medications",
+            "/medication-overview",
             "/my-health",
             "/water-and-sleep",
             "/profile",
@@ -633,16 +634,21 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             if added:
                 self.assertEqual(self.fetch_json("DELETE", "/api/profile/emergency-contact"), 204)
 
-    def medication_item(self, name, list_label="Your medications"):
+    def medication_item(self, name):
         return (
             By.XPATH,
-            f"//ul[@aria-label={xpath_string(list_label)}]/li[.//h3[normalize-space()={xpath_string(name)}]]",
+            f"//ul[contains(concat(' ', normalize-space(@class), ' '), ' medication-list ')]/li[.//h3[normalize-space()={xpath_string(name)}]]",
         )
 
     def add_medication(self, name, dose="10", unit="mg", frequency="once a day"):
-        self.wait.until(lambda d: d.find_elements(*self.button("Add medication")) or d.find_elements(By.ID, "new-name"))
+        add_button = (
+            By.XPATH,
+            "//button[starts-with(@aria-label, 'Add medication') or "
+            "(not(@aria-label) and starts-with(normalize-space(), 'Add medication'))]",
+        )
+        self.wait.until(lambda d: d.find_elements(*add_button) or d.find_elements(By.ID, "new-name"))
         if not self.driver.find_elements(By.ID, "new-name"):
-            self.click(self.button("Add medication"))
+            self.click(add_button)
         self.type_into("new-name", name)
         self.type_into("new-dose", dose)
         self.type_into("new-unit", unit)
@@ -717,6 +723,9 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         # Mark as discontinued.
         self.click(self.button(f"Mark as discontinued: {name}"))
         self.wait_for_message(f"{name} is marked as discontinued")
+        archive = (By.CSS_SELECTOR, "details.medication-archive")
+        self.click((By.CSS_SELECTOR, "details.medication-archive > summary"))
+        self.wait.until(lambda d: d.find_element(*archive).get_attribute("open") is not None)
         self.wait_for_text("Discontinued", item)
         self.visible(self.button(f"Mark as active again: {name}"))
 
@@ -775,7 +784,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/medications")
         self.wait_for_text(f"Medications for {member}", (By.TAG_NAME, "h1"))
         self.add_medication(medicine, dose="5", unit="ml", frequency="twice a day")
-        self.visible(self.medication_item(medicine, f"Medications for {member}"))
+        self.visible(self.medication_item(medicine))
 
         # Back to the user's own list: the family member's medication is not there.
         self.switch_profile(f"{RunAccount.name} (you)")
@@ -785,6 +794,53 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/medications")
         self.visible(self.button("Add medication"))
         self.assertNotIn(medicine, self.body_text())
+
+    def test_authenticated_medication_overview_shows_linked_profiles(self):
+        # SCRUM-150: a nurse's residents are linked profiles; the overview shows all their medications at once.
+        resident = f"Selenium Resident {secrets.token_hex(2)}"
+        medicine = f"Resident tablet {secrets.token_hex(3)}"
+        self.addCleanup(self.switch_back_to_self)
+
+        self.open("/profile")
+        self.click(self.button("Add dependent"))
+        self.type_into("dependentName", resident)
+        self.set_date("dependentDateOfBirth", "1941-02-03")
+        Select(self.visible((By.ID, "dependentRelationship"))).select_by_value("other")
+        self.submit_form_of("dependentName")
+        self.wait_for_text(resident, (By.CSS_SELECTOR, "section[aria-labelledby='linked-heading']"))
+
+        self.switch_profile(f"{resident} (other)")
+        self.open("/medications")
+        self.wait_for_text(f"Medications for {resident}", (By.TAG_NAME, "h1"))
+        self.add_medication(medicine, dose="5", unit="mg", frequency="every morning")
+        self.switch_profile(f"{RunAccount.name} (you)")
+
+        # Reached from the medications page, while acting as the user themself.
+        self.open("/medications")
+        self.click((By.LINK_TEXT, "Medication overview"))
+        self.wait.until(lambda d: "/medication-overview" in d.current_url)
+        self.wait_for_text("Medication overview", (By.TAG_NAME, "h1"))
+        section = (By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]")
+        self.wait_for_text(medicine, section)
+        # Every value is labelled (Dose, Route / form, Frequency...), never a bare number.
+        for label, value in (("Dose", "5 mg"), ("Route / form", "Tablet"), ("Frequency", "every morning")):
+            detail = (By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]//dt[normalize-space()={xpath_string(label)}]/following-sibling::dd[1]")
+            self.assertEqual(self.text(detail), value)
+        # The confidentiality footer is in the page for printing, but not shown on screen.
+        footer = self.driver.find_element(By.CSS_SELECTOR, ".overview-print-footer")
+        self.assertFalse(footer.is_displayed())
+        self.assertEqual(footer.get_attribute("textContent"), "Confidential health information. Do not leave unattended.")
+        self.assertIn("Changed in the last 7 days", self.text(section))
+
+        # The search narrows the page to that resident.
+        self.type_into("overview-search", medicine)
+        self.wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".overview-person")) == 1)
+        self.visible(section)
+
+        # Its edit link opens that resident's own medications page.
+        self.click((By.XPATH, f"//section[.//h2[normalize-space()={xpath_string(resident)}]]//a[normalize-space()={xpath_string(f'Edit {resident}' + chr(39) + 's medications')}]"))
+        self.wait_for_text(f"Medications for {resident}", (By.TAG_NAME, "h1"))
+        self.visible(self.medication_item(medicine))
 
     def switch_back_to_self(self):
         self.driver.execute_script("window.localStorage.removeItem('nabad-active-profile-id');")
@@ -832,6 +888,22 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text("Fluids and sleep, day by day", summary)
         self.wait_for_text("Stay under 1.5 L a day", summary)
         self.visible(self.button("Print or save as PDF"))
+
+    def test_authenticated_vitals_history_and_trends(self):
+        self.open("/vitals")
+        self.type_into("vital-systolic", "120")
+        self.type_into("vital-diastolic", "80")
+        self.type_into("vital-heart-rate", "72")
+        self.type_into("vital-temperature", "36.7")
+        self.submit_form_of("vital-systolic")
+        self.wait_for_text("Vital reading saved.", (By.CSS_SELECTOR, "[role='status']"))
+        history = (By.CSS_SELECTOR, "table.vitals-table")
+        self.wait_for_text("120/80 mmHg", history)
+        self.wait_for_text("72 bpm", history)
+        self.wait_for_text("36.7°C", history)
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Blood pressure trend'] svg[role='group']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Heart rate trend'] svg[role='group']"))
+        self.visible((By.CSS_SELECTOR, "section[aria-label='Temperature trend'] svg[role='group']"))
 
     def test_authenticated_visit_prep_document_attachment_and_editing(self):
         filename = f"Selenium visit prep X-ray {secrets.token_hex(3)}.pdf"

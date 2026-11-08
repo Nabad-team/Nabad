@@ -15,7 +15,7 @@ services:
     # 7.0, not 8.0: MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer, which GitHub's runners now use
     # (https://jira.mongodb.org/browse/SERVER-121912). Production uses MongoDB Atlas and is not affected.
     # 7.0 works on every kernel. Its data lives in the mongo7-data volume.
-    image: mongo:7.0
+    image: mongo:7.0.43@sha256:1f995ad6fdb93244a1addab1b58f934a0bc2f5643c38e02f5e9d7f0c7d227a7b
     restart: unless-stopped
     volumes:
       - mongo7-data:/data/db
@@ -31,7 +31,7 @@ services:
       start_period: 10s
 
   mailpit:
-    image: axllent/mailpit:v1.27
+    image: axllent/mailpit:v1.27.11@sha256:e22dce5b36f93c77082e204a3942fb6b283b7896e057458400a4c88344c3df68
     restart: unless-stopped
     environment:
       # Local only: accept the backend's placeholder SMTP login without TLS.

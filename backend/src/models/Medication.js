@@ -17,6 +17,7 @@ const medicationSchema = new mongoose.Schema({
   unit: { type: String, trim: true, maxlength: LIMITS.unit, default: "" },
   form: { type: String, enum: FORMS, default: "tablet" },
   frequency: { type: String, trim: true, maxlength: LIMITS.frequency, default: "" },
+  times: { type: [String], default: [], validate: { validator: values => values.length <= 12 && values.every(value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value)), message: "invalid medication times" } },
   startDate: { type: Date, required: true },
   endDate: { type: Date, default: null },
   status: { type: String, enum: STATUSES, default: "active" },

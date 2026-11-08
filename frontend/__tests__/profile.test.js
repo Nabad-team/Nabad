@@ -235,15 +235,15 @@ describe("Profile Page", () => {
       expect(await listLinkedProfiles()).toEqual([]);
     });
 
-    test("cannot add more than 10 dependents", async () => {
-      for (let i = 1; i <= 10; i++) {
+    test("cannot add more than 30 dependents", async () => {
+      for (let i = 1; i <= 30; i++) {
         await addLinkedProfile({ fullName: "Child " + i, dateOfBirth: "2015-03-10", relationship: "child" });
       }
 
       renderProfilePage();
 
-      expect(await screen.findByText("Child 10", { selector: "strong" })).toBeInTheDocument();
-      expect(screen.getByText("You can link up to 10 dependents.")).toBeInTheDocument();
+      expect(await screen.findByText("Child 30", { selector: "strong" })).toBeInTheDocument();
+      expect(screen.getByText("You can link up to 30 dependents.")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Add dependent" })).toBeDisabled();
     });
   });

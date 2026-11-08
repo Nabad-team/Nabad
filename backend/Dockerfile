@@ -1,6 +1,6 @@
 # Nabad API image for local development (docker-compose.yml) and the CI build check.
 # Production still deploys from render.yaml (Render's own Node runtime), not from this image.
-FROM node:24-slim
+FROM node:24.22.1-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c
 
 ENV NODE_ENV=production \
     PORT=5000

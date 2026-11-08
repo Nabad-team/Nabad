@@ -5,9 +5,11 @@ import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { announceNotificationsChanged } from "../lib/notificationApi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const DOCUMENT_TYPES = [["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab result"], ["letter", "Letter"], ["other", "Other"]];
@@ -82,6 +84,7 @@ export default function MedicalDocumentsPage() {
   const [documentType, setDocumentType] = useState("other");
   const [documentDate, setDocumentDate] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -110,7 +113,9 @@ export default function MedicalDocumentsPage() {
     try {
       for (const file of files) {
         const payload = await fileToPayload(file);
+        if (profileRef.current === targetProfileId) setUploadProgress(`Processing ${file.name}`);
         const result = await uploadMedicalDocument(targetProfileId, payload, { documentType, documentDate });
+        announceNotificationsChanged();
         uploaded += 1;
         if (profileRef.current === targetProfileId) {
           setDocuments((current) => [result.document, ...(current || [])]);
@@ -129,7 +134,7 @@ export default function MedicalDocumentsPage() {
   const visibleDocuments = (documents || []).filter((document) => {
     const type = document.documentType || "other";
     const date = document.documentDate || "";
-    return (!filterType || type === filterType) && (!dateFrom || (date && date >= dateFrom)) && (!dateTo || (date && date <= dateTo));
+    return (!search.trim() || document.filename.toLowerCase().includes(search.trim().toLowerCase())) && (!filterType || type === filterType) && (!dateFrom || (date && date >= dateFrom)) && (!dateTo || (date && date <= dateTo));
   });
   const handleMetadataSaved = (updated) => setDocuments((current) => current?.map((document) => document.id === updated.id ? updated : document) || []);
 
@@ -166,14 +171,16 @@ export default function MedicalDocumentsPage() {
             <input id="medical-document-date" className="input" type="date" min="1900-01-01" max="2100-12-31" value={documentDate} onChange={(event) => setDocumentDate(event.target.value)} disabled={busy} />
             <p className="text-muted">These details will be used for every file in this upload.</p>
           </div>
-          <Button type="button" onClick={() => inputRef.current?.click()} disabled={busy || !profileId} aria-label="Add medical documents"><span className="medical-documents__plus" aria-hidden="true">+</span> Add documents</Button>
+          <Button type="button" onClick={() => inputRef.current?.click()} disabled={busy || !profileId} aria-label="Add medical documents"><span className="medical-documents__plus" aria-hidden="true">+</span> Add documents{activeProfile?.isSelf === false ? ` for ${activeProfile.fullName}` : ""}</Button>
           <input ref={inputRef} className="visually-hidden" type="file" multiple onChange={handleFiles} aria-label="Choose medical documents" />
         </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
-        {busy && <HeartbeatLoader label={uploadProgress ? `Uploading documents: ${uploadProgress}...` : "Uploading documents..."} />}
+        {busy && <HeartbeatLoader label={uploadProgress ? `${uploadProgress}...` : "Uploading documents..."} />}
         {documents === null ? <HeartbeatLoader label="Loading documents..." /> : documents.length ? <>
           <div className="medical-documents__filters" aria-label="Filter documents">
+            <label className="field__label" htmlFor="filter-document-search">Search by file name</label>
+            <input id="filter-document-search" className="input" type="search" value={search} onChange={(event) => setSearch(event.target.value)} />
             <label className="field__label" htmlFor="filter-document-type">Filter by type</label>
             <select id="filter-document-type" className="input" value={filterType} onChange={(event) => setFilterType(event.target.value)}>
               <option value="">All types</option>
@@ -189,13 +196,13 @@ export default function MedicalDocumentsPage() {
               <div><strong>{document.filename}</strong><p className="text-muted">Uploaded {prettyDate(document.uploadedAt)} · {prettySize(document.size)}</p></div>
               <p>{DOCUMENT_TYPES.find(([value]) => value === (document.documentType || "other"))?.[1] || "Other"} · {dateLabel(document.documentDate)}</p>
               <a href={medicalDocumentDownloadUrl(profileId, document.id)} className="button button--secondary">Download</a>
-              <Button type="button" variant="secondary" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
+              <Button type="button" variant="danger" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />
             </li>
-          ))}</ul> : <p className="medical-documents__empty">No documents match these filters. Clear the type and date filters to see all documents.</p>}
-        </> : <p className="medical-documents__empty">No documents added yet. Use <strong>Add documents</strong> to upload medical files for this profile.</p>}
+          ))}</ul> : <EmptyState title="No documents match these filters." action={<Button variant="secondary" onClick={() => { setSearch(""); setFilterType(""); setDateFrom(""); setDateTo(""); }}>Clear filters</Button>}>Try another file name, type, or date range.</EmptyState>}
+        </> : <EmptyState title="No documents added yet." action={<Button onClick={() => inputRef.current?.click()}>Add the first document</Button>}>Upload medical files so they are ready when this profile needs them.</EmptyState>}
       </Card>
-      <p className="section"><a href="/dashboard">Back to dashboard</a></p>
+      {documents?.length > 0 && <p className="section"><Button href="/visit-prep" variant="secondary">Attach documents to visit preparation</Button></p>}
     </PageLayout>
   );
 }

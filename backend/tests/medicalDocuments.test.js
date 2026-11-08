@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
 const MedicalDocument = require("../src/models/MedicalDocument");
+const Notification = require("../src/models/Notification");
 const VisitPrep = require("../src/models/VisitPrep");
 
 let mongod, server, base, passwordHash;
@@ -19,7 +20,7 @@ before(async () => {
   mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User.init(), LinkedProfile.init(), MedicalDocument.init(), VisitPrep.init()]);
+  await Promise.all([User.init(), LinkedProfile.init(), MedicalDocument.init(), Notification.init(), VisitPrep.init()]);
   passwordHash = await bcrypt.hash("Medical documents test password 123!", 12);
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
@@ -31,7 +32,7 @@ after(async () => {
   await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
-beforeEach(async () => { await Promise.all([User, LinkedProfile, MedicalDocument, VisitPrep].map((Model) => Model.deleteMany({}))); });
+beforeEach(async () => { await Promise.all([User, LinkedProfile, MedicalDocument, Notification, VisitPrep].map((Model) => Model.deleteMany({}))); });
 
 async function user(email = "owner@example.test") { return User.create({ name: "Owner", email, passwordHash }); }
 function token(account) { return jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" }); }
@@ -93,6 +94,23 @@ test("uploads and stores a valid medical document with profile metadata", async 
   assert.equal(String(stored.owner), String(account._id));
   assert.equal(String(stored.profileId), String(account._id));
   assert.deepEqual(Buffer.from(stored.data), Buffer.from(PDF, "base64"));
+  const notification = await Notification.findOne({ owner: account._id });
+  assert.equal(notification.type, "document_ready");
+  assert.equal(String(notification.profileId), String(account._id));
+  assert.equal(notification.title, "Document ready");
+  assert.equal(notification.message, "An uploaded document has finished processing and is ready to view.");
+  assert.equal(notification.link, "/medical-documents");
+  assert.equal(notification.dedupeKey, `document-ready:${stored._id}`);
+});
+
+test("notifies for the selected linked profile without exposing document details", async () => {
+  const account = await user(); const cookie = token(account);
+  const childId = await dependent(cookie, "Sami Haddad");
+  const response = await upload(cookie, undefined, childId);
+  assert.equal(response.status, 201);
+  const notification = await Notification.findOne({ owner: account._id });
+  assert.equal(String(notification.profileId), childId);
+  assert.equal(notification.message.includes("lab-result.pdf"), false);
 });
 
 test("stores and validates document type and clinical date", async () => {

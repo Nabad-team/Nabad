@@ -1,0 +1,97 @@
+[
+  {
+    "id": "flagged-low-result",
+    "category": "abnormal",
+    "reportText": "SYNTHETIC LAB REPORT. Ferritin: 8 ng/mL. Laboratory reference: 15-150 ng/mL. Flag: LOW.",
+    "expected": {
+      "documentType": "written_report",
+      "urgency": "routine",
+      "summary": "The laboratory report flags the ferritin result as low.",
+      "findings": [
+        {
+          "name": "Ferritin",
+          "category": "abnormal",
+          "sourceQuote": "Ferritin: 8 ng/mL. Laboratory reference: 15-150 ng/mL. Flag: LOW.",
+          "result": "8 ng/mL",
+          "reference": "15-150 ng/mL",
+          "explanation": "Ferritin is a measurement related to stored iron. The laboratory marks this result as low.",
+          "followUp": "Ask the ordering clinician what this result means in the context of the complete report and your health history."
+        }
+      ],
+      "nextStep": "Please have the ordering clinician review the complete report and confirm whether any action is needed.",
+      "uncertainties": []
+    }
+  },
+  {
+    "id": "no-explicit-abnormality",
+    "category": "normal",
+    "reportText": "SYNTHETIC LAB REPORT. Hemoglobin: 13.5 g/dL. Laboratory reference: 12.0-15.5 g/dL. No result is flagged abnormal.",
+    "expected": {
+      "documentType": "written_report",
+      "urgency": "routine",
+      "summary": "No clearly marked abnormality was found in the readable report text.",
+      "findings": [],
+      "nextStep": "Please have the ordering clinician review the complete report and interpret it with your symptoms and health history.",
+      "uncertainties": []
+    }
+  },
+  {
+    "id": "missing-reference-range",
+    "category": "ambiguous",
+    "reportText": "SYNTHETIC LAB REPORT. C-reactive protein: 12 mg/L. No reference range or high or low flag is provided.",
+    "expected": {
+      "documentType": "written_report",
+      "urgency": "unclear",
+      "summary": "The report gives a C-reactive protein result but does not provide a range or flag for interpreting it.",
+      "findings": [
+        {
+          "name": "C-reactive protein",
+          "category": "unclear",
+          "sourceQuote": "C-reactive protein: 12 mg/L. No reference range or high or low flag is provided.",
+          "result": "12 mg/L",
+          "reference": "The report does not provide a reference range.",
+          "explanation": "C-reactive protein is a measurement associated with inflammation, but this report does not classify the result.",
+          "followUp": "Ask the ordering clinician to interpret the result using the laboratory's range and your clinical context."
+        }
+      ],
+      "nextStep": "Please ask the ordering clinician to review the result because its significance cannot be determined from this report alone.",
+      "uncertainties": ["The report does not provide a reference range or an abnormal flag."]
+    }
+  },
+  {
+    "id": "poor-quality-extraction",
+    "category": "poor_quality",
+    "reportText": "SYNTHETIC PARTIAL REPORT. Test name unreadable. Result: 4.2. Unit and reference range are unreadable. Page 2 is missing.",
+    "expected": {
+      "documentType": "written_report",
+      "urgency": "unclear",
+      "summary": "The readable text is incomplete and does not identify the test, unit, or reference range.",
+      "findings": [],
+      "nextStep": "Please provide a clearer complete report and have the ordering clinician review the original document.",
+      "uncertainties": ["The test name, unit, and reference range are unreadable.", "Page 2 is missing."]
+    }
+  },
+  {
+    "id": "explicit-critical-instruction",
+    "category": "urgent",
+    "reportText": "SYNTHETIC LAB REPORT. Potassium: 6.8 mmol/L. CRITICAL VALUE: contact your clinician immediately.",
+    "expected": {
+      "documentType": "written_report",
+      "urgency": "urgent",
+      "summary": "The report marks the potassium result as a critical value and instructs immediate clinician contact.",
+      "findings": [
+        {
+          "name": "Potassium",
+          "category": "urgent",
+          "sourceQuote": "Potassium: 6.8 mmol/L. CRITICAL VALUE: contact your clinician immediately.",
+          "result": "6.8 mmol/L",
+          "reference": "The report does not provide a reference range.",
+          "explanation": "Potassium is an electrolyte involved in nerve, muscle, and heart function. The report labels this value critical.",
+          "followUp": "Follow the report's instruction to contact your clinician immediately."
+        }
+      ],
+      "nextStep": "Contact the ordering clinician immediately as instructed by the report.",
+      "uncertainties": []
+    }
+  }
+]

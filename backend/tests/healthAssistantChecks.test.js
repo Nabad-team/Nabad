@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { parseChatReply, answerChat, CHAT_SYSTEM_PROMPT } = require("../src/reports/chat");
-const { parseReportReply } = require("../src/reports/analyze");
+const { analyzeReport, parseReportReply } = require("../src/reports/analyze");
 const { numbersAreGrounded } = require("../src/reports/responseChecks");
 const { LlmError } = require("../src/triage/ai/llmClient");
 
@@ -12,7 +12,7 @@ const rejected = (answer, code = "unsafe_response") => assert.throws(() => parse
 for (const answer of [
   "You have anemia.", "Based on your results, you have diabetes.", "Your symptoms are caused by cancer.", "You have no cancer.",
   "Take 40 mg of ExampleDrug every day.", "You should take 0.5 mg of ExampleDrug.", "Please take one tablet.", "I recommend you take two pills daily.",
-  "Increase your dose to 10 mg.", "تناول ٤٠ ملغ يوميا.", "خذ جرعة يومية من الدواء.", "عليك تناول ٤٠ ملغ يوميا.", "أنت مصاب بفقر الدم.",
+  "Increase your dose to 10 mg.",
 ]) test(`chat blocks a direct diagnosis or personal regimen: ${answer}`, () => rejected(answer));
 
 for (const answer of [
@@ -22,9 +22,34 @@ for (const answer of [
   "You have described tiredness; several explanations are possible.",
   "Do not change your dose based on this explanation; ask your clinician.",
   "Hemoglobin is a protein in red blood cells that carries oxygen.",
-  "لا يمكن تحديد التشخيص من هذه المعلومات وحدها.",
 ]) test(`chat keeps an educational or uncertainty statement: ${answer}`, () => {
   assert.equal(parseChatReply(JSON.stringify({ answer, evidence: [] })).answer, answer);
+});
+
+test("the assistant accepts Arabic input but rejects non-English output", async () => {
+  const result = await answerChat({ question: "هل يمكنك شرح هذا؟", retriever: null, client: { complete: async () => JSON.stringify({ answer: "I can explain the written result in English.", evidence: [], citations: [] }) } });
+  assert.match(result.answer, /in English/);
+  assert.throws(() => parseChatReply(JSON.stringify({ answer: "لا يمكن تحديد التشخيص.", evidence: [] })), (error) => error.code === "non_english_response");
+});
+
+test("reports may be English, Arabic, or bilingual", () => {
+  const { isSupportedInputText } = require("../src/reports/englishPolicy");
+  assert.equal(isSupportedInputText("Patient: ليان البابا. Complete blood count laboratory report."), true);
+  assert.equal(isSupportedInputText("تقرير مختبر. الهيموغلوبين 13.5 غ/دل. المجال المرجعي مذكور في التقرير."), true);
+  assert.equal(isSupportedInputText("Лабораторный отчет"), false);
+});
+
+test("Arabic report evidence is allowed while generated explanation remains English", () => {
+  const arabicReport = "تقرير مختبر. الهيموغلوبين: 10 غ/دل. المجال المرجعي: 12-16 غ/دل. النتيجة منخفضة.";
+  const value = {
+    documentType: "written_report", urgency: "routine", summary: "The report marks the hemoglobin result as low.",
+    findings: [{ name: "Hemoglobin", category: "abnormal", sourceQuote: "الهيموغلوبين: 10 غ/دل. المجال المرجعي: 12-16 غ/دل. النتيجة منخفضة.", result: "10 غ/دل", reference: "12-16 غ/دل", explanation: "Hemoglobin carries oxygen in red blood cells. The laboratory marks this result as low.", followUp: "Ask the ordering clinician to review this result in context." }],
+    nextStep: "Please have the ordering clinician review the complete report.", uncertainties: [],
+  };
+  const parsed = parseReportReply(JSON.stringify(value), { reportText: arabicReport });
+  assert.equal(parsed.findings[0].category, "abnormal");
+  value.summary = "النتيجة منخفضة.";
+  assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: arabicReport }), (error) => error.code === "invalid_response");
 });
 
 test("a quoted medication strength is not treated as a personal dosing instruction", () => {
@@ -60,7 +85,7 @@ test("overlong answers are rejected rather than cutting away qualifications or n
   rejected("A".repeat(1801), "invalid_response");
 });
 
-const analysis = () => ({ documentType: "written_report", urgency: "routine", summary: "The report contains CRP measurements.", findings: [{ name: "CRP", sourceQuote: "Later 1.8 mg/dL", result: "1.8 mg/dL", reference: "Not provided", explanation: "CRP is a marker of inflammation.", followUp: "Review the complete report with the ordering clinician." }], nextStep: "Ask the ordering clinician to review the full report.", uncertainties: ["The report supplies no reference range."] });
+const analysis = () => ({ documentType: "written_report", urgency: "routine", summary: "The report contains CRP measurements.", findings: [{ name: "CRP", category: "unclear", sourceQuote: "Later 1.8 mg/dL", result: "1.8 mg/dL", reference: "Not provided", explanation: "CRP is a marker of inflammation.", followUp: "Review the complete report with the ordering clinician." }], nextStep: "Ask the ordering clinician to review the full report.", uncertainties: ["The report supplies no reference range."] });
 
 test("report explanations reject direct treatment instructions but retain quoted values", () => {
   const value = analysis();
@@ -77,6 +102,105 @@ test("report explanations allow checked conversions but result and reference fie
   assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsupported_quote");
 });
 
+test("each report finding's quote must support that finding's result", () => {
+  const value = analysis();
+  value.findings[0].sourceQuote = "Initial 20 mg/L";
+  value.findings[0].result = "1.8 mg/dL";
+  assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsupported_quote");
+});
+
+test("duplicate report findings are rejected", () => {
+  const value = analysis();
+  value.findings.push({ ...value.findings[0] });
+  assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "invalid_response");
+});
+
+test("finding categories require explicit local evidence", () => {
+  const supported = analysis();
+  supported.findings[0].category = "abnormal";
+  supported.findings[0].sourceQuote = "Initial 20 mg/L, flagged HIGH";
+  supported.findings[0].result = "20 mg/L";
+  assert.equal(parseReportReply(JSON.stringify(supported), { reportText: `${report.text} Initial 20 mg/L, flagged HIGH` }).findings[0].category, "abnormal");
+
+  const unsupported = analysis();
+  unsupported.findings[0].category = "normal";
+  assert.equal(parseReportReply(JSON.stringify(unsupported), { reportText: report.text }).findings[0].category, "unclear");
+});
+
+test("a grounded out-of-range result is delivered as unclear when its quote has no explicit flag", () => {
+  const reportText = "SYNTHETIC REPORT. Magnesium: 1.83 mg/dL. Female reference: 1.9-2.5 mg/dL.";
+  const value = analysis();
+  value.findings[0] = {
+    ...value.findings[0], name: "Magnesium", category: "abnormal",
+    sourceQuote: "Magnesium: 1.83 mg/dL", result: "1.83 mg/dL", reference: "1.9-2.5 mg/dL",
+  };
+  const parsed = parseReportReply(JSON.stringify(value), { reportText });
+  assert.equal(parsed.findings[0].result, "1.83 mg/dL");
+  assert.equal(parsed.findings[0].category, "unclear");
+});
+
+test("laboratory asterisks and insufficiency labels support abnormal categories", () => {
+  for (const sourceQuote of ["Lymphocytes: 40.8 * %", "25 Hydroxy-Vitamin D: 28.353 ng/ml - Insufficiency"]) {
+    const value = analysis();
+    value.findings[0] = {
+      ...value.findings[0], category: "abnormal", sourceQuote,
+      result: sourceQuote.includes("40.8") ? "40.8 %" : "28.353 ng/ml",
+    };
+    const result = parseReportReply(JSON.stringify(value), { reportText: `SYNTHETIC LAB REPORT. ${sourceQuote}.` });
+    assert.equal(result.findings[0].category, "abnormal");
+  }
+});
+
+for (const [reason, rejectedReply] of [
+  ["unsafe_response", (() => { const value = analysis(); value.findings[0].explanation = "This may be caused by an infection."; return JSON.stringify(value); })()],
+  ["unsupported_quote", (() => { const value = analysis(); value.findings[0].sourceQuote = "Invented CRP 1.8 mg/dL"; return JSON.stringify(value); })()],
+  ["invalid_response", "not JSON"],
+]) test(`report analysis regenerates once after ${reason}`, async () => {
+  const calls = [];
+  const accepted = JSON.stringify(analysis());
+  const result = await analyzeReport({ report, client: { complete: async (messages, options) => {
+    calls.push({ messages, options });
+    return calls.length === 1 ? rejectedReply : accepted;
+  } } });
+  assert.equal(result.findings[0].result, "1.8 mg/dL");
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].options, calls[0].options);
+  assert.deepEqual(calls[1].messages.slice(1), calls[0].messages.slice(1));
+  assert.match(calls[1].messages[0].content, /previous generation failed/i);
+  assert.ok(!JSON.stringify(calls[1].messages).includes(rejectedReply));
+});
+
+test("a second invalid report analysis stays blocked", async () => {
+  let calls = 0;
+  await assert.rejects(analyzeReport({ report, client: { complete: async () => {
+    calls += 1;
+    return "not JSON";
+  } } }), (error) => error.code === "invalid_response");
+  assert.equal(calls, 2);
+});
+
+test("report explanations reject broad reassurance, speculative causes and ungrounded supplements", () => {
+  for (const mutate of [
+    (value) => { value.summary = "Most values are within the normal range, with minor deviations."; },
+    (value) => { value.findings[0].explanation = "This may be associated with a recent viral infection."; },
+    (value) => { value.findings[0].followUp = "Ask whether supplementation is needed."; },
+  ]) {
+    const value = analysis();
+    mutate(value);
+    assert.throws(() => parseReportReply(JSON.stringify(value), { reportText: report.text }), (error) => error.code === "unsafe_response");
+  }
+});
+
+test("report analysis uses low reasoning and one bounded retry budget", async () => {
+  let settings;
+  await analyzeReport({ report, client: { complete: async (messages, options) => {
+    settings = options;
+    return JSON.stringify(analysis());
+  } } });
+  assert.equal(settings.reasoningEffort, "low");
+  assert.ok(settings.timeoutMs > 0 && settings.timeoutMs <= 55000);
+});
+
 test("the chat requests a supported higher reasoning effort and explicitly bounds available context", async () => {
   let settings;
   const result = await answerChat({ question: "What does hemoglobin do?", client: { complete: async (messages, options) => {
@@ -86,6 +210,9 @@ test("the chat requests a supported higher reasoning effort and explicitly bound
   assert.match(result.answer, /oxygen/);
   assert.equal(settings.reasoningEffort, "medium");
   assert.match(CHAT_SYSTEM_PROMPT, /Prior assistant replies are unverified/);
+  assert.match(CHAT_SYSTEM_PROMPT, /warm, generous with useful explanation/);
+  assert.match(CHAT_SYSTEM_PROMPT, /false reassurance/);
+  assert.match(CHAT_SYSTEM_PROMPT, /For emergencies, put the action first/);
 });
 
 for (const [reason, rejectedReply] of [

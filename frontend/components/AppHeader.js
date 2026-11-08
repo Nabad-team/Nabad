@@ -16,6 +16,7 @@ import NotificationBell from "./NotificationBell";
 export const MAIN_LINKS = [
   { href: "/dashboard", label: "Dashboard", shortLabel: "Home", icon: "dashboard" },
   { href: "/my-health", label: "My health", shortLabel: "Health", icon: "health" },
+  { href: "/vitals", label: "Vitals", shortLabel: "Vitals", icon: "vitals" },
   { href: "/visit-prep", label: "Visit preparation", shortLabel: "Visit prep", icon: "summary" },
   { href: "/test-results", label: "Health assistant", shortLabel: "Assistant", icon: "results" },
   { href: "/medications", label: "Medications", shortLabel: "Medicines", icon: "medications" },
@@ -29,13 +30,18 @@ export const ACCOUNT_LINKS = [
   { href: "/security", label: "Security", shortLabel: "Security" },
   { href: "/care-circle", label: "Care circle", shortLabel: "Care circle" },
   { href: "/symptoms", label: "Safety check", shortLabel: "Safety" },
-  { href: "/medications", label: "Medications", shortLabel: "Medicines" },
   { href: "/emergency-card", label: "Emergency information card", shortLabel: "Emergency card" },
   { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
 ];
 
 const DOCUMENT_LINK = { href: "/medical-documents", label: "Medical documents", shortLabel: "Documents", icon: "documents" };
 const WORKSPACE_LINKS = [...MAIN_LINKS.slice(0, -1), DOCUMENT_LINK, MAIN_LINKS[MAIN_LINKS.length - 1]];
+const WORKSPACE_BY_HREF = new Map(WORKSPACE_LINKS.map((link) => [link.href, link]));
+export const WORKSPACE_GROUPS = [
+  { label: "Daily care", links: ["/dashboard", "/appointments", "/medications", "/water-and-sleep"] },
+  { label: "Health records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
+  { label: "Support", links: ["/test-results", "/providers"] },
+].map((group) => ({ ...group, links: group.links.map((href) => WORKSPACE_BY_HREF.get(href)) }));
 
 // Keep the current-page indicator in sync with client-side navigation.
 function useCurrentPath() {
@@ -49,6 +55,7 @@ function NavIcon({ name }) {
   const paths = {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
     health: <><path d="M12 20S4 15.4 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 15.4 12 20 12 20Z" /><path d="M8.5 12h2l1-2.5 1.5 5 1-2.5h1.5" /></>,
+    vitals: <><path d="M3 12h4l2-5 4 10 2-5h6" /><path d="M4 4h16v16H4z" /></>,
     results: <><path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 13h8M8 17h5" /><circle cx="17.5" cy="17.5" r="3.5" /><path d="m20 20 2 2" /></>,
     medications: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5M14 15l3 3" /></>,
     calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" /></>,
@@ -60,7 +67,7 @@ function NavIcon({ name }) {
   return <svg className="app-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 }
 
-function NavLinks({ links, path, className, simplified = false, cards = false }) {
+function NavLinks({ links, path, className, simplified = false, cards = false, compact = false }) {
   return (
     <ul className={className}>
       {links.map(({ href, label, shortLabel, icon }) => (
@@ -69,15 +76,24 @@ function NavLinks({ links, path, className, simplified = false, cards = false })
             href={href}
             className={cards ? "app-nav__card" : undefined}
             aria-current={path === href ? "page" : undefined}
-            aria-label={simplified ? label : undefined}
+            aria-label={simplified || compact ? label : undefined}
           >
             {cards && <NavIcon name={icon} />}
-            <span>{simplified ? shortLabel : label}</span>
+            <span>{simplified || compact ? shortLabel : label}</span>
           </Link>
         </li>
       ))}
     </ul>
   );
+}
+
+function GroupedWorkspaceLinks({ path, simplified = false, mobile = false }) {
+  return <div className={mobile ? "workspace-groups workspace-groups--mobile" : "workspace-groups"}>
+    {WORKSPACE_GROUPS.map((group) => <section key={group.label} className="workspace-group" aria-labelledby={`workspace-${mobile ? "mobile-" : ""}${group.label.replace(/\s+/g, "-").toLowerCase()}`}>
+      <p id={`workspace-${mobile ? "mobile-" : ""}${group.label.replace(/\s+/g, "-").toLowerCase()}`} className={`workspace-group__label${mobile ? "" : " visually-hidden"}`}>{group.label}</p>
+      <NavLinks links={group.links} path={path} className={mobile ? "mobile-menu__list mobile-menu__cards" : "workspace-nav__list"} simplified={simplified} cards={mobile} compact={!mobile} />
+    </section>)}
+  </div>;
 }
 
 export function MainNavigation({ className = "app-nav__list", includeMedicalDocuments = false }) {
@@ -199,15 +215,7 @@ export default function AppHeader() {
 
       {signedIn && (
         <nav aria-label="Workspace" className="workspace-nav container container--wide">
-          <ul className="workspace-nav__list">
-            {WORKSPACE_LINKS.map(({ href, label, shortLabel, icon }) => (
-              <li key={href}>
-                <Link href={href} title={label} aria-current={path === href ? "page" : undefined}>
-                  <NavIcon name={icon} /><span>{shortLabel}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <GroupedWorkspaceLinks path={path} simplified={preferences.simplifiedMode} />
         </nav>
       )}
 
@@ -215,7 +223,7 @@ export default function AppHeader() {
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
           <div className="container">
             <nav aria-label="Main">
-              <NavLinks links={WORKSPACE_LINKS} path={path} className="mobile-menu__list mobile-menu__cards" simplified={preferences.simplifiedMode} cards />
+              <GroupedWorkspaceLinks path={path} simplified={preferences.simplifiedMode} mobile />
             </nav>
             <ProfileSwitcher id="profile-switcher-mobile" showLabel />
             <nav aria-label="Account">

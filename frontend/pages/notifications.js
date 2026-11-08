@@ -26,6 +26,7 @@ export default function NotificationsPage() {
   const { selfProfile, linkedProfiles = [] } = useActiveProfile() || {};
   const [show, setShow] = useState("all");
   const [person, setPerson] = useState("");
+  const [search, setSearch] = useState("");
   const [items, setItems] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -108,7 +109,8 @@ export default function NotificationsPage() {
     setItems((current) => (show === "unread" ? [] : current.map((n) => ({ ...n, read: true }))));
   }, "All notifications marked as read.", "We couldn't mark your notifications as read. Please try again.");
 
-  const filtered = show === "unread" || person;
+  const hasFilters = show === "unread" || person || search.trim();
+  const visibleItems = (items || []).filter((item) => `${item.title} ${item.message}`.toLowerCase().includes(search.trim().toLowerCase()));
   return (
     <PageLayout title="Notifications" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Notifications</PageTitle>
@@ -125,6 +127,7 @@ export default function NotificationsPage() {
           {selfProfile && <option value="self">{selfProfile.fullName} (you)</option>}
           {linkedProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.fullName}</option>)}
         </Input>
+        <Input id="notification-search" type="search" label="Search" placeholder="Title or message" value={search} onChange={(event) => setSearch(event.target.value)} />
         <Button variant="secondary" onClick={markAll} disabled={!items?.some((item) => !item.read)}>Mark all as read</Button>
       </div>
 
@@ -132,14 +135,14 @@ export default function NotificationsPage() {
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loadError && <div className="stack"><Alert tone="danger" as="p" role="alert">{loadError}</Alert><Button variant="secondary" onClick={() => load(page)}>Try again</Button></div>}
       {!loadError && items === null && <HeartbeatLoader label="Loading notifications..." />}
-      {items?.length === 0 && (
-        <EmptyState title={filtered ? "No notifications match these filters." : "No notifications yet."}>
-          {filtered ? "Try showing all notifications or everyone." : "Appointment reminders, care circle alerts and other important alerts will appear here."}
+      {items !== null && visibleItems.length === 0 && (
+        <EmptyState title={hasFilters ? "No notifications match these filters." : "No notifications yet."}>
+          {hasFilters ? "Try changing the search or showing all notifications for everyone." : "Appointment reminders, care circle alerts and other important alerts will appear here."}
         </EmptyState>
       )}
-      {items?.length > 0 && (
+      {visibleItems.length > 0 && (
         <ul className="notification-list" aria-label="Notifications">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.id} className={`notification-item${item.read ? "" : " notification-item--unread"}`}>
               <div className="notification-item__heading">
                 <h2 className="notification-item__title">
@@ -156,7 +159,7 @@ export default function NotificationsPage() {
               <div className="button-row">
                 {item.phone && <CallButton item={item} />}
                 {!item.read && <Button variant="secondary" size="small" onClick={() => markRead(item)} aria-label={`Mark "${item.title}" as read`}>Mark as read</Button>}
-                <Button variant="secondary" size="small" onClick={() => remove(item)} aria-label={`Delete "${item.title}"`}>Delete</Button>
+                <Button variant="danger" size="small" onClick={() => remove(item)} aria-label={`Delete "${item.title}"`}>Delete</Button>
               </div>
             </li>
           ))}

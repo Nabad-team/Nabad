@@ -6,7 +6,9 @@ const MedicationAdherence = require("../models/MedicationAdherence");
 const { readReminder, nextReminder } = require("../medicationSchedule");
 const { FORMS, STATUSES, LIMITS } = Medication;
 const { requireAuth } = require("../middleware/authMiddleware");
-const { resolveProfile, profileView } = require("../middleware/profileAccess");
+const User = require("../models/User");
+const LinkedProfile = require("../models/LinkedProfile");
+const { resolveProfile, profileView, PROFILE_NOT_FOUND } = require("../middleware/profileAccess");
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 // Medications of the signed-in user and of the people they look after (their linked profiles).
@@ -24,11 +26,82 @@ const NOT_FOUND = { error: "Medication not found." };
 const ADHERENCE_DATE_ERROR = { error: "Enter a valid date as YYYY-MM-DD." };
 
 const dateString = (date) => (date ? date.toISOString().slice(0, 10) : "");
+
+// ---- Medication overview (SCRUM-150) ----------------------------------------------------------------
+// Every medication of the signed-in user and of all their linked profiles on one page, e.g. a nurse
+// checking her residents during a shift. Residents are ordinary linked profiles: no new sharing model.
+// Three queries in total (the user, their linked profiles, every medication with owner = req.userId),
+// never one request per profile. Only profiles this account owns can appear.
+const OVERVIEW_PROFILE_LIMIT = 100; // well above MAX_LINKED_PROFILES (routes/profile.js), so the page keeps working if that grows
+const RECENT_CHANGE_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const byName = (a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base", numeric: true }) || String(a._id).localeCompare(String(b._id));
+
+// Shift flags. Missing dose/schedule only matter for medications still being given.
+function overviewMedication(medication, now) {
+  const active = medication.status === "active";
+  return {
+    id: String(medication._id),
+    name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form,
+    frequency: medication.frequency, times: medication.times || [],
+    status: medication.status, startDate: dateString(medication.startDate), endDate: dateString(medication.endDate),
+    updatedAt: medication.updatedAt,
+    flags: {
+      missingDose: active && !medication.dose,
+      missingSchedule: active && !medication.frequency && !(medication.times || []).length,
+      changedRecently: now - new Date(medication.updatedAt).getTime() <= RECENT_CHANGE_DAYS * DAY_MS,
+    },
+  };
+}
+
+// details: existing profile fields that tell two people with the same name apart (dateOfBirth, addedOn).
+function overviewProfile(id, name, relationship, details, medications, now) {
+  const items = medications.sort((a, b) => (a.status === b.status ? byName(a, b) : a.status === "active" ? -1 : 1)).map((m) => overviewMedication(m, now));
+  const active = items.filter((m) => m.status === "active");
+  return {
+    id, name, relationship, isSelf: id === "self",
+    dateOfBirth: dateString(details.dateOfBirth), addedOn: dateString(details.createdAt),
+    medications: items,
+    counts: { active: active.length, discontinued: items.length - active.length },
+    flags: {
+      noMedications: items.length === 0,
+      missingDetails: active.filter((m) => m.flags.missingDose || m.flags.missingSchedule).length,
+      changedRecently: items.filter((m) => m.flags.changedRecently).length,
+    },
+  };
+}
+
+router.get("/overview", asyncRoute(async (req, res) => {
+  const [user, linked] = await Promise.all([
+    User.findById(req.userId).select("name dateOfBirth createdAt").lean(),
+    LinkedProfile.find({ owner: req.userId }).select("fullName relationship dateOfBirth createdAt").sort({ createdAt: 1, _id: 1 }).limit(OVERVIEW_PROFILE_LIMIT).lean(),
+  ]);
+  if (!user) return res.status(404).json(PROFILE_NOT_FOUND);
+  const selfId = String(req.userId);
+  const profileIds = [new mongoose.Types.ObjectId(selfId), ...linked.map((p) => p._id)];
+  const medications = await Medication.find({ owner: req.userId, profileId: { $in: profileIds } })
+    .select("profileId name dose unit form frequency times status startDate endDate updatedAt")
+    .limit(profileIds.length * MAX_MEDICATIONS)
+    .lean();
+  const byProfile = new Map(profileIds.map((id) => [String(id), []]));
+  for (const medication of medications) byProfile.get(String(medication.profileId))?.push(medication);
+  const now = Date.now();
+  res.set("Cache-Control", "no-store");
+  return res.json({
+    generatedAt: new Date(now).toISOString(),
+    recentChangeDays: RECENT_CHANGE_DAYS,
+    profiles: [
+      overviewProfile("self", user.name, null, user, byProfile.get(selfId), now),
+      ...linked.map((p) => overviewProfile(String(p._id), p.fullName, p.relationship, p, byProfile.get(String(p._id)), now)),
+    ],
+  });
+}));
+
 router.use(resolveProfile);
 const view = (medication) => ({
   id: String(medication._id),
   profileId: profileView(medication),
-  name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form, frequency: medication.frequency,
+  name: medication.name, dose: medication.dose, unit: medication.unit, form: medication.form, frequency: medication.frequency, times: medication.times || [],
   startDate: dateString(medication.startDate), endDate: dateString(medication.endDate),
   status: medication.status, notes: medication.notes,
   reminderTimes: medication.reminderTimes || [], reminderTimeZone: medication.reminderTimeZone || "Asia/Beirut",
@@ -65,6 +138,8 @@ function readMedication(body) {
   const dose = readText(body, "dose", "Dose", errors);
   const unit = readText(body, "unit", "Unit", errors);
   const frequency = readText(body, "frequency", "How often", errors);
+  const times = body.times === undefined ? [] : body.times;
+  if (!Array.isArray(times) || times.length > 12 || times.some(value => typeof value !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || new Set(times).size !== times.length) errors.push("Enter up to 12 unique medication times in HH:MM format.");
   const notes = readText(body, "notes", "Notes", errors);
   const form = body.form === undefined || body.form === "" ? "tablet" : body.form;
   if (!FORMS.includes(form)) errors.push("Choose a form: tablet, syrup, injection, inhaler, drops or other.");
@@ -79,7 +154,7 @@ function readMedication(body) {
   if (errors.length) return { error: errors[0] };
   const reminder = readReminder(body);
   if (reminder.error) return reminder;
-  return { medication: { name, dose, unit, form, frequency, startDate, endDate, notes, ...reminder } };
+  return { medication: { name, dose, unit, form, frequency, times: [...times].sort(), startDate, endDate, notes, ...reminder } };
 }
 
 // Matches the medication only if it belongs to the signed-in user. null for an id that can't exist (answered as 404).
@@ -101,7 +176,7 @@ router.get("/adherence", asyncRoute(async (req, res) => {
   const takenIds = new Set(logs.map((log) => String(log.medicationId)));
   return res.json({ date: day, medications: medications.map((medication) => ({
     id: String(medication._id), name: medication.name, dose: medication.dose, unit: medication.unit,
-    form: medication.form, frequency: medication.frequency, taken: takenIds.has(String(medication._id)),
+    form: medication.form, frequency: medication.frequency, times: medication.times || [], taken: takenIds.has(String(medication._id)),
   })) });
 }));
 

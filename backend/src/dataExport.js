@@ -42,6 +42,15 @@ const TIMESTAMPS = { createdAt: "createdAt", updatedAt: "updatedAt" };
 // Health data kept per profile (the account owner's own, or a linked family profile's).
 const PROFILE_COLLECTIONS = [
   {
+    key: "visitPreparationShares", model: require("./models/VisitPrepShare"),
+    fields: {
+      _id: ["id", id], patientName: "patientName", sections: "sections", documentIds: ["documentIds", (values) => values.map(String)],
+      expiresAt: "expiresAt", revokedAt: "revokedAt", lastViewedAt: "lastViewedAt", viewCount: "viewCount",
+      confirmedAt: "confirmedAt", confirmedBy: "confirmedBy", ...TIMESTAMPS,
+    },
+    omit: { tokenHash: "Secret hash of the unguessable sharing link token." },
+  },
+  {
     key: "visitPreparation", model: require("./models/VisitPrep"), single: true,
     fields: { _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => values.map(String)], ...TIMESTAMPS },
   },
@@ -49,7 +58,7 @@ const PROFILE_COLLECTIONS = [
     key: "medications",
     model: Medication,
     omit: { nextReminderAt: "Internal scheduler cursor; the user-selected times and time zone are exported." },
-    fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", reminderTimes: "reminderTimes", reminderTimeZone: "reminderTimeZone", ...TIMESTAMPS },
+    fields: { _id: ["id", id], name: "name", dose: "dose", unit: "unit", form: "form", frequency: "frequency", times: "times", startDate: "startDate", endDate: "endDate", status: "status", notes: "notes", reminderTimes: "reminderTimes", reminderTimeZone: "reminderTimeZone", ...TIMESTAMPS },
   },
   {
     key: "medicationCheckIns",
@@ -61,6 +70,12 @@ const PROFILE_COLLECTIONS = [
     model: HealthFact,
     fields: { _id: ["id", id], category: "category", value: "value", source: "source", status: "status", recordedAt: "recordedAt", ...TIMESTAMPS },
     omit: { slot: "An internal key that stops the same fact being saved twice; worked out from the category." },
+  },
+  {
+    key: "vitalReadings",
+    model: require("./models/VitalReading"),
+    sort: { recordedAt: 1 },
+    fields: { _id: ["id", id], recordedAt: "recordedAt", systolic: "systolic", diastolic: "diastolic", heartRate: "heartRate", temperature: "temperature", ...TIMESTAMPS },
   },
   {
     key: "waterEntries",

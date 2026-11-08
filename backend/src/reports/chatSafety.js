@@ -13,7 +13,7 @@ function getChatSafetyReply(question) {
   if (!narrative.test(text)) return null;
   if (classifyUrgency(text).level !== "emergency") return null;
   return {
-    answer: "Seek emergency medical help now: contact your local emergency services or get help reaching the nearest emergency department. Do not drive yourself. Do not wait for this chat, a routine appointment, or for symptoms to get worse. If the warning symptoms have stopped, you still need urgent assessment. This is safety guidance, not a diagnosis.",
+    answer: "Seek emergency medical help now: contact your local emergency services or get help reaching the nearest emergency department. Do not drive yourself. Do not wait for this chat, a routine appointment, or for symptoms to get worse. If the warning symptoms have stopped, you still need urgent assessment. You did the right thing by asking for help; please act now. This is safety guidance, not a diagnosis.",
     evidence: [],
     disclaimer: "Automated safety guidance based on Nabad's symptom rules. These rules can miss emergencies and cannot diagnose a condition.",
     responseSource: "safety_rules",

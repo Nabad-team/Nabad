@@ -8,7 +8,7 @@ import { request } from "./api";
 export const RELATIONSHIPS = ["child", "parent", "spouse", "other"];
 
 // The most dependents one account can link (the backend enforces the same limit).
-export const MAX_LINKED_PROFILES = 10;
+export const MAX_LINKED_PROFILES = 30;
 
 // The account owner's profile has the id "self"; linked profiles use their database id.
 function pictureUrl(profileId) {

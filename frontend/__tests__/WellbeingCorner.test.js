@@ -45,6 +45,7 @@ describe("Wellbeing Corner", () => {
     });
 
     expect(callLink).toHaveAttribute("href", "tel:1564");
+    expect(callLink).toHaveClass("button", "wellbeing-support-number__call");
   });
 
   test("shows support information for Lebanon", () => {
@@ -70,7 +71,9 @@ describe("Wellbeing Corner", () => {
       const source = within(entry).getByRole("link", { name: `Official verification source for ${contact.name}` });
       expect(source).toHaveAttribute("href", contact.sourceUrl);
       expect(source).toHaveAttribute("rel", "noopener noreferrer");
+      expect(source).toHaveTextContent(/^Official source$/);
     }
+    expect(screen.getByRole("link", { name: "Call 140" })).toHaveClass("button--danger");
     expect(screen.queryByText(/Numbers last verified:/)).not.toBeInTheDocument();
     expect(screen.getByText(/not a live phone-line availability check/)).toBeInTheDocument();
   });

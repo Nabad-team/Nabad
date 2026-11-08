@@ -25,7 +25,7 @@ import { formatDate, todayString } from "../lib/dates";
 // Same limits as the backend (models/Medication.js), so the browser stops overlong text before sending it.
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
 const FORM_LABELS = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
-const emptyFields = () => ({ name: "", dose: "", unit: "", form: "tablet", frequency: "", startDate: todayString(), endDate: "", notes: "",
+const emptyFields = () => ({ name: "", dose: "", unit: "", form: "tablet", frequency: "", timesText: "", startDate: todayString(), endDate: "", notes: "",
   reminderTimes: [], reminderTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Beirut" });
 
 // Checks what the browser can check, in the same words as the server. Returns { field: message }.
@@ -60,7 +60,7 @@ const statusAction = (medication) => (medication.status === "active" ? "Mark as 
 
 // The add and edit form. idPrefix keeps the field ids unique when it is shown inside a list item.
 function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCancel }) {
-  const [fields, setFields] = useState(initial);
+  const [fields, setFields] = useState({ ...initial, timesText: initial.times ? initial.times.join(", ") : initial.timesText || "" });
   const [problems, setProblems] = useState({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -80,7 +80,12 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
     }
     setSaving(true);
     try {
-      await onSave({ ...fields, name: fields.name.trim() });
+      const times = fields.timesText.split(",").map(value => value.trim()).filter(Boolean);
+      if (times.some(value => !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) || new Set(times).size !== times.length || times.length > 12) {
+        setProblems({ timesText: "Enter unique times as HH:MM, separated by commas." }); setSaving(false); return;
+      }
+      const { timesText, ...medicationFields } = fields;
+      await onSave({ ...medicationFields, times, name: fields.name.trim() });
     } catch (err) {
       setError(err.message || "Could not save the medication. Please try again.");
       setSaving(false);
@@ -99,6 +104,7 @@ function MedicationForm({ idPrefix, initial, title, submitLabel, onSave, onCance
         {MEDICATION_FORMS.map((form) => <option key={form} value={form}>{FORM_LABELS[form]}</option>)}
       </Input>
       <Input id={id("frequency")} label="How often" hint="For example twice a day, or every 8 hours" value={fields.frequency} onChange={update("frequency")} maxLength={LIMITS.frequency} autoComplete="off" />
+      <Input id={id("timesText")} label="Medication times (optional)" hint="For example 08:00, 20:00. These appear on the calendar." value={fields.timesText} onChange={update("timesText")} error={problems.timesText} autoComplete="off" />
       <div className="field-pair">
         <Input id={id("startDate")} label="Start date" type="date" value={fields.startDate} onChange={update("startDate")} error={problems.startDate} required />
         <Input id={id("endDate")} label="End date (optional)" type="date" min={fields.startDate || undefined} value={fields.endDate} onChange={update("endDate")} error={problems.endDate} />
@@ -139,7 +145,9 @@ export default function MedicationsPage() {
   const [toDelete, setToDelete] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [notice, setNotice] = useState("");
+  const [undoStatus, setUndoStatus] = useState(null);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
 
   // Whose list this is: the profile chosen in the header ("self" or a dependent's id).
   const profileId = activeProfile?.id;
@@ -200,12 +208,27 @@ export default function MedicationsPage() {
     try {
       await setMedicationStatus(profileId, medication.id, status);
       setNotice(status === "active" ? `${medication.name} is marked as active again.` : `${medication.name} is marked as discontinued.`);
+      setUndoStatus({ medication, status: medication.status });
       await load();
     } catch (err) {
       setError(err.message || "Could not change the status. Please try again.");
     } finally {
       setBusyId(null);
     }
+  }
+
+  async function handleUndoStatus() {
+    const change = undoStatus;
+    if (!change) return;
+    setBusyId(change.medication.id); setError("");
+    try {
+      await setMedicationStatus(profileId, change.medication.id, change.status);
+      setNotice(`Status change for ${change.medication.name} was undone.`);
+      setUndoStatus(null);
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not undo the status change. Please try again.");
+    } finally { setBusyId(null); }
   }
 
   async function handleDelete() {
@@ -224,6 +247,32 @@ export default function MedicationsPage() {
     }
   }
 
+  const matching = (medications || []).filter((medication) =>
+    [medication.name, medication.dose, medication.form, medication.notes].some((value) => String(value || "").toLowerCase().includes(query.trim().toLowerCase())));
+  const activeMedications = matching.filter((medication) => medication.status === "active");
+  const discontinuedMedications = matching.filter((medication) => medication.status !== "active");
+  const medicationRow = (medication) => <li key={medication.id} className="medication">
+    {editing === medication.id ? <MedicationForm
+      idPrefix={`edit-${medication.id}`}
+      initial={{ ...emptyFields(), ...medication }}
+      title={`Edit ${medication.name}`}
+      submitLabel="Save changes"
+      onSave={(fields) => handleEdit(medication.id, fields)}
+      onCancel={() => setEditing(null)}
+    /> : <>
+      <div className="medication__heading"><h3>{medication.name}</h3>{medication.status === "active" ? <Badge>Active</Badge> : <Badge tone="neutral">Discontinued</Badge>}</div>
+      {summary(medication) && <p className="medication__summary">{summary(medication)}</p>}
+      <p className="text-muted text-sm">{dates(medication)}</p>
+      {medication.reminderTimes?.length > 0 && <p>Daily reminders: {medication.reminderTimes.join(", ")} ({medication.reminderTimeZone}){medication.status === "discontinued" ? " — paused" : ""}</p>}
+      {medication.notes && <p className="medication__notes"><span className="text-muted">Notes:</span> {medication.notes}</p>}
+      <div className="button-row">
+        <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>
+        <Button variant="secondary" size="small" onClick={() => handleStatus(medication)} disabled={busyId === medication.id} aria-label={`${statusAction(medication)}: ${medication.name}`}>{statusAction(medication)}</Button>
+        <Button variant="danger" size="small" onClick={() => { setNotice(""); setError(""); setToDelete(medication); }} aria-label={`Delete ${medication.name}`}>Delete</Button>
+      </div>
+    </>}
+  </li>;
+
   return (
     <PageLayout title="Medications" header={<ProfileHeader showPicture={false} />}>
       {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
@@ -238,7 +287,7 @@ export default function MedicationsPage() {
       )}
 
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
-      {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
+      {notice && <div className="action-toast" role="status"><span>{notice}</span>{undoStatus && <Button variant="secondary" size="small" onClick={handleUndoStatus} disabled={busyId === undoStatus.medication.id}>Undo</Button>}</div>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
 
       {loadError && (
@@ -256,8 +305,9 @@ export default function MedicationsPage() {
             <MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} />
           ) : (
             <div className="medications-actions">
-              <Button onClick={() => open("add")}>{simplified ? "Add medicine" : "Add medication"}</Button>
-              <Button variant="secondary" href="/appointments">View appointments</Button>
+              <Button onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>
+              <Button variant="secondary" href="/appointments">View medication calendar</Button>
+              <Button variant="secondary" href="/medication-overview">Medication overview</Button>
             </div>
           )}
 
@@ -268,47 +318,16 @@ export default function MedicationsPage() {
           )}
 
           {medications.length > 0 && (
-            <ul className="medication-list" aria-label={forSelf ? "Your medications" : `Medications for ${name}`}>
-              {medications.map((medication) => (
-                <li key={medication.id} className="medication">
-                  {editing === medication.id ? (
-                    <MedicationForm
-                      idPrefix={`edit-${medication.id}`}
-                      initial={{ ...emptyFields(), ...medication }}
-                      title={`Edit ${medication.name}`}
-                      submitLabel="Save changes"
-                      onSave={(fields) => handleEdit(medication.id, fields)}
-                      onCancel={() => setEditing(null)}
-                    />
-                  ) : (
-                    <>
-                      <div className="medication__heading">
-                        <h3>{medication.name}</h3>
-                        {medication.status === "active" ? <Badge>Active</Badge> : <Badge tone="neutral">Discontinued</Badge>}
-                      </div>
-                      {summary(medication) && <p className="medication__summary">{summary(medication)}</p>}
-                      <p className="text-muted text-sm">{dates(medication)}</p>
-                      {medication.reminderTimes?.length > 0 && <p>Daily reminders: {medication.reminderTimes.join(", ")} ({medication.reminderTimeZone}){medication.status === "discontinued" ? " — paused" : ""}</p>}
-                      {medication.notes && <p className="medication__notes"><span className="text-muted">Notes:</span> {medication.notes}</p>}
-                      <div className="button-row">
-                        <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>
-                        {/* The spoken name starts with the visible words, so voice control users can say what they see. */}
-                        <Button
-                          variant="secondary"
-                          size="small"
-                          onClick={() => handleStatus(medication)}
-                          disabled={busyId === medication.id}
-                          aria-label={`${statusAction(medication)}: ${medication.name}`}
-                        >
-                          {statusAction(medication)}
-                        </Button>
-                        <Button variant="secondary" size="small" onClick={() => { setNotice(""); setError(""); setToDelete(medication); }} aria-label={`Delete ${medication.name}`}>Delete</Button>
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <div className="medication-browser">
+              <Input id="medication-search" type="search" label="Search medications" placeholder="Name, dose or notes" value={query} onChange={(event) => setQuery(event.target.value)} />
+              {matching.length === 0 ? <EmptyState title="No medications match your search.">Try a different name, dose or note.</EmptyState> : <>
+                {activeMedications.length > 0 && <ul className="medication-list" aria-label={forSelf ? "Active medications" : `Active medications for ${name}`}>{activeMedications.map(medicationRow)}</ul>}
+                {discontinuedMedications.length > 0 && <details className="medication-archive">
+                  <summary>Discontinued medications ({discontinuedMedications.length})</summary>
+                  <ul className="medication-list" aria-label={forSelf ? "Discontinued medications" : `Discontinued medications for ${name}`}>{discontinuedMedications.map(medicationRow)}</ul>
+                </details>}
+              </>}
+            </div>
           )}
         </>
       )}
@@ -323,9 +342,6 @@ export default function MedicationsPage() {
         </Dialog>
       )}
 
-      <p className="section">
-        <a href="/dashboard">Back to dashboard</a>
-      </p>
     </PageLayout>
   );
 }

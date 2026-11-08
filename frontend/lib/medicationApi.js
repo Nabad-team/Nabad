@@ -2,7 +2,7 @@ import { request } from "./api";
 
 // Medications of the signed-in user ("self") or of one of their linked profiles (backend: routes/medications.js).
 // Every call names the profile, so the list always matches the profile chosen in the header.
-// Each medication: { id, profileId, name, dose, unit, form, frequency, startDate, endDate, status, notes }.
+// Each medication includes times: an ordered list of local HH:MM schedule times.
 // Dates are "YYYY-MM-DD" strings; endDate is "" when there is none. status is "active" or "discontinued".
 export const MEDICATION_FORMS = ["tablet", "syrup", "injection", "inhaler", "drops", "other"];
 

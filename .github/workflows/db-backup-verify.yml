@@ -1,0 +1,52 @@
+name: Database Backup Verification
+
+# Weekly check of the stored backups without decrypting them (docs/backups.md): the newest daily
+# backup is under 26 hours old, matches its manifest's SHA-256, isn't below half the previous size,
+# and retention is right. Logs and issues show only status, sizes, timestamps and SHA-256.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'Nabad-team/Nabad'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify the stored backups
+        id: verify-stored
+        env:
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+        run: ops/backup/backup.sh verify-stored
+
+      - name: Open or update the backup-failure issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STEPS_JSON: ${{ toJSON(steps) }}
+        run: ops/backup/report-issue.sh fail "Weekly backup verification failed"
+
+      - name: Close the backup-failure issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ops/backup/report-issue.sh ok "Weekly backup verification failed"

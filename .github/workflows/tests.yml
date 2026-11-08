@@ -55,6 +55,30 @@ jobs:
       - name: Test API with temporary MongoDB
         run: npm test
 
+  report-quality:
+    name: Medical report safety gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      MONGOMS_DISABLE_POSTINSTALL: "1"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate report analysis and extraction fixtures
+        run: npm run test:report-quality
+      - name: Validate clinical review records
+        run: npm run test:report-review
+
   # SCRUM-282: the 50 realistic triage cases (backend/tests/triage-quality) as their own check, so a
   # change that makes triage less accurate is named on the pull request. The scorecard is on the run's
   # summary page. No database or AI provider is needed, so the MongoDB download is skipped.
@@ -79,3 +103,39 @@ jobs:
         run: npm ci
       - name: Run the triage quality test set
         run: npm run test:triage-quality
+
+  # The backup tooling in ops/backup (docs/backups.md): naming, retention, manifest and sanity-check
+  # logic, plus shellcheck for its scripts. No database or network needed.
+  backup-tooling:
+    name: Backup tooling
+    runs-on: ubuntu-24.04
+    env:
+      # Empty on fork and Dependabot pull requests (see "Log in to Docker Hub").
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Run backup tooling tests
+        run: node --test "ops/backup/tests/*.test.js"
+      - name: Shellcheck backup scripts
+        run: shellcheck --external-sources ops/backup/*.sh
+      # Read-only Docker Hub token, so pulls aren't rate-limited. Fork and Dependabot pull requests
+      # don't get repository secrets: DOCKERHUB_USERNAME is empty, this step is skipped, pulls are anonymous.
+      - name: Log in to Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # The backup workflows only run on a schedule or by hand, never on a pull request, so lint them here.
+      - name: Lint backup workflows (actionlint 1.7.7)
+        run: >-
+          docker run --rm -v "$PWD:/repo:ro" -w /repo
+          rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9
+          -no-color .github/workflows/db-backup.yml .github/workflows/db-backup-verify.yml
