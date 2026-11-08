@@ -1,4 +1,5 @@
 import OfflineSupport from "../components/OfflineSupport";
+import StagingBanner from "../components/StagingBanner";
 import { IBM_Plex_Sans } from "next/font/google";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import SessionTimeout from "../components/SessionTimeout";
@@ -25,6 +26,7 @@ export default function MyApp({ Component, pageProps }) {
           --font-plex: ${plex.style.fontFamily};
         }
       `}</style>
+      <StagingBanner />
       <OfflineSupport />
       <AccessibilityProvider>
         <SessionTimeout>

@@ -1,11 +1,14 @@
 # Render Blueprint for the backend API (https://render.com/docs/blueprint-spec).
 # Values marked "sync: false" are secrets: Render asks for them in the dashboard; they never go in git.
+# This Blueprint ("Nabad1", auto-synced from main) manages PRODUCTION only. Production deploys from the
+# "production" branch: releasing is a pull request from main to production (docs/environments.md).
+# Staging lives in a separate Render workspace (its own free hours), created by hand; see the reference at the end.
 services:
   - type: web
     name: nabad-backend
     runtime: node
     plan: free
-    branch: main
+    branch: production
     rootDir: backend
     buildCommand: npm ci
     startCommand: npm start
@@ -83,3 +86,50 @@ services:
       # trace, route, status, requestId and environment, never health or personal data (docs/architecture.md).
       - key: SENTRY_DSN
         sync: false
+
+# ---------------------------------------------------------------------------------------------------------------
+# Reference only, NOT synced: the staging service, nabad-backend-staging in the "Nabad Staging" Render workspace
+# (https://nabad-backend-staging.onrender.com). A Blueprint can't reach another workspace, so keep this block in step
+# with the dashboard by hand. Staging must never be kept awake by a monitor (docs/environments.md).
+#
+#  - type: web
+#    name: nabad-backend-staging
+#    runtime: node
+#    plan: free
+#    region: frankfurt
+#    branch: main
+#    autoDeploy: true
+#    rootDir: backend
+#    buildCommand: npm ci
+#    startCommand: npm start
+#    healthCheckPath: /api/health/ready
+#    envVars:
+#      - { key: NODE_VERSION, value: "24" }
+#      - { key: NODE_ENV, value: production }
+#      - { key: APP_ENV, value: staging }
+#      - { key: MONGO_DB_NAME, value: nabad_staging }       # the API refuses nabad_production on staging
+#      - { key: CLIENT_ORIGIN, value: https://nabad-staging.vercel.app }
+#      # Staging only (refused elsewhere): PR previews may write too. One "*" inside the first DNS label.
+#      - { key: PREVIEW_ORIGIN_PATTERN, value: "https://nabad-*-nabad3.vercel.app" }
+#      - { key: TRUST_PROXY, value: "2" }
+#      - { key: SESSION_IDLE_TIMEOUT, value: 30m }
+#      - { key: SESSION_ABSOLUTE_TIMEOUT, value: 12h }
+#      - { key: SESSION_WARNING_BEFORE, value: 2m }
+#      - { key: TWO_FACTOR_ON_SIGNUP, value: "false" }
+#      - { key: SMTP_PORT, value: "2525" }
+#      - { key: SMTP_SECURE, value: "false" }
+#      - { key: LLM_TIMEOUT_MS, value: "60000" }
+#      - { key: LLM_VISION_ENABLED, value: "true" }
+#      - { key: MONGO_URI, sync: false }                # staging Atlas project, readWrite on nabad_staging only
+#      - { key: JWT_SECRET, sync: false }               # staging's own, never production's
+#      - { key: TWO_FACTOR_CODE_SECRET, sync: false }   # staging's own, different from JWT_SECRET
+#      - { key: SMTP_HOST, sync: false }                # same Brevo account as production
+#      - { key: SMTP_USER, sync: false }
+#      - { key: SMTP_PASS, sync: false }
+#      - { key: EMAIL_FROM, sync: false }
+#      - { key: LLM_PROVIDER, sync: false }
+#      - { key: LLM_API_URL, sync: false }
+#      - { key: LLM_API_KEY, sync: false }              # Gemini key from staging's own Google Cloud project
+#      - { key: LLM_MODEL, sync: false }
+#      - { key: SENTRY_DSN, sync: false }               # optional; events are tagged "staging"
+#      # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI are left unset: Google sign-in is off.

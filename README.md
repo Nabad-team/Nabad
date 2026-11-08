@@ -26,7 +26,7 @@ npx vercel --prod
 
 The browser only talks to the frontend: `frontend/next.config.js` forwards every `/api/*` request to the backend, so the login cookie stays on the frontend site. Set `BACKEND_URL` in the Vercel project (Settings → Environment Variables) to the backend origin without `/api`, e.g. `https://nabad-backend-nhv5.onrender.com`, then redeploy; the rewrite is fixed at build time. Locally it defaults to `http://localhost:5000`.
 
-The backend runs on Render from [render.yaml](./render.yaml) (Blueprint). Secrets (`MONGO_URI`, `JWT_SECRET`, `TWO_FACTOR_CODE_SECRET`, SMTP) are entered in the Render dashboard, never committed.
+The backend runs on Render from [render.yaml](./render.yaml) (Blueprint). `main` deploys to staging and the `production` branch to production; see [docs/environments.md](./docs/environments.md). Secrets (`MONGO_URI`, `JWT_SECRET`, `TWO_FACTOR_CODE_SECRET`, SMTP) are entered in the Render dashboard, never committed.
 
 ## Authentication configuration
 

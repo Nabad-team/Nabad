@@ -9,6 +9,8 @@
 //   contexts and breadcrumbs.
 // - sendDefaultPii is false, and every kind of data collection is off (COLLECT_NOTHING).
 
+import { isStaging } from "./appEnvironment";
+
 export const SENTRY_DSN = (process.env.NEXT_PUBLIC_SENTRY_DSN || "").trim();
 
 // Sentry v11 collects user info (and lets Sentry record the visitor's IP address), cookies, headers, bodies, query
@@ -50,7 +52,10 @@ export function scrubEvent(event) {
   };
 }
 
-export const sentryEnvironment = () => process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV;
+// "staging" for main's staging URL and PR previews (lib/appEnvironment.js), "production" for the production branch.
+export const sentryEnvironment = () => process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT
+  || (isStaging() ? "staging" : process.env.NEXT_PUBLIC_VERCEL_ENV)
+  || process.env.NODE_ENV;
 
 const commonOptions = (beforeSend) => ({
   dsn: SENTRY_DSN,

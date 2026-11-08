@@ -23,7 +23,7 @@ async function start() {
   require("./passwordHashing").dummyHashes().catch(() => {});
   // createApp already rejected a half-configured pair, so here both are missing or neither is.
   const missingGoogle = missingGoogleCredentials();
-  if (process.env.APP_ENV === "production" && missingGoogle.length) logEvent("google_signin_disabled", { missingVariables: missingGoogle });
+  if (["staging", "production"].includes(process.env.APP_ENV) && missingGoogle.length) logEvent("google_signin_disabled", { missingVariables: missingGoogle });
   await connectDB();
   // Before taking requests, so nobody logs water against a day still counted in glasses. Safe to run every start.
   // On failure the old days read as empty until the next start retries, so the rest of Nabad stays up.
