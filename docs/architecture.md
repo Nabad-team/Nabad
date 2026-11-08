@@ -74,7 +74,7 @@ flowchart LR
         subgraph net["Compose network: nabad"]
             frontend["frontend<br/>Next.js standalone server<br/>:3000"]
             backend["backend<br/>Node/Express API, APP_ENV=development<br/>:5000"]
-            mongo[("mongo<br/>mongo:7.0<br/>nabad_development")]
+            mongo[("mongo<br/>mongo:7.0.43<br/>nabad_development")]
             mailpit["mailpit<br/>SMTP :1025, inbox :8025"]
         end
         vol[("volume: mongo7-data")]

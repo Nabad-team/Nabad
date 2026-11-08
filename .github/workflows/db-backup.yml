@@ -26,6 +26,12 @@ jobs:
       # Throwaway MongoDB for the restore check. Must match RESTORE_MONGO_IMAGE in ops/backup/versions.env.
       restore-db:
         image: mongo:7.0.43@sha256:1f995ad6fdb93244a1addab1b58f934a0bc2f5643c38e02f5e9d7f0c7d227a7b
+        # Service containers start before any step, so they log in to Docker Hub here (read-only token).
+        # Without the secrets (never the case for this scheduled job in the main repository) the runner
+        # skips the login and pulls anonymously.
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
         ports:
           - 27017:27017
         options: >-

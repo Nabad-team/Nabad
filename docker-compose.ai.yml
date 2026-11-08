@@ -2,7 +2,7 @@
 # The base stack remains small for Selenium/CI; this overlay downloads several GB on first use.
 services:
   ollama:
-    image: ollama/ollama:0.34.0
+    image: ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba
     restart: unless-stopped
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
@@ -18,7 +18,7 @@ services:
       start_period: 20s
 
   ollama-model-pull:
-    image: ollama/ollama:0.34.0
+    image: ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba
     restart: "no"
     entrypoint: ["ollama"]
     command: ["pull", "qwen3.5:9b"]
