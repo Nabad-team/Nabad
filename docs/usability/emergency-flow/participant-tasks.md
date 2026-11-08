@@ -4,7 +4,7 @@ Read one card at a time. These are fictional situations. Do not use real symptom
 
 ## T1 — Getting urgent help
 
-Imagine you are helping someone who says: **“I have chest pain.”** Use Nabad to check this symptom description and find what you should do next. Tell the moderator what you would do before contacting anyone.
+Imagine you are helping someone **in Lebanon** who says: **“I have chest pain.”** Use Nabad to check this symptom description and find what you should do next. Tell the moderator what you would do before contacting anyone.
 
 ## T2 — Reaching a trusted person
 

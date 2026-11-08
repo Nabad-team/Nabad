@@ -27,6 +27,8 @@ Use one of: `NOT_RUN`, `SUCCESS_UNAIDED`, `SUCCESS_ASSISTED`, `FAIL`, `TIMEOUT`,
 - Timeouts occur at 90 seconds unless a safety interruption occurs sooner. A wrong outcome is FAIL, not a success just because a button was clicked.
 - Environment/guard failure is not participant failure. Record it, repair it and label any rerun separately. Withdrawal is respected; report the actual completed count. Recruit a replacement only transparently, keeping withdrawn/incomplete rows as such.
 
+If replacements are needed, append new participant IDs (P06 onward) and their task rows; never overwrite or reuse a withdrawn person's rows to make the count appear complete.
+
 ## Proposed decision rules
 
 | Task | Proposed target before sessions |
