@@ -18,7 +18,8 @@ const router = express.Router();
 router.use(requireAuth);
 
 const RELATIONSHIPS = ["child", "parent", "spouse", "other"];
-const MAX_LINKED_PROFILES = 10;
+// 30, not 10, so a nurse can link the residents on her shift (SCRUM-150). Same as frontend/lib/profileApi.js.
+const MAX_LINKED_PROFILES = 30;
 const MAX_PICTURE_BYTES = 1024 * 1024;
 // Keyed by account (requireAuth runs first), so a stolen session cannot guess the password.
 const deleteLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, keyGenerator: (req) => req.userId, message: { error: "Too many account deletion attempts. Try again later." } });

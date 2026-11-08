@@ -188,7 +188,7 @@ export default function ProfilePage() {
       setIsAddingDependent(false);
       setDependentMessage("Dependent added.");
     } catch (err) {
-      // The API explains what went wrong, e.g. "You can link up to 10 dependents".
+      // The API explains what went wrong, e.g. "You can link up to 30 dependents".
       setDependentError(err.message);
     }
   }

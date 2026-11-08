@@ -1,4 +1,5 @@
 import { request } from "./api";
+import { formatDate } from "./dates";
 
 // The medication overview (SCRUM-150): every medication of the signed-in user and of all their linked
 // profiles, e.g. a nurse checking her residents during a shift (backend: GET /api/medications/overview).
@@ -27,12 +28,61 @@ export function filterOverview(profiles, { query = "", onlyActive = false, showD
   return visible;
 }
 
-// "500 mg tablet · twice a day · 08:00, 20:00"
-export function medicationSummary(medication) {
-  const amount = [medication.dose, medication.unit].filter(Boolean).join(" ");
-  const what = [amount, medication.form && medication.form !== "other" ? medication.form : ""].filter(Boolean).join(" ");
-  return [what, medication.frequency, (medication.times || []).join(", ")].filter(Boolean).join(" · ");
+const FORM_LABELS = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
+export const NOT_RECORDED = "Not recorded";
+
+// Every field with its label, so nothing is ever a bare number on screen or on paper
+// (a frequency of "5" reads "Frequency: 5", not "· 5"). Missing dose and frequency say so.
+//   [{ key, label, value }]
+export function medicationDetails(medication) {
+  const details = [
+    { key: "dose", label: "Dose", value: medication.dose ? [medication.dose, medication.unit].filter(Boolean).join(" ") : NOT_RECORDED },
+    { key: "form", label: "Route / form", value: FORM_LABELS[medication.form] || medication.form || NOT_RECORDED },
+    { key: "frequency", label: "Frequency", value: medication.frequency || NOT_RECORDED },
+  ];
+  if ((medication.times || []).length) details.push({ key: "times", label: "Times", value: medication.times.join(", ") });
+  details.push(medication.endDate
+    ? { key: "dates", label: "Dates", value: `${formatDate(medication.startDate)} to ${formatDate(medication.endDate)}` }
+    : { key: "dates", label: "Started", value: formatDate(medication.startDate) || NOT_RECORDED });
+  details.push({ key: "updated", label: "Last updated", value: formatDateTime(medication.updatedAt) || NOT_RECORDED });
+  return details;
 }
+
+// ---- People with the same name ----------------------------------------------------------------------
+const nameKey = (name) => normalize(name).replace(/\s+/g, " ");
+const RELATIONSHIP_LABELS = { child: "Child", parent: "Parent", spouse: "Spouse", other: "Other" };
+
+// Existing profile fields only, never invented: who they are to the user, date of birth, and (only if
+// those are the same too) when the profile was added.
+function baseDetail(profile) {
+  return [profile.isSelf ? "You" : RELATIONSHIP_LABELS[profile.relationship] || "", profile.dateOfBirth ? `born ${formatDate(profile.dateOfBirth)}` : ""]
+    .filter(Boolean).join(", ");
+}
+
+// For every profile that shares its name (ignoring case and extra spaces) with another profile in the
+// overview, a short distinguishing detail. Profiles with a unique name are not in the map.
+//   Map(id -> "Other, born 3 February 1941")
+export function sameNameDetails(profiles) {
+  const groups = new Map();
+  for (const profile of profiles || []) {
+    const key = nameKey(profile.name);
+    groups.set(key, [...(groups.get(key) || []), profile]);
+  }
+  const details = new Map();
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const counts = new Map();
+    for (const profile of group) counts.set(baseDetail(profile), (counts.get(baseDetail(profile)) || 0) + 1);
+    for (const profile of group) {
+      const base = baseDetail(profile);
+      const tie = counts.get(base) > 1 && profile.addedOn ? `profile added ${formatDate(profile.addedOn)}` : "";
+      details.set(profile.id, [base, tie].filter(Boolean).join(", "));
+    }
+  }
+  return details;
+}
+
+export const SAME_NAME_NOTE = "Same name as another person, check carefully";
 
 // The flags of one medication, in words (never color alone). tone matches the Badge component.
 export function medicationFlags(medication, recentChangeDays = 7) {
