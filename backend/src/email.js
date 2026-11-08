@@ -7,14 +7,24 @@ const { UserError } = require("./userError");
 const SMTP_TIMEOUT_MS = 10 * 1000;
 const fromAddress = () => process.env.MAIL_FROM || process.env.EMAIL_FROM;
 
+// Staging sends real email through the same Brevo account, so every subject says it is a test.
+const STAGING_SUBJECT_PREFIX = "[Staging] ";
+function subjectFor(subject, env = process.env) {
+  if (env.APP_ENV !== "staging" || typeof subject !== "string" || subject.startsWith(STAGING_SUBJECT_PREFIX)) return subject;
+  return STAGING_SUBJECT_PREFIX + subject;
+}
 function mailer() {
   const from = fromAddress();
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !from) throw new UserError("Sending email is temporarily unavailable. Please try again later.", 503);
-  return nodemailer.createTransport({
+  const transport = nodemailer.createTransport({
     host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === "true", requireTLS: cookieOptions().secure,
     connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
+  // Every route sends through this transport, so the staging prefix is added in one place.
+  const send = transport.sendMail.bind(transport);
+  transport.sendMail = (message, ...rest) => send({ ...message, subject: subjectFor(message?.subject) }, ...rest);
+  return transport;
 }
 // Email is never awaited by a request: a slow or blocked SMTP server must not hold the response.
 // Only the error name and code are logged; SMTP error messages can echo server responses.
@@ -32,4 +42,4 @@ function sendEmail(req, message, notSentEvent = "email_not_sent") {
   return true;
 }
 
-module.exports = { mailer, logEmailFailure, sendInBackground, sendEmail, fromAddress };
+module.exports = { mailer, logEmailFailure, sendInBackground, sendEmail, fromAddress, subjectFor };

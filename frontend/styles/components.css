@@ -589,6 +589,18 @@ select.input {
   color: var(--color-danger-strong);
 }
 
+/* ---------- Staging banner (StagingBanner.js; never on production) ---------- */
+
+.staging-banner {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 0.1875rem solid var(--color-warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-strong);
+  font-size: var(--text-sm);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Alert / banner ---------- */
 
 .alert {
