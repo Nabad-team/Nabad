@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getMyProfile, listLinkedProfiles } from "../lib/profileApi";
 import { useSessionStatus } from "../components/SessionTimeout";
+import offlineEmergency from "../public/offline-emergency";
 
 // localStorage key that remembers which profile the user is acting as.
 const ACTIVE_PROFILE_KEY = "nabad-active-profile-id";
@@ -25,6 +26,7 @@ export function ActiveProfileProvider({ children }) {
       const [self, linked] = await Promise.all([getMyProfile(), listLinkedProfiles()]);
       // The user may have signed out while this was loading.
       if (statusRef.current !== "signedIn") return;
+      try { offlineEmergency.reconcile(self.email, ["self", ...linked.map(profile => profile.id)]); } catch {}
       setSelfProfile(self);
       setLinkedProfiles(linked);
       setError("");
