@@ -5,6 +5,7 @@ The same rules are in [CLAUDE.md](CLAUDE.md) for Claude Code; keep the two in sy
 ## Branch rules
 
 - Always work on a new branch. Never push to `main`: it is protected.
+- Never open or merge pull requests into the `production` branch. Releases (pull requests from `main` to `production`) are done by Gerges; see [docs/environments.md](docs/environments.md).
 - Open a pull request and fill in the PR template (`.github/pull_request_template.md`) honestly. Tick only what is really done; write "n/a" where something does not apply.
 - Wait for all required checks to pass: `backend-tests`, `frontend-tests`, `docker-build`, `selenium`, `Backup tooling`, `Medical report safety gate` and `Vercel`.
 - Merge with a merge commit (not squash or rebase), then delete the branch.

@@ -1,7 +1,8 @@
 # Render Blueprint for the backend API (https://render.com/docs/blueprint-spec).
 # Values marked "sync: false" are secrets: Render asks for them in the dashboard; they never go in git.
-# This Blueprint ("Nabad1", auto-synced from main) manages PRODUCTION only. Production deploys from the
-# "production" branch: releasing is a pull request from main to production (docs/environments.md).
+# This Blueprint ("Nabad1") manages PRODUCTION only. Production deploys from the "production" branch: releasing is a
+# pull request from main to production. Auto Sync is off and the Blueprint reads this file from main, so changes here
+# apply only when someone clicks "Manual sync" on the Blueprint after a release (docs/environments.md).
 # Staging lives in a separate Render workspace (its own free hours), created by hand; see the reference at the end.
 services:
   - type: web
