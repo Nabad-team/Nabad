@@ -10,7 +10,7 @@ We run two hosted copies of Nabad. **Staging** follows `main` and holds test dat
 | API (Render) | https://nabad-backend-staging.onrender.com | https://nabad-backend-nhv5.onrender.com |
 | Health check | https://nabad-backend-staging.onrender.com/api/health/ready | https://nabad-psi.vercel.app/api/health/ready |
 | Deploys from | `main`, on every merge | `production`, on every release |
-| Render | service `nabad-backend-staging`, workspace "Nabad Staging", Frankfurt, created by hand | service `nabad-backend-nhv5`, Oregon, managed by the Blueprint "Nabad1" ([render.yaml](../render.yaml)) |
+| Render | service `nabad-backend-staging`, workspace "Nabad Staging", Frankfurt, created by hand | service `nabad-backend-nhv5`, Oregon, managed by the Blueprint "Nabad1" ([render.yaml](../render.yaml)), Auto Sync **off** |
 | Vercel | the Preview environment; `nabad-staging.vercel.app` is assigned to branch `main` | the Production environment; production branch `production` |
 | Database (Atlas) | `nabad_staging`, a separate free cluster in its own Atlas project | `nabad_production`, cluster "Nabad" (Frankfurt) |
 | `APP_ENV` | `staging` | `production` |
@@ -36,6 +36,8 @@ Vercel Deployment Protection ("Vercel Authentication") is **off**. Staging and p
 
 ## Releasing to production
 
+Releases are done by Gerges. Everyone else, coding agents included, never opens or merges pull requests into `production`.
+
 1. Merge to `main` as usual: pull request, all 7 required checks, merge commit. Staging deploys automatically.
 2. Check the change on https://nabad-staging.vercel.app. The staging API sleeps when idle, so the first request can take up to a minute.
 3. Open the release pull request:
@@ -45,7 +47,13 @@ Vercel Deployment Protection ("Vercel Authentication") is **off**. Staging and p
    ```
 
 4. Merge it with a **merge commit** (not squash or rebase), and don't delete `main`. GitHub runs no workflows on this pull request: the code was already checked on its way into `main`.
-5. Render deploys `nabad-backend-nhv5` and Vercel deploys https://nabad-psi.vercel.app from `production`. Check https://nabad-psi.vercel.app/api/health/ready returns `{"status":"ready"}`.
+5. Render deploys `nabad-backend-nhv5` and Vercel deploys https://nabad-psi.vercel.app from `production`. Confirm the Render deploy in **Render**, not on GitHub: Render's GitHub deployment records are labelled "main - nabad-backend-nhv5" (and can even show `main`'s commit) although production deploys from `production`. In `nabad-backend-nhv5` → **Events**, the deploy must show the release merge commit on `production` and "New commit via Auto-Deploy". Then check https://nabad-psi.vercel.app/api/health/ready returns `{"status":"ready"}`.
+6. **Only if the release changes `render.yaml`:** apply it to production by hand. Blueprint Auto Sync is off, so a `render.yaml` change does nothing until someone syncs.
+   1. Make sure `main`'s `render.yaml` is exactly what was released: `git fetch origin && git diff origin/production origin/main -- render.yaml` must print nothing. The Blueprint reads `render.yaml` from `main`, so syncing while `main` has unreleased `render.yaml` changes would push them to production early. If it prints anything, release those changes first or wait.
+   2. In Render, open **Blueprints** → **Nabad1** → **Manual sync**. Review the changes it lists for `nabad-backend-nhv5` and confirm.
+   3. Wait for the deploy, then check the health URL again.
+
+Because Auto Sync is off, merging a `render.yaml` change to `main` changes nothing on Render: production's settings only change at step 6, and the release itself is what changes production's code.
 
 `production` is protected: changes only go in through a pull request, force pushes and deletion are blocked, and the rules apply to admins too. It has no required status checks.
 
