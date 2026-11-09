@@ -52,6 +52,7 @@ Releases are done by Gerges. Everyone else, coding agents included, never opens 
    1. Make sure `main`'s `render.yaml` is exactly what was released: `git fetch origin && git diff origin/production origin/main -- render.yaml` must print nothing. The Blueprint reads `render.yaml` from `main`, so syncing while `main` has unreleased `render.yaml` changes would push them to production early. If it prints anything, release those changes first or wait.
    2. In Render, open **Blueprints** → **Nabad1** → **Manual sync**. Review the changes it lists for `nabad-backend-nhv5` and confirm.
    3. Wait for the deploy, then check the health URL again.
+7. **Update the release log.** Add a row to [releases.md](./releases.md): date, release pull request, the release merge commit on `production`, what changed, and the rollback target (the `production` commit that was live before). Whoever rolls back looks there first.
 
 Because Auto Sync is off, merging a `render.yaml` change to `main` changes nothing on Render: production's settings only change at step 6, and the release itself is what changes production's code.
 
@@ -59,11 +60,11 @@ Because Auto Sync is off, merging a `render.yaml` change to `main` changes nothi
 
 ## Rolling back
 
-The full procedure is task #88. The short version:
+If a release breaks production, see [rollback.md](./rollback.md): when to roll back, the exact clicks in Render and Vercel, the revert pull request, and how to turn automatic deploys back on afterwards. In short:
 
-1. **Right away:** in Render (`nabad-backend-nhv5` → **Events**), click **Rollback** on the last good deploy. In Vercel (**Deployments**), open the last good production deployment → **⋯** → **Instant Rollback**.
-2. **Then make git match:** open a pull request on `production` that reverts the release merge (`git revert -m 1 <merge commit>`), and merge it with a merge commit.
-3. **Watch out:** a revert that exists only on `production` is not undone by the next release from `main`, so changes that `main` still has would stay missing from production. After a revert, either fix the problem on `main` and revert the revert in the next release, or merge `production` back into `main`. Task #88 decides which.
+1. **Right away:** roll back `nabad-backend-nhv5` in Render and use **Instant Rollback** in Vercel, to the rollback target in [releases.md](./releases.md).
+2. **The same day:** revert the release on `production` through a pull request, then merge `production` into `main` so the next release doesn't bring the bug back.
+3. **Before the next release:** turn automatic deploys back on. Both a Render dashboard rollback and a Vercel Instant Rollback switch them off, so later releases would otherwise not go live.
 
 ## Which secrets live where
 
@@ -103,4 +104,3 @@ Backups (they only cover `nabad_production`), UptimeRobot (it only watches produ
 ## Follow-ups
 
 - **Move production to Frankfurt.** `nabad-backend-nhv5` runs in Oregon while its Atlas cluster is in Frankfurt, so every database query crosses the Atlas. Staging already runs in Frankfurt. Render can't change a service's region, so this means a new production service; plan it as its own task.
-- **Rollback details** (task #88), including how a revert on `production` gets back to `main`.

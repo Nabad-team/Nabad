@@ -7,7 +7,8 @@ Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express AP
 - Local development: [docker.md](./docker.md)
 - Tests: [testing.md](./testing.md)
 - Database backups and restore: [backups.md](./backups.md)
-- Staging and production, releasing and rolling back: [environments.md](./environments.md)
+- Staging and production, releasing: [environments.md](./environments.md); release log: [releases.md](./releases.md)
+- Rolling back a bad release: [rollback.md](./rollback.md)
 
 ## Production
 
