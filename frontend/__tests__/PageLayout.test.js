@@ -1,6 +1,6 @@
 // Automated tests for the page frame: the browser tab title, the link preview tags and the site footer.
 import { render, screen, within } from "@testing-library/react";
-import PageLayout, { pageTitle } from "../components/ui/PageLayout";
+import PageLayout, { pageTitle, STATUS_PAGE_URL } from "../components/ui/PageLayout";
 
 // next/head only fills <head> inside a running Next.js app; here it renders its tags in place.
 jest.mock("next/head", () => ({ __esModule: true, default: ({ children }) => <>{children}</> }));
@@ -34,7 +34,7 @@ describe("PageLayout", () => {
     expect(meta("property", "og:image")).toBe("https://nabad-psi.vercel.app/og-image.png");
   });
 
-  test("every page gets a footer with the legal links, the disclaimer and the team credit", () => {
+  test("every page gets a footer with the legal links, the status page, the disclaimer and the team credit", () => {
     render(<PageLayout title="Dashboard">content</PageLayout>);
 
     const footer = screen.getByRole("contentinfo");
@@ -43,7 +43,12 @@ describe("PageLayout", () => {
       ["Privacy", "/privacy"],
       ["Terms of Use", "/terms"],
       ["Contact", "/contact"],
+      ["Status", STATUS_PAGE_URL],
     ]);
+    expect(STATUS_PAGE_URL).toBe("https://stats.uptimerobot.com/GFwdUOKlhv");
+    const status = within(footer).getByRole("link", { name: "Status" });
+    expect(status).toHaveAttribute("target", "_blank");
+    expect(status).toHaveAttribute("rel", "noopener noreferrer");
     expect(footer).toHaveTextContent("Nabad gives guidance, not a diagnosis. In an emergency, call 140.");
     expect(within(footer).getByRole("link", { name: "140" })).toHaveAttribute("href", "tel:140");
     expect(footer).toHaveTextContent("© 2026 Nabad");

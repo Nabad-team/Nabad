@@ -52,7 +52,10 @@ export default function PageLayout({ title, header, width = "content", variant, 
   );
 }
 
-// The bottom of every page: the legal and contact links, the medical disclaimer and who made Nabad.
+// Our public status page on UptimeRobot (production's health check every 5 minutes); see docs/uptime.md.
+export const STATUS_PAGE_URL = "https://stats.uptimerobot.com/GFwdUOKlhv";
+
+// The bottom of every page: the legal, contact and status links, the medical disclaimer and who made Nabad.
 export function SiteFooter({ width = "content" }) {
   const container = width === "wide" ? "container container--wide" : "container";
   return (
@@ -63,6 +66,7 @@ export function SiteFooter({ width = "content" }) {
             <li><a href="/privacy">Privacy</a></li>
             <li><a href="/terms">Terms of Use</a></li>
             <li><a href="/contact">Contact</a></li>
+            <li><a href={STATUS_PAGE_URL} target="_blank" rel="noopener noreferrer">Status</a></li>
           </ul>
         </nav>
         <p className="site-footer__disclaimer">

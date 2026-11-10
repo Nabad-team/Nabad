@@ -1,0 +1,11 @@
+# Release log
+
+Every release to production, newest first. Gerges adds a row with every release (step 7 of [Releasing to production](./environments.md#releasing-to-production)).
+
+- **Release PR:** the pull request from `main` to `production`.
+- **Production commit:** the merge commit that pull request created on `production`. This is what `git revert -m 1` takes in a [permanent fix](./rollback.md#permanent-fix).
+- **Rollback target:** the `production` commit that was live before this release, so the deploy to pick in Render and the deployment Vercel offers in **Instant Rollback** ([rollback.md](./rollback.md)).
+
+| Date | Release PR | Production commit | What changed | Rollback target |
+|---|---|---|---|---|
+| 2026-11-09 | [#197](https://github.com/Nabad-team/Nabad/pull/197) | `7aeaccf` | Staging support: a separate staging environment, `APP_ENV` checks that keep staging and production databases and secrets apart, staging banner and `noindex` (SCRUM-187) | `f9d0d39` |

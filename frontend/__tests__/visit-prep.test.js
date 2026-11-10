@@ -28,6 +28,9 @@ jest.mock("../components/SessionTimeout", () => ({
   useSignedIn: () => true,
 }));
 
+// Links must still be active whenever the tests run, so their expiry is relative to today, not a fixed date.
+const inAWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
 function renderPage() {
   return render(<ActiveProfileProvider><VisitPrepPage /></ActiveProfileProvider>);
 }
@@ -245,9 +248,9 @@ describe("Visit preparation page", () => {
     const writeText = jest.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     createVisitPrepShare.mockResolvedValue({
-      token: "secure-token", share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 0, confirmedAt: null, revokedAt: null },
+      token: "secure-token", share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 0, confirmedAt: null, revokedAt: null },
     });
-    revokeVisitPrepShare.mockResolvedValue({ share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 0, confirmedAt: null, revokedAt: "2026-11-03T10:05:00.000Z" } });
+    revokeVisitPrepShare.mockResolvedValue({ share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 0, confirmedAt: null, revokedAt: "2026-11-03T10:05:00.000Z" } });
     window.confirm = jest.fn(() => true);
     renderPage();
 
@@ -268,8 +271,8 @@ describe("Visit preparation page", () => {
 
   test("refreshes the patient's list to show clinician confirmation", async () => {
     getVisitPrepShares
-      .mockResolvedValueOnce({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 1, confirmedAt: null, revokedAt: null }] })
-      .mockResolvedValueOnce({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: "2026-11-10T10:00:00.000Z", viewCount: 2, confirmedAt: "2026-11-04T09:30:00.000Z", confirmedBy: "Dr Layla Khoury", revokedAt: null }] });
+      .mockResolvedValueOnce({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 1, confirmedAt: null, revokedAt: null }] })
+      .mockResolvedValueOnce({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 2, confirmedAt: "2026-11-04T09:30:00.000Z", confirmedBy: "Dr Layla Khoury", revokedAt: null }] });
     renderPage();
     expect(await screen.findByText("Awaiting clinician confirmation")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Refresh status" }));
