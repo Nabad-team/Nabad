@@ -29,6 +29,7 @@
   --color-primary-strong: #134e4a; /* headings and teal text */
   --color-primary-soft: #eaf5f1;
   --color-primary-line: #b6d9cc;
+  --color-on-primary: #ffffff; /* text on a primary background: 5.5:1 on --color-primary */
 
   /* Accent: muted terracotta. Use sparingly, for one highlight per screen at most. */
   --color-accent: #9c4a2f; /* 5.7:1 */
@@ -127,4 +128,5 @@ html[data-high-contrast="true"] {
   --color-primary-strong: #003b37;
   --color-primary-soft: #e6fffc;
   --color-primary-line: #006e67;
+  --color-on-primary: #ffffff; /* 8.1:1 on the high-contrast primary */
 }

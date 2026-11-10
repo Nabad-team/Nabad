@@ -3,6 +3,7 @@ import json
 import os
 import re
 from pathlib import Path
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -14,7 +15,9 @@ def audit(testcase, driver, state):
     if not AXE_SCRIPT.is_file():
         raise RuntimeError('Install the pinned audit engine: npm ci --prefix tests/accessibility --ignore-scripts')
     # Audit the loaded UI, not a mixture of loading/disabled and enabled states.
-    WebDriverWait(driver, 20).until(lambda browser: not any(element.is_displayed() for element in browser.find_elements(By.CSS_SELECTOR, '.loader')))
+    # A loader React removes between finding it and checking it raises StaleElementReferenceException; the wait
+    # then polls again, so it still only continues once no loader is displayed.
+    WebDriverWait(driver, 20, ignored_exceptions=[StaleElementReferenceException]).until(lambda browser: not any(element.is_displayed() for element in browser.find_elements(By.CSS_SELECTOR, '.loader')))
     driver.execute_async_script("""
       const done=arguments[0]; document.fonts.ready.then(()=>Promise.all(
         document.getAnimations().filter(a=>a.effect && a.effect.getComputedTiming().endTime !== Infinity)
