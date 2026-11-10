@@ -20,7 +20,7 @@ If in doubt, roll back. It's fast, and the release can go out again once it's fi
 
 ## Who does it
 
-Gerges does rollbacks and releases. Once the operations guide gives a second person supervised access to Render and Vercel, that person can roll back too, with Gerges on a call. Coding agents never roll back, and never open or merge pull requests into `production`.
+Gerges does rollbacks and releases. Once the operations guide gives a second person supervised access to Render and Vercel, that person can roll back too, with Gerges on a call. Coding agents never roll back on their own: a rollback is an action in a production dashboard, so an agent stops and asks first. An agent only opens or merges pull requests into `production` for a release Gerges asked for in his session ([environments.md](./environments.md#releasing-to-production)).
 
 Anyone who sees production broken posts in the team chat and tags Gerges.
 
