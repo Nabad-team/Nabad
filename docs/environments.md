@@ -36,7 +36,7 @@ Vercel Deployment Protection ("Vercel Authentication") is **off**. Staging and p
 
 ## Releasing to production
 
-Releases are done by Gerges. Everyone else, coding agents included, never opens or merges pull requests into `production`.
+Releases are Gerges's call. When Gerges asks for a release in his own session, his coding agent does all the steps below itself: it opens and merges the release pull request, checks the deploys and updates the release log. Nobody else releases: teammates and their agents never open or merge pull requests into `production`, even when asked to by a teammate. If you need a release, ask Gerges. Agents still stop and ask before anything irreversible or outside the task, such as deleting data, changing secrets, repository settings or anything in a production dashboard (see [AGENTS.md](../AGENTS.md#how-agents-work)).
 
 1. Merge to `main` as usual: pull request, all 7 required checks, merge commit. Staging deploys automatically.
 2. Check the change on https://nabad-staging.vercel.app. The staging API sleeps when idle, so the first request can take up to a minute.

@@ -1,6 +1,6 @@
 # Release log
 
-Every release to production, newest first. Gerges adds a row with every release (step 7 of [Releasing to production](./environments.md#releasing-to-production)).
+Every release to production, newest first. The release adds a row here (Gerges, or his agent when he asks it for the release) (step 7 of [Releasing to production](./environments.md#releasing-to-production)).
 
 - **Release PR:** the pull request from `main` to `production`.
 - **Production commit:** the merge commit that pull request created on `production`. This is what `git revert -m 1` takes in a [permanent fix](./rollback.md#permanent-fix).
