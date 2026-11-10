@@ -1,7 +1,7 @@
 // Automated tests for the Contact page.
 import { render, screen } from "@testing-library/react";
 import ContactPage from "../pages/contact";
-import { CONTACT_EMAIL } from "../components/ui/PageLayout";
+import { CONTACT_EMAIL, STATUS_PAGE_URL } from "../components/ui/PageLayout";
 
 describe("Contact page", () => {
   test("shows the title", () => {
@@ -19,6 +19,14 @@ describe("Contact page", () => {
     render(<ContactPage />);
     expect(screen.getByRole("heading", { level: 2, name: "Report a problem" })).toBeInTheDocument();
     expect(screen.getByText(/Please don't include passwords or health details/)).toBeInTheDocument();
+  });
+
+  test("points to the status page, in a new tab", () => {
+    render(<ContactPage />);
+    const link = screen.getByRole("link", { name: "status page" });
+    expect(link).toHaveAttribute("href", STATUS_PAGE_URL);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   test("says it is not for medical help and gives the emergency number", () => {

@@ -66,6 +66,7 @@ flowchart LR
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
 - **Sentry** receives error reports from the API, the web app's server and the browser, when `SENTRY_DSN` (Render) and `NEXT_PUBLIC_SENTRY_DSN` (Vercel) are set. They never contain health or personal data; see [Error tracking](#error-tracking-sentry).
+- **UptimeRobot** checks https://nabad-psi.vercel.app/api/health/ready every 5 minutes, which tests Vercel, the API and the database in one request, emails us when it fails and runs the public [status page](https://stats.uptimerobot.com/GFwdUOKlhv). Our 99% monthly uptime target and what to do on an alert are in [uptime.md](./uptime.md).
 - **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` deploys staging; a release pull request from `main` to `production` deploys production ([environments.md](./environments.md)).
 
 ## Local development (Docker Compose)
@@ -308,7 +309,7 @@ flowchart LR
 - **The browser never calls the model.** The API checks the session and the profile with `resolveProfile`, then sends the symptoms, the rules' minimum level, any follow-up answers and the profile's last three checks. Never the user's name, email or profile, and the My health summary is not sent today.
 - **The rules keep the final say.** Red-flag rules run first. An emergency answers at once without the model (with the 140 emergency route), and the final level is the more serious of the rules and the model: the AI can raise urgency, never lower it. If the model is off, slow, unreachable or its reply fails the guardrails, the rules answer alone. See [AI triage](#ai-triage).
 - **Provider by configuration.** `LLM_PROVIDER`, `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` on Render choose the model. Moving to Ollama means setting `LLM_PROVIDER=ollama` and its URL; the rules, guardrails, routes and UI don't change. Locally, [docker-compose.ai.yml](../docker-compose.ai.yml) already runs Ollama; see [self-hosted AI](./self-hosted-ai.md).
-- **Monitoring.** Errors in the triage route reach [Sentry](#error-tracking-sentry), scrubbed of health data. Uptime is watched from outside through the health checks: `/api/health` (the API is alive) and `/api/health/ready` (the database is reachable), which Render also uses before sending traffic to a new deploy.
+- **Monitoring.** Errors in the triage route reach [Sentry](#error-tracking-sentry), scrubbed of health data. Uptime is watched from outside through the health checks: `/api/health` (the API is alive) and `/api/health/ready` (the database is reachable), which Render also uses before sending traffic to a new deploy. UptimeRobot checks production's `/api/health/ready` every 5 minutes against our 99% monthly target, and publishes a [status page](https://stats.uptimerobot.com/GFwdUOKlhv); see [uptime.md](./uptime.md).
 
 ## Diagrams
 
