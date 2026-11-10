@@ -1,4 +1,4 @@
-import PageLayout, { CONTACT_EMAIL } from "../components/ui/PageLayout";
+import PageLayout, { CONTACT_EMAIL, STATUS_PAGE_URL } from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Alert from "../components/ui/Alert";
 
@@ -20,6 +20,13 @@ export default function ContactPage() {
       </p>
 
       <h2 id="report-a-problem">Report a problem</h2>
+      <p>
+        If Nabad isn&apos;t loading, check our{" "}
+        <a href={STATUS_PAGE_URL} target="_blank" rel="noopener noreferrer">
+          status page
+        </a>{" "}
+        first. It shows whether the app is up and any recent outages.
+      </p>
       <p>
         If something looks wrong or doesn&apos;t work, email us with the page you were on, what you did and what
         happened. A screenshot helps. Please don&apos;t include passwords or health details.

@@ -145,5 +145,5 @@ We time each part: **time to roll back** is from clicking the button until the h
 
 | Date | What was rolled back | Time to roll back | Time to roll forward | Issues |
 |---|---|---|---|---|
-| 2026-11-09 | Render, staging (`nabad-backend-staging`): dashboard rollback `398a329` → `f9d0d39`, then Manual Deploy of the latest commit (`398a329`) | Deploy 40.7 s; about 1 min until health ready and sign-in worked | 1 min 1 s until health ready | None. Auto-Deploy was turned off by the rollback, as documented; set back to On Commit |
+| 2026-11-09 | Render, staging (`nabad-backend-staging`): dashboard rollback `398a329` → `f9d0d39`, then Manual Deploy of the latest commit on `main` at the time (`b2b5bad`, confirmed in Render **Events**: "Manually triggered by you via Dashboard", live at 4:35 PM) | Deploy 40.7 s; about 1 min until health ready and sign-in worked | 1 min 1 s until health ready | None. Auto-Deploy was turned off by the rollback, as documented; set back to On Commit |
 | 2026-11-09 | Vercel, production: Instant Rollback `7aeaccf` → `f9d0d39` (the only option on Hobby), reason "Rollback drill for #88"; undone with **Manage** → promote `7aeaccf` | Seconds; health ready, sign-in and Medications worked | About 3 s; `7aeaccf` current again with `nabad-psi.vercel.app` assigned | None |

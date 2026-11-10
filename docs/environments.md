@@ -85,9 +85,17 @@ Secrets never go in git. Each one is entered by hand in its dashboard.
 
 `BACKEND_URL` and the `NEXT_PUBLIC_` variables are fixed when Vercel builds, so redeploy after changing them. The full list of staging settings, with their plain values, is in the commented reference block at the end of [render.yaml](../render.yaml). It is not synced, so keep it in step with the dashboard by hand.
 
+## Render only deploys backend changes
+
+Both Render services (`nabad-backend-staging` and `nabad-backend-nhv5`) have **Root Directory** set to `backend`. Render then only auto-deploys a commit that changes files under `backend/`. A merge that only touches docs, the frontend or CI is skipped on Render by design: no new deploy shows up in **Events**, and the service keeps running the last backend commit. Vercel still deploys the web app as usual. If you need Render to pick up such a commit anyway, use **Manual Deploy** → **Deploy latest commit**.
+
+## Uptime and the status page
+
+UptimeRobot checks production every 5 minutes, and the public status page is https://stats.uptimerobot.com/GFwdUOKlhv (linked in the site footer). Our target, what an alert means and what to check first are in [uptime.md](./uptime.md).
+
 ## Limits we share, and rules that follow from them
 
-- **Never keep staging awake with a monitor.** Render's free plan gives each workspace 750 instance hours a month, shared by all its free services. If they run out, Render suspends every free service in that workspace until the month ends. Production is kept awake by UptimeRobot and uses about 720–744 hours a month on its own. That's why staging lives in its own workspace, "Nabad Staging". Even there, don't add an UptimeRobot (or any other) monitor for staging: let it sleep when idle. Never move staging back into production's workspace, or put a second free service there.
+- **Never keep staging awake with a monitor.** Render's free plan gives each workspace 750 instance hours a month, shared by all its free services. If they run out, Render suspends every free service in that workspace until the month ends. Production is kept awake by UptimeRobot ([uptime.md](./uptime.md)) and uses about 720–744 hours a month on its own. That's why staging lives in its own workspace, "Nabad Staging". Even there, don't add an UptimeRobot (or any other) monitor for staging: let it sleep when idle. Never move staging back into production's workspace, or put a second free service there.
 - **Email: 300 a day, shared.** Staging and production send through the same Brevo account, and the free plan allows 300 emails a day across both. Automated scans on staging (for example the OWASP ZAP task) must exclude or rate-limit the endpoints that send email:
   - `POST /api/auth/signup` and `POST /api/auth/verify-email/resend` (verification email)
   - `POST /api/auth/forgot-password` (reset email)
