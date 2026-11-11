@@ -26,6 +26,7 @@ import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { TwoHearts } from "../components/illustrations";
 import AccessibilitySettings from "../components/AccessibilitySettings";
 import NotificationPreferences from "../components/NotificationPreferences";
+import ProfileCoverage from "../components/ProfileCoverage";
 import { useAccessibility } from "../context/AccessibilityContext";
 
 // Checks the form and returns an object of error messages, e.g. { phone: "..." }.
@@ -319,6 +320,8 @@ export default function ProfilePage() {
           )}
         </section>
       )}
+
+      {activeProfile && <ProfileCoverage profile={activeProfile} />}
 
       <section className="section" aria-labelledby="security-heading">
         <h2 id="security-heading">{simplified ? "Sign-in safety" : "Account security"}</h2>

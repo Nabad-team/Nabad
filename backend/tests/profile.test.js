@@ -9,6 +9,7 @@ const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
 const Appointment = require("../src/models/Appointment");
 const ReportConversation = require("../src/models/ReportConversation");
+const ProfileCoverage = require("../src/models/ProfileCoverage");
 let mongod, server, base;
 const password = "Profile test password 123!";
 let passwordHash;
@@ -20,7 +21,7 @@ before(async () => {
   mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
-  await Promise.all([User.init(), LinkedProfile.init(), Appointment.init(), ReportConversation.init()]);
+  await Promise.all([User.init(), LinkedProfile.init(), Appointment.init(), ReportConversation.init(), ProfileCoverage.init()]);
   passwordHash = await bcrypt.hash(password, 12);
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
@@ -32,7 +33,7 @@ after(async () => {
   await mongoose.disconnect();
   if (mongod) await mongod.stop();
 });
-beforeEach(async () => { await User.deleteMany({}); await LinkedProfile.deleteMany({}); await Appointment.deleteMany({}); await ReportConversation.deleteMany({}); });
+beforeEach(async () => { await User.deleteMany({}); await LinkedProfile.deleteMany({}); await Appointment.deleteMany({}); await ReportConversation.deleteMany({}); await ProfileCoverage.deleteMany({}); });
 
 async function user(email = "owner@example.test", extra = {}) { return User.create({ name: "Owner", email, passwordHash, ...extra }); }
 function token(account) { return jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" }); }
@@ -59,6 +60,34 @@ test("every profile route requires sign-in and writes require our Origin", async
   for (const [method, path] of routes) assert.equal((await request(method, path, { body: method === "GET" ? undefined : {} })).status, 401, `${method} ${path}`);
   const cookie = token(await user());
   assert.equal((await request("PATCH", "/profile/me", { cookie, origin: "https://evil.example", body: { fullName: "X" } })).status, 403);
+});
+
+test("stores private identification and coverage documents outside medical records", async () => {
+  const account = await user(); const cookie = token(account);
+  const pdf = Buffer.from("%PDF-profile-card").toString("base64");
+  const empty = await request("GET", "/profile-coverage?profileId=self", { cookie });
+  assert.deepEqual(empty.body.coverage, { hasInsurance: false, hasNssf: false, patientId: null, insuranceCard: null, nssfDocument: null });
+  const choices = await request("PATCH", "/profile-coverage?profileId=self", { cookie, body: { hasInsurance: true, hasNssf: true } });
+  assert.equal(choices.status, 200);
+  const uploaded = await request("PUT", "/profile-coverage/documents/insurance_card?profileId=self", { cookie, body: { file: { filename: "insurance.pdf", mimeType: "application/pdf", data: pdf } } });
+  assert.equal(uploaded.status, 200);
+  assert.equal(uploaded.body.coverage.insuranceCard.filename, "insurance.pdf");
+  assert.equal(uploaded.body.coverage.patientId, null);
+  const stored = await ProfileCoverage.findOne({ owner: account._id });
+  assert.deepEqual(Buffer.from(stored.insuranceCard.data), Buffer.from(pdf, "base64"));
+  const download = await fetch(`${base}/profile-coverage/documents/insurance_card/download?profileId=self`, { headers: { Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${cookie}` } });
+  assert.equal(download.status, 200);
+  assert.equal(download.headers.get("content-type"), "application/pdf");
+});
+
+test("coverage files are profile-scoped and validate type and size", async () => {
+  const ownerCookie = token(await user()); const otherCookie = token(await user("other@example.test"));
+  const child = (await addDependent(ownerCookie)).body.profile;
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString("base64");
+  assert.equal((await request("PUT", `/profile-coverage/documents/patient_id?profileId=${child.id}`, { cookie: ownerCookie, body: { file: { filename: "id.png", mimeType: "image/png", data: png } } })).status, 200);
+  assert.equal((await request("GET", `/profile-coverage?profileId=${child.id}`, { cookie: otherCookie })).status, 404);
+  assert.equal((await request("PUT", "/profile-coverage/documents/nssf?profileId=self", { cookie: ownerCookie, body: { file: { filename: "bad.txt", mimeType: "text/plain", data: png } } })).status, 400);
+  assert.equal((await request("GET", `/profile-coverage/documents/patient_id/download?profileId=self`, { cookie: ownerCookie })).status, 404);
 });
 
 test("reads and edits my profile, ignoring fields that are not editable", async () => {
