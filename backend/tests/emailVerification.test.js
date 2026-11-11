@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
+const { TEST_PROXY_SECRET, asVisitor } = require("./helpers/proxyHeaders");
 
 let mongod, server, base, sent = [];
 const password = "Verify test password 123!";
@@ -15,7 +16,7 @@ before(async () => {
   Object.assign(process.env, { NODE_ENV: "test", APP_ENV: "test", JWT_SECRET: crypto.randomBytes(32).toString("hex"), CLIENT_ORIGIN: "http://localhost:3000",
     SMTP_HOST: "smtp.example.test", SMTP_USER: "smtp-user", SMTP_PASS: "smtp-pass", EMAIL_FROM: "Nabad <no-reply@example.test>",
     // Each test uses its own client IP so the signup rate limit (5 per hour per IP) is not shared.
-    TRUST_PROXY: "1" });
+    API_PROXY_SECRET: TEST_PROXY_SECRET });
   mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
@@ -25,7 +26,7 @@ before(async () => {
   await new Promise((resolve) => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
-after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.TRUST_PROXY; });
+after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.API_PROXY_SECRET; });
 beforeEach(async (t) => {
   await User.deleteMany({}); sent = [];
   t.mock.method(nodemailer, "createTransport", () => ({ sendMail: async (message) => { sent.push(message); } }));
@@ -35,7 +36,7 @@ let ipCounter = 0;
 async function call(path, { body, cookie, ip = `10.1.0.${++ipCounter}` } = {}) {
   const response = await fetch(base + path, {
     method: body === undefined ? "GET" : "POST",
-    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": ip, ...(cookie ? { Cookie: `accessToken=${cookie}` } : {}) },
+    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(ip), ...(cookie ? { Cookie: `accessToken=${cookie}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   return { status: response.status, body: await response.json(), headers: response.headers };

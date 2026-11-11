@@ -81,6 +81,8 @@ Secrets never go in git. Each one is entered by hand in its dashboard.
 | `SENTRY_DSN` | Render (optional) | Render |
 | `BACKEND_URL` | Vercel, Preview environment: `https://nabad-backend-staging.onrender.com` | Vercel, Production environment: `https://nabad-backend-nhv5.onrender.com` |
 | `NEXT_PUBLIC_APP_ENV` | Vercel, Preview environment: `staging` | not set |
+| `API_PROXY_SECRET` | Vercel, Preview environment, **and** Render (Nabad Staging workspace): the same staging value | Vercel, Production environment, **and** Render (`nabad-backend-nhv5`): the same production value, different from staging's |
+| `API_PROXY_REQUIRED` (a setting, not a secret) | Render: `true`, set last ([Client IP](#client-ip)) | Render: `true`, set last |
 | `BACKUP_MONGODB_URI` and other backup secrets | none (staging is not backed up) | GitHub Actions secrets ([backups.md](./backups.md)) |
 
 `BACKEND_URL` and the `NEXT_PUBLIC_` variables are fixed when Vercel builds, so redeploy after changing them. The full list of staging settings, with their plain values, is in the commented reference block at the end of [render.yaml](../render.yaml). It is not synced, so keep it in step with the dashboard by hand.
@@ -88,6 +90,41 @@ Secrets never go in git. Each one is entered by hand in its dashboard.
 ## Render only deploys backend changes
 
 Both Render services (`nabad-backend-staging` and `nabad-backend-nhv5`) have **Root Directory** set to `backend`. Render then only auto-deploys a commit that changes files under `backend/`. A merge that only touches docs, the frontend or CI is skipped on Render by design: no new deploy shows up in **Events**, and the service keeps running the last backend commit. Vercel still deploys the web app as usual. If you need Render to pick up such a commit anyway, use **Manual Deploy** → **Deploy latest commit**.
+
+## Client IP
+
+Rate limits (sign-in, 2FA codes, email verification, signup, password reset) need each visitor's real IP. Between the visitor and the API sit Vercel, Cloudflare (in front of Render) and Render's own proxies, and a visitor can push fake `X-Forwarded-For` and `X-Vercel-Forwarded-For` values through Vercel. We checked on staging on 2026-11-11. So the API trusts **no** IP header a visitor can send, and counting proxy hops (the old `TRUST_PROXY`) no longer works.
+
+How it works instead:
+
+1. **Vercel:** [frontend/proxy.js](../frontend/proxy.js) runs before every `/api` request is forwarded. It deletes any `X-Nabad-Proxy-Secret` or `X-Nabad-Client-IP` the visitor sent, then adds the visitor's IP as Vercel determined it (`x-real-ip`), plus `API_PROXY_SECRET`.
+2. **Render:** [backend/src/clientIp.js](../backend/src/clientIp.js) believes `X-Nabad-Client-IP` only when the secret matches.
+   - Without a valid secret, while `API_PROXY_REQUIRED` isn't `true`, it uses Cloudflare's `CF-Connecting-IP`. Cloudflare sets that header itself, so it can't be spoofed, but for requests that came through Vercel it's Vercel's address, shared by many visitors.
+   - With `API_PROXY_REQUIRED=true`, every request without the right secret gets **403**, except `GET /api/health` and `/api/health/ready`, which Render's health check uses. Nobody can bypass Vercel by calling `onrender.com` directly.
+3. **Locally** (Docker Compose, `npm run dev`), there is no secret, so the API uses the socket address and ignores every IP header.
+
+Sign-in, 2FA codes and email verification count **per account and network** (20 per 15 minutes), plus **200 per 15 minutes per network**. A whole room on one campus IP can sign in, while one network still can't try many accounts.
+
+**Check it:** on staging (and locally), `GET /api/health/client-ip` returns your own IP as the API sees it, and `viaAppProxy: true` when it came through our proxy. It's not available in production.
+
+```sh
+curl -s https://nabad-staging.vercel.app/api/health/client-ip \
+  -H "X-Forwarded-For: 198.51.100.1, 203.0.113.2" -H "X-Vercel-Forwarded-For: 198.51.100.3" \
+  -H "X-Real-IP: 198.51.100.4" -H "X-Nabad-Client-IP: 198.51.100.5"
+# Must show your real IP (compare https://www.cloudflare.com/cdn-cgi/trace) and "viaAppProxy": true.
+```
+
+### Rolling it out without an outage
+
+Each step works whatever the order of the others. Until the last step, a missing or mismatched secret only means the API falls back to `CF-Connecting-IP`.
+
+1. Generate one value per environment with `openssl rand -hex 32`.
+2. Set it in **Vercel** (Preview for staging, Production for production; a server variable, never `NEXT_PUBLIC_`) **and** on **Render** (`nabad-backend-staging`, or `nabad-backend-nhv5`).
+3. Deploy the code: merging to `main` deploys staging, and a release deploys production. Vercel only applies an environment variable to deployments made after it was set, so redeploy on Vercel if you set it after the last deploy.
+4. Check with the `curl` above (staging), or log in on production: sign-in works and the checks show your real IP.
+5. Only then set `API_PROXY_REQUIRED=true` on that Render service. From then on, direct requests to `onrender.com` get 403.
+
+To roll back, first remove `API_PROXY_REQUIRED` (back to the fallback), then the secrets.
 
 ## Uptime and the status page
 

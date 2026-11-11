@@ -65,11 +65,17 @@ function loadConfig(env = process.env) {
   if (![undefined, "", "on", "off"].includes(env.PWNED_PASSWORDS_CHECK)) throw new Error('PWNED_PASSWORDS_CHECK must be "on" or "off".');
   // The PR security scan loosens every rate limit; never on staging or production (rateLimit.js throws for those).
   relaxedForScan(env);
-  const trustProxy = Number(env.TRUST_PROXY || 0);
-  if (!Number.isInteger(trustProxy) || trustProxy < 0) throw new Error("TRUST_PROXY must be a whole number of proxy hops.");
+  // The shared secret our Next.js proxy sends with every /api request (clientIp.js). Optional until
+  // API_PROXY_REQUIRED=true, so it can be rolled out without an outage (docs/environments.md, "Client IP").
+  // TRUST_PROXY is no longer used: counting proxy hops can't work behind Vercel and Cloudflare.
+  const proxySecret = present(env, "API_PROXY_SECRET") ? env.API_PROXY_SECRET.trim() : null;
+  if (proxySecret && proxySecret.length < 32) throw new Error("API_PROXY_SECRET must contain at least 32 characters.");
+  if (![undefined, "", "true", "false"].includes(env.API_PROXY_REQUIRED)) throw new Error('API_PROXY_REQUIRED must be "true" or "false".');
+  const proxyRequired = env.API_PROXY_REQUIRED === "true";
+  if (proxyRequired && !proxySecret) throw new Error("API_PROXY_REQUIRED=true needs API_PROXY_SECRET.");
   // Writes (POST, PUT, PATCH, DELETE) are only accepted from these origins (app.js).
   const isAllowedOrigin = (origin) => origin === clientOrigin || isPreviewOrigin(origin);
-  return { environment, secure, clientOrigin, databaseName: env.MONGO_DB_NAME, trustProxy, isAllowedOrigin };
+  return { environment, secure, clientOrigin, databaseName: env.MONGO_DB_NAME, proxySecret, proxyRequired, isAllowedOrigin };
 }
 function cookieOptions() {
   const environment = process.env.APP_ENV || process.env.NODE_ENV;

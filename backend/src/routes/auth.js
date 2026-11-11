@@ -30,11 +30,29 @@ const GOOGLE_2FA_MESSAGE = "Google accounts are protected by Google sign-in and 
 const TRUSTED_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_TRUSTED_DEVICES = 10;
 
-const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many login attempts. Try again later." } });
-const codeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
+// Sign-in, 2FA codes and email verification count per account AND network (client IP): many people share one
+// public IP on a campus or mobile network, and one person's typos must not lock everyone else out. A higher cap per
+// IP still stops one network trying many accounts. Each account also locks itself after repeated wrong passwords.
+const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_PER_IP_CAP = 200;
+function accountKey(req) {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  if (email) return `email:${email.slice(0, 254)}`;
+  // A 2FA challenge or a session cookie names its account. Only used as a counter key, so not verified here;
+  // the route verifies it. A forged one only gets its own counter, still under the per-IP cap.
+  for (const token of [req.body?.challenge, req.cookies?.accessToken]) {
+    const sub = typeof token === "string" ? jwt.decode(token)?.sub : null;
+    if (typeof sub === "string" && /^[a-f0-9]{24}$/i.test(sub)) return `user:${sub.toLowerCase()}`;
+  }
+  return "none";
+}
+const byAccountAndIp = (req) => `${req.clientIp || "unknown"}|${accountKey(req)}`;
+const authIpCap = rateLimit({ windowMs: AUTH_WINDOW_MS, max: AUTH_PER_IP_CAP, message: { error: "Too many attempts from this network. Try again later." } });
+const loginLimiter = [authIpCap, rateLimit({ windowMs: AUTH_WINDOW_MS, max: 20, keyGenerator: byAccountAndIp, message: { error: "Too many login attempts. Try again later." } })];
+const codeLimiter = [authIpCap, rateLimit({ windowMs: AUTH_WINDOW_MS, max: 20, keyGenerator: byAccountAndIp, message: { error: "Too many verification attempts. Try again later." } })];
 const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many reset attempts. Try again later." } });
 const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
-const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many verification attempts. Try again later." } });
+const verifyLimiter = [authIpCap, rateLimit({ windowMs: AUTH_WINDOW_MS, max: 20, keyGenerator: byAccountAndIp, message: { error: "Too many verification attempts. Try again later." } })];
 const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
 function hash(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }

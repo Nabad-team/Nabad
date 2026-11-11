@@ -9,7 +9,7 @@ const MedicalDocument = require("../models/MedicalDocument");
 
 const router = express.Router();
 const run = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
-const writeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, keyGenerator: (req) => req.userId || req.ip, message: { error: "Too many requests. Please wait a few minutes and try again." } });
+const writeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, keyGenerator: (req) => req.userId || req.clientIp, message: { error: "Too many requests. Please wait a few minutes and try again." } });
 const publicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false });
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 const hash = (token) => crypto.createHash("sha256").update(token).digest("hex");

@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
 const { hashCode, LOCKED_MESSAGE } = require("../src/twoFactorProtection");
+const { TEST_PROXY_SECRET, asVisitor } = require("./helpers/proxyHeaders");
 let mongod, server, base, sent = [];
 const password = "Brute force test password 123!";
 const SECRET = crypto.randomBytes(32).toString("hex");
@@ -19,9 +20,9 @@ before(async () => {
   process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
   process.env.TWO_FACTOR_CODE_SECRET = SECRET;
   process.env.CLIENT_ORIGIN = "http://localhost:3000";
-  // Each request comes from a new address (X-Forwarded-For), so the per-IP limiter never steps in:
+  // Each request comes from a new address (X-Nabad-Client-IP via the proxy secret), so the per-IP limiter never steps in:
   // the per-account protection must hold on its own, as it would against an attacker rotating IPs.
-  process.env.TRUST_PROXY = "1";
+  process.env.API_PROXY_SECRET = TEST_PROXY_SECRET;
   for (const key of ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "MAIL_FROM"]) process.env[key] = "test";
   mock.method(nodemailer, "createTransport", () => ({ sendMail: async (message) => { sent.push(message); } }));
   mongod = await createTestMongo();
@@ -30,7 +31,7 @@ before(async () => {
   await User.init();
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
-  delete process.env.TRUST_PROXY;
+  delete process.env.API_PROXY_SECRET;
   await new Promise(resolve => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
@@ -50,7 +51,7 @@ async function request(method, path, body) {
   visitor += 1;
   const response = await fetch(base + path, {
     method,
-    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": `198.51.${Math.floor(visitor / 250) % 250}.${visitor % 250}` },
+    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(`198.51.${Math.floor(visitor / 250) % 250}.${visitor % 250}`) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();
@@ -273,7 +274,7 @@ test("enabling 2FA from the security page checks the HMAC too", async () => {
   const user = await User.create({ name: "Setup", email: "setup@example.test", passwordHash: await bcrypt.hash(password, 4), emailVerified: true });
   const jwt = require("jsonwebtoken");
   const cookie = `accessToken=${jwt.sign({ sub: String(user._id), ver: 0 }, process.env.JWT_SECRET, { expiresIn: "15m" })}`;
-  const call = (path, body) => fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, Cookie: cookie, "X-Forwarded-For": "192.0.2.77" }, body: JSON.stringify(body || {}) });
+  const call = (path, body) => fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, Cookie: cookie, ...asVisitor("192.0.2.77") }, body: JSON.stringify(body || {}) });
   assert.equal((await call("/auth/2fa/setup")).status, 200);
   const code = latestCode(user.email);
   assert.equal((await User.findById(user._id)).twoFactorCodeHash, hashCode(code));

@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const User = require("../src/models/User");
 const { ARGON2, verifyPassword, argon2NeedsRehash, dummyHashes } = require("../src/passwordHashing");
+const { TEST_PROXY_SECRET, asVisitor } = require("./helpers/proxyHeaders");
 
 // Argon2id for new passwords, and old bcrypt hashes (made by bcryptjs, as in production) replaced at the next
 // successful sign-in with no action from the user.
@@ -28,10 +29,10 @@ before(async () => {
   await User.init();
   await dummyHashes();
   // Each request from its own address, so the per-IP signup and login limits never interfere.
-  process.env.TRUST_PROXY = "1";
+  process.env.API_PROXY_SECRET = TEST_PROXY_SECRET;
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
-  delete process.env.TRUST_PROXY;
+  delete process.env.API_PROXY_SECRET;
   await new Promise(resolve => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
@@ -47,7 +48,7 @@ async function request(method, path, body, cookie) {
   visitor += 1;
   const response = await fetch(base + path, {
     method,
-    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": `198.18.${Math.floor(visitor / 250) % 250}.${visitor % 250}`, ...(cookie ? { Cookie: `accessToken=${cookie}` } : {}) },
+    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(`198.18.${Math.floor(visitor / 250) % 250}.${visitor % 250}`), ...(cookie ? { Cookie: `accessToken=${cookie}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();
