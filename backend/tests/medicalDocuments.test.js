@@ -126,6 +126,16 @@ test("stores and validates document type and clinical date", async () => {
   assert.equal((await upload(cookie, undefined, "self", { documentDate: "2026-02-30" })).status, 400);
 });
 
+test("stores patient identification and coverage document types", async () => {
+  const cookie = token(await user());
+  for (const documentType of ["patient_id", "insurance_card", "nssf"]) {
+    const response = await upload(cookie, undefined, "self", { documentType });
+    assert.equal(response.status, 201);
+    assert.equal(response.body.document.documentType, documentType);
+    assert.equal((await MedicalDocument.findById(response.body.document.id)).documentType, documentType);
+  }
+});
+
 test("updates categorization only for the owner and selected profile", async () => {
   const ownerCookie = token(await user());
   const otherCookie = token(await user("other@example.test"));

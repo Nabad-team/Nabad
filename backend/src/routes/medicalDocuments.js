@@ -11,7 +11,8 @@ const router = express.Router();
 router.use(requireAuth);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const DOCUMENT_TYPES = ["imaging", "lab", "letter", "other"];
+const DOCUMENT_TYPES = ["imaging", "lab", "letter", "patient_id", "insurance_card", "nssf", "other"];
+const DOCUMENT_TYPE_ERROR = "Choose imaging, lab result, letter, patient ID, insurance card, NSSF or other for the document type.";
 const uploadLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, keyGenerator: (req) => req.userId, message: { error: "Too many uploads. Please wait a few minutes and try again." } });
 const metadataLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, keyGenerator: (req) => req.userId, message: { error: "Too many changes in a short time. Please wait a few minutes and try again." } });
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
@@ -40,7 +41,7 @@ router.post("/", uploadLimiter, express.json({ limit: "14mb" }), resolveProfile,
   const filename = file.filename.trim().replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 255);
   if (!filename) return res.status(400).json({ error: "Choose a medical document to upload." });
   const documentType = req.body.documentType === undefined ? "other" : req.body.documentType;
-  if (!DOCUMENT_TYPES.includes(documentType)) return res.status(400).json({ error: "Choose imaging, lab result, letter or other for the document type." });
+  if (!DOCUMENT_TYPES.includes(documentType)) return res.status(400).json({ error: DOCUMENT_TYPE_ERROR });
   const { date: documentDate, error: dateError } = parseDocumentDate(req.body.documentDate);
   if (dateError) return res.status(400).json({ error: dateError });
   const mimeType = typeof file.mimeType === "string" && /^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/i.test(file.mimeType)
@@ -72,7 +73,7 @@ router.post("/", uploadLimiter, express.json({ limit: "14mb" }), resolveProfile,
 router.patch("/:id", metadataLimiter, express.json({ limit: "10kb" }), resolveProfile, asyncRoute(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Document not found." });
   const documentType = req.body?.documentType;
-  if (!DOCUMENT_TYPES.includes(documentType)) return res.status(400).json({ error: "Choose imaging, lab result, letter or other for the document type." });
+  if (!DOCUMENT_TYPES.includes(documentType)) return res.status(400).json({ error: DOCUMENT_TYPE_ERROR });
   const { date: documentDate, error: dateError } = parseDocumentDate(req.body?.documentDate);
   if (dateError) return res.status(400).json({ error: dateError });
   const document = await MedicalDocument.findOneAndUpdate({ _id: req.params.id, owner: req.userId, profileId: req.profileId }, { $set: { documentType, documentDate } }, { new: true, runValidators: true });
