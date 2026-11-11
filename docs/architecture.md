@@ -210,6 +210,10 @@ The first urgent or emergency result of a check alerts, even if follow-up questi
 
 The model can raise the urgency but never lower it. Self-care steps are only shown for routine results. Only the outcome code and duration are logged, never the symptoms or the model's words. Each account can run 30 AI assessments per 15 minutes. The unit tests use a fake model, so they need no API key.
 
+### Prescription photos
+
+`POST /api/prescriptions/read` reads the medicines on a prescription photo or PDF with the configured model, and `POST /api/prescriptions/apply` adds the ones the person confirms to the medication list. See [Adding medicines from a prescription photo](./prescription-photos.md).
+
 ### AI report explanations
 
 `POST /api/reports/analyze` requires sign-in and accepts PDF, DOCX, UTF-8 TXT/CSV, or a JPG/PNG/WebP photo (3 MB maximum). `reports/extract.js` extracts searchable PDF text in memory (up to 25 pages / 30,000 characters), reads the Word document body without extracting files to disk, and limits all extracted text. Photos are sent as image input only when `LLM_VISION_ENABLED=true` and the configured model supports vision. Only written reports are in scope: raw MRI/CT/X-ray/ultrasound images and DICOM are not interpreted. The report and optional question are sent to the configured model server, are not persisted by Nabad, and are excluded from logs. Each account can request five structured report explanations per 15 minutes.

@@ -406,3 +406,46 @@ describe("Medications for a family member", () => {
     expect(mockApi.getMedications).not.toHaveBeenCalledWith(childId);
   });
 });
+
+// SCRUM-146: adding medicines from a prescription photo, from the Medications page.
+jest.mock("../lib/prescriptionApi", () => ({
+  ...jest.requireActual("../lib/prescriptionApi"),
+  readPrescription: (...args) => mockPrescriptionApi.readPrescription(...args),
+  applyPrescription: (...args) => mockPrescriptionApi.applyPrescription(...args),
+}));
+const mockPrescriptionApi = {
+  readPrescription: jest.fn(async () => ({ unreadable: "", medications: [
+    { name: "Ventolin", dose: "100", unit: "mcg", form: "inhaler", frequency: "when needed", durationDays: null, notes: "", needsCheck: false, match: { status: "new" } },
+  ] })),
+  applyPrescription: jest.fn(async (profileId, items) => {
+    for (const fields of items) await mockApi.addMedication(profileId, fields);
+    return { added: items.map((item) => ({ name: item.name })), replaced: [] };
+  }),
+};
+
+describe("Medications page: add from a prescription", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockMedications = [];
+    mockNextId = 1;
+    jest.clearAllMocks();
+  });
+
+  test("reads the prescription, adds what the person confirms, and shows it on the list", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Add from a prescription" }));
+    const panel = screen.getByRole("region", { name: "Add from a prescription" });
+    expect(screen.queryByText("No medications yet.")).not.toBeInTheDocument();
+    await user.upload(within(panel).getByLabelText("Prescription photo or PDF"), new File([new Uint8Array([137, 80, 78, 71])], "rx.png", { type: "image/png" }));
+    await user.click(within(panel).getByRole("checkbox", { name: /I agree/ }));
+    await user.click(within(panel).getByRole("button", { name: "Read prescription" }));
+    await user.click(await within(panel).findByRole("button", { name: "Add 1 medicine to your list" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("1 medicine was added to your list from the prescription.");
+    expect(mockPrescriptionApi.readPrescription).toHaveBeenCalledWith("self", expect.any(File), expect.any(AbortSignal));
+    expect(within(await item("Ventolin")).getByText("100 mcg inhaler · when needed")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Add from a prescription" })).not.toBeInTheDocument();
+  });
+});
