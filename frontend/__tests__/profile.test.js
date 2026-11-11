@@ -7,6 +7,7 @@ import ProfilePage from "../pages/profile";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, addLinkedProfile, listLinkedProfiles } from "../lib/profileApi";
 import * as fakeProfileApi from "../test-utils/fakeProfileApi";
+import * as fakeProfileCoverageApi from "../test-utils/fakeProfileCoverageApi";
 import { PAGE_FLOW_TIMEOUT } from "../test-utils/timeouts";
 
 // Full-page flows: slow under load for a good reason (see test-utils/timeouts.js).
@@ -14,6 +15,7 @@ jest.setTimeout(PAGE_FLOW_TIMEOUT);
 
 // The profile API is replaced by an in-memory fake of the backend.
 jest.mock("../lib/profileApi", () => require("../test-utils/fakeProfileApi"));
+jest.mock("../lib/profileCoverageApi", () => require("../test-utils/fakeProfileCoverageApi"));
 
 // The profile provider loads profiles only while signed in; here the user is signed in.
 jest.mock("../components/SessionTimeout", () => ({
@@ -54,6 +56,7 @@ describe("Profile Page", () => {
   beforeEach(() => {
     localStorage.clear();
     fakeProfileApi.resetFakeProfiles();
+    fakeProfileCoverageApi.resetFakeProfileCoverage();
     mockSignOut.mockClear();
   });
 
@@ -167,6 +170,28 @@ describe("Profile Page", () => {
     await screen.findByRole("heading", { name: "Account owner" });
 
     expect(screen.queryByText(/You're managing/)).not.toBeInTheDocument();
+  });
+
+  test("keeps identification and coverage in the active patient's profile", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderProfilePage();
+    expect(await screen.findByRole("heading", { name: "Identification and coverage" })).toBeInTheDocument();
+    expect(screen.getByText(/not included with medical documents or visit preparation/i)).toBeInTheDocument();
+    expect(screen.queryByText("Medical insurance card", { selector: "h3" })).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("This patient has medical insurance"));
+    expect(await screen.findByRole("heading", { name: "Medical insurance card" })).toBeInTheDocument();
+    await user.upload(screen.getByLabelText("Choose medical insurance card"), new File(["card"], "insurance.pdf", { type: "application/pdf" }));
+    expect(await screen.findByText("insurance.pdf")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Download" })).toHaveAttribute("href", "/api/profile-coverage/documents/insurance_card/download?profileId=self");
+  });
+
+  test("shows a separate NSSF option and patient ID upload", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderProfilePage();
+    await screen.findByRole("heading", { name: "Patient ID" });
+    expect(screen.queryByRole("heading", { name: "NSSF document" })).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("This patient has NSSF coverage"));
+    expect(await screen.findByRole("heading", { name: "NSSF document" })).toBeInTheDocument();
   });
 
   test("shows the emergency contact placeholder", async () => {

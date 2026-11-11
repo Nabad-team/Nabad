@@ -13,15 +13,7 @@ import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl,
 import { announceNotificationsChanged } from "../lib/notificationApi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
-const DOCUMENT_TYPE_GROUPS = [
-  ["Medical documents", [["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab result"], ["letter", "Letter"]]],
-  ["Coverage and identification", [["patient_id", "Patient ID"], ["insurance_card", "Medical insurance card"], ["nssf", "NSSF document"]]],
-  ["Other", [["other", "Other"]]],
-];
-const DOCUMENT_TYPES = DOCUMENT_TYPE_GROUPS.flatMap(([, types]) => types);
-const DocumentTypeOptions = () => DOCUMENT_TYPE_GROUPS.map(([group, types]) => (
-  <optgroup key={group} label={group}>{types.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</optgroup>
-));
+const DOCUMENT_TYPES = [["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab result"], ["letter", "Letter"], ["other", "Other"]];
 const prettySize = (size) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const prettyDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
 const dateLabel = (value) => value ? prettyDate(`${value}T00:00:00`) : "Date not provided";
@@ -60,7 +52,7 @@ function DocumentMetadataEditor({ profileId, document, onSaved }) {
         <div className="medical-documents__edit-field">
         <label className="field__label" htmlFor={`edit-document-type-${document.id}`}>Document type</label>
         <select id={`edit-document-type-${document.id}`} className="input" value={type} onChange={(event) => setType(event.target.value)} disabled={busy}>
-          <DocumentTypeOptions />
+          {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
         </div>
         <div className="medical-documents__edit-field">
@@ -164,20 +156,19 @@ export default function MedicalDocumentsPage() {
   }
 
   return (
-    <PageLayout title="Medical and administrative documents" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>Medical and administrative documents</PageTitle>
+    <PageLayout title="Medical documents" header={<ProfileHeader showPicture={false} />}>
+      <PageTitle>Medical documents</PageTitle>
       <Card className="medical-documents section" aria-labelledby="documents-heading">
         <div className="medical-documents__header">
           <div>
             <h2 id="documents-heading">{activeProfile?.isSelf ? "Your documents" : `${activeProfile?.fullName || "Profile"}'s documents`}</h2>
-            <p className="text-muted">Store medical records and optional coverage or identification documents for this profile. Any file type up to 10 MB each.</p>
+            <p className="text-muted">Store X-rays, lab results and letters for this profile. Any file type up to 10 MB each.</p>
           </div>
           <div className="medical-documents__metadata">
             <label className="field__label" htmlFor="medical-document-type">Document type</label>
             <select id="medical-document-type" className="input" value={documentType} onChange={(event) => setDocumentType(event.target.value)} disabled={busy}>
-              <DocumentTypeOptions />
+              {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
-            <p className="text-muted">For coverage and identification, upload only documents needed for patient matching, billing or care access.</p>
             <label className="field__label" htmlFor="medical-document-date">Document date (if known)</label>
             <input id="medical-document-date" className="input" type="date" min="1900-01-01" max="2100-12-31" value={documentDate} onChange={(event) => setDocumentDate(event.target.value)} disabled={busy} />
             <p className="text-muted">These details will be used for every file in this upload.</p>
@@ -195,7 +186,7 @@ export default function MedicalDocumentsPage() {
             <label className="field__label" htmlFor="filter-document-type">Filter by type</label>
             <select id="filter-document-type" className="input" value={filterType} onChange={(event) => setFilterType(event.target.value)}>
               <option value="">All types</option>
-              <DocumentTypeOptions />
+              {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
             <label className="field__label" htmlFor="filter-document-date-from">Document date from</label>
             <input id="filter-document-date-from" className="input" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
