@@ -26,8 +26,23 @@ ZAP runs from `ghcr.io/zaproxy/zaproxy:2.17.0`, pinned by digest to the stable b
 1. Docker Compose builds and starts the app, with ZAP joined to its private network. ZAP scans `http://frontend:3000`. Email goes to Mailpit and no AI provider is configured, so nothing leaves the runner.
 2. A test user (`zap-<random>@example.test`) signs up through the API and is verified through Mailpit. It signs in with a password only, so ZAP can reuse one session cookie: the scan's Compose file sets `TWO_FACTOR_ON_SIGNUP=false` for this run.
 3. **Signed out:** ZAP opens every page in `frontend/pages` and the main API reads, sends sample sign-in, verify and reset requests, spiders the app, and runs the passive and active scan.
-4. **Signed in:** the same again with the test user's session cookie, plus sample writes (medications, appointments, vitals, symptoms, search and so on), so the active scan has JSON fields to test. The signed-in active scan skips anything that would end its own session or delete the test user: log out, 2FA changes, password reset and deleting the account. At the end the log says whether the session was still valid.
+4. **Signed in:** the same again with the test user's session cookie, plus sample writes (medications, appointments, vitals, symptoms, search and so on), so the active scan has JSON fields to test. Some endpoints are left out, as described under [Signed-in exclusions](#signed-in-exclusions).
 5. ZAP sends `Origin: http://localhost:3000` with every request, as a browser on the app would. Otherwise the API's origin check would refuse every write.
+
+### Signed-in exclusions
+
+While signed in, the scan never requests these endpoints, neither through the spider nor the active scan, and ZAP itself refuses to send them ([zap_scan.py](../security/zap/zap_scan.py), `SIGNED_IN_EXCLUDE`):
+
+| Endpoint | Why |
+|---|---|
+| `/api/auth/logout` | Signing out ends **every** session of the user (it bumps the user's `authVersion`), so one request would sign the rest of the scan out. |
+| `/api/auth/reset-password` | Changing the password also ends every session. Passwords only change through the reset flow; there is no separate change-password endpoint. |
+| `/api/auth/2fa/…` | 2FA settings (setup, enable, disable, resend, verify): turning 2FA on would change how the test user signs in. |
+| `/api/profile/me` | `DELETE` deletes the account. `PATCH` (change your name) shares the URL and ZAP can't exclude by method, so both are skipped. |
+
+All of them are still scanned in the signed-out pass, where they can't affect the session. In a first CI run without these exclusions, the session ended partway through the signed-in pass. Part of that pass then ran signed out, and the scan only noticed at the end.
+
+A **session watcher** checks the test user's session every 20 seconds during the signed-in pass, straight from the runner rather than through ZAP. The log then says either `session valid for the whole signed-in pass (checked N times)`, or when it was lost. A lost session makes the scan exit with code 2: the results would overstate what was tested signed in, so the scan setup needs fixing before they count.
 
 **Scan-only settings** (only in [compose.zap.yml](../security/zap/compose.zap.yml)):
 

@@ -143,6 +143,70 @@ class ErrorTests(unittest.TestCase):
             self.assertEqual(z.main(["pr", "--target", "https://nabad-psi.vercel.app"]), 2)
 
 
+class SignedInPassTests(unittest.TestCase):
+    def test_session_ending_endpoints_are_excluded_while_signed_in(self):
+        for path in ("/api/auth/logout", "/api/auth/reset-password", "/api/auth/2fa/setup", "/api/auth/2fa/enable",
+                     "/api/auth/2fa/disable", "/api/auth/2fa/resend", "/api/auth/2fa/verify", "/api/profile/me",
+                     "/api/profile/me?profileId=self"):
+            self.assertTrue(z.signed_in_excluded(path), path)
+
+    def test_everything_else_is_still_scanned_signed_in(self):
+        for path in ("/api/auth/me", "/api/auth/session", "/api/profile/linked", "/api/profile/me/picture",
+                     "/api/profile/emergency-contact", "/api/medications?profileId=self", "/dashboard", "/logout-help"):
+            self.assertFalse(z.signed_in_excluded(path), path)
+        self.assertFalse([p for p in z.API_GETS if z.signed_in_excluded(p)] == z.API_GETS)
+        self.assertFalse([path for _, path, _ in z.API_WRITES_SIGNED_IN if z.signed_in_excluded(path)])
+
+
+class SessionWatchTests(unittest.TestCase):
+    """A tiny local app that accepts the session for the first N checks, then refuses it."""
+
+    def serve(self, accept_first):
+        import http.server
+        import threading
+        calls = {"n": 0}
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                calls["n"] += 1
+                ok = calls["n"] <= accept_first and self.headers.get("Cookie") == "accessToken=abc"
+                self.send_response(200 if ok else 401)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b"{}")
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        return f"http://127.0.0.1:{server.server_port}"
+
+    def test_reports_a_session_that_stays_valid(self):
+        with z.SessionWatch(self.serve(accept_first=100), "accessToken=abc", interval=0.05) as watch:
+            import time
+            time.sleep(0.3)
+        valid, message = watch.outcome()
+        self.assertTrue(valid)
+        self.assertIn("valid for the whole signed-in pass", message)
+        self.assertGreater(watch.checks, 2)
+
+    def test_reports_when_the_session_was_lost(self):
+        with z.SessionWatch(self.serve(accept_first=2), "accessToken=abc", interval=0.05) as watch:
+            import time
+            time.sleep(0.4)
+        valid, message = watch.outcome()
+        self.assertFalse(valid)
+        self.assertRegex(message, r"session was lost \d+\.\d minutes into the signed-in pass \(HTTP 401\)")
+        self.assertNotIn("127.0.0.1", message)
+
+    def test_the_last_check_catches_a_session_lost_at_the_very_end(self):
+        with z.SessionWatch(self.serve(accept_first=0), "accessToken=abc", interval=60) as watch:
+            pass
+        self.assertFalse(watch.outcome()[0])
+
+
 class SeedTests(unittest.TestCase):
     def test_pages_come_from_the_frontend(self):
         pages = z.page_paths()

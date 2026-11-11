@@ -22,6 +22,7 @@ import os
 import re
 import secrets
 import sys
+import threading
 import time
 from collections import OrderedDict
 from pathlib import Path
@@ -46,14 +47,18 @@ ACTIONS = {"IGNORE", "WARN"}
 SCOPES = {"all", "pr", "staging"}
 VERIFY_SUBJECT = "Verify your Nabad email"
 
-# Signed-in pass: requests that would end or change the scan's own session, or delete the test user. They are
-# still spidered and passively scanned while signed out.
-AUTH_ACTIVE_EXCLUDE = [
-    r".*/api/auth/logout.*",
-    r".*/api/auth/2fa/(setup|enable|disable).*",
-    r".*/api/auth/reset-password.*",
-    r".*/api/profile/me$",  # DELETE /api/profile/me deletes the account; PATCH is seeded and scanned below.
+# Signed-in pass: endpoints that would end the scan's session, delete the test user or change how it signs in.
+# Neither the spider nor the active scan requests them while signed in; they are still scanned signed out, where
+# they can't affect the session. Logging out and a password reset bump the user's authVersion, which ends every
+# session at once. There is no separate change-password endpoint: passwords only change through the reset flow.
+SIGNED_IN_EXCLUDE = [
+    r".*/api/auth/logout.*",          # sign out: ends every session of the user
+    r".*/api/auth/reset-password.*",  # password change: ends every session
+    r".*/api/auth/2fa/.*",            # 2FA settings: setup, enable, disable, resend and verify
+    r".*/api/profile/me([?#].*)?",    # DELETE deletes the account; PATCH shares the URL, so both are skipped
 ]
+# How often the session watcher checks the test user's session during the signed-in pass.
+SESSION_CHECK_SECONDS = 20
 
 # Profile-scoped API reads, seeded so the signed-in pass covers them even where no page links to them.
 API_GETS = [
@@ -84,7 +89,6 @@ API_WRITES_SIGNED_IN = [
     ("PUT", "/api/wellbeing/water/goal?profileId=self", {"goal": 8}),
     ("PUT", "/api/visit-prep?profileId=self", {"notes": "Synthetic note"}),
     ("POST", "/api/profile/emergency-contact", {"name": "Synthetic Contact", "phone": "+96170000000", "relationship": "friend"}),
-    ("PATCH", "/api/profile/me", {"name": "ZAP Tester"}),
 ]
 
 
@@ -346,6 +350,51 @@ def create_test_user(app_url, mailpit_api, origin):
     return "; ".join(cookies)
 
 
+class SessionWatch:
+    """Checks the test user's session every SESSION_CHECK_SECONDS during the signed-in pass, straight from this
+    machine rather than through ZAP, and remembers when it was first refused. Reports only the outcome."""
+
+    def __init__(self, app_url, cookie, interval=SESSION_CHECK_SECONDS):
+        self.url = f"{app_url}/api/auth/me"
+        self.cookie = cookie
+        self.interval = interval
+        self.started = time.time()
+        self.checks = 0
+        self.lost_after = None
+        self.lost_status = None
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def check(self):
+        try:
+            status, _, _ = http_json("GET", self.url, headers={"Cookie": self.cookie})
+        except OSError:
+            return  # The app being briefly unreachable is not a lost session.
+        self.checks += 1
+        if status != 200 and self.lost_after is None:
+            self.lost_after = time.time() - self.started
+            self.lost_status = status
+
+    def _run(self):
+        while not self._stop.wait(self.interval):
+            self.check()
+
+    def __enter__(self):
+        self.started = time.time()
+        self._thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self._stop.set()
+        self._thread.join()
+        self.check()  # One last check at the very end of the pass.
+
+    def outcome(self):
+        if self.lost_after is None:
+            return True, f"session valid for the whole signed-in pass (checked {self.checks} times)"
+        return False, f"session was lost {self.lost_after / 60:.1f} minutes into the signed-in pass (HTTP {self.lost_status})"
+
+
 # ---- Scans ------------------------------------------------------------------------------------------------------
 
 def spider(zap, target, context, minutes, seeds):
@@ -392,15 +441,24 @@ def run_pr(zap, args):
     check = zap.send(raw_request("GET", target + "/api/auth/me"))
     if " 200 " not in check["sendRequest"][0]["responseHeader"].split("\r\n", 1)[0] + " ":
         raise ScanError("The scan's session cookie is not accepted, so the signed-in pass would scan nothing.")
-    for regex in AUTH_ACTIVE_EXCLUDE:
+    for regex in SIGNED_IN_EXCLUDE:
+        zap.call("context", "action", "excludeFromContext", contextName=context, regex=regex)
+        zap.call("spider", "action", "excludeFromScan", regex=regex)
         zap.call("ascan", "action", "excludeFromScan", regex=regex)
-    for method, path, body in API_WRITES_SIGNED_IN:
-        zap.send(raw_request(method, target + path, args.origin, body))
-    spider(zap, target, context, args.spider_minutes, pages + API_GETS)
-    active_scan(zap, target, context_id, "signed in")
+        zap.call("core", "action", "excludeFromProxy", regex=regex)
+    with SessionWatch(args.app_url.rstrip("/"), cookie) as watch:
+        for method, path, body in API_WRITES_SIGNED_IN:
+            zap.send(raw_request(method, target + path, args.origin, body))
+        spider(zap, target, context, args.spider_minutes, pages + [p for p in API_GETS if not signed_in_excluded(p)])
+        active_scan(zap, target, context_id, "signed in")
+    valid, message = watch.outcome()
+    print(f"  {message}", flush=True)
+    if not valid:
+        raise ScanError(f"The {message}, so part of the signed-in pass ran signed out (docs/security-scanning.md).")
 
-    still_signed_in = " 200 " in zap.send(raw_request("GET", target + "/api/auth/me"))["sendRequest"][0]["responseHeader"].split("\r\n", 1)[0] + " "
-    print(f"  session still valid at the end: {'yes' if still_signed_in else 'no (part of the signed-in pass may have run signed out)'}", flush=True)
+
+def signed_in_excluded(path):
+    return any(re.fullmatch(pattern, "http://app" + path) for pattern in SIGNED_IN_EXCLUDE)
 
 
 def run_staging(zap, args):
