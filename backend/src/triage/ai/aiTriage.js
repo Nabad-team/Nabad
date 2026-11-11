@@ -6,6 +6,8 @@
 //      kept waiting for a model.
 //   3. Model off, unreachable, slow, or its reply fails the guardrails -> the rules answer alone.
 //      The user always gets an answer; ai.reason says why the model was not used.
+//      SCRUM-310: before that, a backup model is tried, and models over their usage limit are not
+//      called at all (modelAccess.js); ai.reason is then "usage_limit" or "model_paused".
 //   4. Otherwise the model's level is combined with the floor: the more serious one wins.
 //
 // SCRUM-279: with the person's My health profile ("health", from healthContext.readHealth()), the safety
@@ -51,7 +53,7 @@ function describeAnswers(answers, health = null) {
   });
 }
 
-// client: from llmClient.getLlmClient(), or null when AI triage is off.
+// client: from modelAccess.getTriageLlmClient() (main model, then the backup), or null when AI triage is off.
 // answers: optional follow-up answers, as for POST /api/triage/refine.
 // health: from healthContext.readHealth(), or null when there is no profile or it couldn't be loaded.
 // followUpState (SCRUM-280): what the page sent back from the last result ({ round, asked }), or nothing.
@@ -129,6 +131,8 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
 
   const { level, applied } = applySafetyFloor(floor.level, reply.level);
   const ai = { used: true, level: reply.level, guardrails: [applied, ...new Set(reply.removed)] };
+  // SCRUM-310: the main model failed or was over its limit, and the backup model answered.
+  if (client.answeredBy === "fallback") ai.fallback = true;
   if (summaryHasOrders) ai.guardrails.push("health_summary_omitted");
   // SCRUM-281: the model found an emergency that the rules did not. The rules are the safety net
   // when the model is off or fails, so each of these is a possible missing rule. The route logs
