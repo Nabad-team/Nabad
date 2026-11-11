@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
 const { errorDetails, errorHandler, INVALID_DETAILS } = require("../src/logger");
 const { UserError, GENERIC_ERROR } = require("../src/userError");
+const { TEST_PROXY_SECRET, asVisitor } = require("./helpers/proxyHeaders");
 
 // No raw library or database error message (JWT, Mongoose, MongoDB, crypto) ever reaches the user: they get a
 // clear message, and the logs get what is safe (the error's type, code and field names, never its message).
@@ -29,10 +30,10 @@ before(async () => {
   await mongoose.connect(process.env.MONGO_URI);
   await User.init();
   // Every request from its own address, so the per-IP code limiter never interferes.
-  process.env.TRUST_PROXY = "1";
+  process.env.API_PROXY_SECRET = TEST_PROXY_SECRET;
   const { createApp } = require("../src/app");
   server = createApp().listen(0, "127.0.0.1");
-  delete process.env.TRUST_PROXY;
+  delete process.env.API_PROXY_SECRET;
   await new Promise(resolve => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
@@ -48,7 +49,7 @@ async function request(method, path, { body, cookie } = {}) {
   visitor += 1;
   const response = await fetch(base + path, {
     method,
-    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": `203.0.113.${visitor % 250}`, ...(cookie ? { Cookie: `accessToken=${cookie}` } : {}) },
+    headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(`203.0.113.${visitor % 250}`), ...(cookie ? { Cookie: `accessToken=${cookie}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();

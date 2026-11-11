@@ -70,8 +70,6 @@ services:
       SMTP_PORT: "1025"
       SMTP_SECURE: "false"
       APPOINTMENT_REMINDER_INTERVAL_MS: ${APPOINTMENT_REMINDER_INTERVAL_MS:-60000}
-      # Browser -> Next.js /api rewrite (frontend container) -> API: one proxy hop.
-      TRUST_PROXY: "1"
     networks: [nabad]
     ports:
       - "127.0.0.1:5000:5000"

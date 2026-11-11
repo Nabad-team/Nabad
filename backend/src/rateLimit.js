@@ -22,10 +22,16 @@ function scaledMax(options) {
   return (options.max ?? 5) * SCAN_FACTOR; // 5 is express-rate-limit's default.
 }
 
+// Limits without their own keyGenerator count per client IP: req.clientIp from clientIp.js, never req.ip, which is a
+// proxy's address. express-rate-limit's X-Forwarded-For check is off for the same reason: we deliberately ignore it.
+const byClientIp = (req) => req.clientIp || "unknown";
+
 function rateLimit(options = {}, env = process.env) {
-  return expressRateLimit(relaxedForScan(env) ? { ...options, max: scaledMax(options) } : options);
+  const withKey = { keyGenerator: byClientIp, ...options, validate: { xForwardedForHeader: false, ...(options.validate || {}) } };
+  return expressRateLimit(relaxedForScan(env) ? { ...withKey, max: scaledMax(options) } : withKey);
 }
 
 module.exports = rateLimit;
 module.exports.relaxedForScan = relaxedForScan;
 module.exports.SCAN_FACTOR = SCAN_FACTOR;
+module.exports.byClientIp = byClientIp;
