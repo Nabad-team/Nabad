@@ -54,9 +54,10 @@ const {
   chooseCareTypeId,
 } = require("../triage/careTypes");
 
+// SCRUM-310: the main model, then the backup model, each within its usage limits.
 const {
-  getLlmClient,
-} = require("../triage/ai/llmClient");
+  getTriageLlmClient,
+} = require("../triage/ai/modelAccess");
 
 const {
   assessWithAi,
@@ -313,6 +314,7 @@ router.post(
 
     try {
       let health = null;
+      let client = null;
       let result = req.ruleEmergency;
       if (!result) {
         const [previousChecks, profileHealth] = await Promise.all([
@@ -325,8 +327,9 @@ router.post(
           symptoms: record.description,
           messages: (record.conversation || []).slice(-6).map(({ role, content }) => ({ role, content })),
         }));
+        client = getTriageLlmClient();
         result = await assessWithAi(symptoms, {
-          client: getLlmClient(), answers: req.body?.answers, location: req.body?.location,
+          client, answers: req.body?.answers, location: req.body?.location,
           priorConversations, health, followUpState: req.body?.followUpState,
         });
       }
@@ -349,6 +352,16 @@ router.post(
           // missing rule). Only this yes/no is logged, never what the user wrote.
           ruleGap:
             result.ai.ruleGap || undefined,
+
+          // SCRUM-310: which model answered when it was the backup, and why each model before it was
+          // not used (e.g. "primary:timeout", "primary:usage_limit"). Fixed codes only.
+          model:
+            client?.answeredBy === "fallback" ? "fallback" : undefined,
+
+          modelAttempts:
+            client?.attempts?.length
+              ? client.attempts.map(({ role, reason }) => `${role}:${reason}`).join(",")
+              : undefined,
 
           // SCRUM-279: whether My health was used and made it more urgent. Yes/no only, never the facts.
           healthProfile:

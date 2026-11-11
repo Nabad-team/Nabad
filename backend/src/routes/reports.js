@@ -4,7 +4,8 @@ const rateLimit = require("../rateLimit");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile } = require("../middleware/profileAccess");
 const ReportConversation = require("../models/ReportConversation");
-const { getLlmClient } = require("../triage/ai/llmClient");
+// SCRUM-310: the main model within its usage limits, leaving part of the daily budget for symptom checks.
+const { getLlmClient } = require("../triage/ai/modelAccess");
 const { extractReport, ReportInputError } = require("../reports/extract");
 const { analyzeReport, ReportAnalysisError } = require("../reports/analyze");
 const { answerChat } = require("../reports/chat");
