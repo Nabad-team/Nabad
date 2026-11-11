@@ -25,6 +25,9 @@ function createApp() {
     );
   }
 
+  // TEMPORARY (client-IP fix): staging-only log of the addresses the API sees, for diagnostic requests only.
+  app.use(require("./ipDiagnostic").ipDiagnostic(config.environment, config.trustProxy));
+
   app.use(requestLogger);
 
   app.use((req, res, next) => {
