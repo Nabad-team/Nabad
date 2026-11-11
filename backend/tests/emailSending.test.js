@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../src/models/User");
+const { TEST_PROXY_SECRET, asVisitor } = require("./helpers/proxyHeaders");
 let mongod, server, base, sent = [];
 const password = "Email test password 123!";
 const smtpPassword = "Fake-Smtp-Pass-" + crypto.randomBytes(8).toString("hex");
@@ -13,7 +14,7 @@ before(async () => {
   Object.assign(process.env, { NODE_ENV: "test", APP_ENV: "test", JWT_SECRET: crypto.randomBytes(32).toString("hex"), CLIENT_ORIGIN: "http://localhost:3000",
     SMTP_HOST: "smtp.example.test", SMTP_USER: "smtp-user", SMTP_PASS: smtpPassword, EMAIL_FROM: "Nabad <no-reply@example.test>",
     // Each test uses its own client IP so the shared reset rate limit (5 per hour) is not exhausted.
-    TRUST_PROXY: "1" });
+    API_PROXY_SECRET: TEST_PROXY_SECRET });
   mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
@@ -23,12 +24,12 @@ before(async () => {
   await new Promise(resolve => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
-after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.TRUST_PROXY; });
+after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.API_PROXY_SECRET; });
 beforeEach(async () => { await User.deleteMany({}); sent = []; });
 async function user(email = "elias@example.test") { return User.create({ name: "Elias", email, passwordHash: await bcrypt.hash(password, 4) }); }
 // The 20-second abort only turns a hang into a clear failure; a passing request takes milliseconds.
 async function request(path, body, ip) {
-  const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": ip }, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
+  const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(ip) }, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
   return { status: response.status, body: await response.json() };
 }
 // Polls until the email work that runs after the response is done. Returns as soon as the check passes;
@@ -82,7 +83,8 @@ test("SMTP uses 10 second timeouts and failures log the error code but never the
 });
 
 test("reset tokens last one hour, are single-use, and a new request invalidates the previous one", async (t) => {
-  const account = await user();
+  // Its own address: reset emails are limited to 3 per address an hour, and other tests here reset elias@ too.
+  const account = await user("elias.tokens@example.test");
   t.mock.method(nodemailer, "createTransport", () => ({ sendMail: async message => { sent.push(message); } }));
   await request("/auth/forgot-password", { email: account.email }, "10.0.0.4");
   await waitFor(() => sent.length === 1);

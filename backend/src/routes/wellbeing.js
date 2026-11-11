@@ -1,5 +1,5 @@
 const express = require("express");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const { HydrationEntry, SleepEntry, WellbeingSettings, LIMITS, GOAL_TYPES } = require("../models/Wellbeing");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile } = require("../middleware/profileAccess");

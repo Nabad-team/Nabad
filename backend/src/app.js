@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const { loadConfig } = require("./config");
+const { clientIp } = require("./clientIp");
 const {
   requestLogger,
   errorHandler,
@@ -15,17 +16,20 @@ function createApp() {
 
   app.disable("x-powered-by");
 
-  // Number of proxies in front of the app
-  // (Vercel rewrite + Render = 2),
-  // so rate limits see the visitor's IP.
-  if (config.trustProxy) {
-    app.set(
-      "trust proxy",
-      config.trustProxy
-    );
-  }
+  // Express never trusts X-Forwarded-For: a visitor can fake it through Vercel. The client IP that rate limits use
+  // comes from clientIp.js instead (req.clientIp); see docs/environments.md, "Client IP".
+  app.set("trust proxy", false);
 
   app.use(requestLogger);
+
+  app.use(clientIp({ secret: config.proxySecret, required: config.proxyRequired, hosted: config.secure }));
+
+  // Checks the client-IP setup without reading logs (docs/environments.md, "Client IP"). Staging and local: the
+  // caller's own IP as the API resolved it. Production: only whether the request came through our proxy with the
+  // right secret, never an address, so the secrets can be checked before API_PROXY_REQUIRED is turned on.
+  app.get("/api/health/client-ip", (req, res) => res.json(config.environment === "production"
+    ? { viaAppProxy: req.viaAppProxy }
+    : { clientIp: req.clientIp, viaAppProxy: req.viaAppProxy }));
 
   app.use((req, res, next) => {
     res.setHeader(

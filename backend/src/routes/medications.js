@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const Medication = require("../models/Medication");
 const MedicationAdherence = require("../models/MedicationAdherence");
 const { readReminder, nextReminder } = require("../medicationSchedule");

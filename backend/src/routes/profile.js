@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const User = require("../models/User");
 const LinkedProfile = require("../models/LinkedProfile");
 const { deleteProfileData } = require("../profileData");

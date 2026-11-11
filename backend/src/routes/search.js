@@ -1,5 +1,5 @@
 const express = require("express");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile } = require("../middleware/profileAccess");
 const Medication = require("../models/Medication");

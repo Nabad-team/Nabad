@@ -25,9 +25,11 @@ services:
         value: nabad_production
       - key: CLIENT_ORIGIN
         value: https://nabad-psi.vercel.app
-      # Browser -> Vercel rewrite -> Render load balancer -> app.
-      - key: TRUST_PROXY
-        value: "2"
+      # Shared with the Next.js proxy on Vercel (Production environment), which vouches for each visitor's IP
+      # (docs/environments.md, "Client IP"). Entered in the dashboard. API_PROXY_REQUIRED=true, which refuses requests
+      # without it, is set in the dashboard last, never here: a Blueprint sync must not turn it on early.
+      - key: API_PROXY_SECRET
+        sync: false
       - key: SESSION_IDLE_TIMEOUT
         value: 30m
       - key: SESSION_ABSOLUTE_TIMEOUT
@@ -112,7 +114,7 @@ services:
 #      - { key: CLIENT_ORIGIN, value: https://nabad-staging.vercel.app }
 #      # Staging only (refused elsewhere): PR previews may write too. One "*" inside the first DNS label.
 #      - { key: PREVIEW_ORIGIN_PATTERN, value: "https://nabad-*-nabad3.vercel.app" }
-#      - { key: TRUST_PROXY, value: "2" }
+#      - API_PROXY_SECRET (secret, same value as Vercel's Preview environment) and, once checked, API_PROXY_REQUIRED=true
 #      - { key: SESSION_IDLE_TIMEOUT, value: 30m }
 #      - { key: SESSION_ABSOLUTE_TIMEOUT, value: 12h }
 #      - { key: SESSION_WARNING_BEFORE, value: 2m }

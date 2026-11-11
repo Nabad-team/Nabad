@@ -128,6 +128,32 @@ describe("next.config.js", () => {
       });
     });
 
+    describe("Access-Control-Allow-Origin on pages (ZAP 10098)", () => {
+      const pageRule = async (env) => (await loadConfig(env).headers()).find((rule) => rule.headers.some((h) => h.key === "Access-Control-Allow-Origin"));
+      const allowedFor = async (env) => (await pageRule(env))?.headers.find((h) => h.key === "Access-Control-Allow-Origin").value;
+
+      test("names production's own origin on production builds, staging's on staging and previews", async () => {
+        expect(await allowedFor({ VERCEL: "1", VERCEL_ENV: "production", BACKEND_URL: "https://nabad-backend-nhv5.onrender.com" })).toBe("https://nabad-psi.vercel.app");
+        expect(await allowedFor({ VERCEL: "1", VERCEL_ENV: "preview", BACKEND_URL: "https://staging.example", NEXT_PUBLIC_APP_ENV: "staging" })).toBe("https://nabad-staging.vercel.app");
+        expect(await allowedFor({ VERCEL: "1", VERCEL_ENV: "preview", BACKEND_URL: "https://staging.example" })).toBe("https://nabad-staging.vercel.app");
+      });
+
+      test("never a wildcard, and nothing on local builds", async () => {
+        expect(await allowedFor({})).toBeUndefined();
+        for (const env of [{ VERCEL: "1", VERCEL_ENV: "production", BACKEND_URL: "https://b.example" }, { NEXT_PUBLIC_APP_ENV: "staging" }]) {
+          expect(await allowedFor(env)).not.toBe("*");
+        }
+      });
+
+      test("applies to pages, never to /api (the API sends its own CORS headers)", async () => {
+        const { source } = await pageRule({ VERCEL: "1", VERCEL_ENV: "production", BACKEND_URL: "https://b.example" });
+        const { pathToRegexp } = require("next/dist/compiled/path-to-regexp");
+        const matches = (path) => pathToRegexp(source).test(path);
+        for (const page of ["/", "/login", "/dashboard", "/providers", "/offline.html", "/apiary"]) expect(matches(page)).toBe(true);
+        for (const api of ["/api", "/api/", "/api/health/ready", "/api/auth/me"]) expect(matches(api)).toBe(false);
+      });
+    });
+
     test("allows same-origin location across client-side routes while keeping cameras disabled", async () => {
       expect((await headersFor("/symptoms"))["Permissions-Policy"]).toBe("camera=(), microphone=(self), geolocation=(self)");
       expect((await headersFor("/providers"))["Permissions-Policy"]).toBe("camera=(), microphone=(self), geolocation=(self)");

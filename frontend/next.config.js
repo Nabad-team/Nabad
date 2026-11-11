@@ -62,11 +62,20 @@ const { isStaging } = require("./lib/appEnvironment");
 const staging = isStaging(process.env.NEXT_PUBLIC_APP_ENV, process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.VERCEL_ENV);
 const stagingHeaders = staging ? [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] : [];
 
+// Vercel's CDN sends "Access-Control-Allow-Origin: *" with static pages (OWASP ZAP rule 10098). The pages are public,
+// but no other site needs to read them, so name this site's own address instead: production's for production builds,
+// staging's for staging and previews (only staging is scanned). Not on /api: the API sends its own CORS headers
+// (its own origin only, with credentials). Local builds get nothing, as Next.js itself sends no such header.
+const SITE_ORIGINS = { production: "https://nabad-psi.vercel.app", staging: "https://nabad-staging.vercel.app" };
+const pageOrigin = process.env.VERCEL_ENV === "production" ? SITE_ORIGINS.production : staging ? SITE_ORIGINS.staging : null;
+const PAGES_NOT_API = "/((?!api(?:/|$)).*)";
+
 const nextConfig = {
   poweredByHeader: false,
   async headers() {
     return [
       { source: "/:path*", headers: [...securityHeaders, ...stagingHeaders] },
+      ...(pageOrigin ? [{ source: PAGES_NOT_API, headers: [{ key: "Access-Control-Allow-Origin", value: pageOrigin }] }] : []),
       // Shared visit links contain their access token in the path. Never send that path in a Referer header.
       { source: "/visit-prep-share/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
       { source: "/providers", headers: [{ key: "Permissions-Policy", value: permissionsPolicy("(self)") }] },

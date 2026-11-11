@@ -1,6 +1,6 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const User = require("../models/User");
 const { buildExport } = require("../dataExport");
 const { checkUserPassword } = require("../passwordHashing");

@@ -1,5 +1,6 @@
 // The password rules as the signup and reset-password routes apply them. Every request comes from its own
-// client IP, so the real signup and reset rate limits (5 per hour) stay on without capping how much is covered.
+// client IP and (by default) its own address, so the real signup and reset rate limits stay on without capping
+// how much is covered.
 const { test, before, after, beforeEach, mock } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
@@ -9,10 +10,11 @@ const crypto = require("crypto");
 const User = require("../src/models/User");
 const { PASSWORD_MESSAGES } = require("../src/passwordPolicy");
 const { verifyPassword } = require("../src/passwordHashing");
+const { TEST_PROXY_SECRET, asVisitor } = require("./helpers/proxyHeaders");
 let mongod, server, base, ip = 0;
 const goodPassword = "my cat sleeps on the sofa";
 before(async () => {
-  Object.assign(process.env, { NODE_ENV: "test", APP_ENV: "test", JWT_SECRET: crypto.randomBytes(32).toString("hex"), CLIENT_ORIGIN: "http://localhost:3000", TRUST_PROXY: "1" });
+  Object.assign(process.env, { NODE_ENV: "test", APP_ENV: "test", JWT_SECRET: crypto.randomBytes(32).toString("hex"), CLIENT_ORIGIN: "http://localhost:3000", API_PROXY_SECRET: TEST_PROXY_SECRET });
   mongod = await createTestMongo();
   process.env.MONGO_URI = mongod.getUri();
   await mongoose.connect(process.env.MONGO_URI);
@@ -22,13 +24,16 @@ before(async () => {
   await new Promise(resolve => server.once("listening", resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
-after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.TRUST_PROXY; delete process.env.PWNED_PASSWORDS_CHECK; });
+after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.API_PROXY_SECRET; delete process.env.PWNED_PASSWORDS_CHECK; });
 beforeEach(async () => { await User.deleteMany({}); delete process.env.PWNED_PASSWORDS_CHECK; });
 async function post(path, body) {
-  const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, "X-Forwarded-For": `198.51.100.${++ip}` }, body: JSON.stringify(body) });
+  const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(`198.51.100.${++ip}`) }, body: JSON.stringify(body) });
   return { status: response.status, body: await response.json() };
 }
-const signup = (password, name = "Sam Rivers", email = "sam.rivers@example.test") => post("/auth/signup", { name, email, password });
+// A new address each time by default: sign-up allows 3 tries per address an hour (src/routes/auth.js), and these
+// tests are about the password rules, not that limit.
+let signups = 0;
+const signup = (password, name = "Sam Rivers", email = `sam.rivers.${++signups}@example.test`) => post("/auth/signup", { name, email, password });
 // A user with a valid reset link; returns the link token.
 async function resetLink({ name = "Sam Rivers", email = "sam.rivers@example.test", passwordHash } = {}) {
   const token = crypto.randomBytes(32).toString("hex");
