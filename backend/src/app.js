@@ -116,6 +116,9 @@ function createApp() {
 
   app.use("/api/search", require("./routes/search"));
 
+  // SCRUM-156: questions about the profile's own history.
+  app.use("/api/history", require("./routes/history"));
+
   // SCRUM-311: the team's usage dashboard (anonymous daily totals, team members only).
   app.use("/api/usage", require("./routes/usage"));
 
