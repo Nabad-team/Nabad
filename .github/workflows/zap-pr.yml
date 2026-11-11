@@ -1,0 +1,73 @@
+name: Security Scan (ZAP)
+
+# OWASP ZAP against a throwaway copy of the whole app, started from docker-compose.yml like the Selenium job:
+# spider, passive and active scan, signed out and then signed in as a fresh test user. Never staging or production,
+# and nothing leaves the runner: email goes to Mailpit and no AI provider is configured.
+# The log shows only a summary table (rule ID, name, risk, count). No reports are uploaded: the repository is
+# public. For the full report, run the scan locally (docs/security-scanning.md).
+# Not a required check yet; see docs/security-scanning.md for when it becomes one.
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zap-pr-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Empty on fork and Dependabot pull requests (see "Log in to Docker Hub").
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      COMPOSE_FILE: docker-compose.yml:security/zap/compose.zap.yml
+      COMPOSE_PROFILES: zap
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # MongoDB and Mailpit come from Docker Hub; ZAP comes from ghcr.io and needs no login.
+      - name: Log in to Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Test the scan driver
+        run: python3 -m unittest discover -s security/zap -p "test_*.py"
+
+      - name: Create a ZAP API key for this run
+        run: |
+          key="$(openssl rand -hex 24)"
+          echo "::add-mask::$key"
+          echo "ZAP_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Start the app and ZAP with Docker Compose
+        run: docker compose up -d --build --quiet-pull
+
+      - name: Wait for the app
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/api/health/ready >/dev/null && curl -fsS -o /dev/null http://localhost:3000/; then
+              echo "App is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "The app did not become ready in 3 minutes"
+          docker compose ps
+          exit 1
+
+      - name: Run the ZAP scan
+        run: python3 security/zap/zap_scan.py pr
+
+      - name: Stop the app and remove its data
+        if: always()
+        run: docker compose down -v

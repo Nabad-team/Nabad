@@ -23,7 +23,7 @@
 
 const { emergencyNeeds } = require("../triage/emergencyNeeds");
 const express = require("express");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 
 const {
   requireAuth,

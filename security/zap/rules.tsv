@@ -1,0 +1,13 @@
+# OWASP ZAP findings we have decided to ignore or downgrade (docs/security-scanning.md).
+# High and Medium findings fail the scan; Low and Informational are warnings. Nothing is ignored silently:
+# every exception is one line here, reviewed in a pull request, with a written reason.
+#
+# Columns, separated by ONE TAB: rule_id   action   scope   reason
+#   rule_id  the "Rule ID" column of the scan summary: one alert (10055-5) or every alert of that scan rule (10055)
+#   action   WARN (report it, don't fail) or IGNORE (listed as ignored in the summary, doesn't fail)
+#   scope    pr, staging or all
+#   reason   why it is safe or a false positive, and the follow-up (Jira key) if it is accepted for now
+
+10055-5	WARN	all	CSP script-src allows 'unsafe-inline': each page has one inline Turbopack chunk-loader script. Accepted until the follow-up story 'CSP without unsafe-inline' (try a webpack build first, nonces as fallback) removes it.
+10055-6	WARN	all	CSP style-src allows 'unsafe-inline': Leaflet positions the provider map with inline styles and Next.js/styled-jsx injects style tags. Injected styles cannot run code; revisit together with the script-src follow-up story.
+10096	IGNORE	all	False positive: the Unix timestamp is a date field in the public provider directory data returned by /api/providers, not a server or build time.

@@ -1,0 +1,57 @@
+name: Security Scan (ZAP, staging)
+
+# Weekly passive OWASP ZAP baseline of https://nabad-staging.vercel.app: spider and passive scan only, about two
+# requests a second, and never anything in security/zap/staging-exclude.txt (every endpoint that sends email or
+# calls the AI, so the shared Brevo quota and staging's Gemini key are safe). Never production.
+# The log shows only a summary table; no reports are uploaded (docs/security-scanning.md).
+on:
+  schedule:
+    # Mondays 03:17 UTC, a quiet time for staging.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-staging
+  cancel-in-progress: false
+
+jobs:
+  zap-staging-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      COMPOSE_FILE: docker-compose.yml:security/zap/compose.zap.yml
+      COMPOSE_PROFILES: zap
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # Only ZAP (ghcr.io) starts here, but the login keeps this job in line with the Docker Hub rule (docs/docker.md).
+      - name: Log in to Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Test the scan driver
+        run: python3 -m unittest discover -s security/zap -p "test_*.py"
+
+      - name: Create a ZAP API key for this run
+        run: |
+          key="$(openssl rand -hex 24)"
+          echo "::add-mask::$key"
+          echo "ZAP_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Start ZAP
+        run: docker compose up -d --quiet-pull zap
+
+      - name: Run the ZAP staging scan
+        run: python3 security/zap/zap_scan.py staging
+
+      - name: Stop ZAP
+        if: always()
+        run: docker compose down -v

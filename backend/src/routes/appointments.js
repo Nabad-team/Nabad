@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const Appointment = require("../models/Appointment");
 const { REMINDER_MINUTES, LIMITS } = Appointment;
 const { requireAuth } = require("../middleware/authMiddleware");
