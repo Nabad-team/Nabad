@@ -58,6 +58,14 @@ const AUDIT = [
   ] },
   { rule: "testicle-sudden", level: "emergency", says: ["sudden severe pain in my testicle", "sudden sharp pain in my testicle"] },
   { rule: "swallowed-object", level: "emergency", says: ["my child swallowed a battery", "my toddler swallowed magnets", "he ate a button battery"] },
+  // ---------- Emergency: added in SCRUM-309 (tests/triage-safety) ----------
+  { rule: "non-blanching-rash", level: "emergency", says: [
+    "my baby has spots that don't fade when I press a glass on them", "a non blanching rash on her legs",
+  ] },
+  { rule: "cauda-equina", level: "emergency", says: [
+    "numbness around my bottom", "bad back pain and now I can't control my bladder", "saddle numbness since this morning",
+  ] },
+  { rule: "ectopic-pregnancy", level: "emergency", says: ["I'm 6 weeks pregnant with pain in the tip of my shoulder"] },
   { rule: "baby-not-moving", level: "emergency", says: [
     "I'm pregnant and my baby stopped moving", "I haven't felt the baby move today", "the baby is moving less than usual",
   ] },
@@ -81,6 +89,13 @@ const AUDIT = [
   { rule: "urinary-retention", level: "urgent", says: ["I can't pee at all", "he hasn't been able to pee since yesterday"] },
   { rule: "eye-urgent", level: "urgent", says: ["severe pain in my eye", "I got bleach in my eye", "my eye hurts so much"] },
   { rule: "testicle-pain", level: "urgent", says: ["testicle pain", "my testicle is swollen"] },
+
+  // ---------- Urgent: added in SCRUM-309 (tests/triage-safety) ----------
+  { rule: "pregnancy-pain", level: "urgent", says: ["I'm pregnant and have a sharp pain on my left side", "8 weeks pregnant with pain low down on one side"] },
+  { rule: "pre-eclampsia", level: "urgent", says: ["I'm 32 weeks pregnant and my vision is blurry", "pregnant and my face suddenly swelled up"] },
+  { rule: "kidney-infection", level: "urgent", says: ["fever and pain in my back on the right side", "I have a fever and kidney pain"] },
+  { rule: "asthma-worsening", level: "urgent", says: ["my asthma is getting worse", "my blue inhaler isn't helping", "using my inhaler every 2 hours"] },
+  { rule: "breathless-with-fever", level: "urgent", says: ["I have a fever and I'm short of breath", "fever and more breathless than usual"] },
 ];
 
 // Sentences that mention a new warning sign but must NOT be treated as one.
@@ -94,6 +109,15 @@ const NOT_RED_FLAGS = [
   { says: "my 6 month old has a fever", notRule: "young-infant-fever" },
   { says: "my newborn has no fever", notRule: "young-infant-fever" },
   { says: "no pain in my testicle", notRule: "testicle-pain" },
+  { says: "a rash that doesn't fade after a week", notRule: "non-blanching-rash" },
+  { says: "the rash fades when I press a glass on it", notRule: "non-blanching-rash" },
+  { says: "lower back pain for weeks, no numbness and I can pee normally", notRule: "cauda-equina" },
+  { says: "my shoulder hurts after the gym", notRule: "ectopic-pregnancy" },
+  { says: "I'm pregnant and my back aches after standing", notRule: "pregnancy-pain" },
+  { says: "I'm pregnant and have a mild headache", notRule: "pre-eclampsia" },
+  { says: "back pain after moving furniture, no fever", notRule: "kidney-infection" },
+  { says: "no asthma, just a cold", notRule: "asthma-worsening" },
+  { says: "out of breath after running, no fever", notRule: "breathless-with-fever" },
 ];
 
 const atLeast = (level, minimum) => ORDER.indexOf(level) >= ORDER.indexOf(minimum);

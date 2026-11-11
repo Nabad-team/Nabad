@@ -144,6 +144,100 @@ const EVERYDAY_WORDING = [
     /\bbaby (?:is )?(?:moving|kicking) (?:a lot |much )?less\b/,
   ] },
 
+  // ---------- SCRUM-309: emergency wording found missing by the clinical safety test set ----------
+  // Each case is in tests/triage-safety/cases.json; each pattern has a sentence in tests/naturalLanguage.test.js.
+  { means: "chest pain", patterns: [
+    new RegExp(`\\b(?:pain|ache|aching|pressure|tightness|heaviness|squeezing) in the (?:middle|centre|center) of ${PERSON} chest\\b`),
+    // "my chest has been really tight", "chest feels heavy". Heaviness is how many people, often women, describe a heart attack.
+    /\bchest (?:has been|is|feels|felt|was|is getting|getting|keeps getting)(?: really| very| so| quite| a bit| kind of)? (?:tight|heavy|crushed|squeezed)\b/,
+  ] },
+  { means: "short of breath at rest", patterns: [
+    /\b(?:out of breath|breathless|short of breath)\b[^.]{0,25}?\b(?:sitting|resting|lying down|at rest|doing nothing)\b/,
+    /\b(?:can't|cannot|couldn't) (?:finish|complete) (?:a |my |his |her )?sentences?\b/,
+  ] },
+  { means: "struggling to breathe", patterns: [
+    /\btoo (?:breathless|out of breath|short of breath|wheezy) to (?:talk|speak|eat|drink|walk)\b/,
+    // A baby's chest pulling in under the ribs, or grunting while breathing (NICE NG143 red signs).
+    /\b(?:skin|chest|tummy) (?:under|between|below) (?:her|his|the|their|my) ribs (?:is |are )?(?:sucking|pulling|caving|going) in\b/,
+    /\bribs (?:are |is )?(?:sucking|pulling|caving) in\b/,
+    /\bbreathing (?:really |very |so )?fast and grunting\b|\bgrunting (?:when|with|as|while) (?:she|he|they) breathes?\b/,
+  ] },
+  { means: "slurred speech", patterns: [
+    /\b(?:speech|words?) (?:was|were|went|got|became|sounded|are coming out|is coming out|came out|keep coming out) (?:all |a bit |really )?(?:slurred|jumbled|garbled|wrong|mixed up|muddled)\b/,
+  ] },
+  { means: "sudden numbness", patterns: [
+    /\bsuddenly (?:went|gone|go|became|feels?|felt) (?:numb|weak|limp|dead)\b|\b(?:went|gone) (?:numb|weak|limp) suddenly\b/,
+  ] },
+  { means: "arm weakness", patterns: [
+    /\b(?:arm|hand|leg) (?:went|has gone|suddenly went) (?:weak|limp|floppy)\b/,
+  ] },
+  { means: "not waking up", patterns: [
+    /\b(?:isn't|wasn't|aren't|still isn't) waking up\b/,
+  ] },
+  { means: "unconscious", patterns: [
+    /\b(?:was|got|been|is|being) knocked out\b|\bknocked (?:him|her|them|me|himself|herself|myself) out\b/,
+  ] },
+  { means: "unresponsive", patterns: [
+    // A floppy baby or child: not responding normally (NICE NG143 red sign).
+    /\b(?:is|was|seems?|looks?|gone|went|very|really|so|all) (?:very |really |so |all )?floppy\b/,
+  ] },
+  { means: "fell from a height", patterns: [
+    // More than 5 stairs is a "call an ambulance" head-injury sign; a whole staircase counts.
+    /\bfell down (?:the |a )?(?:whole |entire |full )?(?:flight of stairs|stairs|staircase)\b/,
+  ] },
+  { means: "suddenly confused", patterns: [
+    // "now hes confused": typed without the apostrophe. Not "confused about the dose".
+    /\b(?:hes|shes|theyre|they're|now) (?:suddenly |very |really |so |all |completely )?confused\b(?! (?:about|by|with|on|why|how|what|whether|if|over))/,
+  ] },
+  { means: "vomiting blood", patterns: [
+    /\b(?:threw up|throw up|throwing up|vomited|puked|brought up|bringing up|sick with) (?:some |a lot of |lots of |bright red |red |dark )?blood\b/,
+    new RegExp(`\\bblood in ${PERSON} (?:vomit|sick)\\b`),
+  ] },
+  { means: "swollen tongue", patterns: [
+    /\btongue (?:is |feels |looks |is getting )?(?:swollen|swelling|swelling up|thick)\b/,
+  ] },
+  { means: "severe allergic reaction", patterns: [
+    // The face swelling up (now, not "a swollen face"), as after a sting or a food.
+    /\bface (?:is |has |started |starting |keeps )?(?:swelling|puffing)(?: up)?\b|\bface (?:has )?(?:swelled|puffed) up\b/,
+  ] },
+  { means: "non blanching rash", patterns: [
+    // The glass test: "spots that don't fade when I press a glass on them". Only with pressing or a glass,
+    // so "a rash that doesn't fade after a week" doesn't count.
+    /\b(?:rash|spots|marks|dots|blotches)\b[^.]{0,30}?\b(?:don't|doesn't|do not|does not|won't|didn't|did not) fade\b[^.]{0,40}?\b(?:press|pressed|pressing|glass|tumbler)\b/,
+  ] },
+  { means: "want to die", patterns: [
+    /\b(?:wants|wanted|wanting) to die\b/,
+    /\b(?:kill|end) (?:himself|herself|themselves|his life|her life|their life|his own life|her own life)\b/,
+    /\b(?:wants|wanted|wanting|going|thinking about|thinking of|talking about) (?:to )?(?:hurt|harm|kill)(?:ing)? (?:himself|herself|themselves)\b/,
+  ] },
+  { means: "overdose", patterns: [
+    /\b(?:took|swallowed|taken|has taken|had) (?:a |the )?(?:whole|full|entire) (?:pack|packet|box|bottle|strip|sheet) of\b/,
+    /\b(?:took|taken|swallowed) (?:too many|loads of|a handful of|handfuls of) (?:\w+ )?(?:pills|tablets|paracetamol|panadol|painkillers|capsules)\b/,
+  ] },
+  { means: "swallowed poison", patterns: [
+    /\b(?:drank|drunk|drinking|swallowed|ate|eaten) (?:some |a bit of |a little |a lot of |the )?(?:bleach|detergent|oven cleaner|drain cleaner|toilet cleaner|cleaning (?:liquid|product|spray)|washing (?:powder|liquid|pods?)|laundry (?:pods?|liquid|detergent)|dishwasher (?:liquid|tablets?|pods?)|chlorine|kerosene|petrol|gasoline|antifreeze|rat poison|pesticide|weed killer|paint thinner|lamp oil|nail polish remover)\b/,
+  ] },
+  { means: "mottled", patterns: [
+    // A child or adult who feels abnormally cold to touch (Sepsis Trust sign).
+    /\b(?:feels?|is|felt) (?:very |really |abnormally |unusually |ice )?cold to (?:the )?touch\b/,
+  ] },
+  { means: "severe burn", patterns: [
+    /\b(?:boiling|scalding) (?:water|oil|soup|milk)\b[^.]{0,20}?\bover (?:himself|herself|themselves|myself|him|her|them|me)\b/,
+    /\b(?:burn|burns|burned|burnt|scald|scalds|scalded)\b[^.]{0,60}?\bskin (?:is )?(?:peeling|coming off|came off|falling off)\b/,
+  ] },
+  { means: "saddle numbness", patterns: [
+    new RegExp(`\\bnumb(?:ness)?\\b(?: \\w+){0,2}? (?:around|in|between|on) ${PERSON} (?:bottom|bum|butt|buttocks|genitals|groin|inner thighs|back passage|private parts|legs)\\b`),
+    // Back pain, then losing control of the bladder or bowels.
+    new RegExp(`\\b(?:back pain|pain in ${PERSON} (?:lower )?back|sciatica)\\b[^]{0,120}?\\b(?:can't|cannot|couldn't|unable to|lost|losing) (?:control|feel)(?: of| over| when)? (?:i |he |she )?(?:my |his |her )?(?:pee|wee|bladder|bowels?|poo|poop|peeing|weeing|urine)\\b`),
+  ] },
+  { means: "shoulder tip pain", patterns: [
+    new RegExp(`\\b(?:pain|ache|aching|hurts?|hurting)\\b[^.]{0,20}?\\b(?:tip|top) of ${PERSON} shoulder\\b`),
+    /\bshoulder[- ]tip\b/,
+  ] },
+  { means: "sudden testicle pain", patterns: [
+    /\bsudden(?:ly)? (?:\w+ ){0,2}(?:pain|ache) in (?:my|his|one|the) (?:left |right )?(?:testicle|testicles|balls)\b/,
+  ] },
+
   // ---------- Urgent ----------
   { means: "high fever", patterns: [
     /\b(?:temperature|temp|fever)(?: is| of| was| reached| hit)? (?:about |around |over )?(?:39\.[5-9]|4[0-2](?:\.\d)?|10[3-6](?:\.\d)?)\b/,
@@ -212,6 +306,60 @@ const EVERYDAY_WORDING = [
   { means: "sudden testicle pain", patterns: [
     // SCRUM-282: "left" or "right" allowed: "sudden really bad pain in my left testicle".
     /\bsudden(?:ly)? (?:severe |sharp |bad |really bad )?(?:pain|ache) in (?:my|his|one) (?:left |right )?(?:testicle|testicles|balls)\b/,
+  ] },
+
+  // ---------- SCRUM-309: urgent wording found missing by the clinical safety test set ----------
+  { means: "sharp pain in my lower right", patterns: [
+    // Appendicitis: pain that starts in the middle and moves to the lower right.
+    /\b(?:moved|spread|went|shifted|moving|spreading) (?:down )?to (?:the |my )?(?:lower|bottom) right\b/,
+  ] },
+  { means: "no urine", patterns: [
+    /\b(?:hasn't|has not|haven't|have not|no) (?:had |done |been )?(?:a |any )?wet (?:nappy|nappies|diaper|diapers)\b/,
+    /\b(?:nappy|nappies|diaper|diapers) (?:has been |have been |is |are )?(?:dry|bone dry)\b/,
+    /\b(?:hasn't|has not|haven't|have not) (?:peed|weed|urinated|passed urine)\b/,
+  ] },
+  { means: "cannot put weight", patterns: [
+    /\b(?:can't|cannot|couldn't|unable to) (?:put|bear|take) (?:any |much )?weight\b/,
+    /\b(?:can't|cannot|couldn't|unable to) (?:walk|stand) on (?:it|my \w+|his \w+|her \w+)\b/,
+  ] },
+  { means: "chemical in my eye", patterns: [
+    new RegExp(`\\b(?:got|splashed|sprayed|spilled|squirted) (?:some )?(?:oven cleaner|drain cleaner|toilet cleaner|cleaning (?:spray|liquid)|detergent|dishwasher \\w+|chlorine|ammonia|lime|cement|pepper spray|washing up liquid|nail polish remover|hair dye|superglue|glue) (?:in|into) ${PERSON} eyes?\\b`),
+  ] },
+  { means: "bleeding", patterns: [
+    // Only used by the pregnancy rule (pregnant + bleeding).
+    /\bspotting\b/,
+  ] },
+  { means: "testicle pain", patterns: [
+    /\b(?:testicle|testicles|testis|balls?) (?:has been|have been|is|are|feels?|got|getting) (?:\w+ )?(?:swollen|sore|painful|hurting|tender|aching)\b/,
+    new RegExp(`\\b(?:ache|aching|pain|soreness) in ${PERSON} (?:left |right )?(?:testicle|testicles|balls)\\b`),
+  ] },
+  { means: "pain on one side", patterns: [
+    /\bpain (?:low |low down |down low )?on one side\b/,
+    /\b(?:sharp|sudden|bad|severe|stabbing) pain (?:low |low down )?(?:in|on) (?:my |the )?(?:lower )?(?:left|right) side\b/,
+  ] },
+  { means: "preeclampsia warning sign", patterns: [
+    /\b(?:blurry|blurred|blurring) vision\b|\b(?:vision|eyesight) (?:is |has gone |went |is getting )?(?:blurry|blurred)\b/,
+    /\bseeing (?:flashing lights|flashes|spots|stars)\b|\bflashing lights\b/,
+    /\b(?:face|hands|feet|ankles)(?: and (?:my |his |her )?(?:face|hands|feet|ankles))? (?:have |has |are |is )?suddenly (?:swelled|swollen|swelling|puffed)(?: up)?\b|\bsudden swelling\b/,
+    /\bheadache (?:that|which) (?:painkillers|paracetamol|panadol|tablets) (?:don't|doesn't|won't|do not|does not|didn't) (?:help|touch|shift|work)\b/,
+    new RegExp(`\\bpain (?:just )?(?:below|under) ${PERSON} ribs\\b`),
+  ] },
+  { means: "flank pain", patterns: [
+    new RegExp(`\\bpain in ${PERSON} (?:lower )?back on (?:the |one )?(?:left |right )?side\\b`),
+    /\b(?:left|right)[- ]sided? (?:lower )?back pain\b/,
+    new RegExp(`\\bpain in ${PERSON} (?:left |right )?(?:side|flank|kidney|kidneys)\\b`),
+    /\b(?:flank|kidney) pain\b|\b(?:kidney|kidneys|flank) (?:hurts?|is hurting|aches?)\b/,
+  ] },
+  { means: "inhaler isn't helping", patterns: [
+    /\binhaler (?:every|each) (?:1|2|3|one|two|three|couple of|few) hours?\b/,
+    /\b(?:blue |reliever )?inhaler (?:isn't|is not|not|doesn't|does not|hasn't|has not) (?:helping|working|help|work)\b/,
+  ] },
+  { means: "breathless", patterns: [
+    /\b(?:short of breath|out of breath|shortness of breath)\b/,
+  ] },
+  { means: "fever", patterns: [
+    // A measured temperature of 38-42°C: "temp is 39".
+    /\b(?:temperature|temp)(?: is| of| was| reached| hit| at| around)? (?:about |around |over |nearly )?(?:3[89]|4[0-2])(?:\.\d+)?\b/,
   ] },
 
   // ---------- See a doctor soon ----------

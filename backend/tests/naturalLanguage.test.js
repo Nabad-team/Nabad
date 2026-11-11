@@ -257,3 +257,96 @@ describe("POST /api/triage/ai-assess with everyday wording (AI off)", () => {
     assert.match(body.explanation.summary, /“chest hurts”/);
   });
 });
+
+// SCRUM-309: wording added after the triage clinical safety set (tests/triage-safety) found it was missed.
+// One sentence per new pattern in everydayWording.js, and sentences that must stay as they were.
+describe("wording found by the triage clinical safety set", () => {
+  test("emergencies", () => {
+    expectLevel("emergency", [
+      "pain in the middle of my chest",
+      "my chest feels heavy",
+      "my chest has been really tight since this morning",
+      "out of breath even when sitting down",
+      "i cant finish a sentence without stopping for breath",
+      "too breathless to talk",
+      "the skin under her ribs is sucking in",
+      "her ribs are pulling in when she breathes",
+      "my baby is breathing really fast and grunting",
+      "my words are coming out wrong",
+      "his speech was slurred for a few minutes",
+      "my right hand suddenly went numb",
+      "his arm went weak",
+      "she still isnt waking up",
+      "he was knocked out playing rugby",
+      "my baby is very floppy",
+      "my grandad fell down the stairs",
+      "my dad hit his head and now hes confused",
+      "i threw up blood",
+      "theres blood in my vomit",
+      "my tongue feels swollen",
+      "my face is swelling up after a bee sting",
+      "spots that dont fade when i press a glass on them",
+      "my son wants to die",
+      "she said she wants to kill herself",
+      "he is talking about hurting himself",
+      "she took a whole pack of paracetamol",
+      "he swallowed a handful of sleeping pills",
+      "my toddler drank some bleach",
+      "my son feels cold to the touch and his skin is mottled",
+      "he spilled boiling water over himself",
+      "she burned her arm on the stove and the skin is peeling off",
+      "numbness around my bottom",
+      "back pain and now i cant control my bladder",
+      "im pregnant with pain in the tip of my shoulder",
+      "sudden terrible pain in his testicle",
+    ]);
+  });
+
+  test("urgent problems", () => {
+    expectLevel("urgent", [
+      "the pain moved to the lower right of my belly",
+      "my toddler hasnt had a wet nappy since this morning",
+      "his nappies are dry",
+      "she hasnt peed all day",
+      "i cant put any weight on my ankle",
+      "cant walk on my ankle after twisting it",
+      "got oven cleaner in my eye",
+      "im pregnant and spotting",
+      "my testicle has been swollen since yesterday",
+      "an ache in my left testicle",
+      "im pregnant with a sharp pain on my right side",
+      "pregnant and seeing flashing lights",
+      "pregnant and my vision is blurry",
+      "pregnant and my feet suddenly swelled up",
+      "pregnant with a headache that paracetamol doesnt help",
+      "pregnant with pain under my ribs",
+      "fever and pain in my back on the right side",
+      "fever and right sided back pain",
+      "fever and kidney pain",
+      "using my blue inhaler every 2 hours",
+      "my inhaler isnt helping",
+      "fever and short of breath",
+      "temp is 39 and im out of breath",
+    ]);
+  });
+
+  test("a measured temperature of 38 or more counts as a fever", () => {
+    expectLevel("soon", ["temp is 38.4", "temperature of 39"]);
+  });
+
+  test("harmless sentences that look similar are not raised", () => {
+    expectLevel("routine", [
+      "im a bit confused about when to take my vitamins",
+      "a swollen face from a tooth, no fever",
+      "my leg went numb after sitting cross legged, it's fine now",
+      "my chest feels fine, just a runny nose",
+      "i walked down the stairs and feel fine",
+      "the stairs are steep",
+      "my shoulder hurts after the gym",
+      "my back aches after moving furniture",
+      "i walked up the stairs and got out of breath",
+    ]);
+    // A rash that lasts is still a rash to see a doctor about, but the glass test was not described.
+    assert.equal(levelOf("a rash that doesnt fade after a week, no fever"), "soon");
+  });
+});
