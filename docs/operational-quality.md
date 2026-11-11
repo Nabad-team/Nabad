@@ -28,6 +28,15 @@ An authorized database operator can run this from backend, using the existing da
 
 Choose 1 through 90 days. Output is aggregate JSON, with totals and daily rows including zero-activity days. This is an operator command, not an API exposing team statistics to patients. MONGO_URI and optional MONGO_DB_NAME stay in the operator's environment; never paste them into Jira or GitHub. No new secret is required. USAGE_ANALYTICS_ENABLED=false disables new counting.
 
+### Team dashboard (SCRUM-311)
+
+The same totals are on the **Team dashboard** at `/team-dashboard` for team members, so nobody needs database access to follow adoption. It shows, for the last 7, 30 or 90 UTC days: symptom checks started, assessments completed, follow-up rounds and new accounts, as totals, a chart per day and a table of every day.
+
+- **Who can see it:** signed-in accounts whose **verified** email is listed in `TEAM_DASHBOARD_EMAILS` on the API (comma-separated, any case). Unset means nobody. Everyone else gets the same 404 as a page that doesn't exist, and the page says it is for the team. An unverified account can't get in by signing up with a team member's address. Changing the list is an environment change: ask Gerges.
+- **What it sends:** `GET /api/usage/summary?days=7|30|90` returns only the UTC dates, the four counts per day and their totals. New accounts are counted from account creation dates alone; no id, name, email, symptom, urgency level or health record is read into the answer. Each view logs `team_dashboard_viewed` with the viewer's account id, never what they saw.
+- **What the numbers mean:** requests, not unique people (as above). The page is not linked from the patient navigation and is kept out of search engines (`robots.txt`).
+- **Tests:** `backend/tests/teamDashboard.test.js` (access, counts, quiet days, nothing personal in the answer or logs) and `frontend/__tests__/teamDashboard.test.js`.
+
 ## Availability resilience
 
 The shared API client now cancels ordinary requests after 30 seconds and slower AI/report/document/prep requests after 120 seconds. The deadline also covers reading the response body. Caller cancellation is preserved. No write is automatically retried: a response timeout does not prove a save failed. Existing backend status codes and request reference IDs remain available.
