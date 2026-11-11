@@ -8,6 +8,8 @@ Nabad has three layers of automated tests. All three run on every pull request t
 | Frontend | [frontend/\_\_tests\_\_](../frontend/__tests__) | Jest and React Testing Library, in jsdom | Pages and components on their own, with the API mocked |
 | End-to-end | [tests/test_nabad.py](../tests/test_nabad.py) | Python `unittest` and Selenium, in Chrome | The whole app as a user sees it: the real frontend, API, database and email, started with Docker Compose |
 
+Security scanning is separate: OWASP ZAP scans a Docker Compose copy of the app on every pull request (not a required check yet), and does a passive weekly scan of staging. See [security-scanning.md](./security-scanning.md).
+
 ## Backend and frontend
 
 ```bash

@@ -28,3 +28,6 @@ loadtest/jmeter/users.csv
 __pycache__/
 *.pyc
 tests/artifacts/
+
+# Full OWASP ZAP reports from local scans (docs/security-scanning.md). Never commit or upload them.
+security/zap/reports/

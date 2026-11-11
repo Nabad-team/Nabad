@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const HealthFact = require("../models/HealthFact");
 const { CATEGORIES, SINGLE_CATEGORIES } = HealthFact;
 const { readValue, slotFor, ageText, loadHealthProfile } = require("../healthProfile");

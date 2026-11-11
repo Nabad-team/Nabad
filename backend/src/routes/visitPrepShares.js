@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const express = require("express");
 const mongoose = require("mongoose");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 const { requireAuth } = require("../middleware/authMiddleware");
 const { resolveProfile, profileView } = require("../middleware/profileAccess");
 const VisitPrepShare = require("../models/VisitPrepShare");

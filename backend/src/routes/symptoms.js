@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../rateLimit");
 
 const SymptomRecord = require("../models/SymptomRecord");
 const { LEVELS, classifyUrgency } = require("../triage/urgency");

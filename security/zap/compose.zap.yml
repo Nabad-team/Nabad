@@ -1,0 +1,45 @@
+# OWASP ZAP for the PR security scan (docs/security-scanning.md). Layered on top of docker-compose.yml:
+#
+#   ZAP_API_KEY=<random> docker compose -f docker-compose.yml -f security/zap/compose.zap.yml up -d
+#
+# ZAP joins the app's private network and scans http://frontend:3000, the same copy of the app the Selenium job
+# uses: local MongoDB, email to Mailpit, no AI provider configured. It never reaches staging, production, Brevo or
+# Gemini. Its API is published on 127.0.0.1 only, and every call needs ZAP_API_KEY.
+
+services:
+  backend:
+    environment:
+      # The scan's test user signs in with a password only, so ZAP can reuse one session cookie.
+      TWO_FACTOR_ON_SIGNUP: "false"
+      # Thousands of scan requests must not each call Have I Been Pwned.
+      PWNED_PASSWORDS_CHECK: "off"
+      # Every rate limit x1000, so the active scan tests the endpoints instead of mostly getting 429s.
+      # Only allowed locally: the API refuses to start with it on staging or production (backend/src/rateLimit.js).
+      SECURITY_SCAN_RELAXED_RATE_LIMITS: "true"
+
+  zap:
+    # ZAP 2.17.0, the stable build of 2026-10-26 (ghcr.io, so no Docker Hub login is needed for this one).
+    # Upstream moves the 2.17.0 tag to each rebuild; the digest is what pins it. See docs/docker.md.
+    image: ghcr.io/zaproxy/zaproxy:2.17.0@sha256:030d3df57735dacbb83464854758e674dd9ad01d79d12a129a8e58b1fd384238
+    profiles: [zap]
+    # -silent: no update checks, news or add-on downloads, so the pinned image is exactly what runs.
+    command:
+      - zap.sh
+      - -daemon
+      - -silent
+      - -host
+      - 0.0.0.0
+      - -port
+      - "8090"
+      - -config
+      - api.key=${ZAP_API_KEY:?Set ZAP_API_KEY to a random value}
+      - -config
+      - api.addrs.addr.name=.*
+      - -config
+      - api.addrs.addr.regex=true
+    volumes:
+      # Full reports, only when you ask for them locally (--report). Git-ignored; CI never writes or uploads them.
+      - ./security/zap/reports:/zap/wrk:rw
+    networks: [nabad]
+    ports:
+      - "127.0.0.1:8090:8090"

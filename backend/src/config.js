@@ -1,3 +1,5 @@
+const { relaxedForScan } = require("./rateLimit");
+
 // Production must not boot half-configured (e.g. password reset email silently broken).
 const PRODUCTION_REQUIRED = ["MONGO_URI", "JWT_SECRET", "MONGO_DB_NAME", "CLIENT_ORIGIN", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM", "GOOGLE_REDIRECT_URI", "TWO_FACTOR_CODE_SECRET"];
 // Staging (APP_ENV=staging, test data only) needs the same secrets, except Google sign-in, which stays off there
@@ -61,6 +63,8 @@ function loadConfig(env = process.env) {
   }
   if (![undefined, "", "true", "false"].includes(env.TWO_FACTOR_ON_SIGNUP)) throw new Error('TWO_FACTOR_ON_SIGNUP must be "true" or "false".');
   if (![undefined, "", "on", "off"].includes(env.PWNED_PASSWORDS_CHECK)) throw new Error('PWNED_PASSWORDS_CHECK must be "on" or "off".');
+  // The PR security scan loosens every rate limit; never on staging or production (rateLimit.js throws for those).
+  relaxedForScan(env);
   const trustProxy = Number(env.TRUST_PROXY || 0);
   if (!Number.isInteger(trustProxy) || trustProxy < 0) throw new Error("TRUST_PROXY must be a whole number of proxy hops.");
   // Writes (POST, PUT, PATCH, DELETE) are only accepted from these origins (app.js).

@@ -1,0 +1,30 @@
+# Paths the weekly staging scan never requests (docs/security-scanning.md). One regex per line, matched against
+# the full URL. The scan is passive (GET only, no forms), but the spider finds API paths in the JavaScript bundles,
+# so anything that could send email or call the AI is excluded outright.
+#
+# Email: staging shares production's Brevo account and its 300 emails a day (docs/environments.md).
+# Sign-up sends a verification email.
+.*/api/auth/signup.*
+# Verification email resend.
+.*/api/auth/verify-email.*
+# Password reset email.
+.*/api/auth/forgot-password.*
+.*/api/auth/reset-password.*
+# Sign-in sends 2FA codes and lockout alerts; the 2FA endpoints send codes.
+.*/api/auth/login.*
+.*/api/auth/2fa/.*
+# Care circle invitations are emailed.
+.*/api/care-circle.*
+# Every data export emails a "your data was downloaded" notice.
+.*/api/account/.*
+# A symptom check can trigger a care circle alert email.
+.*/api/symptoms.*
+#
+# AI: staging's Gemini key has its own small free quota.
+# Symptom triage (rules and AI assessment).
+.*/api/triage/.*
+# Health assistant chat, report analysis and prescription photo reading.
+.*/api/reports/.*
+#
+# Leaves the site: Google sign-in redirects to Google.
+.*/api/auth/google.*
