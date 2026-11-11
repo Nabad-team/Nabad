@@ -22,6 +22,7 @@ import {
 } from "../lib/medicationApi";
 import { formatDate, todayString } from "../lib/dates";
 import useSearchTarget from "../lib/useSearchTarget";
+import PrescriptionScan from "../components/PrescriptionScan";
 
 // Same limits as the backend (models/Medication.js), so the browser stops overlong text before sending it.
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
@@ -142,7 +143,7 @@ export default function MedicationsPage() {
   const [medications, setMedications] = useState(null);
   useSearchTarget(medications, "medication");
   const [loadError, setLoadError] = useState("");
-  // null, "add", or the id of the medication being edited. Only one form is open at a time.
+  // null, "add", "prescription" (SCRUM-146), or the id of the medication being edited. Only one form is open at a time.
   const [editing, setEditing] = useState(null);
   const [toDelete, setToDelete] = useState(null);
   const [busyId, setBusyId] = useState(null);
@@ -188,6 +189,13 @@ export default function MedicationsPage() {
     await addMedication(profileId, fields);
     setEditing(null);
     setNotice(`${fields.name} was added to ${listName}.`);
+    await load();
+  }
+
+  // SCRUM-146: the medicines read from a prescription were saved.
+  async function handlePrescriptionDone(message) {
+    setEditing(null);
+    setNotice(message);
     await load();
   }
 
@@ -305,15 +313,18 @@ export default function MedicationsPage() {
         <>
           {editing === "add" ? (
             <MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} />
+          ) : editing === "prescription" ? (
+            <PrescriptionScan profileId={profileId} listName={listName} onDone={handlePrescriptionDone} onCancel={() => setEditing(null)} />
           ) : (
             <div className="medications-actions">
               <Button onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>
+              <Button variant="secondary" onClick={() => open("prescription")}>{simplified ? "Add from a prescription photo" : "Add from a prescription"}</Button>
               <Button variant="secondary" href="/appointments">View medication calendar</Button>
               <Button variant="secondary" href="/medication-overview">Medication overview</Button>
             </div>
           )}
 
-          {medications.length === 0 && editing !== "add" && (
+          {medications.length === 0 && editing !== "add" && editing !== "prescription" && (
             <EmptyState illustration={<MedicineBox size="5rem" />} title="No medications yet.">
               {forSelf ? "Add the ones you take so they're ready for your doctor." : `Add the ones ${name} takes so they're ready for their doctor.`}
             </EmptyState>

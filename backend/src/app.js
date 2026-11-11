@@ -105,6 +105,8 @@ function createApp() {
   app.use("/api/emergency-card", require("./routes/emergencyCard"));
   app.use("/api/visit-prep", require("./routes/visitPrep"));
   app.use("/api/visit-prep-shares", require("./routes/visitPrepShares"));
+  // SCRUM-146: a prescription photo, read into the medication list.
+  app.use("/api/prescriptions", require("./routes/prescriptions"));
 
   app.use(
     express.json({

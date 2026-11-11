@@ -4133,3 +4133,47 @@ select.input {
 .usage-table thead th {
   color: var(--color-text-muted);
 }
+
+/* ---------- Add medicines from a prescription (SCRUM-146) ---------- */
+
+.prescription-scan {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.prescription-scan > h2 {
+  margin-top: 0;
+  font-size: var(--text-xl);
+}
+
+.prescription-items {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prescription-item fieldset {
+  margin: 0;
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.prescription-item__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.prescription-item__change {
+  margin: var(--space-2) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
