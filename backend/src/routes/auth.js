@@ -50,8 +50,27 @@ const byAccountAndIp = (req) => `${req.clientIp || "unknown"}|${accountKey(req)}
 const authIpCap = rateLimit({ windowMs: AUTH_WINDOW_MS, max: AUTH_PER_IP_CAP, message: { error: "Too many attempts from this network. Try again later." } });
 const loginLimiter = [authIpCap, rateLimit({ windowMs: AUTH_WINDOW_MS, max: 20, keyGenerator: byAccountAndIp, message: { error: "Too many login attempts. Try again later." } })];
 const codeLimiter = [authIpCap, rateLimit({ windowMs: AUTH_WINDOW_MS, max: 20, keyGenerator: byAccountAndIp, message: { error: "Too many verification attempts. Try again later." } })];
-const resetLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many reset attempts. Try again later." } });
-const signupLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: "Too many signup attempts. Try again later." } });
+// Sign-up and password reset send email, so they are strict per email address (whatever the network, so nobody can
+// flood one inbox) and have a higher cap per network, so a whole class on one campus IP can sign up at the demo.
+// The network caps also bound how much of the shared Brevo budget (300 emails a day) one network can use.
+const HOUR_MS = 60 * 60 * 1000;
+const SIGNUP_PER_EMAIL = 3;
+const SIGNUP_PER_NETWORK = 60;
+const RESET_PER_EMAIL = 3;
+const RESET_PER_NETWORK = 30;
+const byEmail = (req) => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase().slice(0, 254) : "";
+  return email ? `email:${email}` : `none:${req.clientIp || "unknown"}`;
+};
+const signupLimiter = [
+  rateLimit({ windowMs: HOUR_MS, max: SIGNUP_PER_NETWORK, message: { error: "Too many sign-ups from this network. Try again later." } }),
+  rateLimit({ windowMs: HOUR_MS, max: SIGNUP_PER_EMAIL, keyGenerator: byEmail, message: { error: "Too many signup attempts. Try again later." } }),
+];
+const resetNetworkCap = rateLimit({ windowMs: HOUR_MS, max: RESET_PER_NETWORK, message: { error: "Too many reset attempts from this network. Try again later." } });
+const forgotLimiter = [resetNetworkCap,
+  rateLimit({ windowMs: HOUR_MS, max: RESET_PER_EMAIL, keyGenerator: byEmail, message: { error: "Too many reset attempts. Try again later." } })];
+// Setting the new password carries a reset token, not an email: the network cap only (the token itself can't be guessed).
+const resetLimiter = [resetNetworkCap];
 const verifyLimiter = [authIpCap, rateLimit({ windowMs: AUTH_WINDOW_MS, max: 20, keyGenerator: byAccountAndIp, message: { error: "Too many verification attempts. Try again later." } })];
 const googleLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: "Too many Google sign-in attempts. Try again later." } });
 
@@ -350,7 +369,7 @@ async function sendPasswordReset(email, transport) {
   await transport.sendMail({ from: process.env.MAIL_FROM || process.env.EMAIL_FROM, to: user.email, subject: "Reset your Nabad password", text: "Use this link within one hour to reset your password: " + origin + "/reset-password?token=" + token });
 }
 
-router.post("/forgot-password", resetLimiter, (req, res) => {
+router.post("/forgot-password", forgotLimiter, (req, res) => {
   const generic = { message: "If an account matches that email, reset instructions will be sent." };
   const email = String(req.body.email || "").trim().toLowerCase();
   if (!validator.isEmail(email)) return res.json(generic);

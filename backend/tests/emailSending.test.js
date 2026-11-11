@@ -83,7 +83,8 @@ test("SMTP uses 10 second timeouts and failures log the error code but never the
 });
 
 test("reset tokens last one hour, are single-use, and a new request invalidates the previous one", async (t) => {
-  const account = await user();
+  // Its own address: reset emails are limited to 3 per address an hour, and other tests here reset elias@ too.
+  const account = await user("elias.tokens@example.test");
   t.mock.method(nodemailer, "createTransport", () => ({ sendMail: async message => { sent.push(message); } }));
   await request("/auth/forgot-password", { email: account.email }, "10.0.0.4");
   await waitFor(() => sent.length === 1);

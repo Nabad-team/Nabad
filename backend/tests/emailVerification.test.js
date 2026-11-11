@@ -27,7 +27,11 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}/api`;
 }, { timeout: 240000 });
 after(async () => { server?.close(); await mongoose.disconnect(); await mongod?.stop(); delete process.env.API_PROXY_SECRET; });
+// Each test signs Rana up with her own address: sign-up and reset allow 3 tries per address an hour (src/routes/auth.js).
+let rana = "";
+let testNumber = 0;
 beforeEach(async (t) => {
+  rana = `rana.${++testNumber}@example.test`;
   await User.deleteMany({}); sent = [];
   t.mock.method(nodemailer, "createTransport", () => ({ sendMail: async (message) => { sent.push(message); } }));
 });
@@ -51,7 +55,7 @@ const tokenFrom = (message) => message.text.match(/verify-email\?token=([a-f0-9]
 const cookieFrom = (res) => res.headers.get("set-cookie").split(";")[0].split("=")[1];
 const cookieFor = (account) => jwt.sign({ sub: String(account._id), ver: account.authVersion || 0 }, process.env.JWT_SECRET, { expiresIn: "15m" });
 async function signupRana() {
-  const res = await call("/auth/signup", { body: { name: "Rana", email: "rana@example.test", password } });
+  const res = await call("/auth/signup", { body: { name: "Rana", email: rana, password } });
   assert.equal(res.status, 201);
   await waitFor(() => sent.length === 1);
   return { res, token: tokenFrom(sent[0]), cookie: cookieFrom(res) };
@@ -60,9 +64,9 @@ async function signupRana() {
 test("signup creates an unverified account and emails a verification link", async () => {
   const { res, token } = await signupRana();
   assert.equal(res.body.user.emailVerified, false);
-  assert.equal(sent[0].to, "rana@example.test");
+  assert.equal(sent[0].to, rana);
   assert.match(sent[0].text, /http:\/\/localhost:3000\/verify-email\?token=/);
-  const saved = await User.findOne({ email: "rana@example.test" });
+  const saved = await User.findOne({ email: rana });
   assert.equal(saved.emailVerified, false);
   // Only the hash is stored, never the token from the email.
   assert.notEqual(saved.emailVerifyTokenHash, token);
@@ -86,9 +90,9 @@ test("a link works only once", async () => {
 
 test("an expired link is rejected and the email stays unverified", async () => {
   const { token } = await signupRana();
-  await User.updateOne({ email: "rana@example.test" }, { $set: { emailVerifyExpires: new Date(Date.now() - 1000) } });
+  await User.updateOne({ email: rana }, { $set: { emailVerifyExpires: new Date(Date.now() - 1000) } });
   assert.equal((await call("/auth/verify-email", { body: { token } })).status, 400);
-  assert.equal((await User.findOne({ email: "rana@example.test" })).emailVerified, false);
+  assert.equal((await User.findOne({ email: rana })).emailVerified, false);
 });
 
 test("wrong, malformed and missing tokens are rejected", async () => {
@@ -96,17 +100,17 @@ test("wrong, malformed and missing tokens are rejected", async () => {
   for (const body of [{ token: "a".repeat(64) }, { token: "not-a-token" }, { token: 123 }, {}]) {
     assert.equal((await call("/auth/verify-email", { body })).status, 400, JSON.stringify(body));
   }
-  assert.equal((await User.findOne({ email: "rana@example.test" })).emailVerified, false);
+  assert.equal((await User.findOne({ email: rana })).emailVerified, false);
 });
 
 test("resend issues a new link to the account's own address and the old link stops working", async () => {
   const { token: oldToken, cookie } = await signupRana();
-  await User.updateOne({ email: "rana@example.test" }, { $set: { emailVerifyLastSent: new Date(Date.now() - 61 * 1000) } });
+  await User.updateOne({ email: rana }, { $set: { emailVerifyLastSent: new Date(Date.now() - 61 * 1000) } });
   // An email in the body is ignored: the link only ever goes to the signed-in account's address.
   const res = await call("/auth/verify-email/resend", { cookie, body: { email: "attacker@example.test" } });
   assert.equal(res.status, 200);
   await waitFor(() => sent.length === 2);
-  assert.equal(sent[1].to, "rana@example.test");
+  assert.equal(sent[1].to, rana);
   assert.equal((await call("/auth/verify-email", { body: { token: oldToken } })).status, 400);
   assert.equal((await call("/auth/verify-email", { body: { token: tokenFrom(sent[1]) } })).status, 200);
 });
@@ -135,11 +139,11 @@ test("Google accounts count as verified even if created before this feature", as
 
 test("completing a password reset also verifies the email (the link proves inbox access)", async () => {
   await signupRana();
-  await call("/auth/forgot-password", { body: { email: "rana@example.test" } });
+  await call("/auth/forgot-password", { body: { email: rana } });
   await waitFor(() => sent.length === 2);
   const resetToken = sent[1].text.match(/token=([a-f0-9]{64})/)[1];
   assert.equal((await call("/auth/reset-password", { body: { token: resetToken, password: "Another strong password 456!" } })).status, 200);
-  assert.equal((await User.findOne({ email: "rana@example.test" })).emailVerified, true);
+  assert.equal((await User.findOne({ email: rana })).emailVerified, true);
 });
 
 test("signup still succeeds when email is not configured; resend then answers 503", async () => {

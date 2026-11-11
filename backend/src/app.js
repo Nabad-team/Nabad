@@ -24,11 +24,12 @@ function createApp() {
 
   app.use(clientIp({ secret: config.proxySecret, required: config.proxyRequired, hosted: config.secure }));
 
-  // Staging and local only: the caller's own IP as the API resolved it, to check the setup without reading logs.
-  // Never in production. Shows nothing but the caller's own address.
-  if (config.environment !== "production") {
-    app.get("/api/health/client-ip", (req, res) => res.json({ clientIp: req.clientIp, viaAppProxy: req.viaAppProxy }));
-  }
+  // Checks the client-IP setup without reading logs (docs/environments.md, "Client IP"). Staging and local: the
+  // caller's own IP as the API resolved it. Production: only whether the request came through our proxy with the
+  // right secret, never an address, so the secrets can be checked before API_PROXY_REQUIRED is turned on.
+  app.get("/api/health/client-ip", (req, res) => res.json(config.environment === "production"
+    ? { viaAppProxy: req.viaAppProxy }
+    : { clientIp: req.clientIp, viaAppProxy: req.viaAppProxy }));
 
   app.use((req, res, next) => {
     res.setHeader(

@@ -162,3 +162,43 @@ test("the client-ip check shows only the caller's own resolved address (staging 
   const direct = await fetch(`${api.url}/api/health/client-ip`, { headers: FAKES });
   assert.deepEqual(await direct.json(), { clientIp: "127.0.0.1", viaAppProxy: false });
 });
+
+// ---- Sign-up and password reset: strict per email, a higher cap per network -------------------------------------
+
+function post(path, body, headers) {
+  return fetch(`${api.url}/api/auth${path}`, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...headers },
+    body: JSON.stringify(body) });
+}
+// A weak password is refused before anything is saved or sent, but still counts towards the limits.
+const signup = (email, headers) => post("/signup", { name: "Demo Student", email, password: "short" }, headers);
+
+test("sign-up: 3 tries per email address, even from different networks", async () => {
+  const email = `same${network}@example.test`;
+  for (let i = 0; i < 3; i++) assert.equal((await signup(email, viaProxy(ipOf(network * 10 + i)))).status, 400);
+  const blocked = await signup(email, viaProxy(ipOf(network * 10 + 5)));
+  assert.equal(blocked.status, 429);
+  assert.match((await blocked.json()).error, /Too many signup attempts/);
+});
+
+test("sign-up: a whole class of 60 on one network can sign up, the 61st sign-up from it waits", async () => {
+  const campus = ipOf(network * 10);
+  for (let i = 0; i < 60; i++) assert.notEqual((await signup(`class${network}-${i}@example.test`, viaProxy(campus))).status, 429, `student ${i + 1}`);
+  const blocked = await signup(`late${network}@example.test`, viaProxy(campus));
+  assert.equal(blocked.status, 429);
+  assert.match((await blocked.json()).error, /Too many sign-ups from this network/);
+  assert.notEqual((await signup(`late${network}@example.test`, viaProxy(ipOf(network * 10 + 1)))).status, 429);
+});
+
+test("password reset: 3 emails per address, 30 reset requests per network", async () => {
+  const campus = ipOf(network * 10);
+  const forgot = (email, ip) => post("/forgot-password", { email }, viaProxy(ip));
+  // No mail server in tests, so these answer 503; the limits count them all the same.
+  for (let i = 0; i < 3; i++) assert.notEqual((await forgot(`reset${network}@example.test`, ipOf(network * 10 + 1 + i))).status, 429);
+  assert.equal((await forgot(`reset${network}@example.test`, ipOf(network * 10 + 5))).status, 429);
+  for (let i = 0; i < 30; i++) assert.notEqual((await forgot(`r${network}-${i}@example.test`, campus)).status, 429, `request ${i + 1}`);
+  const blocked = await forgot(`other${network}@example.test`, campus);
+  assert.equal(blocked.status, 429);
+  assert.match((await blocked.json()).error, /Too many reset attempts from this network/);
+  // Setting the new password shares the network's reset cap.
+  assert.equal((await post("/reset-password", { token: "0".repeat(64), password: "x" }, viaProxy(campus))).status, 429);
+});
