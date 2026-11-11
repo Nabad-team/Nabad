@@ -20,6 +20,7 @@ Disallow: /medication-overview
 Disallow: /appointments
 Disallow: /water-and-sleep
 Disallow: /symptoms
+Disallow: /my-history
 Disallow: /profile
 Disallow: /security
 Disallow: /notifications

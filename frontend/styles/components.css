@@ -4177,3 +4177,58 @@ select.input {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
+
+/* ---------- Ask about my history (SCRUM-156) ---------- */
+
+.history-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.history-answer {
+  margin-top: var(--space-6);
+}
+
+.history-answer__question {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.history-answer__text {
+  font-size: var(--text-lg);
+}
+
+.history-records {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.history-record {
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.history-record p {
+  margin: var(--space-1) 0;
+}
+
+.history-record__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.history-record__date {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.history-record__title {
+  font-weight: var(--weight-semibold);
+}

@@ -210,6 +210,10 @@ The first urgent or emergency result of a check alerts, even if follow-up questi
 
 The model can raise the urgency but never lower it. Self-care steps are only shown for routine results. Only the outcome code and duration are logged, never the symptoms or the model's words. Each account can run 30 AI assessments per 15 minutes. The unit tests use a fake model, so they need no API key.
 
+### Questions about your history
+
+`POST /api/history/ask` answers questions such as "When did I last have a headache?" from the profile's own symptom checks, appointments, medications and documents, with an optional AI-written answer. See [Asking questions about your own history](./history-questions.md).
+
 ### Prescription photos
 
 `POST /api/prescriptions/read` reads the medicines on a prescription photo or PDF with the configured model, and `POST /api/prescriptions/apply` adds the ones the person confirms to the medication list. See [Adding medicines from a prescription photo](./prescription-photos.md).

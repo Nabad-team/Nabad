@@ -809,6 +809,8 @@ export default function SymptomsPage() {
 
       <section className="symptom-history section" aria-labelledby="symptom-history-heading">
         <h2 id="symptom-history-heading">Previous symptom checks</h2>
+        {/* SCRUM-156 */}
+        <p><a href="/my-history">Ask a question about your history</a>, for example when you last had a symptom.</p>
         {history.length === 0 ? <p className="text-muted">Your saved conversations will appear here.</p> : (
           <ul className="symptom-history__list">
             {history.slice(0, 10).map((record) => (

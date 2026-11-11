@@ -16,6 +16,7 @@ module.exports = [
   ["Security", "/security", "password two factor authentication"],
   ["Care circle", "/care-circle", "caregiver family invitations"],
   ["Safety check", "/symptoms", "symptoms emergency triage"],
+  ["Ask about my history", "/my-history", "past symptoms visits recall questions when last time"],
   ["Emergency information card", "/emergency-card", "print medical card"],
   ["Privacy Policy", "/privacy", "personal data"],
 ];
