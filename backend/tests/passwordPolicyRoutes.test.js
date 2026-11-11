@@ -1,5 +1,6 @@
 // The password rules as the signup and reset-password routes apply them. Every request comes from its own
-// client IP, so the real signup and reset rate limits (5 per hour) stay on without capping how much is covered.
+// client IP and (by default) its own address, so the real signup and reset rate limits stay on without capping
+// how much is covered.
 const { test, before, after, beforeEach, mock } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
@@ -29,7 +30,10 @@ async function post(path, body) {
   const response = await fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.CLIENT_ORIGIN, ...asVisitor(`198.51.100.${++ip}`) }, body: JSON.stringify(body) });
   return { status: response.status, body: await response.json() };
 }
-const signup = (password, name = "Sam Rivers", email = "sam.rivers@example.test") => post("/auth/signup", { name, email, password });
+// A new address each time by default: sign-up allows 3 tries per address an hour (src/routes/auth.js), and these
+// tests are about the password rules, not that limit.
+let signups = 0;
+const signup = (password, name = "Sam Rivers", email = `sam.rivers.${++signups}@example.test`) => post("/auth/signup", { name, email, password });
 // A user with a valid reset link; returns the link token.
 async function resetLink({ name = "Sam Rivers", email = "sam.rivers@example.test", passwordHash } = {}) {
   const token = crypto.randomBytes(32).toString("hex");

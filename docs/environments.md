@@ -103,9 +103,9 @@ How it works instead:
    - With `API_PROXY_REQUIRED=true`, every request without the right secret gets **403**, except `GET /api/health` and `/api/health/ready`, which Render's health check uses. Nobody can bypass Vercel by calling `onrender.com` directly.
 3. **Locally** (Docker Compose, `npm run dev`), there is no secret, so the API uses the socket address and ignores every IP header.
 
-Sign-in, 2FA codes and email verification count **per account and network** (20 per 15 minutes), plus **200 per 15 minutes per network**. A whole room on one campus IP can sign in, while one network still can't try many accounts.
+Sign-in, 2FA codes and email verification count **per account and network** (20 per 15 minutes), plus **200 per 15 minutes per network**. Sign-up and password reset send email, so they're strict **per email address**, whatever the network: 3 sign-ups and 3 reset emails per address per hour. They also have a higher cap **per network**: 60 sign-ups an hour, and 30 reset requests an hour, shared with setting the new password. A whole class on one campus IP can sign in and sign up, while one network still can't try many accounts or use up the shared Brevo budget (300 emails a day).
 
-**Check it:** on staging (and locally), `GET /api/health/client-ip` returns your own IP as the API sees it, and `viaAppProxy: true` when it came through our proxy. It's not available in production.
+**Check it:** `GET /api/health/client-ip`. On staging (and locally) it returns your own IP as the API sees it, and `viaAppProxy: true` when the request came through our proxy with the right secret. In production it returns **only** `{"viaAppProxy": true}` or `false`, never an address, so you can check that the production secrets match before turning enforcement on.
 
 ```sh
 curl -s https://nabad-staging.vercel.app/api/health/client-ip \
@@ -121,8 +121,8 @@ Each step works whatever the order of the others. Until the last step, a missing
 1. Generate one value per environment with `openssl rand -hex 32`.
 2. Set it in **Vercel** (Preview for staging, Production for production; a server variable, never `NEXT_PUBLIC_`) **and** on **Render** (`nabad-backend-staging`, or `nabad-backend-nhv5`).
 3. Deploy the code: merging to `main` deploys staging, and a release deploys production. Vercel only applies an environment variable to deployments made after it was set, so redeploy on Vercel if you set it after the last deploy.
-4. Check with the `curl` above (staging), or log in on production: sign-in works and the checks show your real IP.
-5. Only then set `API_PROXY_REQUIRED=true` on that Render service. From then on, direct requests to `onrender.com` get 403.
+4. Open `https://<site>/api/health/client-ip` in a browser (staging: also try the `curl` above). It must say `"viaAppProxy": true`. If it says `false`, the two values differ, or Vercel hasn't redeployed since the secret was set: fix that first. Also check that sign-in works.
+5. Only then set `API_PROXY_REQUIRED=true` on that Render service. From then on, direct requests to `onrender.com` get 403, the check included.
 
 To roll back, first remove `API_PROXY_REQUIRED` (back to the fallback), then the secrets.
 
