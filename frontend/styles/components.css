@@ -3981,3 +3981,155 @@ select.input {
     box-shadow: none !important;
   }
 }
+
+/* ---------- Team dashboard (SCRUM-311) ---------- */
+
+.usage-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+}
+
+.usage-range legend {
+  margin-bottom: var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
+/* Each option is a 44px tap target. */
+.usage-range__option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}
+
+.usage-period,
+.usage-note {
+  color: var(--color-text-muted);
+}
+
+.usage-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-4);
+  margin: var(--space-4) 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.usage-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  height: 100%;
+}
+
+.usage-total__value {
+  color: var(--color-primary-strong);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.1;
+}
+
+.usage-total__label {
+  font-weight: var(--weight-semibold);
+}
+
+.usage-total__help {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.usage-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-6);
+}
+
+.usage-chart {
+  margin: 0;
+}
+
+.usage-chart__title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+}
+
+.usage-chart__summary {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.usage-chart__max {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* The number of columns is set inline: 7, 30 or 90 days. */
+.usage-chart__area {
+  display: grid;
+  gap: 0.0625rem;
+  height: 9rem;
+  border-top: 0.0625rem solid var(--color-border);
+  border-bottom: 0.0625rem solid var(--color-border-strong);
+}
+
+.usage-chart__column {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.usage-chart__column:hover {
+  background: var(--color-sunken);
+}
+
+.usage-chart__bar {
+  width: 100%;
+  max-width: 1.5rem;
+  min-height: 0.125rem;
+  background: var(--color-primary);
+  border-radius: 0.125rem 0.125rem 0 0;
+}
+
+.usage-chart__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.usage-table {
+  margin-top: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.usage-table summary {
+  padding-block: var(--space-3);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.usage-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.usage-table th,
+.usage-table td {
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  border-bottom: 0.0625rem solid var(--color-border);
+  text-align: left;
+  font-weight: var(--weight-regular);
+}
+
+.usage-table thead th {
+  color: var(--color-text-muted);
+}
