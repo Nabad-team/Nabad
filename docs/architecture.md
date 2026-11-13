@@ -9,6 +9,7 @@ Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express AP
 - Database backups and restore: [backups.md](./backups.md)
 - Staging and production, releasing: [environments.md](./environments.md); release log: [releases.md](./releases.md)
 - Rolling back a bad release: [rollback.md](./rollback.md)
+- Operations (services, access, secrets, what to do when something breaks): [operations.md](./operations.md)
 
 ## Production
 

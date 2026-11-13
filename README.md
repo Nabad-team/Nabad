@@ -12,6 +12,10 @@ Backend, frontend and Selenium end-to-end tests run on every pull request. [docs
 
 [docs/architecture.md](./docs/architecture.md) describes production (Vercel, Render, MongoDB Atlas, Brevo, Google sign-in, GitHub Actions) and local development, with diagrams, the backend modules and the security layers.
 
+## Operations
+
+[docs/operations.md](./docs/operations.md) lists every hosted service with its dashboard, who has access, where each secret lives (names only), what to do when something breaks, and our known limits.
+
 ## Deployment
 
 The frontend is live at **https://nabad-psi.vercel.app** (Vercel project `nabad`).
