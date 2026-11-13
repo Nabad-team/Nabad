@@ -39,6 +39,15 @@ test("directory is readable and only exposes public facility fields", async () =
   assert.ok(result.body.providers.every(p => p.id && p.sources.length && !p._id));
   assert.equal((await get("?q=Nini")).body.providers[0].emergency24h, null);
 });
+test("laboratory and imaging types can be filtered with existing service and location filters", async () => {
+  const laboratories = await get("?type=laboratory&service=laboratory");
+  assert.deepEqual(laboratories.body.providers.map(p => p.id).sort(), ["hajj-medical-laboratories", "wakim-laboratory-antelias"]);
+  const imaging = await get("?type=imaging-center&city=jounieh&service=mri");
+  assert.deepEqual(imaging.body.providers.map(p => p.id), ["wakim-medical-center-jounieh"]);
+  assert.equal(imaging.body.providers[0].latitude, null);
+  assert.equal((await get("?type=imaging-center&emergency24h=true")).body.total, 0);
+  assert.equal((await get("?type[$ne]=hospital")).status, 400);
+});
 test("schema rejects invalid coordinates and hours", async () => {
   const fixture = require("../data/providers")[0];
   await assert.rejects(new Provider({ ...fixture, latitude: 91 }).validate());

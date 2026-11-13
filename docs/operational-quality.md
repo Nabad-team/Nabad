@@ -56,7 +56,8 @@ The document remains lang=en and symptom speech recognition remains en-US. Calen
 ## Bug tracking in the existing Jira project
 
 Board: https://nabdteam.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog
-Story: https://nabdteam.atlassian.net/browse/SCRUM-184
+Sprint 4 story: https://nabdteam.atlassian.net/browse/SCRUM-322
+Previous story: https://nabdteam.atlassian.net/browse/SCRUM-184
 
 An authorized team member should:
 1. Search existing Jira bugs by feature, error reference and reproducible behavior before creating another ticket.
@@ -75,6 +76,7 @@ Suggested bug template:
     Actual result:
     Sanitized request reference or screenshot:
     Existing related issue:
+    GitHub issue or pull request URL:
     Regression test:
     Fix PR and live verification:
 

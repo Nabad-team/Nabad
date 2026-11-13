@@ -1,17 +1,54 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProvidersPage from "../pages/providers";
-import { getProviders, getProviderFavorites, setProviderFavorite } from "../lib/providerApi";
+import { getProviders, getProviderFavorites, setProviderFavorite, getProviderDrivingMinutes } from "../lib/providerApi";
 let mockSignedIn = true;
 let mockRouter = { isReady: true, query: {}, asPath: "/providers", push: jest.fn() };
 jest.mock("next/router", () => ({ useRouter: () => mockRouter }));
 jest.mock("../components/SessionTimeout", () => ({ useSignedIn: () => mockSignedIn }));
-jest.mock("../lib/providerApi", () => ({ getProviders: jest.fn(), getProviderFavorites: jest.fn(), setProviderFavorite: jest.fn() }));
+jest.mock("../lib/providerApi", () => ({ getProviders: jest.fn(), getProviderFavorites: jest.fn(), setProviderFavorite: jest.fn(), getProviderDrivingMinutes: jest.fn() }));
 jest.mock("../components/ProfileHeader", () => () => <header>Profile</header>);
 const provider = { id: "clinic", name: "Test Clinic", type: "clinic", city: "Beirut", address: "Clinic Street",
   latitude: 33.9, longitude: 35.5, services: ["mri"], specialties: ["pediatrics"], phone: "+9611000000", sources: ["https://example.org"], verifiedAt: "2026-10-15T00:00:00Z" };
 const result = { providers: [provider], total: 1, specialties: ["pediatrics"], cities: ["Beirut"] };
 beforeEach(() => { jest.resetAllMocks(); mockSignedIn = true; mockRouter = { isReady: true, query: {}, asPath: "/providers", push: jest.fn() }; getProviders.mockResolvedValue(result); getProviderFavorites.mockResolvedValue([]); setProviderFavorite.mockResolvedValue({}); });
+
+test("public comparison keeps at most three facilities and lets users replace or clear them", async () => {
+  mockSignedIn = false;
+  const facilities = ["One", "Two", "Three", "Four"].map((name, index) => ({ ...provider, id: `clinic-${index}`, name }));
+  getProviders.mockResolvedValue({ ...result, providers: facilities, total: facilities.length });
+  const user = userEvent.setup();
+  render(<ProvidersPage />);
+  await user.click(await screen.findByRole("button", { name: "Compare One" }));
+  await user.click(screen.getByRole("button", { name: "Compare Two" }));
+  await user.click(screen.getByRole("button", { name: "Compare Three" }));
+  const comparison = screen.getByRole("region", { name: "Compare facilities" });
+  expect(within(comparison).getByText("3 of 3 facilities selected")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Compare Four" })).toBeDisabled();
+  await user.click(within(comparison).getByRole("button", { name: "Remove Two from comparison" }));
+  await user.click(screen.getByRole("button", { name: "Compare Four" }));
+  expect(within(comparison).getByRole("heading", { name: "Four" })).toBeInTheDocument();
+  expect(within(comparison).queryByRole("heading", { name: "Two" })).not.toBeInTheDocument();
+  await user.click(within(comparison).getByRole("button", { name: "Clear comparison" }));
+  expect(screen.queryByRole("region", { name: "Compare facilities" })).not.toBeInTheDocument();
+});
+
+test("driving estimates require an explicit request and never put the origin in the page URL", async () => {
+  const approximate = { ...provider, id: "approximate", name: "Approximate Clinic", locationApproximate: true };
+  getProviders.mockResolvedValue({ ...result, providers: [provider, approximate] });
+  getProviderDrivingMinutes.mockResolvedValue({ clinic: 12 });
+  const locate = jest.fn(success => success({ coords: { latitude: 33.9, longitude: 35.5 } }));
+  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: locate } });
+  const user = userEvent.setup();
+  render(<ProvidersPage />);
+  const estimate = await screen.findByRole("button", { name: "Estimate driving times" });
+  expect(locate).not.toHaveBeenCalled();
+  expect(getProviderDrivingMinutes).not.toHaveBeenCalled();
+  await user.click(estimate);
+  expect(await screen.findByText("About 12 min by car")).toBeInTheDocument();
+  expect(getProviderDrivingMinutes).toHaveBeenCalledWith({ lat: 33.9, lng: 35.5 }, ["clinic"], expect.any(AbortSignal));
+  expect(mockRouter.push).not.toHaveBeenCalled();
+});
 
 test("emergency routing asks for location, applies it immediately and identifies the closest capability match", async () => {
   mockRouter = { ...mockRouter, query: { emergencyNeeds: "cardiac" }, asPath: "/providers?emergencyNeeds=cardiac" };
@@ -60,7 +97,7 @@ test("lists providers and submits a specialty search", async () => {
   const user = userEvent.setup(); render(<ProvidersPage />);
   expect(await screen.findByRole("heading", { name: "Test Clinic" })).toBeInTheDocument();
   await user.selectOptions(screen.getByLabelText("Specialty"), "pediatrics");
-  await user.type(screen.getByLabelText("Search by hospital or clinic name"), "Test");
+  await user.type(screen.getByLabelText("Search by facility name"), "Test");
   await user.click(screen.getByRole("button", { name: "Search providers" }));
   await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ q: "Test", specialty: "pediatrics" }), expect.any(AbortSignal)));
   expect(ProvidersPage.requireSignIn).not.toBe(true);

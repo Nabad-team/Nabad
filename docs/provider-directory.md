@@ -10,11 +10,25 @@ Use `frontend/lib/providerFilters.js` to build links. Example:
 
 `/providers?specialty=emergency-medicine&emergency24h=true`
 
-Supported public URL fields: `q`, `specialty`, `service`, `city`, `governorate`,
+Supported public URL fields: `q`, `type`, `specialty`, `service`, `city`, `district`, `governorate`,
 `insurance`, `openNow`, `emergency24h`, `emergencyNeeds`, `favorites`, `page`. Boolean values are `true`/`false`.
 The directory restores these on load and browser back/forward navigation. GPS
 coordinates are intentionally kept out of shareable URLs; the API additionally
 accepts `lat`, `lng`, `radiusKm`, and `limit` for distance searches.
+
+Facility types are `hospital`, `clinic`, `laboratory`, and `imaging-center`.
+The diagnostic listings use published sources and a source-review date. A listing
+with a verified laboratory service can match that service filter regardless of
+facility type. The next general verification date is 180 days after the source
+review. Missing dates and overdue checks display a warning.
+
+The directory can show estimated driving minutes for the current page of
+non-emergency results after the visitor requests them. Set
+`OPENROUTESERVICE_API_KEY` in the backend to enable it. The request sends the
+visitor's location and verified destination coordinates to OpenRouteService.
+Coordinates are sent in a request body and kept out of shareable links. Results
+exclude live traffic. Missing routes and approximate facility pins have no
+estimate. The directory and directions remain usable if routing is unavailable.
 
 Emergency triage results keep `careTypeId=emergency-department` and additionally
 return `emergencyNeeds`, an allow-listed array chosen by the server from positive

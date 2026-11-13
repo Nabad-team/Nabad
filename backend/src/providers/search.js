@@ -6,11 +6,13 @@ const { openingStatus } = require("./hours");
 // resolve text matches to IDs, then let the geospatial index order/filter those IDs.
 async function searchProviders(query, favorites, now = new Date()) {
   const match = {};
+  if (query.type) match.type = query.type;
   for (const key of ["specialty", "service"]) if (query[key]) match[key === "specialty" ? "specialties" : "services"] = query[key];
   for (const key of ["city", "district", "governorate"]) if (query[key]) match[key] = new RegExp(`^${query[key].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
   if (query.insurance) match.insurances = query.insurance;
   if (query.emergency24h) match.emergency24h = true;
   if (query.emergencyNeeds?.length) {
+    if (query.type && query.type !== "hospital") match._id = { $in: [] };
     match.type = "hospital";
     match.emergency24h = true;
     for (const field of ["specialties", "services"]) {

@@ -12,7 +12,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
-import { getProviders, getProviderFavorites, setProviderFavorite } from "../lib/providerApi";
+import { getProviders, getProviderFavorites, setProviderFavorite, getProviderDrivingMinutes } from "../lib/providerApi";
 import { providerText as t } from "../lib/providerText";
 import ProviderMap from "../components/ProviderMap";
 
@@ -25,6 +25,12 @@ export default function ProvidersPage() {
   const [favoriteRetry, setFavoriteRetry] = useState(0);
   const [saving, setSaving] = useState(null);
   const [notice, setNotice] = useState("");
+  const [comparison, setComparison] = useState([]);
+  function toggleComparison(provider) {
+    setComparison(current => current.some(item => item.id === provider.id)
+      ? current.filter(item => item.id !== provider.id)
+      : current.length < 3 ? [...current, provider] : current);
+  }
   useEffect(() => {
     let active = true;
     setFavorites(null); setFavoriteError("");
@@ -50,7 +56,7 @@ export default function ProvidersPage() {
   const [locationError, setLocationError] = useState("");
   const locationRequest = useRef(0);
   useEffect(() => () => { locationRequest.current += 1; }, []);
-  function locate(rankEmergency = false) {
+  function locate(rankEmergency = false, onLocated) {
     const request = ++locationRequest.current;
     setLocationError(""); setLocating(true);
     const fail = () => { if (request === locationRequest.current) { setLocating(false); setLocationError(t("locationError")); } };
@@ -60,20 +66,39 @@ export default function ProvidersPage() {
       const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
       setLocation(coords); setLocating(false);
       if (rankEmergency) applyFilters({ ...filters, ...coords, page: 1 });
+      onLocated?.(coords);
     }, fail, { timeout: 10000, maximumAge: 60000 });
   }
   const [filters, setFilters] = useState(null);
+  const [travelRequest, setTravelRequest] = useState(null);
+  const [travel, setTravel] = useState(null);
+  useEffect(() => {
+    if (!travelRequest) return;
+    const controller = new AbortController();
+    getProviderDrivingMinutes(travelRequest.location, travelRequest.ids, controller.signal)
+      .then(minutes => { if (!controller.signal.aborted) setTravel({ request: travelRequest, minutes }); })
+      .catch(() => { if (!controller.signal.aborted) setTravel({ request: travelRequest, error: true }); });
+    return () => controller.abort();
+  }, [travelRequest]);
+  function resetTravel() {
+    setTravelRequest(null);
+    setTravel(null);
+  }
   useEffect(() => {
     if (!router.isReady) return;
     // A late GPS callback must not restore requirements from a previous search.
     locationRequest.current += 1;
     setLocating(false);
+    resetTravel();
     const restored = readProviderFilters(router.query);
     setDraft(restored);
     // Coordinates are intentionally not read from or written to shareable URLs.
     setFilters(old => ({ ...restored, ...(old?.lat == null ? {} : { lat: old.lat, lng: old.lng, radiusKm: old.radiusKm }) }));
   }, [router.isReady, router.asPath]);
   function applyFilters(next) {
+    locationRequest.current += 1;
+    setLocating(false);
+    resetTravel();
     setFilters(next);
     router.push(providerUrl(next), undefined, { shallow: true, scroll: false });
   }
@@ -98,6 +123,16 @@ export default function ProvidersPage() {
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; controller.abort(); };
   }, [filters, retry, signedIn]);
+  const travelIds = data.providers.filter(provider =>
+    !provider.locationApproximate && Number.isFinite(provider.latitude) && Number.isFinite(provider.longitude)
+  ).map(provider => provider.id);
+  const travelResults = travel?.request === travelRequest ? travel : null;
+  const estimating = Boolean(travelRequest && !travelResults);
+  function estimateTravel() {
+    const start = coords => setTravelRequest({ location: coords, ids: travelIds });
+    if (location) start(location);
+    else locate(false, start);
+  }
   const field = key => ({ value: draft[key], onChange: e => setDraft(old => ({ ...old, [key]: e.target.value })) });
   return <PageLayout title={t("title")} header={<ProfileHeader showPicture={false} />}>
     <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
@@ -115,8 +150,17 @@ export default function ProvidersPage() {
     {favoriteError && <Alert tone="danger" role="alert"><p>{favoriteError}</p>
       {!favorites && <Button variant="secondary" onClick={() => setFavoriteRetry(value => value + 1)}>{t("retryFavorites")}</Button>}
     </Alert>}
-    <form className="form provider-filters" onSubmit={event => { event.preventDefault(); applyFilters({ ...draft, ...(location || {}), page: 1 }); }}>
+    <form className="form provider-filters" onSubmit={event => {
+      event.preventDefault();
+      applyFilters({ ...draft, type: draft.emergency24h ? "" : draft.type, ...(location || {}), page: 1 });
+    }}>
       <Input id="provider-search" label={t("search")} maxLength={100} {...field("q")} />
+      <div className="field"><label htmlFor="provider-type" className="field__label">{t("facilityType")}</label>
+        <select id="provider-type" className="input" disabled={draft.emergency24h} {...field("type")}>
+          <option value="">{t("allFacilityTypes")}</option>
+          {["hospital", "clinic", "laboratory", "imaging-center"].map(type => <option key={type} value={type}>{t(type)}</option>)}
+        </select>
+      </div>
       <div className="field"><label htmlFor="provider-specialty" className="field__label">{t("specialty")}</label>
         <select id="provider-specialty" className="input" {...field("specialty")}>
           <option value="">{t("allSpecialties")}</option>
@@ -186,18 +230,47 @@ export default function ProvidersPage() {
       <p>{error}</p><Button variant="secondary" onClick={() => setRetry(value => value + 1)}>{t("retry")}</Button>
     </Alert> : <>
       <p role="status">{t("count", { count: data.total })}</p>
+      {!filters.emergency24h && travelIds.length > 0 && <div>
+        <p id="provider-travel-hint">{t("travelHint")}</p>
+        <Button variant="secondary" disabled={locating || estimating}
+          aria-describedby="provider-travel-hint" onClick={estimateTravel}>{t(estimating ? "travelLoading" : "travelButton")}</Button>
+        {travelResults && <p role="status">{t(travelResults.error ? "travelError" : "travelReady")}</p>}
+      </div>}
       <Button variant="secondary" aria-pressed={showMap} onClick={() => setShowMap(value => !value)}>{t(showMap ? "hideMap" : "showMap")}</Button>
       {showMap && <ProviderMap providers={data.providers} />}
       {!data.providers.length && <p>{t(filters.emergencyNeeds ? "emergencyNoMatch" : "empty")}</p>}
+      {comparison.length > 0 && <Card as="section" aria-labelledby="provider-comparison">
+        <h2 id="provider-comparison">{t("compareTitle")}</h2>
+        <p role="status">{t("compareCount", { count: comparison.length })}</p>
+        <Button variant="secondary" onClick={() => setComparison([])}>{t("compareClear")}</Button>
+        <div className="provider-comparison">
+          {comparison.map(saved => {
+            const current = data.providers.find(item => item.id === saved.id);
+            const provider = current || { ...saved, distanceKm: null };
+            return <section key={provider.id} aria-label={provider.name}>
+              <h3><Link href={`/providers/${provider.id}`}>{provider.name}</Link></h3>
+              <Button variant="secondary" aria-label={t("compareRemoveName", { name: provider.name })}
+                onClick={() => toggleComparison(provider)}>{t("compareRemove")}</Button>
+              <ProviderFacts provider={provider} showLiveStatus={Boolean(current)}
+                drivingMinutes={travelResults?.minutes?.[provider.id]} />
+            </section>;
+          })}
+        </div>
+      </Card>}
       <ul className="provider-list" aria-label={t("results")}>
-        {data.providers.map((provider, index) => <Card as="li" className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
-          {filters.emergencyNeeds && filters.lat != null && data.page === 1 && index === 0 && provider.distanceKm != null && <p role="status">{t("emergencyNearest")}</p>}
-          <h2><Link href={`/providers/${provider.id}`}>{provider.name}</Link></h2>
-          {signedIn ? <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
-            aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}
-            onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button> : <a className="button button--secondary" href="/login">{t("signInToSave")}</a>}
-          <ProviderFacts provider={provider} />
-        </Card>)}
+        {data.providers.map((provider, index) => {
+          const comparing = comparison.some(item => item.id === provider.id);
+          return <Card as="li" className="provider-item" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
+            {filters.emergencyNeeds && filters.lat != null && data.page === 1 && index === 0 && provider.distanceKm != null && <p role="status">{t("emergencyNearest")}</p>}
+            <h2><Link href={`/providers/${provider.id}`}>{provider.name}</Link></h2>
+            <Button variant="secondary" aria-pressed={comparing} disabled={!comparing && comparison.length === 3}
+              aria-label={t("compareName", { name: provider.name })} onClick={() => toggleComparison(provider)}>{t("compareAdd")}</Button>
+            {signedIn ? <Button variant="secondary" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
+              aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}
+              onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button> : <a className="button button--secondary" href="/login">{t("signInToSave")}</a>}
+            <ProviderFacts provider={provider} drivingMinutes={travelResults?.minutes?.[provider.id]} />
+          </Card>;
+        })}
       </ul>
       {data.total > (data.limit || 20) && <div className="form-actions">
         <Button variant="secondary" disabled={data.page <= 1} onClick={() => applyFilters({ ...filters, page: data.page - 1 })}>{t("previous")}</Button>

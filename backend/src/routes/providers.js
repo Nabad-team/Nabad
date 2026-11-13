@@ -9,8 +9,23 @@ const ProviderFeedback = require("../models/ProviderFeedback");
 const ProviderCorrection = require("../models/ProviderCorrection");
 const { feedbackInput, feedbackView, providerSummaries } = require("../providers/feedback");
 const { openingStatus } = require("../providers/hours");
+const { parseTravelRequest, drivingMinutes } = require("../providers/travelTime");
 const router = express.Router();
 const asyncRoute = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+const travelLimit = rateLimit({ windowMs: 60_000, max: 10 });
+router.post("/travel-time", travelLimit, asyncRoute(async (req, res) => {
+  let query;
+  try { query = parseTravelRequest(req.body); } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+  const apiKey = process.env.OPENROUTESERVICE_API_KEY?.trim();
+  if (apiKey) {
+    try { return res.json({ minutes: await drivingMinutes(query, apiKey) }); } catch {
+      // Keep ordinary directory browsing usable when routing is unavailable.
+    }
+  }
+  res.status(503).json({ error: "Driving estimates are temporarily unavailable." });
+}));
 const view = p => ({ id: p.slug, name: p.name, type: p.type, city: p.city, district: p.district || "", address: p.address,
   latitude: p.latitude, longitude: p.longitude, locationApproximate: p.locationApproximate,
   phone: p.phone, specialties: p.specialties, services: p.services || [], governorate: p.governorate || "", emergency24h: p.emergency24h,
@@ -79,6 +94,7 @@ router.get("/:id/feedback/me", requireAuth, providerId, asyncRoute(async (req, r
 router.put("/:id/feedback", requireAuth, contributions, providerId, asyncRoute(async (req, res) => {
   let fields;
   try { fields = feedbackInput(req.body); } catch (error) { return res.status(400).json({ error: error.message }); }
+  fields.status = "pending";
   const filter = { owner: req.userId, providerSlug: req.providerSlug };
   let entry;
   try {
