@@ -15,12 +15,13 @@ import { getProvider, getMyProviderFeedback, saveProviderFeedback, removeProvide
 const emptyFeedback = () => ({ rating: "5", visitDate: "", note: "", waitLevel: "", recentVisit: false });
 const reportFields = { name: "Name", location: "Location or address", phone: "Telephone",
   hours: "Opening hours or emergency status", insurance: "Insurance", services: "Services or equipment", other: "Other" };
+const reviewStatus = { reviewed: "Reviewed", approved: "Approved", rejected: "Rejected", pending: "Pending review" };
 export default function ProviderDetailPage() {
   const router = useRouter(), signedIn = useSignedIn();
   const id = typeof router.query.id === "string" ? router.query.id : null;
   const [provider, setProvider] = useState(null), [loading, setLoading] = useState(true), [error, setError] = useState("");
   const [retry, setRetry] = useState(0), [mineRetry, setMineRetry] = useState(0);
-  const [form, setForm] = useState(emptyFeedback), [hasFeedback, setHasFeedback] = useState(false);
+  const [form, setForm] = useState(emptyFeedback), [feedbackStatus, setFeedbackStatus] = useState(null);
   const [reports, setReports] = useState([]), [report, setReport] = useState({ field: "phone", details: "" });
   const [mineReady, setMineReady] = useState(false), [mineError, setMineError] = useState("");
   const [busy, setBusy] = useState(""), [actionError, setActionError] = useState(""), [notice, setNotice] = useState("");
@@ -37,13 +38,16 @@ export default function ProviderDetailPage() {
     return () => { current = false; controller.abort(); };
   }, [router.isReady, id, retry]);
   useEffect(() => {
-    setMineReady(false); setMineError(""); setForm(emptyFeedback()); setHasFeedback(false); setReports([]);
+    setMineReady(false); setMineError(""); setForm(emptyFeedback()); setFeedbackStatus(null); setReports([]);
     if (!signedIn || !provider?.id) return;
     const controller = new AbortController(); let current = true;
     Promise.all([getMyProviderFeedback(provider.id, controller.signal), getMyProviderCorrections(provider.id, controller.signal)])
       .then(([feedback, ownReports]) => {
         if (!current) return;
-        if (feedback) { setForm({ ...emptyFeedback(), rating: String(feedback.rating), visitDate: feedback.visitDate, note: feedback.note || "" }); setHasFeedback(true); }
+        if (feedback) {
+          setForm({ ...emptyFeedback(), rating: String(feedback.rating), visitDate: feedback.visitDate, note: feedback.note || "" });
+          setFeedbackStatus(feedback.status || "pending");
+        }
         setReports(ownReports); setMineReady(true);
       }).catch(e => { if (current && e.name !== "AbortError") setMineError("We could not load your contributions. Retry before making changes."); });
     return () => { current = false; controller.abort(); };
@@ -71,8 +75,8 @@ export default function ProviderDetailPage() {
     try {
       await saveProviderFeedback(provider.id, { ...form, rating: Number(form.rating),
         ...(form.waitLevel ? {} : { recentVisit: false }) });
-      setHasFeedback(true); setForm(old => ({ ...old, waitLevel: "", recentVisit: false }));
-      setNotice("Your visit feedback was saved. Only aggregate ratings and recent waiting levels are public.");
+      setFeedbackStatus("pending"); setForm(old => ({ ...old, waitLevel: "", recentVisit: false }));
+      setNotice("Your visit feedback was saved for review. Approved ratings and recent waiting reports contribute to public summaries.");
       await refreshSummary();
     } catch (e) { setActionError(e.message || "Feedback could not be saved."); }
     finally { setBusy(""); }
@@ -81,7 +85,7 @@ export default function ProviderDetailPage() {
     if (!mineReady || busy) return;
     setBusy("feedback"); setActionError(""); setNotice("");
     try {
-      await removeProviderFeedback(provider.id); setHasFeedback(false); setForm(emptyFeedback());
+      await removeProviderFeedback(provider.id); setFeedbackStatus(null); setForm(emptyFeedback());
       setNotice("Your feedback and its waiting report were removed."); await refreshSummary();
     } catch (e) { setActionError(e.message || "Feedback could not be removed."); }
     finally { setBusy(""); }
@@ -130,6 +134,7 @@ export default function ProviderDetailPage() {
         {!mineReady && !mineError && <p role="status">Loading your contributions...</p>}
         <Card><h2>Your visit feedback</h2>
           <p>One current review per account and facility; saving again replaces your review. Ratings are self-reported experiences, not verified measures of clinical quality.</p>
+          {feedbackStatus && <p>Feedback status: {reviewStatus[feedbackStatus]}</p>}
           <form className="form" onSubmit={submitFeedback}>
             <Input id="feedback-rating" label="Visit rating" as="select" required {...control("rating")}>
               {[5, 4, 3, 2, 1].map(n => <option key={n} value={String(n)}>{n} out of 5</option>)}
@@ -143,7 +148,7 @@ export default function ProviderDetailPage() {
             {form.waitLevel && <label><input type="checkbox" required checked={form.recentVisit} onChange={e => setForm(old => ({ ...old, recentVisit: e.target.checked }))} /> I observed this waiting level at this facility within the last two hours.</label>}
             <p className="text-muted">Waiting reports expire after two hours and need at least three accounts before a level is shown. Saving without a fresh waiting report removes your previous waiting observation.</p>
             <div className="form-actions"><Button type="submit" disabled={!mineReady || !!busy}>{busy === "feedback" ? "Saving..." : "Save visit feedback"}</Button>
-              {hasFeedback && <Button variant="danger" disabled={!mineReady || !!busy} onClick={deleteFeedback}>Remove my feedback</Button>}</div>
+              {feedbackStatus && <Button variant="danger" disabled={!mineReady || !!busy} onClick={deleteFeedback}>Remove my feedback</Button>}</div>
           </form>
         </Card>
         <Card><h2>Report incorrect information</h2>
@@ -156,7 +161,7 @@ export default function ProviderDetailPage() {
             <Button type="submit" disabled={!mineReady || !!busy}>{busy === "report" ? "Saving..." : "Send correction report"}</Button>
           </form>
           {reports.length > 0 && <><h3>Your reports</h3><ul>{reports.map(r => <li key={r.field}>
-            <p>{reportFields[r.field]}: {r.details}</p><p>Status: {r.status === "reviewed" ? "Reviewed" : "Pending review"}</p>
+            <p>{reportFields[r.field]}: {r.details}</p><p>Status: {reviewStatus[r.status] || "Pending review"}</p>
             <Button variant="secondary" disabled={!!busy || !mineReady} onClick={() => withdrawReport(r.field)}>Withdraw {reportFields[r.field].toLowerCase()} report</Button>
           </li>)}</ul></>}
         </Card>

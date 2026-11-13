@@ -21,7 +21,7 @@ function feedbackInput(body, now = new Date()) {
 function feedbackView(row) {
   if (!row) return null;
   return { rating: row.rating, visitDate: row.visitDate, note: row.note,
-    waitLevel: row.waitLevel, waitReportedAt: row.waitReportedAt, updatedAt: row.updatedAt };
+    waitLevel: row.waitLevel, waitReportedAt: row.waitReportedAt, updatedAt: row.updatedAt, status: row.status || "pending" };
 }
 function summary(row = {}) {
   const counts = LEVELS.map(k => row[k] || 0), total = counts.reduce((a, b) => a + b, 0);
@@ -38,7 +38,7 @@ async function providerSummaries(slugs, now = new Date()) {
   if (!slugs.length) return new Map();
   const recent = { $and: [{ $gt: ["$waitReportedAt", new Date(now - WINDOW_MS)] }, { $lte: ["$waitReportedAt", now] }] };
   // Aggregate in MongoDB: never load individual notes, author IDs or every review in JS.
-  const rows = await ProviderFeedback.aggregate([{ $match: { providerSlug: { $in: slugs } } },
+  const rows = await ProviderFeedback.aggregate([{ $match: { providerSlug: { $in: slugs }, status: "approved" } },
     { $group: { _id: "$providerSlug", count: { $sum: 1 }, averageRating: { $avg: "$rating" },
       ...Object.fromEntries(LEVELS.map(k => [k, { $sum: { $cond: [{ $and: [recent, { $eq: ["$waitLevel", k] }] }, 1, 0] } }])),
       latest: { $max: { $cond: [recent, "$waitReportedAt", null] } } } }]).option({ maxTimeMS: 3000 });

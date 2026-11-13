@@ -72,13 +72,17 @@ test("concurrent feedback saves replace one review and remain private to its own
   assert.equal((await req("GET", "/providers/test-hospital/feedback/me", b)).body.feedback, null);
   assert.equal((await req("GET", "/providers/test-hospital/feedback/me", a)).body.feedback.note, review().note);
   const publicResult = await req("GET", "/providers/test-hospital");
-  assert.equal(publicResult.body.provider.feedback.count, 1);
-  assert.equal(publicResult.body.provider.feedback.averageRating, 4);
+  assert.equal(publicResult.body.provider.feedback.count, 0);
+  assert.equal((await req("GET", "/providers/test-hospital/feedback/me", a)).body.feedback.status, "pending");
+  await Feedback.updateOne({ owner: a.user._id }, { status: "approved" });
+  assert.equal((await req("GET", "/providers/test-hospital")).body.provider.feedback.averageRating, 4);
   assert.ok(!JSON.stringify(publicResult).includes(review().note));
   assert.ok(!JSON.stringify(publicResult).includes(String(a.user._id)));
   await req("PUT", "/providers/test-hospital/feedback", a, { ...review(), rating: 2 });
   assert.equal(await Feedback.countDocuments(), 1);
-  assert.equal((await req("GET", "/providers/test-hospital")).body.provider.feedback.averageRating, 2);
+  assert.equal((await req("GET", "/providers/test-hospital")).body.provider.feedback.count, 0);
+  await Feedback.updateOne({ owner: a.user._id }, { status: "rejected" });
+  assert.equal((await req("GET", "/providers/test-hospital")).body.provider.feedback.count, 0);
   await req("DELETE", "/providers/test-hospital/feedback", b);
   assert.equal(await Feedback.countDocuments(), 1);
   await req("DELETE", "/providers/test-hospital/feedback", a);
@@ -97,6 +101,7 @@ test("invalid review values, dates, spoofed owners and unconfirmed waiting are r
 test("waiting uses a two-hour window, distinct accounts, and the conservative median only with enough reports", async () => {
   const users = [a.user, b.user, (await account("c")).user, (await account("d")).user, (await account("e")).user];
   await Feedback.create(users.map((u, i) => ({ owner: u._id, providerSlug: "test-hospital", rating: 4, visitDate: "2026-10-29",
+    status: "approved",
     waitLevel: ["short", "moderate", "long", "short", "long"][i],
     waitReportedAt: i === 3 ? new Date(now - WINDOW_MS) : i === 4 ? new Date(now.getTime() + 1) : now })));
   let summary = (await providerSummaries(["test-hospital"], now)).get("test-hospital");

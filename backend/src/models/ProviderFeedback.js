@@ -8,7 +8,9 @@ const schema = new mongoose.Schema({
   note: { type: String, default: "", maxlength: 1000 },
   waitLevel: { type: String, enum: ["short", "moderate", "long", null], default: null },
   waitReportedAt: { type: Date, default: null },
+  status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
 }, { timestamps: true, strict: "throw" });
 schema.index({ owner: 1, providerSlug: 1 }, { unique: true });
 schema.index({ providerSlug: 1, waitReportedAt: -1 });
+schema.index({ status: 1, updatedAt: -1 });
 module.exports = mongoose.model("ProviderFeedback", schema);

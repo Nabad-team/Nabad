@@ -97,3 +97,24 @@ test("public waiting summaries include report age and never present an unknown a
   expect(screen.getByText(/Based on 3 reports in the past two hours/)).toBeInTheDocument();
   expect(screen.getByText(/not a live queue/)).toBeInTheDocument();
 });
+test("facility facts show the next verification date and warn from the day it is due", () => {
+  const clock = jest.spyOn(Date, "now").mockReturnValue(Date.parse("2027-04-26T23:59:59Z"));
+  try {
+    const view = render(<ProviderFacts provider={provider} />);
+    expect(screen.getByText("Information checked: 29 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("Re-verification due: 27 April 2027")).toBeInTheDocument();
+    expect(screen.queryByText("Information may be outdated")).not.toBeInTheDocument();
+    clock.mockReturnValue(Date.parse("2027-04-27T00:00:00Z"));
+    view.rerender(<ProviderFacts provider={provider} />);
+    expect(screen.getByText("Information may be outdated")).toBeInTheDocument();
+    expect(screen.getByText(/Contact the facility to confirm/)).toBeInTheDocument();
+  } finally {
+    clock.mockRestore();
+  }
+});
+test.each([null, "invalid", "2099-01-01T00:00:00Z"])("unknown verification date (%s) gets a warning", verifiedAt => {
+  render(<ProviderFacts provider={{ ...provider, verifiedAt }} />);
+  expect(screen.getByText("Verification date unavailable.")).toBeInTheDocument();
+  expect(screen.getByText("Information may be outdated")).toBeInTheDocument();
+  expect(screen.queryByText(/Re-verification due/)).not.toBeInTheDocument();
+});
