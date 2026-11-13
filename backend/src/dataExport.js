@@ -200,7 +200,7 @@ const CARE_CIRCLE = {
 
 const PROVIDER_CONTRIBUTIONS = [
   { key: "providerFeedback", model: require("./models/ProviderFeedback"),
-    fields: { _id: ["id", id], providerSlug: "providerId", rating: "rating", visitDate: "visitDate", note: "note", waitLevel: "waitLevel", waitReportedAt: "waitReportedAt", ...TIMESTAMPS } },
+    fields: { _id: ["id", id], providerSlug: "providerId", rating: "rating", visitDate: "visitDate", note: "note", waitLevel: "waitLevel", waitReportedAt: "waitReportedAt", status: "status", ...TIMESTAMPS } },
   { key: "providerCorrections", model: require("./models/ProviderCorrection"),
     fields: { _id: ["id", id], providerSlug: "providerId", field: "field", details: "details", status: "status", ...TIMESTAMPS } },
 ];

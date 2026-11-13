@@ -143,6 +143,7 @@ test("account data export includes only its own contributions, and account delet
   const exported = await require("../src/dataExport").buildExport(a.user._id);
   assert.equal(exported.providerFeedback.length, 1); assert.equal(exported.providerCorrections.length, 1);
   assert.equal(exported.providerFeedback[0].note, "a private note");
+  assert.equal(exported.providerFeedback[0].status, "pending");
   assert.ok(!JSON.stringify(exported).includes("b correction"));
   assert.equal((await req("DELETE", "/profile/me", a, { confirm: "DELETE", email: a.user.email })).status, 204);
   assert.equal(await Feedback.countDocuments({ owner: a.user._id }), 0);
