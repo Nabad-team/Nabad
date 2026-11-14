@@ -84,8 +84,10 @@ describe("Dashboard Page", () => {
     expect(within(quickActions).getByRole("link", { name: "Add medication" })).toHaveAttribute("href", "/medications");
     expect(within(quickActions).getByRole("link", { name: "Add appointment" })).toHaveAttribute("href", "/appointments");
     expect(within(quickActions).getByRole("link", { name: "Upload document" })).toHaveAttribute("href", "/medical-documents");
-    expect(within(quickActions).getByRole("link", { name: "Prepare for a visit" })).toHaveAttribute("href", "/visit-prep");
-    expect(within(quickActions).getByRole("link", { name: "Medication overview" })).toHaveAttribute("href", "/medication-overview");
+    // Four at most: Medication overview lives in My care and on My medications, visit prep in My records.
+    expect(within(quickActions).getAllByRole("link")).toHaveLength(4);
+    expect(within(quickActions).queryByRole("link", { name: "Medication overview" })).not.toBeInTheDocument();
+    expect(within(quickActions).queryByRole("link", { name: "Prepare for a visit" })).not.toBeInTheDocument();
     // Equal tiles: every action has an icon and a short one-line label.
     for (const link of within(quickActions).getAllByRole("link")) {
       expect(link).toHaveClass("quick-action");
@@ -320,5 +322,23 @@ describe("Dashboard Page", () => {
     await act(async () => { rejectSave(new Error("Offline")); });
     expect(screen.getByRole("button", { name: "Mark taken: Aspirin" })).toBeEnabled();
     expect(screen.getByRole("alert")).toHaveTextContent("couldn't update today's medication check-in");
+  });
+
+  test("is short: the Wellbeing Corner is one compact card, and 140 shows once besides the footer", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo");
+    const corner = screen.getByRole("region", { name: "Wellbeing Corner" });
+    // Today's message and both numbers stay visible; tips and notes are under More.
+    expect(within(corner).getByRole("link", { name: "Call 1564" })).toHaveAttribute("href", "tel:1564");
+    expect(within(corner).getByRole("link", { name: "Call 140" })).toHaveAttribute("href", "tel:140");
+    const more = corner.querySelector("details.wellbeing-corner__more");
+    expect(more).not.toHaveAttribute("open");
+    expect(within(more).getByText("Simple wellbeing tips")).toBeInTheDocument();
+    // The self-harm result's "View mental health support" link still lands on this card.
+    expect(document.getElementById("wellbeing-corner-heading")).toBe(within(corner).getByRole("heading", { level: 2 }));
+    const main = document.querySelector("main");
+    const footer = document.querySelector("footer");
+    const visibleText = [...main.querySelectorAll("*")].filter((el) => !el.closest("details:not([open]) > :not(summary)") && !footer?.contains(el) && el.children.length === 0).map((el) => el.textContent).join(" ");
+    expect(visibleText.match(/\b140\b/g)).toHaveLength(1);
   });
 });
