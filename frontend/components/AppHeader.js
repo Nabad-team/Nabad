@@ -103,28 +103,6 @@ function GroupedWorkspaceLinks({ path, simplified = false, mobile = false }) {
   </div>;
 }
 
-export function MainNavigation({ className = "app-nav__list", includeMedicalDocuments = false }) {
-  const { preferences } = useAccessibility();
-  const signedIn = useSignedIn();
-  const path = useCurrentPath();
-
-  if (!signedIn) return null;
-
-  return (
-    <nav aria-label="Main">
-      <NavLinks
-        links={includeMedicalDocuments
-          ? WORKSPACE_LINKS
-          : MAIN_LINKS}
-        path={path}
-        className={className}
-        simplified={preferences.simplifiedMode}
-        cards
-      />
-    </nav>
-  );
-}
-
 function ProfileSwitcher({ id, showLabel }) {
   const { selfProfile, linkedProfiles = [], activeProfile, switchProfile } = useActiveProfile() || {};
   if (!selfProfile || !activeProfile) return null;
