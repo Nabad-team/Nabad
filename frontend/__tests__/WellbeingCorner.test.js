@@ -113,4 +113,11 @@ describe("Wellbeing Corner", () => {
       expect(contact.phone).toMatch(/^\d+$/);
     }
   });
+
+  test("the More toggle has a chevron that screen readers skip", () => {
+    render(<WellbeingCorner />);
+    const summary = document.querySelector(".wellbeing-corner__more > summary");
+    expect(summary).toHaveTextContent("More wellbeing tips and support details");
+    expect(summary.querySelector("svg.wellbeing-corner__chevron")).toHaveAttribute("aria-hidden", "true");
+  });
 });

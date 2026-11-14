@@ -85,7 +85,7 @@ export default function WellbeingCorner() {
       </section>
 
       <details className="wellbeing-corner__more">
-        <summary>More<span className="visually-hidden"> wellbeing tips and support details</span></summary>
+        <summary>More<span className="visually-hidden"> wellbeing tips and support details</span><svg className="wellbeing-corner__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg></summary>
         <section className="wellbeing-tips" aria-labelledby="wellbeing-tips-heading">
           <h3 id="wellbeing-tips-heading">Simple wellbeing tips</h3>
           <ul>

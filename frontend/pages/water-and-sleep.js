@@ -247,8 +247,10 @@ function SleepForm({ initial, who, busy, onSave, onCancel }) {
     if (usingTimes) {
       if (!bedtime || !wakeTime) found.times = "Enter both bedtime and wake-up time, or clear them to type the hours.";
       else if (worked === null) found.times = "Bedtime and wake-up time can't be the same. Clear them and type the hours instead.";
-    } else if (hours.trim() === "" || !Number.isFinite(value) || value < 0 || value > 24 || !Number.isInteger(value * 2)) {
-      found.hours = "Enter the hours slept, from 0 to 24, in half hours (for example 7.5), or a bedtime and wake-up time.";
+      else if (worked < 0.5) found.times = "That's less than half an hour of sleep. Check the times, or clear them and type the hours.";
+    } else if (hours.trim() === "" || !Number.isFinite(value) || value < 0.5 || value > 24 || !Number.isInteger(value * 2)) {
+      // A night is at least half an hour (the server checks the same: backend/src/routes/wellbeing.js).
+      found.hours = "Enter the hours slept, from 0.5 to 24, in half hours (for example 7.5), or a bedtime and wake-up time.";
     }
     if (!quality) found.quality = "Choose how well the night went.";
     setProblems(found); setError("");
@@ -268,7 +270,7 @@ function SleepForm({ initial, who, busy, onSave, onCancel }) {
       <Input
         id="sleep-hours" label="Hours slept"
         hint={usingTimes ? "Worked out from bedtime and wake-up time." : "For example 7 or 7.5. Or enter bedtime and wake-up time below instead."}
-        type="number" inputMode="decimal" min="0" max="24" step="0.5"
+        type="number" inputMode="decimal" min="0.5" max="24" step="0.5"
         value={usingTimes ? (worked === null ? "" : String(worked)) : hours} readOnly={usingTimes}
         onChange={(e) => setHours(e.target.value)} error={problems.hours}
       />

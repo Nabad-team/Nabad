@@ -19,16 +19,21 @@ function verificationDates(value) {
   };
 }
 
-// The badges a result card shows side by side: distance, driving time, opening status, 24/7 ER, and
-// "possibly outdated" when the listing is due for a check.
+// The badges a result card shows side by side. Only known facts: distance, driving time, open or closed per published
+// hours, and the 24/7 ER status when it is published (yes or no). Unknown hours and an unverified ER status get no
+// badge (one note above the list explains this), and "possibly outdated" is under More details.
 export function ProviderBadges({ provider: p, showLiveStatus = true, drivingMinutes }) {
-  const verification = verificationDates(p.verifiedAt);
+  const opening = showLiveStatus && (p.openingStatus === "open" || p.openingStatus === "closed") ? p.openingStatus : null;
+  const er = p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : null;
+  const badges = [
+    p.distanceKm != null && <Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge>,
+    Number.isFinite(drivingMinutes) && <Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge>,
+    opening && <Badge tone={opening === "open" ? "info" : "neutral"}>{t(opening)}</Badge>,
+    er && <Badge tone={er === "erYes" ? "info" : "neutral"}>{t(er)}</Badge>,
+  ].filter(Boolean);
+  if (!badges.length) return null;
   return <ul className="provider-badges" aria-label={t("keyFacts", { name: p.name })}>
-    {p.distanceKm != null && <li><Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge></li>}
-    {Number.isFinite(drivingMinutes) && <li><Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge></li>}
-    {showLiveStatus && <li><Badge tone={p.openingStatus === "open" ? "info" : "neutral"}>{t(p.openingStatus || "unknown")}</Badge></li>}
-    <li><Badge tone={p.emergency24h === true ? "info" : "neutral"}>{t(p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : "erUnknown")}</Badge></li>
-    {(!verification || verification.outdated) && <li><Badge tone="warning">{t("possiblyOutdated")}</Badge></li>}
+    {badges.map((badge, index) => <li key={index}>{badge}</li>)}
   </ul>;
 }
 
@@ -43,7 +48,7 @@ export default function ProviderFacts({ provider: p, showLiveStatus = true, driv
     {full ? <p>{t(p.type)}{p.city ? ` \u00b7 ${p.city}` : ""}{p.district ? ` \u00b7 ${t("district")}: ${p.district}` : ""}</p>
       : p.district && <p>{t("district")}: {p.district}</p>}
     <p>{p.address || t("addressUnknown")}</p>
-    {(!verification || verification.outdated) && <p>{full && <><Badge tone="neutral">{t("possiblyOutdated")}</Badge> </>}{t("confirmBeforeVisiting")}</p>}
+    {(!verification || verification.outdated) && <p><Badge tone={full ? "neutral" : "warning"}>{t("possiblyOutdated")}</Badge> {t("confirmBeforeVisiting")}</p>}
     {full && p.distanceKm != null && <p><Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge></p>}
     {full && Number.isFinite(drivingMinutes) && <p><Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge></p>}
     {p.locationApproximate && <p>{t("approximatePin")}</p>}

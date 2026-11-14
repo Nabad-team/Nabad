@@ -233,7 +233,7 @@ export default function ProvidersPage() {
     </Alert> : <>
       <p role="status">{t("count", { count: data.total })}</p>
       {/* One short directory note for every result, instead of the same notes on each card. */}
-      <p className="text-muted provider-directory-note">{t("notice")}</p>
+      <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
       {!filters.emergency24h && travelIds.length > 0 && <div>
         <p id="provider-travel-hint">{t("travelHint")}</p>
         <Button variant="secondary" disabled={locating || estimating}
