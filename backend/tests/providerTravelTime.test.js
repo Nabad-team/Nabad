@@ -33,3 +33,24 @@ test("the road matrix uses known destinations and omits facilities without a rou
   });
   assert.deepEqual(await drivingMinutes({ lat: 33.9, lng: 35.5, ids: ["clinic", "unroutable", "unlocated"] }, "test-key"), { clinic: 11 });
 });
+
+test("upstream failures retain only a safe reason and status for diagnosis", async t => {
+  const query = { lat: 33.9, lng: 35.5, ids: ["clinic"] };
+  t.mock.method(Provider, "find", () => ({
+    select: () => ({ lean: async () => [{ slug: "clinic", latitude: 33.8, longitude: 35.4 }] }),
+  }));
+  const fetch = t.mock.method(globalThis, "fetch", async () => new Response("private error body", { status: 403 }));
+  await assert.rejects(drivingMinutes(query, "test-key"), {
+    message: "Routing service unavailable.", reason: "upstream_http_error", status: 403,
+  });
+
+  fetch.mock.mockImplementationOnce(async () => new Response("private invalid response"));
+  await assert.rejects(drivingMinutes(query, "test-key"), {
+    message: "Routing service unavailable.", reason: "upstream_invalid_response",
+  });
+
+  fetch.mock.mockImplementationOnce(async () => { throw new Error("private network error"); });
+  await assert.rejects(drivingMinutes(query, "test-key"), {
+    message: "Routing service unavailable.", reason: "upstream_connection_failed",
+  });
+});

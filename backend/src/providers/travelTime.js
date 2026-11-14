@@ -3,6 +3,14 @@ const Provider = require("../models/Provider");
 const MAX_DESTINATIONS = 20;
 const MATRIX_URL = "https://api.heigit.org/openrouteservice/v2/matrix/driving-car";
 
+class RoutingServiceError extends Error {
+  constructor(reason, status) {
+    super("Routing service unavailable.");
+    this.reason = reason;
+    this.status = status;
+  }
+}
+
 function parseTravelRequest(body) {
   const { lat, lng, ids } = body || {};
   if (!Number.isFinite(lat) || Math.abs(lat) > 90 ||
@@ -20,6 +28,7 @@ async function drivingMinutes({ lat, lng, ids }, apiKey) {
   const destinations = rows.filter(row => Number.isFinite(row.latitude) && Number.isFinite(row.longitude));
   if (!destinations.length) return {};
 
+  const signal = AbortSignal.timeout(5000);
   const response = await fetch(MATRIX_URL, {
     method: "POST",
     headers: { Authorization: apiKey, "Content-Type": "application/json" },
@@ -30,16 +39,22 @@ async function drivingMinutes({ lat, lng, ids }, apiKey) {
       metrics: ["duration"],
     }),
     redirect: "error",
-    signal: AbortSignal.timeout(5000),
+    signal,
+  }).catch(() => {
+    throw new RoutingServiceError(signal.aborted ? "upstream_timeout" : "upstream_connection_failed");
   });
-  if (!response.ok) throw new Error("Routing service unavailable.");
-  const { durations } = await response.json();
-  const seconds = durations?.[0];
-  if (!Array.isArray(seconds) || seconds.length !== destinations.length) throw new Error("Invalid routing response.");
+  if (!response.ok) throw new RoutingServiceError("upstream_http_error", response.status);
+  const result = await response.json().catch(() => {
+    throw new RoutingServiceError(signal.aborted ? "upstream_timeout" : "upstream_invalid_response");
+  });
+  const seconds = result?.durations?.[0];
+  if (!Array.isArray(seconds) || seconds.length !== destinations.length) {
+    throw new RoutingServiceError("upstream_invalid_response");
+  }
   return Object.fromEntries(destinations.flatMap(({ slug }, index) => {
     const duration = seconds[index];
     return Number.isFinite(duration) && duration >= 0 ? [[slug, Math.ceil(duration / 60)]] : [];
   }));
 }
 
-module.exports = { parseTravelRequest, drivingMinutes };
+module.exports = { parseTravelRequest, drivingMinutes, RoutingServiceError };
