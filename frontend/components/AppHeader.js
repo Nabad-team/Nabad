@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/compat/router";
 import Logo from "./Logo";
@@ -42,11 +42,17 @@ export const ACCOUNT_LINKS = [
 const DOCUMENT_LINK = link("/medical-documents", "My documents", "documents");
 const WORKSPACE_LINKS = [...MAIN_LINKS.slice(0, -1), DOCUMENT_LINK, MAIN_LINKS[MAIN_LINKS.length - 1]];
 const WORKSPACE_BY_HREF = new Map(WORKSPACE_LINKS.map((item) => [item.href, item]));
-export const WORKSPACE_GROUPS = [
-  { label: "Daily care", links: ["/symptoms", "/dashboard", "/appointments", "/medications", "/medication-overview", "/water-and-sleep"] },
-  { label: "Health records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
-  { label: "Support", links: ["/test-results", "/providers"] },
-].map((group) => ({ ...group, links: group.links.map((href) => WORKSPACE_BY_HREF.get(href)) }));
+// The workspace navigation, in order: single links, and two groups that open as dropdowns on desktop.
+// The phone menu shows the same items in the same order, with the groups as labelled card lists.
+export const NAV_ITEMS = [
+  { href: "/symptoms" },
+  { href: "/dashboard" },
+  { id: "my-care", label: "My care", links: ["/appointments", "/medications", "/medication-overview", "/water-and-sleep"] },
+  { id: "my-records", label: "My records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
+  { href: "/test-results" },
+  { href: "/providers" },
+].map((item) => item.href ? WORKSPACE_BY_HREF.get(item.href) : { ...item, links: item.links.map((href) => WORKSPACE_BY_HREF.get(href)) });
+export const WORKSPACE_GROUPS = NAV_ITEMS.filter((item) => item.links);
 
 // Keep the current-page indicator in sync with client-side navigation.
 function useCurrentPath() {
@@ -94,12 +100,101 @@ function NavLinks({ links, path, className, simplified = false, cards = false, c
   );
 }
 
-function GroupedWorkspaceLinks({ path, simplified = false, mobile = false }) {
-  return <div className={mobile ? "workspace-groups workspace-groups--mobile" : "workspace-groups"}>
-    {WORKSPACE_GROUPS.map((group) => <section key={group.label} className="workspace-group" aria-label={mobile ? undefined : group.label} aria-labelledby={mobile ? `workspace-mobile-${group.label.replace(/\s+/g, "-").toLowerCase()}` : undefined}>
-      {mobile && <p id={`workspace-mobile-${group.label.replace(/\s+/g, "-").toLowerCase()}`} className="workspace-group__label">{group.label}</p>}
-      <NavLinks links={group.links} path={path} className={mobile ? "mobile-menu__list mobile-menu__cards" : "workspace-nav__list"} simplified={simplified} cards={mobile} compact={!mobile} />
-    </section>)}
+// A desktop dropdown ("My care", "My records"): a disclosure button, not an ARIA menu, so links stay links.
+// Enter or Space opens it and focus moves to the first link; Down and Up move between links (Down/Up on the closed
+// button opens it at the first/last link), Home and End jump; Escape closes it and returns to the button;
+// clicking outside or tabbing out closes it. The group shows as current when one of its pages is open.
+function NavGroup({ group, path }) {
+  const disclosure = useDisclosure();
+  const focusLast = useRef(false);
+  const current = group.links.some((item) => item.href === path);
+  const panelId = `nav-group-${group.id}`;
+
+  useEffect(() => {
+    if (disclosure.open && focusLast.current) {
+      const links = disclosure.panelRef.current?.querySelectorAll("a");
+      links?.[links.length - 1]?.focus();
+    }
+    focusLast.current = false;
+  }, [disclosure.open, disclosure.panelRef]);
+
+  function onButtonKeyDown(event) {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    if (disclosure.open) {
+      const links = [...(disclosure.panelRef.current?.querySelectorAll("a") || [])];
+      (event.key === "ArrowDown" ? links[0] : links[links.length - 1])?.focus();
+      return;
+    }
+    focusLast.current = event.key === "ArrowUp";
+    disclosure.toggle();
+  }
+
+  function onPanelKeyDown(event) {
+    const links = [...disclosure.panelRef.current.querySelectorAll("a")];
+    const index = links.indexOf(document.activeElement);
+    const next = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: links.length - 1 }[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    links[(next + links.length) % links.length].focus();
+  }
+
+  return (
+    <li className="nav-group">
+      <button
+        ref={disclosure.buttonRef}
+        type="button"
+        className={`nav-group__button${current ? " nav-group__button--current" : ""}`}
+        aria-expanded={disclosure.open}
+        aria-controls={panelId}
+        aria-label={current ? `${group.label}, current section` : undefined}
+        onClick={disclosure.toggle}
+        onKeyDown={onButtonKeyDown}
+      >
+        {group.label}
+        <svg className="nav-group__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+      </button>
+      {disclosure.open && (
+        <ul id={panelId} ref={disclosure.panelRef} className="nav-group__panel" onKeyDown={onPanelKeyDown}>
+          {group.links.map(({ href, label, icon }) => (
+            <li key={href}>
+              <Link href={href} aria-current={path === href ? "page" : undefined} onClick={disclosure.close}>
+                <NavIcon name={icon} />
+                <span>{label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+// Desktop: one row. Phones: the same items as cards, the groups under their labels.
+function WorkspaceLinks({ path, mobile = false }) {
+  if (!mobile) {
+    return <ul className="workspace-nav__list">
+      {NAV_ITEMS.map((item) => item.links ? <NavGroup key={item.id} group={item} path={path} /> : (
+        <li key={item.href}><Link href={item.href} aria-current={path === item.href ? "page" : undefined}>{item.label}</Link></li>
+      ))}
+    </ul>;
+  }
+  // Consecutive single links share one unlabelled card list; each group gets its label.
+  const sections = [];
+  for (const item of NAV_ITEMS) {
+    if (item.links) sections.push(item);
+    else if (sections.length && !sections[sections.length - 1].id) sections[sections.length - 1].links.push(item);
+    else sections.push({ links: [item] });
+  }
+  return <div className="workspace-groups workspace-groups--mobile">
+    {sections.map((section, index) => section.id ? (
+      <section key={section.id} className="workspace-group" aria-labelledby={`workspace-mobile-${section.id}`}>
+        <p id={`workspace-mobile-${section.id}`} className="workspace-group__label">{section.label}</p>
+        <NavLinks links={section.links} path={path} className="mobile-menu__list mobile-menu__cards" cards />
+      </section>
+    ) : (
+      <NavLinks key={`links-${index}`} links={section.links} path={path} className="mobile-menu__list mobile-menu__cards" cards />
+    ))}
   </div>;
 }
 
@@ -126,7 +221,8 @@ function ProfileSwitcher({ id, showLabel }) {
 }
 
 // The signed-in header.
-//   Desktop: logo and account controls, with the workspace links on a second row.
+//   Desktop: logo and account controls, with the workspace navigation in one row below
+//            (single links plus the "My care" and "My records" dropdowns).
 //   Phones (under 40rem / 640px): logo, the notifications bell and a "Menu" button that opens a full-width panel
 //            with everything else.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
@@ -201,7 +297,7 @@ export default function AppHeader() {
 
       {signedIn && (
         <nav aria-label="Workspace" className="workspace-nav container container--wide">
-          <GroupedWorkspaceLinks path={path} simplified={preferences.simplifiedMode} />
+          <WorkspaceLinks path={path} />
         </nav>
       )}
 
@@ -209,7 +305,7 @@ export default function AppHeader() {
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
           <div className="container">
             <nav aria-label="Main">
-              <GroupedWorkspaceLinks path={path} simplified={preferences.simplifiedMode} mobile />
+              <WorkspaceLinks path={path} mobile />
             </nav>
             <ProfileSwitcher id="profile-switcher-mobile" showLabel />
             <nav aria-label="Account">

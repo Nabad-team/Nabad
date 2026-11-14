@@ -169,7 +169,7 @@ Every signed-in page uses `<ProfileHeader />`. It draws the header bar (`compone
 
 ```
 Desktop   [Nabad]  [Search]                                                 [Bell] [Profile ▾] [(RH)▾]
-          Symptom check  Dashboard  My appointments  My medications  ... | My health  My vitals ... | Health assistant  Find care
+          Symptom check  Dashboard  My care ▾  My records ▾  Health assistant  Find care
                                                                                       My profile
                                                                                       Account security
                                                                                       Sign out
@@ -177,17 +177,18 @@ Phone     [Nabad]                                                              [
           ┌ Symptom check · Dashboard · ... · Acting for [▾] · My profile · Account security · Sign out ┐
 ```
 
-- **Main links** (`MAIN_LINKS` in `AppHeader.js`, extended with My documents) appear below the desktop account bar on every signed-in page, in three groups (Daily care, Health records, Support). **Symptom check is always the first link.** Links have a current-page underline and wrap on tablets.
+- **Workspace navigation** (`NAV_ITEMS` in `AppHeader.js`) is **one row** below the desktop account bar: Symptom check (always first), Dashboard, the **My care** dropdown (My appointments, My medications, Medication overview, Water and sleep), the **My records** dropdown (My health, My vitals, My documents, Visit preparation), Health assistant and Find care. The phone menu shows the same items in the same order, with My care and My records as labelled groups. A new page goes into one of the groups rather than adding a seventh item to the row.
+- **Dropdowns** are disclosure buttons (`aria-expanded`, `aria-controls`), not ARIA menus: links stay links. Enter or Space opens one and focuses its first link; Down/Up move between links (on the closed button they open it at the first/last link), Home/End jump, Escape closes it and returns focus to the button; a click outside or tabbing out closes it. When one of its pages is open, the group button gets the current-page style and the name "My care, current section", and the link inside has `aria-current="page"`.
 - **One name per page.** A link's label is exactly the page's `<title>` and `<h1>` (for example "My medications", "Symptom check"), also in simplified mode. Personal records use "My …" (My health, My vitals, My medications, My appointments, My documents, My profile); tools keep plain names (Symptom check, Visit preparation, Health assistant, Find care, Water and sleep). For a linked profile the title names them instead ("Vitals for Rania"). The dashboard doesn't repeat the menu as tiles; its quick actions are equal icon tiles with one-line labels.
 - **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
 - **Phones (under 40rem / 640px):** the logo and a **Menu** button. The menu is a full-width panel under the bar, in the page flow (not an overlay), with every link, the profile switcher ("Acting for") and Sign out.
-- **From 40rem to 60rem** the main links move to their own row under the logo, so nothing gets squeezed.
+- **From 40rem** the workspace row sits under the logo and account bar. It is one line on laptops and wide tablets; on narrow tablets or with very large text it wraps rather than scrolling.
 - **Current page:** its link gets `aria-current="page"`, shown as light teal with a teal underline (never color alone). On My profile or Security, the account button gets a teal ring.
-- **Keyboard:** both menus are disclosure buttons (`aria-expanded`, `aria-controls`):
+- **Keyboard:** the account menu and the phone menu are disclosure buttons too (`aria-expanded`, `aria-controls`):
   - Opening a menu moves focus to its first item.
   - Tab moves through the items. Tabbing out, clicking outside, or pressing Escape closes the menu.
   - Escape also puts focus back on the button.
-  - Use links for pages and a button for actions (Sign out). Don't turn these into ARIA `menu`s, which expect arrow-key navigation.
+  - Use links for pages and a button for actions (Sign out). Don't turn these into ARIA `menu`s: they are lists of links. (Arrow keys in the workspace dropdowns are an extra, not the ARIA menu pattern.)
 
 ### Button
 
