@@ -223,3 +223,21 @@ test("result cards are compact: key facts and actions first, everything else und
   expect(screen.getAllByText(/Facility information comes from published sources/)).toHaveLength(1);
   expect(card).not.toHaveTextContent(/Facility information comes from published sources/);
 });
+
+test("cards show only known facts as badges; unverified ones get no badge and one note explains it", async () => {
+  getProviders.mockResolvedValue({ ...result, total: 2, providers: [
+    { ...provider, id: "known", name: "Known Hospital", openingStatus: "closed", emergency24h: false },
+    { ...provider, id: "unknown", name: "Unknown Clinic", openingStatus: "unknown", emergency24h: null, verifiedAt: null },
+  ] });
+  render(<ProvidersPage />);
+  const known = (await screen.findByRole("heading", { name: "Known Hospital" })).closest("li");
+  expect(within(within(known).getByRole("list", { name: "Key facts about Known Hospital" })).getAllByRole("listitem").map((item) => item.textContent))
+    .toEqual(["Closed per published hours", "No 24/7 emergency department"]);
+  const unknown = screen.getByRole("heading", { name: "Unknown Clinic" }).closest("li");
+  expect(within(unknown).queryByRole("list", { name: "Key facts about Unknown Clinic" })).not.toBeInTheDocument();
+  expect(unknown).not.toHaveTextContent(/not verified/);
+  // "Possibly outdated" is still there, under More details.
+  const more = unknown.querySelector("details.provider-card__more");
+  expect(within(more).getByText("Information may be outdated")).toBeInTheDocument();
+  expect(screen.getAllByText(/Cards show opening hours and 24\/7 ER status only when they are published/)).toHaveLength(1);
+});

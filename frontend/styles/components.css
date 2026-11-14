@@ -825,7 +825,10 @@ select.input {
 .wellbeing-corner--compact .wellbeing-support-number__call { width: auto; padding-block: var(--space-2); }
 .wellbeing-corner--compact .wellbeing-support-number__call span { font-size: var(--text-base); }
 .wellbeing-corner--compact .wellbeing-support-number__meta { margin-top: var(--space-2); }
-.wellbeing-corner__more > summary { cursor: pointer; font-weight: var(--weight-semibold); color: var(--color-primary-strong); min-height: var(--tap-target); display: inline-flex; align-items: center; }
+.wellbeing-corner__more > summary { cursor: pointer; font-weight: var(--weight-semibold); color: var(--color-primary-strong); min-height: var(--tap-target); display: inline-flex; align-items: center; gap: var(--space-2); list-style: none; }
+.wellbeing-corner__more > summary::-webkit-details-marker { display: none; }
+.wellbeing-corner__chevron { width: 0.8rem; height: 0.8rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duration-fast) ease; }
+.wellbeing-corner__more[open] .wellbeing-corner__chevron { transform: rotate(180deg); }
 .wellbeing-corner__more[open] > summary { margin-bottom: var(--space-3); }
 .wellbeing-corner__more .wellbeing-tips { margin-top: 0; }
 .wellbeing-corner__about { margin: var(--space-3) 0 0; }

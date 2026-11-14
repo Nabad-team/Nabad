@@ -222,8 +222,14 @@ describe("Water and sleep page", () => {
     const section = await sleepSection();
 
     await user.click(within(section).getByRole("button", { name: "Save sleep" }));
-    expect(within(section).getByLabelText("Hours slept")).toHaveAccessibleDescription(/Enter the hours slept, from 0 to 24/);
+    expect(within(section).getByLabelText("Hours slept")).toHaveAccessibleDescription(/Enter the hours slept, from 0\.5 to 24/);
     expect(within(section).getByText("Choose how well the night went.")).toBeInTheDocument();
+    // 0 hours is not a night's sleep: at least half an hour, the same rule as the server.
+    await user.type(within(section).getByLabelText("Hours slept"), "0");
+    await user.click(within(section).getByRole("button", { name: "Save sleep" }));
+    expect(within(section).getByLabelText("Hours slept")).toHaveAccessibleDescription(/Enter the hours slept, from 0\.5 to 24/);
+    expect(within(section).getByLabelText("Hours slept")).toHaveAttribute("min", "0.5");
+    await user.clear(within(section).getByLabelText("Hours slept"));
 
     await user.type(within(section).getByLabelText("Hours slept"), "7.5");
     const quality = within(section).getByRole("group", { name: "How well did you sleep?" });
@@ -267,6 +273,10 @@ describe("Water and sleep page", () => {
     fireEvent.change(within(section).getByLabelText("Wake-up time"), { target: { value: "23:30" } });
     await user.click(within(section).getByRole("button", { name: "Save sleep" }));
     expect(within(section).getByText(/Bedtime and wake-up time can't be the same/)).toBeInTheDocument();
+
+    fireEvent.change(within(section).getByLabelText("Wake-up time"), { target: { value: "23:45" } });
+    await user.click(within(section).getByRole("button", { name: "Save sleep" }));
+    expect(within(section).getByText("That's less than half an hour of sleep. Check the times, or clear them and type the hours.")).toBeInTheDocument();
 
     fireEvent.change(within(section).getByLabelText("Wake-up time"), { target: { value: "06:45" } });
     expect(hours).toHaveValue(7.25);
