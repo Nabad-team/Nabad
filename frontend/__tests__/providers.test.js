@@ -161,7 +161,7 @@ test("public visitors can browse and get a sign-in link without a favorites requ
   expect(getProviderFavorites).not.toHaveBeenCalled();
   expect(screen.getByRole("link", { name: "Sign in to save" })).toHaveAttribute("href", "/login");
   expect(screen.queryByLabelText("My saved providers")).not.toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Directions in Google Maps" })).toHaveAttribute("href", "https://www.google.com/maps/dir/?api=1&destination=33.9%2C35.5");
+  expect(screen.getByRole("link", { name: "Directions to Test Clinic in Google Maps" })).toHaveAttribute("href", "https://www.google.com/maps/dir/?api=1&destination=33.9%2C35.5");
 });
 test("URL filters hydrate on load and browser navigation restores them", async () => {
   mockRouter = { ...mockRouter, query: { specialty: "pediatrics", emergency24h: "true", service: "mri" }, asPath: "/providers?specialty=pediatrics&emergency24h=true&service=mri" };
@@ -183,7 +183,7 @@ test("district search is shareable and unlocated facilities do not offer fake di
   getProviders.mockResolvedValue({ ...result, districts: ["Saida"], providers: [{ ...provider, district: "Saida", city: "", address: "", latitude: null, longitude: null }] });
   const user = userEvent.setup(); render(<ProvidersPage />);
   await screen.findByText("Test Clinic");
-  expect(screen.queryByRole("link", { name: "Directions in Google Maps" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /Directions/ })).not.toBeInTheDocument();
   expect(screen.getByText(/Map location not yet verified/)).toBeInTheDocument();
   expect(screen.getByText("Street address not yet verified")).toBeInTheDocument();
   await user.selectOptions(screen.getByLabelText("District"), "saida");
@@ -200,4 +200,26 @@ test("insurance filters are submitted and retained in shareable URLs", async () 
   expect(mockRouter.push).toHaveBeenCalledWith("/providers?insurance=nssf", undefined, { shallow: true, scroll: false });
   await waitFor(() => expect(getProviders).toHaveBeenLastCalledWith(expect.objectContaining({ insurance: "nssf" }), expect.any(AbortSignal)));
   expect(screen.getByRole("link", { name: "Test Clinic" })).toHaveAttribute("href", "/providers/clinic");
+});
+
+test("result cards are compact: key facts and actions first, everything else under More details", async () => {
+  getProviders.mockResolvedValue({ ...result, providers: [{ ...provider, distanceKm: 2.4, openingStatus: "open", emergency24h: true, insurances: ["nssf"], feedback: { count: 0 } }] });
+  render(<ProvidersPage />);
+  const card = (await screen.findByRole("heading", { name: "Test Clinic" })).closest("li");
+  expect(within(card).getByText("Clinic · Beirut")).toBeInTheDocument();
+  const badges = within(card).getByRole("list", { name: "Key facts about Test Clinic" });
+  expect(within(badges).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["About 2.4 km away (straight line)", "Open per published hours", "24/7 emergency department (published)"]);
+  expect(within(card).getByRole("link", { name: "Call Test Clinic" })).toHaveAttribute("href", "tel:+9611000000");
+  expect(within(card).getByRole("link", { name: "Directions to Test Clinic in Google Maps" })).toHaveTextContent("Directions");
+  expect(within(card).getByRole("button", { name: "Save Test Clinic" })).toBeInTheDocument();
+  // Nothing is lost: specialties, services, insurance, sources, notes and the check date are all in More details.
+  const more = card.querySelector("details.provider-card__more");
+  expect(more).not.toHaveAttribute("open");
+  expect(within(more).getByText("More details", { exact: false })).toBeInTheDocument();
+  for (const text of ["Clinic Street", "Pediatrics", /Services and equipment:/, /Insurance and third-party payers:/, "Information checked: 15 October 2026", "Information source 1", /Listed capabilities are published information/]) {
+    expect(within(more).getByText(text)).toBeInTheDocument();
+  }
+  // The directory note appears once, above the results, not on every card.
+  expect(screen.getAllByText(/Facility information comes from published sources/)).toHaveLength(1);
+  expect(card).not.toHaveTextContent(/Facility information comes from published sources/);
 });

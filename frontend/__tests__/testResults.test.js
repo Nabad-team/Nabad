@@ -249,3 +249,12 @@ test("repeated submit events create one request and unmount cancels it", async (
   await act(async () => pending.resolve({ answer: "Late answer.", evidence: [], conversationId: "late" }));
   expect(getReportConversations).toHaveBeenCalledTimes(1);
 });
+
+test("the greeting shows the Nabad assistant with its name and the guidance-not-diagnosis note", async () => {
+  getReportConversations.mockResolvedValue({ conversations: [] });
+  render(<TestResultsPage />);
+  const greeting = (await screen.findByRole("heading", { name: "What can I help you understand?" })).closest("section");
+  expect(greeting.querySelector('svg[role="img"][aria-label="Nabad assistant"]')).not.toBeNull();
+  expect(greeting).toHaveTextContent("Nabad assistant");
+  expect(greeting).toHaveTextContent("Nabad gives guidance, not a diagnosis.");
+});

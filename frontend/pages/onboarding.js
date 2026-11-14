@@ -4,10 +4,14 @@ import { completeOnboarding } from "../lib/api";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
-import { PersonWithPhone, SmallHouse, TwoHearts } from "../components/illustrations";
+import { SmallHouse, TwoHearts } from "../components/illustrations";
+import NabadAssistant from "../components/NabadAssistant";
+
+// The first step introduces the Nabad assistant (a calm place for the mascot).
+const Assistant = (props) => <NabadAssistant {...props} title="Nabad assistant" />;
 
 const steps = [
-  { title: "Welcome to Nabad", text: "When you're worried about your health, Nabad helps you understand where to go for care.", Illustration: PersonWithPhone },
+  { title: "Welcome to Nabad", text: "When you're worried about your health, Nabad helps you understand where to go for care.", Illustration: Assistant },
   { title: "Set up your profile", text: "Add your contact details. If you look after family members, you can add a profile for each of them too.", Illustration: TwoHearts },
   { title: "Find your way around", text: "Your dashboard is your home in Nabad. From there you can open your profile, update your details and manage family profiles.", Illustration: SmallHouse },
 ];

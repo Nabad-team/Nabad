@@ -294,6 +294,19 @@
 
 /* ---------- Heartbeat loader ---------- */
 
+/* The Nabad assistant (components/NabadAssistant.js). Calm places only; see docs/design-system.md. */
+.nabad-assistant { color: var(--color-primary); flex: none; }
+.nabad-assistant__face { stroke: var(--color-primary-strong); }
+.nabad-assistant--tracing .nabad-assistant__line { stroke-dasharray: 100; animation: assistant-trace 1.6s ease-in-out infinite; }
+@keyframes assistant-trace { 0% { stroke-dashoffset: 100; } 55%, 100% { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .nabad-assistant--tracing .nabad-assistant__line { animation: none; stroke-dasharray: none; }
+}
+.assistant-loader { color: var(--color-text); }
+.assistant-greeting { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.assistant-greeting__name { display: block; font-weight: var(--weight-semibold); color: var(--color-primary-strong); }
+.assistant-greeting__note { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }
+
 .loader {
   display: flex;
   align-items: center;
@@ -1734,7 +1747,7 @@ select.input {
 
 @media (min-width: 52rem) {
   .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
     gap: var(--space-8);
   }
 
@@ -1743,6 +1756,50 @@ select.input {
     justify-self: end;
   }
 }
+
+/* Home: a slim emergency bar near the top (red means emergency here). The larger call box stays further down. */
+.emergency-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  margin-bottom: var(--space-5);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+  text-decoration: none;
+}
+.emergency-bar:hover { text-decoration: underline; }
+.emergency-bar__icon { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+
+/* Home hero: a sample symptom-check result, built from the real result styles and clearly labelled "Sample". */
+.sample-result { margin: 0; width: 100%; max-width: 24rem; justify-self: center; }
+.sample-result__caption { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
+.sample-result__card { margin-top: 0; padding: var(--space-4); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.sample-result__card > * { margin: 0; }
+.sample-result__card .urgency__indicator { margin: var(--space-3) 0; }
+.sample-result__quote { font-style: italic; color: var(--color-text-muted); }
+.sample-result__level { margin: 0; font-weight: var(--weight-semibold); font-size: var(--text-lg); color: inherit; }
+.sample-result__line { margin: var(--space-1) 0 0; color: var(--color-text); }
+.sample-result__scale { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: var(--space-3); }
+@media (min-width: 40rem) { .sample-result .sample-result__scale { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sample-result__next { font-size: var(--text-sm); color: var(--color-text); }
+@media (min-width: 52rem) { .sample-result { justify-self: end; } }
+
+/* Home: the other things in an account, as a quiet two-column list. */
+.more-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-3) var(--space-6);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.more-features > li { margin: 0; padding-left: var(--space-4); border-left: 3px solid var(--color-primary-line); }
+.more-features strong { display: block; color: var(--color-primary-strong); }
+.more-features span { color: var(--color-text-muted); }
 
 .feature-list {
   display: grid;
@@ -3412,6 +3469,37 @@ select.input {
 .provider-item { padding-block: var(--space-5); border-bottom: 1px solid var(--color-border); }
 .provider-item h2 { font-size: var(--text-lg); }
 .provider-sources { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); }
+
+/* Find care layout: one column on phones; from 60rem the filters sit in a side panel beside the results. */
+.providers-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.providers-layout__results { min-width: 0; }
+@media (min-width: 60rem) {
+  .providers-layout { grid-template-columns: 17rem minmax(0, 1fr); gap: var(--space-6); }
+  .providers-layout .provider-filters {
+    position: sticky;
+    top: var(--space-4);
+    margin-block: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .providers-layout .provider-filters .button[type="submit"] { width: 100%; }
+}
+.provider-directory-note { margin-top: 0; }
+
+/* Compact result cards: the facts people compare first, the main actions, then "More details". */
+.provider-list { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+.provider-card { display: grid; gap: var(--space-2); padding-block: var(--space-4); border-bottom: 0; }
+.provider-card > * { margin: 0; }
+.provider-card h2 { font-size: var(--text-lg); }
+.provider-card__meta { color: var(--color-text-muted); }
+.provider-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.provider-badges > li { margin: 0; }
+.provider-card__actions { margin-top: var(--space-1); }
+.provider-card__more > summary { cursor: pointer; font-weight: var(--weight-semibold); color: var(--color-primary-strong); min-height: var(--tap-target); display: flex; align-items: center; }
+.provider-card__details { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
+.provider-card__details > p { margin: 0; }
 
 .progress-summary__list {
   display: grid;
