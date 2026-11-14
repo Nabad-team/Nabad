@@ -165,8 +165,8 @@ export default function MedicalDocumentsPage() {
   }
 
   return (
-    <PageLayout title="Medical and administrative documents" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>Medical and administrative documents</PageTitle>
+    <PageLayout title="My documents" header={<ProfileHeader showPicture={false} />}>
+      <PageTitle lead="Medical and administrative documents, kept together and ready for a visit.">My documents</PageTitle>
       <Card className="medical-documents section" aria-labelledby="documents-heading">
         <div className="medical-documents__header">
           <div>

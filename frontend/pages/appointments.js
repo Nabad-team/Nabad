@@ -9,7 +9,6 @@ import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { useAccessibility } from "../context/AccessibilityContext";
 import { formatDate, todayString } from "../lib/dates";
 import {
   REMINDER_OPTIONS,
@@ -183,8 +182,6 @@ function Calendar({ month, appointments, medications, selectedDate, onMonthChang
 
 export default function AppointmentsPage() {
   const { activeProfile, error: profilesError } = useActiveProfile();
-  const { preferences } = useAccessibility();
-  const simplified = preferences.simplifiedMode;
   const [appointments, setAppointments] = useState(null);
   useSearchTarget(appointments, "appointment");
   const [medications, setMedications] = useState([]);
@@ -288,12 +285,12 @@ export default function AppointmentsPage() {
     }
   }
 
-  const listName = forSelf ? "Your appointments" : `Appointments for ${name}`;
+  const listName = forSelf ? "My appointments" : `Appointments for ${name}`;
   const selectedAppointments = selectedDate ? appointments?.filter((appointment) => appointment.appointmentDate === selectedDate) || [] : [];
   const selectedMedications = selectedDate ? medicationEventsForDate(medications, selectedDate) : [];
   return (
-    <PageLayout title="Appointments" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>{simplified ? "Calendar" : listName}</PageTitle>
+    <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
+      <PageTitle>{listName}</PageTitle>
       <p className="page-intro">Keep your doctor's appointments together and get browser reminders before visits while this page is open.</p>
       {notificationPermission === "default" && <Button variant="secondary" onClick={enableReminders}>Enable reminders</Button>}
       {notificationPermission === "denied" && <p className="text-muted text-sm">Notifications are blocked in browser settings. Change that setting, then reload this page to try again.</p>}

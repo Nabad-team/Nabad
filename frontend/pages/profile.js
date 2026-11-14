@@ -250,7 +250,7 @@ export default function ProfilePage() {
           You're managing {activeProfile.fullName}'s care. Account settings below belong to you.
         </p>
       )}
-      <PageTitle>{simplified ? "Profile" : "My profile"}</PageTitle>
+      <PageTitle>My profile</PageTitle>
 
       {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
       {!profile && !loadError && <HeartbeatLoader />}

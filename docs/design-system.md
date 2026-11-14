@@ -151,15 +151,17 @@ Give every page a `title`: `<PageLayout title="My profile">` shows "My profile �
 Every signed-in page uses `<ProfileHeader />`. It draws the header bar (`components/AppHeader.js`), then the picture controls (unless `showPicture={false}`) and, when acting for a family member, the "Acting as" banner.
 
 ```
-Desktop   [Nabad]  Dashboard  My health  Medications  Water and sleep   [Profile ▾] [(RH)▾]
+Desktop   [Nabad]  [Search]                                                 [Bell] [Profile ▾] [(RH)▾]
+          Symptom check  Dashboard  My appointments  My medications  ... | My health  My vitals ... | Health assistant  Find care
                                                                                       My profile
-                                                                                      Security
+                                                                                      Account security
                                                                                       Sign out
-Phone     [Nabad]                                                                     [Menu]
-          ┌ Dashboard · My health · Medications · Water and sleep · Acting for [▾] · My profile · Security · Sign out ┐
+Phone     [Nabad]                                                              [Bell] [Menu]
+          ┌ Symptom check · Dashboard · ... · Acting for [▾] · My profile · Account security · Sign out ┐
 ```
 
-- **Main links** (`MAIN_LINKS` in `AppHeader.js`, extended with Medical documents) appear below the desktop account bar on every signed-in page. The compact labels have icons and a current-page underline. Links wrap on tablets. The dashboard also offers larger section cards below the progress overview.
+- **Main links** (`MAIN_LINKS` in `AppHeader.js`, extended with My documents) appear below the desktop account bar on every signed-in page, in three groups (Daily care, Health records, Support). **Symptom check is always the first link.** Links have a current-page underline and wrap on tablets.
+- **One name per page.** A link's label is exactly the page's `<title>` and `<h1>` (for example "My medications", "Symptom check"), also in simplified mode. Personal records use "My …" (My health, My vitals, My medications, My appointments, My documents, My profile); tools keep plain names (Symptom check, Visit preparation, Health assistant, Find care, Water and sleep). For a linked profile the title names them instead ("Vitals for Rania"). The dashboard doesn't repeat the menu as tiles; its quick actions are equal icon tiles with one-line labels.
 - **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
 - **Phones (under 40rem / 640px):** the logo and a **Menu** button. The menu is a full-width panel under the bar, in the page flow (not an overlay), with every link, the profile switcher ("Acting for") and Sign out.
 - **From 40rem to 60rem** the main links move to their own row under the logo, so nothing gets squeezed.
@@ -224,6 +226,12 @@ Show a form-level error with `<Alert tone="danger" as="p" role="alert">` just ab
 ```
 
 Use `role="alert"` for errors that need attention now and `role="status"` for calm confirmations. Leave `role` off for static text.
+
+### Symptom check result
+
+While a check runs, the submit button reads "Checking..." and is disabled, and `HeartbeatLoader` shows "Checking your symptoms". When the result arrives (or follow-up answers update it), the page moves focus to the result card, scrolls to it (instantly with reduced motion) and announces one short line in a live region that is always on the page. Emergencies are the exception: the emergency dialog takes focus and the card keeps `role="alert"`.
+
+The card starts with the level's icon, "Urgency: <label>" and one short line, then a 4-step scale (Routine / self-care, See a doctor soon, Urgent, Emergency) using the triage API's own labels. The current step has its colour, its icon, bold text, "This result" and `aria-current="step"`. The scale only displays the server's level; it never decides one.
 
 ### Badge
 

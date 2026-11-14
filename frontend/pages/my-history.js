@@ -133,7 +133,7 @@ export default function MyHistoryPage() {
               </ul>
             </>
           )}
-          <p className="text-sm text-muted">This recalls what was saved in Nabad. It is not medical advice. If you feel unwell now, use the Safety check, or call 140 in an emergency.</p>
+          <p className="text-sm text-muted">This recalls what was saved in Nabad. It is not medical advice. If you feel unwell now, use the Symptom check, or call 140 in an emergency.</p>
         </section>
       )}
     </PageLayout>

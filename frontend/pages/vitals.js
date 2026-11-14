@@ -82,8 +82,8 @@ export default function VitalsPage() {
   const sorted = useMemo(() => readings || [], [readings]);
   const who = activeProfile?.isSelf === false ? activeProfile.fullName : null;
 
-  return <PageLayout title="Vitals" header={<ProfileHeader showPicture={false} />}>
-    <PageTitle lead={`Log measurements and see how they change over time${who ? ` for ${who}` : ""}.`}>{who ? `Vitals for ${who}` : "Vitals"}</PageTitle>
+  return <PageLayout title={who ? `Vitals for ${who}` : "My vitals"} header={<ProfileHeader showPicture={false} />}>
+    <PageTitle lead={`Log measurements and see how they change over time${who ? ` for ${who}` : ""}.`}>{who ? `Vitals for ${who}` : "My vitals"}</PageTitle>
     {profilesError && <Alert tone="danger" as="p">{profilesError}</Alert>}
     {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
     {message && <Alert tone="success" as="p" role="status">{message}</Alert>}
