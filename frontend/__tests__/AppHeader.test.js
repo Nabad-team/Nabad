@@ -44,9 +44,13 @@ describe("Header navigation", () => {
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     const navigation = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(navigation).getAllByRole("link")).toHaveLength(10);
-    expect(within(navigation).getByRole("link", { name: "Vitals" })).toHaveAttribute("href", "/vitals");
-    expect(within(navigation).getByRole("link", { name: "Medical documents" })).toHaveAttribute("href", "/medical-documents");
+    expect(within(navigation).getAllByRole("link")).toHaveLength(12);
+    // The symptom check comes first, with the same name as its page title.
+    expect(within(navigation).getAllByRole("link")[0]).toHaveTextContent("Symptom check");
+    expect(within(navigation).getByRole("link", { name: "Symptom check" })).toHaveAttribute("href", "/symptoms");
+    expect(within(navigation).getByRole("link", { name: "Medication overview" })).toHaveAttribute("href", "/medication-overview");
+    expect(within(navigation).getByRole("link", { name: "My vitals" })).toHaveAttribute("href", "/vitals");
+    expect(within(navigation).getByRole("link", { name: "My documents" })).toHaveAttribute("href", "/medical-documents");
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
     expect(within(navigation).getAllByRole("region").map((group) => group.getAttribute("aria-label") || group.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Daily care"), expect.stringContaining("Health records"), expect.stringContaining("Support")]));
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
@@ -56,7 +60,7 @@ describe("Header navigation", () => {
     renderHeader("/medications");
     await screen.findByRole("option", { name: "Demo User (you)" });
     const navigation = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(navigation).getByRole("link", { name: "Medications" })).toHaveAttribute("aria-current", "page");
+    expect(within(navigation).getByRole("link", { name: "My medications" })).toHaveAttribute("aria-current", "page");
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
 
@@ -67,7 +71,7 @@ describe("Header navigation", () => {
     expect(accountButton()).toHaveClass("account-menu__button--current");
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
     await user.click(accountButton());
-    expect(screen.getByRole("link", { name: "Security" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Account security" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "My profile" })).not.toHaveAttribute("aria-current");
   });
 
@@ -107,9 +111,8 @@ describe("Account menu", () => {
     expect(within(panel).getByText("Demo User")).toBeInTheDocument();
     expect(within(panel).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
       ["My profile", "/profile"],
-      ["Security", "/security"],
+      ["Account security", "/security"],
       ["Care circle", "/care-circle"],
-      ["Safety check", "/symptoms"],
       ["Emergency information card", "/emergency-card"],
       ["Privacy Policy", "/privacy"],
     ]);
@@ -144,11 +147,9 @@ describe("Account menu", () => {
     await user.keyboard("{Enter}");
     expect(screen.getByRole("link", { name: "My profile" })).toHaveFocus();
     await user.tab();
-    expect(screen.getByRole("link", { name: "Security" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Account security" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Care circle" })).toHaveFocus();
-    await user.tab();
-    expect(screen.getByRole("link", { name: "Safety check" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("link", { name: "Emergency information card" })).toHaveFocus();
     await user.tab();
@@ -200,21 +201,20 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Dashboard", "Appointments", "Medications", "Water and sleep", "My health", "Vitals", "Medical documents", "Visit preparation", "Health assistant", "Find care"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Symptom check", "Dashboard", "My appointments", "My medications", "Medication overview", "Water and sleep", "My health", "My vitals", "My documents", "Visit preparation", "Health assistant", "Find care"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([
       "My profile",
-      "Security",
+      "Account security",
       "Care circle",
-      "Safety check",
       "Emergency information card",
       "Privacy Policy",
     ]);
     expect(within(panel).getByLabelText("Acting for")).toHaveValue("self");
     expect(within(panel).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     // Focus moves to the first link.
-    expect(within(main).getByRole("link", { name: "Dashboard" })).toHaveFocus();
+    expect(within(main).getByRole("link", { name: "Symptom check" })).toHaveFocus();
   });
 
   test("Escape closes it and puts focus back on Menu", async () => {

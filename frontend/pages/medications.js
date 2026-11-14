@@ -284,15 +284,15 @@ export default function MedicationsPage() {
   </li>;
 
   return (
-    <PageLayout title="Medications" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title={forSelf ? "My medications" : `Medications for ${name}`} header={<ProfileHeader showPicture={false} />}>
       {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
       {forSelf ? (
         <PageTitle lead={simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor."}>
-          {simplified ? "Medicines" : "My medications"}
+          My medications
         </PageTitle>
       ) : (
         <PageTitle lead={simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`}>
-          {simplified ? `Medicines for ${name}` : `Medications for ${name}`}
+          {`Medications for ${name}`}
         </PageTitle>
       )}
 

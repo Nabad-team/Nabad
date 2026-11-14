@@ -14,32 +14,36 @@ import NotificationBell from "./NotificationBell";
 import HeaderSearch from "./HeaderSearch";
 
 // The main sections, in the order they appear. A new top-level page goes here.
+// Each label is exactly the page's title, so people see the same name in the menu, the tab and the heading.
+// (shortLabel is kept equal to label: the simplified mode used to show different words, which didn't match the titles.)
+const link = (href, label, icon) => ({ href, label, shortLabel: label, icon });
 export const MAIN_LINKS = [
-  { href: "/dashboard", label: "Dashboard", shortLabel: "Home", icon: "dashboard" },
-  { href: "/my-health", label: "My health", shortLabel: "Health", icon: "health" },
-  { href: "/vitals", label: "Vitals", shortLabel: "Vitals", icon: "vitals" },
-  { href: "/visit-prep", label: "Visit preparation", shortLabel: "Visit prep", icon: "summary" },
-  { href: "/test-results", label: "Health assistant", shortLabel: "Assistant", icon: "results" },
-  { href: "/medications", label: "Medications", shortLabel: "Medicines", icon: "medications" },
-  { href: "/appointments", label: "Appointments", shortLabel: "Calendar", icon: "calendar" },
-  { href: "/water-and-sleep", label: "Water and sleep", shortLabel: "Water & sleep", icon: "wellbeing" },
-  { href: "/providers", label: providerText("title"), shortLabel: providerText("title"), icon: "care" },
+  link("/symptoms", "Symptom check", "symptom"),
+  link("/dashboard", "Dashboard", "dashboard"),
+  link("/my-health", "My health", "health"),
+  link("/vitals", "My vitals", "vitals"),
+  link("/visit-prep", "Visit preparation", "summary"),
+  link("/test-results", "Health assistant", "results"),
+  link("/medications", "My medications", "medications"),
+  link("/medication-overview", "Medication overview", "overview"),
+  link("/appointments", "My appointments", "calendar"),
+  link("/water-and-sleep", "Water and sleep", "wellbeing"),
+  link("/providers", providerText("title"), "care"),
 ];
 // Pages about the account itself, in the account menu.
 export const ACCOUNT_LINKS = [
-  { href: "/profile", label: "My profile", shortLabel: "Profile" },
-  { href: "/security", label: "Security", shortLabel: "Security" },
+  { href: "/profile", label: "My profile", shortLabel: "My profile" },
+  { href: "/security", label: "Account security", shortLabel: "Account security" },
   { href: "/care-circle", label: "Care circle", shortLabel: "Care circle" },
-  { href: "/symptoms", label: "Safety check", shortLabel: "Safety" },
-  { href: "/emergency-card", label: "Emergency information card", shortLabel: "Emergency card" },
-  { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy" },
+  { href: "/emergency-card", label: "Emergency information card", shortLabel: "Emergency information card" },
+  { href: "/privacy", label: "Privacy Policy", shortLabel: "Privacy Policy" },
 ];
 
-const DOCUMENT_LINK = { href: "/medical-documents", label: "Medical documents", shortLabel: "Documents", icon: "documents" };
+const DOCUMENT_LINK = link("/medical-documents", "My documents", "documents");
 const WORKSPACE_LINKS = [...MAIN_LINKS.slice(0, -1), DOCUMENT_LINK, MAIN_LINKS[MAIN_LINKS.length - 1]];
-const WORKSPACE_BY_HREF = new Map(WORKSPACE_LINKS.map((link) => [link.href, link]));
+const WORKSPACE_BY_HREF = new Map(WORKSPACE_LINKS.map((item) => [item.href, item]));
 export const WORKSPACE_GROUPS = [
-  { label: "Daily care", links: ["/dashboard", "/appointments", "/medications", "/water-and-sleep"] },
+  { label: "Daily care", links: ["/symptoms", "/dashboard", "/appointments", "/medications", "/medication-overview", "/water-and-sleep"] },
   { label: "Health records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
   { label: "Support", links: ["/test-results", "/providers"] },
 ].map((group) => ({ ...group, links: group.links.map((href) => WORKSPACE_BY_HREF.get(href)) }));
@@ -54,6 +58,8 @@ function useCurrentPath() {
 
 function NavIcon({ name }) {
   const paths = {
+    symptom: <><path d="M4 5h16v11H10l-4 4v-4H4Z" /><path d="M7 10.5h3l1.2-2.5 1.8 5 1.2-2.5H17" /></>,
+    overview: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h10M7 17h6" /></>,
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
     health: <><path d="M12 20S4 15.4 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 15.4 12 20 12 20Z" /><path d="M8.5 12h2l1-2.5 1.5 5 1-2.5h1.5" /></>,
     vitals: <><path d="M3 12h4l2-5 4 10 2-5h6" /><path d="M4 4h16v16H4z" /></>,
@@ -95,28 +101,6 @@ function GroupedWorkspaceLinks({ path, simplified = false, mobile = false }) {
       <NavLinks links={group.links} path={path} className={mobile ? "mobile-menu__list mobile-menu__cards" : "workspace-nav__list"} simplified={simplified} cards={mobile} compact={!mobile} />
     </section>)}
   </div>;
-}
-
-export function MainNavigation({ className = "app-nav__list", includeMedicalDocuments = false }) {
-  const { preferences } = useAccessibility();
-  const signedIn = useSignedIn();
-  const path = useCurrentPath();
-
-  if (!signedIn) return null;
-
-  return (
-    <nav aria-label="Main">
-      <NavLinks
-        links={includeMedicalDocuments
-          ? WORKSPACE_LINKS
-          : MAIN_LINKS}
-        path={path}
-        className={className}
-        simplified={preferences.simplifiedMode}
-        cards
-      />
-    </nav>
-  );
 }
 
 function ProfileSwitcher({ id, showLabel }) {

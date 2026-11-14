@@ -764,9 +764,10 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait_for_text(f"Welcome, {RunAccount.name.split()[0]}", (By.TAG_NAME, "h1"))
         for locator, path in (
             ((By.CSS_SELECTOR, "a[aria-label='Type your symptoms']"), "/symptoms"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Main'] a[href='/my-health']"), "/my-health"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Main'] a[href='/medications']"), "/medications"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Main'] a[href='/water-and-sleep']"), "/water-and-sleep"),
+            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/symptoms']"), "/symptoms"),
+            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/my-health']"), "/my-health"),
+            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/medications']"), "/medications"),
+            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/water-and-sleep']"), "/water-and-sleep"),
         ):
             with self.subTest(path=path):
                 self.open("/dashboard")
