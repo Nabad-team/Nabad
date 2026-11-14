@@ -94,7 +94,7 @@ test("public waiting summaries include report age and never present an unknown a
   view.rerender(<ProviderFacts provider={{ ...provider, feedback: { count: 3, averageRating: 4.3,
     waiting: { level: "moderate", reportCount: 3, updatedAt: "2026-10-29T12:00:00Z" } } }} />);
   expect(screen.getByText("User-reported waiting level: moderate")).toBeInTheDocument();
-  expect(screen.getByText(/Based on 3 reports in the past two hours/)).toBeInTheDocument();
+  expect(screen.getByText(/Based on 3 reports in the past two hours/)).toHaveTextContent("Latest: 29 October 2026, 14:00 (Beirut time).");
   expect(screen.getByText(/not a live queue/)).toBeInTheDocument();
 });
 test("facility facts show the next verification date and warn from the day it is due", () => {

@@ -1,5 +1,5 @@
 import Badge from "./ui/Badge";
-import { formatDate } from "../lib/dates";
+import { formatDate, formatDateTime } from "../lib/dates";
 import { providerText as t } from "../lib/providerText";
 
 const REVIEW_INTERVAL_DAYS = 180;
@@ -9,11 +9,12 @@ function verificationDates(value) {
   const now = Date.now();
   const verified = typeof value === "string" ? new Date(value) : null;
   if (!verified || !Number.isFinite(verified.getTime()) || verified.getTime() > now) return null;
+  // The review rule works on whole UTC days (unchanged). UTC midnight is 02:00 or 03:00 in Beirut, so the shown day is the same.
   verified.setUTCHours(0, 0, 0, 0);
   const reviewDue = new Date(verified.getTime() + REVIEW_INTERVAL_DAYS * DAY_MS);
   return {
-    checked: verified.toISOString().slice(0, 10),
-    due: reviewDue.toISOString().slice(0, 10),
+    checked: formatDate(verified),
+    due: formatDate(reviewDue),
     outdated: now >= reviewDue.getTime(),
   };
 }
@@ -34,16 +35,16 @@ export default function ProviderFacts({ provider: p, showLiveStatus = true, driv
     <p><Badge tone={p.emergency24h === true ? "info" : "neutral"}>{t(p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : "erUnknown")}</Badge></p>
     <p>{p.services?.length ? `${t("service")}: ${p.services.map(s => t(`services.${s}`)).join(", ")}` : t("servicesUnknown")}</p>
     <p className="text-muted">{t("servicesNote")}</p>
-    {p.servicesReviewedAt && <p className="text-muted">{t("servicesChecked", { date: p.servicesReviewedAt.slice(0, 10) })}</p>}
+    {p.servicesReviewedAt && <p className="text-muted">{t("servicesChecked", { date: formatDate(p.servicesReviewedAt) })}</p>}
     {p.serviceSources?.map((url, i) => <p key={url}><a href={url} target="_blank" rel="noopener noreferrer">{t("serviceSource", { number: i + 1 })}</a></p>)}
     <p>{p.insurances?.length ? `${t("insurance")}: ${p.insurances.map(s => t(`insurances.${s}`)).join(", ")}` : t("insuranceUnknown")}</p>
-    {p.insuranceVerifiedAt && <p className="text-muted">{t("insuranceChecked", { date: p.insuranceVerifiedAt.slice(0, 10) })}</p>}
+    {p.insuranceVerifiedAt && <p className="text-muted">{t("insuranceChecked", { date: formatDate(p.insuranceVerifiedAt) })}</p>}
     <p className="text-muted">{t("insuranceNote")}</p>
     {p.insuranceSources?.map((url, i) => <p key={url}><a href={url} target="_blank" rel="noopener noreferrer">{t("insuranceSource", { number: i + 1 })}</a></p>)}
     <p>{feedback?.count ? t("ratingSummary", { rating: feedback.averageRating, count: feedback.count }) : t("noFeedback")}</p>
     {showLiveStatus && <>
       <p><Badge tone="neutral">{t(`waiting.${waiting?.level || "unknown"}`)}</Badge></p>
-      {waiting?.updatedAt && <p className="text-muted">{t("waitingUpdated", { date: new Date(waiting.updatedAt).toLocaleString("en-GB", { timeZone: "Asia/Beirut" }), count: waiting.reportCount })}</p>}
+      {waiting?.updatedAt && <p className="text-muted">{t("waitingUpdated", { date: formatDateTime(waiting.updatedAt), count: waiting.reportCount })}</p>}
       <p className="text-muted">{t("waitingNote")}</p>
     </>}
     {p.hoursKnown && <details><summary>{t("hoursTitle")}</summary>
@@ -53,8 +54,8 @@ export default function ProviderFacts({ provider: p, showLiveStatus = true, driv
     {p.phone && <p><a href={`tel:${p.phone}`}>{t("call", { name: p.name })}</a></p>}
     {Number.isFinite(p.latitude) && Number.isFinite(p.longitude) ? <p><a className="button button--secondary" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${p.latitude},${p.longitude}`)}`} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p> : <p>{t("locationUnknown")}</p>}
     {verification ? <>
-      <p className="text-muted">{t("checked", { date: formatDate(verification.checked) })}</p>
-      <p className="text-muted">{t("reviewDue", { date: formatDate(verification.due) })}</p>
+      <p className="text-muted">{t("checked", { date: verification.checked })}</p>
+      <p className="text-muted">{t("reviewDue", { date: verification.due })}</p>
     </> : <p className="text-muted">{t("verificationUnknown")}</p>}
     <div className="provider-sources">{p.sources?.map((url, i) => <a key={url} href={url} target="_blank" rel="noopener noreferrer">{t("source", { number: i + 1 })}</a>)}</div>
   </>;

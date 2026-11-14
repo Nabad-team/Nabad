@@ -11,7 +11,7 @@ import { getHealthProfile } from "../lib/healthProfileApi";
 import { factText } from "../lib/healthProfile";
 import { getSymptomsForProfile } from "../lib/symptomApi";
 import { getMedicalDocuments, medicalDocumentDownloadUrl } from "../lib/medicalDocumentApi";
-import { formatDate } from "../lib/dates";
+import { formatDate, formatDateTime } from "../lib/dates";
 import { exportVisitPrep } from "../lib/visitPrepExport";
 import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
 import { createVisitPrepShare, getVisitPrep, getVisitPrepShares, revokeVisitPrepShare, saveVisitPrep } from "../lib/visitPrepApi";
@@ -273,7 +273,7 @@ export default function VisitPrepPage() {
             <ul className="visit-prep__shares" aria-label="Shared visit links">{shares.map((share) => {
             const expired = new Date(share.expiresAt) <= new Date();
             const inactive = Boolean(share.revokedAt) || expired;
-            return <li className={share.confirmedAt ? "visit-prep__share--confirmed" : ""} key={share.id}><div><strong>{share.confirmedAt ? `✓ Confirmed accurate by ${share.confirmedBy}` : inactive ? (share.revokedAt ? "Revoked" : "Expired") : "Awaiting clinician confirmation"}</strong><span className="text-muted">Created {formatDate(share.createdAt.slice(0, 10))} · expires {formatDate(share.expiresAt.slice(0, 10))}{share.confirmedAt ? ` · confirmed ${formatDate(share.confirmedAt.slice(0, 10))}` : ""}{share.viewCount ? ` · opened ${share.viewCount} time${share.viewCount === 1 ? "" : "s"}` : ""}</span></div>{!inactive && <Button size="small" variant="secondary" type="button" disabled={sharing} onClick={() => revokeShare(share)}>Revoke</Button>}</li>;
+            return <li className={share.confirmedAt ? "visit-prep__share--confirmed" : ""} key={share.id}><div><strong>{share.confirmedAt ? `✓ Confirmed accurate by ${share.confirmedBy}` : inactive ? (share.revokedAt ? "Revoked" : "Expired") : "Awaiting clinician confirmation"}</strong><span className="text-muted">Created {formatDate(share.createdAt)} · expires {formatDate(share.expiresAt)}{share.confirmedAt ? ` · confirmed ${formatDate(share.confirmedAt)}` : ""}{share.viewCount ? ` · opened ${share.viewCount} time${share.viewCount === 1 ? "" : "s"}` : ""}</span></div>{!inactive && <Button size="small" variant="secondary" type="button" disabled={sharing} onClick={() => revokeShare(share)}>Revoke</Button>}</li>;
           })}</ul></>}
         </Card>
         {editing && <Card className="section visit-prep__editor" aria-labelledby="visit-prep-editor-heading">
@@ -365,7 +365,7 @@ export default function VisitPrepPage() {
             {symptomRecords.length ? <ol className="visit-prep__symptoms" aria-label="Recent symptom checks">
               {symptomRecords.map((record) => (
                 <li key={record.id}>
-                  <p><strong>{formatDate(String(record.createdAt || "").slice(0, 10))}</strong>{record.urgencyResult?.label ? ` · ${record.urgencyResult.label}` : ""}</p>
+                  <p><strong>{record.createdAt ? formatDateTime(record.createdAt) : "Date not recorded"}</strong>{record.urgencyResult?.label ? ` · ${record.urgencyResult.label}` : ""}</p>
                   <p>{record.symptoms || record.description}</p>
                   {record.conversation?.length > 2 && <ul aria-label="Follow-up details">{record.conversation.slice(2).filter((message) => message.role === "patient").map((message, index) => <li key={`${record.id}-${index}`}>{message.content}</li>)}</ul>}
                 </li>

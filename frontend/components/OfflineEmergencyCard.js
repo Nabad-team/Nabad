@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import offline from "../public/offline-emergency";
 import { factText } from "../lib/healthProfile";
 import Button from "./ui/Button";
+import { formatDateTime } from "../lib/dates";
 
 export default function OfflineEmergencyCard({ card, owner }) {
   const [saved, setSaved] = useState(null);
@@ -55,7 +56,7 @@ export default function OfflineEmergencyCard({ card, owner }) {
   return <section aria-label="Offline emergency information" className="section">
     <h2>Use without internet</h2>
     <p>Save one emergency card on this device. Anyone using this browser can view it without signing in. Use a trusted personal device. Saving replaces the previous copy; updates are not automatic. Signing out or ending your session removes it.</p>
-    {saved && <p>Saved copy: {saved.card.profile.fullName}. Saved {new Date(saved.savedAt).toLocaleString("en-GB")}.</p>}
+    {saved && <p>Saved copy: {saved.card.profile.fullName}. Saved {formatDateTime(saved.savedAt)}.</p>}
     <div className="button-row">
       <Button disabled={!card || !owner || saving} onClick={save}>{saving ? "Saving offline copy..." : "Save for offline use"}</Button>
       <Button variant="secondary" href="/offline.html">Open emergency help</Button>

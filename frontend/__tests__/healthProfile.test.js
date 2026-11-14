@@ -20,21 +20,21 @@ describe("factText", () => {
 });
 
 describe("sourceText", () => {
-  test("says who added it and when, with the year only when it isn't this year", () => {
-    expect(sourceText(fact("sex", "male"), NOW)).toBe("You added this, 12 Oct");
-    expect(sourceText(fact("sex", "male", { recordedAt: "2025-03-05T09:00:00Z", updatedAt: "2025-03-05T09:00:00Z" }), NOW)).toBe("You added this, 5 Mar 2025");
+  test("says who added it and when, as a full date", () => {
+    expect(sourceText(fact("sex", "male"), NOW)).toBe("You added this, 12 October 2026");
+    expect(sourceText(fact("sex", "male", { recordedAt: "2025-03-05T09:00:00Z", updatedAt: "2025-03-05T09:00:00Z" }), NOW)).toBe("You added this, 5 March 2025");
     expect(shortDate("not a date", NOW)).toBe("");
   });
 
   test("adds when it was last changed, if on a later day", () => {
-    expect(sourceText(fact("sex", "male", { updatedAt: "2026-10-14T09:00:00Z" }), NOW)).toBe("You added this, 12 Oct · updated 14 Oct");
-    expect(sourceText(fact("sex", "male", { updatedAt: "2026-10-12T10:00:00Z" }), NOW)).toBe("You added this, 12 Oct");
+    expect(sourceText(fact("sex", "male", { updatedAt: "2026-10-14T09:00:00Z" }), NOW)).toBe("You added this, 12 October 2026 · updated 14 October 2026");
+    expect(sourceText(fact("sex", "male", { updatedAt: "2026-10-12T10:00:00Z" }), NOW)).toBe("You added this, 12 October 2026");
   });
 
   test("names other sources, and suggestions as suggested", () => {
-    expect(sourceText(fact("bloodType", "O+", { source: "lab_report" }), NOW)).toBe("From a lab report, 12 Oct");
-    expect(sourceText(fact("bloodType", "O+", { source: "lab_report", status: "suggested" }), NOW)).toBe("Suggested from a lab report, 12 Oct");
-    expect(sourceText(fact("condition", { code: "asthma" }, { source: "symptom_check" }), NOW)).toBe("From a symptom check, 12 Oct");
+    expect(sourceText(fact("bloodType", "O+", { source: "lab_report" }), NOW)).toBe("From a lab report, 12 October 2026");
+    expect(sourceText(fact("bloodType", "O+", { source: "lab_report", status: "suggested" }), NOW)).toBe("Suggested from a lab report, 12 October 2026");
+    expect(sourceText(fact("condition", { code: "asthma" }, { source: "symptom_check" }), NOW)).toBe("From a symptom check, 12 October 2026");
   });
 });
 

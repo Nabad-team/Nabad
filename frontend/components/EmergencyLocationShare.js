@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Button from "./ui/Button";
 import { contactNumber, locationSnapshot, locationSmsUrl, LOCATION_LIFETIME_MS } from "../lib/emergencyLocation";
+import { formatTime } from "../lib/dates";
 
 export default function EmergencyLocationShare({ profileId, contact, loading, error, onRetry }) {
   const [fix, setFix] = useState(null);
@@ -68,7 +69,7 @@ export default function EmergencyLocationShare({ profileId, contact, loading, er
             <Button variant="secondary" disabled={locating} onClick={locate}>{locating ? "Finding your location..." : fix ? "Get updated location" : `Share my location with ${contact.name}`}</Button>
             {problem && <p role="alert">{problem}</p>}
             {fix && <div>
-              <p>Captured {new Date(fix.capturedAt).toLocaleTimeString()}{fix.accuracy === null ? "" : ` · Accuracy about ${fix.accuracy} m`}</p>
+              <p>Captured {formatTime(fix.capturedAt)}{fix.accuracy === null ? "" : ` · Accuracy about ${fix.accuracy} m`}</p>
               <p>Open a text-message draft, then review and send it in your messaging app. Nabad does not send a message or confirm delivery.</p>
               <div className="dialog__actions">
                 <Button variant="secondary" href={locationSmsUrl(number, fix, appleMobile)}>Text location to {contact.name}</Button>

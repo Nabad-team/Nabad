@@ -7,6 +7,7 @@ import Alert from "../components/ui/Alert";
 import { request } from "../lib/api";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getReportConversations, deleteReportConversation } from "../lib/reportConversationApi";
+import { formatDate } from "../lib/dates";
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "csv", "jpg", "jpeg", "png", "webp"]);
@@ -241,7 +242,7 @@ export default function TestResultsPage() {
             <li key={conversation.id}>
               <button type="button" className={`assistant-chat__history-link${conversationId === conversation.id ? " is-current" : ""}`} onClick={() => openConversation(conversation)} aria-label={conversation.title} aria-current={conversationId === conversation.id ? "page" : undefined} disabled={busy}>
                 <span>{conversation.title}</span>
-                <small>{new Date(conversation.updatedAt).toLocaleDateString("en-GB")}</small>
+                <small>{formatDate(conversation.updatedAt)}</small>
               </button>
               <button type="button" className="assistant-chat__delete" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`} disabled={busy}>x</button>
             </li>
@@ -265,7 +266,7 @@ export default function TestResultsPage() {
                 {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
                 {message.citations?.length > 0 && <div className="report-chat__sources">
                   <strong>Reviewed sources:</strong>
-                  <ul>{message.citations.map((source) => <li key={`${source.id}-${source.version || "legacy"}`}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}{source.version && ` · version ${source.version}`}{source.reviewedAt && ` · reviewed ${new Date(source.reviewedAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}`}</li>)}</ul>
+                  <ul>{message.citations.map((source) => <li key={`${source.id}-${source.version || "legacy"}`}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}{source.version && ` · version ${source.version}`}{source.reviewedAt && ` · reviewed ${formatDate(source.reviewedAt)}`}</li>)}</ul>
                 </div>}
                 {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
               </article>

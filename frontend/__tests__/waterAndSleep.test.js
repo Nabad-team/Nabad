@@ -343,9 +343,9 @@ describe("Water and sleep page", () => {
     expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Date", "Fluids", "Sleep", "Bedtime to wake-up", "Sleep quality", "Note"]);
     const rows = within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.querySelectorAll("th, td"), (cell) => cell.textContent));
     expect(rows).toHaveLength(14);
-    expect(rows[0]).toEqual(["Mon 12 Oct", "0.75 L", "Not logged", "", "", ""]);
-    expect(rows[1]).toEqual(["Sun 11 Oct", "Not logged", "7.3 hours", "23:40 to 07:00", "Well", "Woke at 3"]);
-    expect(rows[13]).toEqual(["Tue 29 Sep", "1.2 L", "Not logged", "", "", ""]);
+    expect(rows[0]).toEqual(["Mon 12 October 2026", "0.75 L", "Not logged", "", "", ""]);
+    expect(rows[1]).toEqual(["Sun 11 October 2026", "Not logged", "7.3 hours", "23:40 to 07:00", "Well", "Woke at 3"]);
+    expect(rows[13]).toEqual(["Tue 29 September 2026", "1.2 L", "Not logged", "", "", ""]);
     expect(within(section).getByText(/Self-reported in Nabad, not measured by a clinician\. Made on 12 October 2026\./)).toBeInTheDocument();
 
     await user.click(within(section).getByRole("button", { name: "Print or save as PDF" }));
