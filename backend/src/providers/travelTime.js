@@ -1,7 +1,7 @@
 const Provider = require("../models/Provider");
 
 const MAX_DESTINATIONS = 20;
-const MATRIX_URL = "https://api.openrouteservice.org/v2/matrix/driving-car";
+const MATRIX_URL = "https://api.heigit.org/openrouteservice/v2/matrix/driving-car";
 
 function parseTravelRequest(body) {
   const { lat, lng, ids } = body || {};
