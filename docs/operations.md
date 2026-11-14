@@ -74,9 +74,9 @@ First, post in the team chat and tag Gerges. Then work down the checklist for th
 ### Driving times missing
 
 1. The directory still works without them; only the minutes are missing, and approximate pins never get one ([provider-directory.md](./provider-directory.md)).
-2. `POST /api/providers/travel-time` answers **503** when `OPENROUTESERVICE_API_KEY` is missing on Render, or when OpenRouteService fails, times out (5 seconds) or refuses the key. The failure isn't logged.
-3. In https://account.heigit.org, check the key is still valid and how much of its daily quota is left.
-4. Check whether HeiGIT has retired the endpoint the code calls (see [Known limits](#known-limits)).
+2. Confirm the latest backend commit is deployed in the Render service's **Events**. Reproduce the 503 from the Nabad site and search **Logs** for `provider_driving_estimate_unavailable` or the response's `X-Request-ID`. The event records a reason and, for HTTP errors, HeiGIT's status. It contains no coordinates, account data, credentials or response bodies.
+3. For `missing_api_key` or an upstream 401/403, check `OPENROUTESERVICE_API_KEY` on that service. Use the copy button in https://account.heigit.org to get the full key. For 403/429 also check the Matrix quota there.
+4. For `upstream_timeout` (5 seconds), connection failures or upstream 5xx, check networking and HeiGIT's availability. For upstream 404, confirm the deployed code uses the current HeiGIT Matrix endpoint.
 
 ### Bad release
 
