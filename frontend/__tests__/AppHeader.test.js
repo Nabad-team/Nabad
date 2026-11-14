@@ -1,6 +1,6 @@
 // Automated tests for the signed-in header: main navigation, the account menu, the phone menu,
 // keyboard behavior and the current-page highlight.
-import { render, screen, within, fireEvent } from "@testing-library/react";
+import { act, render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AppHeader from "../components/AppHeader";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
@@ -40,28 +40,92 @@ describe("Header navigation", () => {
     jest.clearAllMocks();
   });
 
-  test("provides every workspace section from the desktop header", async () => {
+  test("shows the workspace in one row: four links and the My care and My records dropdowns", async () => {
     renderHeader();
     await screen.findByRole("option", { name: "Demo User (you)" });
     const navigation = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(navigation).getAllByRole("link")).toHaveLength(12);
-    // The symptom check comes first, with the same name as its page title.
-    expect(within(navigation).getAllByRole("link")[0]).toHaveTextContent("Symptom check");
+    const items = within(navigation).getAllByRole("listitem").filter((item) => item.parentElement.classList.contains("workspace-nav__list"));
+    expect(items.map((item) => item.firstElementChild.textContent)).toEqual(["Symptom check", "Dashboard", "My care", "My records", "Health assistant", "Find care"]);
     expect(within(navigation).getByRole("link", { name: "Symptom check" })).toHaveAttribute("href", "/symptoms");
-    expect(within(navigation).getByRole("link", { name: "Medication overview" })).toHaveAttribute("href", "/medication-overview");
-    expect(within(navigation).getByRole("link", { name: "My vitals" })).toHaveAttribute("href", "/vitals");
-    expect(within(navigation).getByRole("link", { name: "My documents" })).toHaveAttribute("href", "/medical-documents");
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(within(navigation).getAllByRole("region").map((group) => group.getAttribute("aria-label") || group.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Daily care"), expect.stringContaining("Health records"), expect.stringContaining("Support")]));
+    // Closed dropdowns show no links.
+    expect(within(navigation).getAllByRole("link")).toHaveLength(4);
+    expect(within(navigation).getByRole("button", { name: "My care" })).toHaveAttribute("aria-expanded", "false");
+    expect(within(navigation).getByRole("button", { name: "My records" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/dashboard");
   });
 
-  test("marks the current workspace section on other pages", async () => {
+  test("a dropdown opens with its links, in the same groups as the phone menu", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    const navigation = screen.getByRole("navigation", { name: "Workspace" });
+    await user.click(within(navigation).getByRole("button", { name: "My care" }));
+    const care = document.getElementById(within(navigation).getByRole("button", { name: "My care" }).getAttribute("aria-controls"));
+    expect(within(care).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["My appointments", "/appointments"], ["My medications", "/medications"], ["Medication overview", "/medication-overview"], ["Water and sleep", "/water-and-sleep"],
+    ]);
+    expect(within(care).getByRole("link", { name: "My appointments" })).toHaveFocus();
+    await user.click(within(navigation).getByRole("button", { name: "My records" }));
+    expect(within(navigation).getByRole("button", { name: "My care" })).toHaveAttribute("aria-expanded", "false");
+    const records = document.getElementById(within(navigation).getByRole("button", { name: "My records" }).getAttribute("aria-controls"));
+    expect(within(records).getAllByRole("link").map((link) => link.textContent)).toEqual(["My health", "My vitals", "My documents", "Visit preparation"]);
+  });
+
+  test("dropdowns work from the keyboard: Enter, arrows, Home and End, Escape", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    const button = screen.getByRole("button", { name: "My records" });
+    button.focus();
+    await user.keyboard("{Enter}");
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("link", { name: "My health" })).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("link", { name: "My vitals" })).toHaveFocus();
+    await user.keyboard("{End}");
+    expect(screen.getByRole("link", { name: "Visit preparation" })).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("link", { name: "My health" })).toHaveFocus();
+    await user.keyboard("{ArrowUp}");
+    expect(screen.getByRole("link", { name: "Visit preparation" })).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect(screen.getByRole("link", { name: "My health" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(button).toHaveFocus();
+    // Down or Up on the closed button opens it at the first or last link.
+    await user.keyboard("{ArrowUp}");
+    expect(screen.getByRole("link", { name: "Visit preparation" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("link", { name: "My health" })).toHaveFocus();
+  });
+
+  test("closes on a click outside and when focus leaves it", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderHeader();
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    const button = screen.getByRole("button", { name: "My care" });
+    await user.click(button);
+    fireEvent.mouseDown(document.body);
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    await user.click(button);
+    act(() => screen.getByRole("link", { name: "A link on the page" }).focus());
+    expect(button).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("marks the current page inside its group and on the group button", async () => {
+    const user = userEvent.setup({ delay: null });
     renderHeader("/medications");
     await screen.findByRole("option", { name: "Demo User (you)" });
     const navigation = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(navigation).getByRole("link", { name: "My medications" })).toHaveAttribute("aria-current", "page");
+    const care = await within(navigation).findByRole("button", { name: "My care, current section" });
+    expect(care).toHaveClass("nav-group__button--current");
+    expect(within(navigation).getByRole("button", { name: "My records" })).not.toHaveClass("nav-group__button--current");
     expect(within(navigation).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
+    await user.click(care);
+    expect(screen.getByRole("link", { name: "My medications" })).toHaveAttribute("aria-current", "page");
   });
 
   test("on an account page, the account button and the link inside the menu show it", async () => {
@@ -202,6 +266,8 @@ describe("Phone menu", () => {
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
     expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Symptom check", "Dashboard", "My appointments", "My medications", "Medication overview", "Water and sleep", "My health", "My vitals", "My documents", "Visit preparation", "Health assistant", "Find care"]);
+    // The same groups as the desktop dropdowns.
+    expect(within(main).getAllByRole("region").map((group) => group.querySelector(".workspace-group__label").textContent)).toEqual(["My care", "My records"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");
     expect(account).toHaveAccessibleName("Account");
     expect(within(account).getAllByRole("link").map((link) => link.textContent)).toEqual([

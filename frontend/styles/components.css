@@ -867,7 +867,7 @@ select.input {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-5);
-  padding-block: var(--space-4);
+  padding-block: var(--space-3);
 }
 
 /* Wrapping navigation also fits enlarged text; phones use the disclosure. */
@@ -895,13 +895,15 @@ select.input {
 .workspace-nav__list {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-1);
   list-style: none;
-  padding: 0;
+  padding: 0 0 var(--space-2);
   margin: 0;
 }
 .workspace-nav__list > li { margin: 0; }
-.workspace-nav__list a {
+.workspace-nav__list a,
+.nav-group__button {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -916,8 +918,10 @@ select.input {
   transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 .workspace-nav__list .app-nav__icon { width: 1.125rem; height: 1.125rem; flex-basis: 1.125rem; }
-.workspace-nav__list a:hover { background: var(--color-primary-soft); color: var(--color-primary-strong); }
-.workspace-nav__list a[aria-current="page"] {
+.workspace-nav__list a:hover,
+.nav-group__button:hover { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+.workspace-nav__list a[aria-current="page"],
+.nav-group__button--current {
   background: var(--color-surface);
   border-color: var(--color-primary-line);
   color: var(--color-primary-strong);
@@ -927,8 +931,32 @@ select.input {
   .workspace-nav { display: none; }
 }
 @media (min-width: 40rem) and (max-width: 70rem) {
-  .workspace-nav__list a { padding-inline: var(--space-2); }
+  .workspace-nav__list a, .nav-group__button { padding-inline: var(--space-2); }
 }
+
+/* "My care" and "My records": a button that opens a small panel of links under it. */
+.nav-group { position: relative; margin: 0; }
+.nav-group__button { background: transparent; cursor: pointer; font-family: inherit; line-height: inherit; }
+.nav-group__chevron { width: 0.75rem; height: 0.75rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duration-fast) ease; }
+.nav-group__button[aria-expanded="true"] { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+.nav-group__button[aria-expanded="true"] .nav-group__chevron { transform: rotate(180deg); }
+.nav-group__panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 70;
+  min-width: 15rem;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+.nav-group__panel > li { margin: 0; }
+.nav-group__panel a { width: 100%; white-space: nowrap; }
+.nav-group__panel .app-nav__icon { width: 1.125rem; height: 1.125rem; flex: none; }
 
 .workspace-groups--mobile { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
 .workspace-groups--mobile .workspace-group { display: block; margin-left: 0; padding: 0; border: 0; background: transparent; }
@@ -1023,7 +1051,7 @@ select.input {
 
 .profile-select {
   width: auto;
-  max-width: 14rem;
+  max-width: 20rem;
   min-height: var(--tap-target);
   font-size: var(--text-sm);
   text-overflow: ellipsis;
@@ -4131,7 +4159,7 @@ select.input {
 }
 
 /* Header search uses normal links and the existing keyboard focus styles. */
-.header-search { position: relative; flex: 1 1 20rem; min-width: 0; max-width: 38rem; }
+.header-search { position: relative; flex: 1 1 16rem; min-width: 0; max-width: 32rem; }
 .header-search__form { display: flex; gap: var(--space-2); }
 .header-search__form .input { min-width: 0; flex: 1; }
 .header-search__results { position: absolute; top: calc(100% + var(--space-2)); inset-inline: 0; z-index: 60; max-height: min(65vh, 34rem); overflow-y: auto; padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay); overflow-wrap: anywhere; }

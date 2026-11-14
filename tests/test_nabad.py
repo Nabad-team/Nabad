@@ -544,6 +544,17 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/appointments")
         self.click(self.button("Add appointment"))
         audit_accessibility(self, self.driver, "appointment-add-form")
+        # The workspace dropdowns: open with the keyboard, audit while open, Escape closes and returns focus.
+        self.open("/medications")
+        care = self.visible((By.CSS_SELECTOR, "nav[aria-label='Workspace'] button[aria-controls='nav-group-my-care']"))
+        self.assertEqual(care.get_attribute("aria-label"), "My care, current section")
+        care.send_keys(Keys.ENTER)
+        self.wait.until(lambda _: care.get_attribute("aria-expanded") == "true")
+        self.assertEqual(self.driver.switch_to.active_element.get_attribute("href").split("/")[-1], "appointments")
+        audit_accessibility(self, self.driver, "header-dropdown-open")
+        self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+        self.wait.until(lambda _: care.get_attribute("aria-expanded") == "false")
+        self.assertEqual(self.driver.switch_to.active_element, care)
 
         self.open("/dashboard")
         self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
@@ -762,15 +773,18 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait.until(lambda d: d.title.strip() and "Dashboard" in d.title)
         self.assertIn("Dashboard", self.driver.title)
         self.wait_for_text(f"Welcome, {RunAccount.name.split()[0]}", (By.TAG_NAME, "h1"))
-        for locator, path in (
-            ((By.CSS_SELECTOR, "a[aria-label='Type your symptoms']"), "/symptoms"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/symptoms']"), "/symptoms"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/my-health']"), "/my-health"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/medications']"), "/medications"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/water-and-sleep']"), "/water-and-sleep"),
+        # Single links in the workspace row, and links inside the "My care" / "My records" dropdowns.
+        for group, locator, path in (
+            (None, (By.CSS_SELECTOR, "a[aria-label='Type your symptoms']"), "/symptoms"),
+            (None, (By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/symptoms']"), "/symptoms"),
+            ("my-records", (By.CSS_SELECTOR, "#nav-group-my-records a[href='/my-health']"), "/my-health"),
+            ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/medications']"), "/medications"),
+            ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/water-and-sleep']"), "/water-and-sleep"),
         ):
             with self.subTest(path=path):
                 self.open("/dashboard")
+                if group:
+                    self.click((By.CSS_SELECTOR, f"nav[aria-label='Workspace'] button[aria-controls='nav-group-{group}']"))
                 self.click(locator)
                 self.wait.until(EC.url_contains(path))
         with self.subTest(path="/profile"):
