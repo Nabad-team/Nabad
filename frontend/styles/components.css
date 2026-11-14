@@ -809,6 +809,26 @@ select.input {
 .wellbeing-support-number__meta a { display: inline-flex; align-items: center; gap: .25rem; font-weight: 600; }
 .wellbeing-support-number__meta a svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .wellbeing-support__note { margin: var(--space-4) 0 0; }
+
+/* The dashboard's compact Wellbeing Corner: message and numbers in a tight card, everything else under "More". */
+.wellbeing-corner--compact { display: grid; gap: var(--space-4); }
+.wellbeing-corner--compact > h2 { margin: 0; }
+.wellbeing-corner--compact .wellbeing-message { display: block; padding: var(--space-3) var(--space-4); }
+.wellbeing-corner--compact .wellbeing-message__label { margin: 0 0 var(--space-1); font-size: var(--text-sm); color: var(--color-text-muted); }
+.wellbeing-corner--compact .wellbeing-message p { font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support { margin: 0; padding: 0; border: 0; }
+.wellbeing-corner--compact .wellbeing-support__title { margin: 0 0 var(--space-2); font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support__grid { gap: var(--space-3); }
+.wellbeing-corner--compact .wellbeing-support-number { padding: var(--space-3) var(--space-4); }
+.wellbeing-corner--compact .wellbeing-support-number__icon { width: 2.25rem; height: 2.25rem; }
+.wellbeing-corner--compact .wellbeing-support-number h4 { font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support-number__call { width: auto; padding-block: var(--space-2); }
+.wellbeing-corner--compact .wellbeing-support-number__call span { font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support-number__meta { margin-top: var(--space-2); }
+.wellbeing-corner__more > summary { cursor: pointer; font-weight: var(--weight-semibold); color: var(--color-primary-strong); min-height: var(--tap-target); display: inline-flex; align-items: center; }
+.wellbeing-corner__more[open] > summary { margin-bottom: var(--space-3); }
+.wellbeing-corner__more .wellbeing-tips { margin-top: 0; }
+.wellbeing-corner__about { margin: var(--space-3) 0 0; }
 @media (max-width: 46rem) {
   .wellbeing-tips ul, .wellbeing-support__grid { grid-template-columns: 1fr; }
   .wellbeing-support__heading { align-items: start; flex-direction: column; }
@@ -933,6 +953,23 @@ select.input {
 @media (min-width: 40rem) and (max-width: 70rem) {
   .workspace-nav__list a, .nav-group__button { padding-inline: var(--space-2); }
 }
+
+/* A "More" button with a small panel of secondary actions (visit preparation). Same look as the header dropdowns. */
+.more-menu { position: relative; display: inline-block; }
+.more-menu__chevron { width: 0.75rem; height: 0.75rem; margin-left: var(--space-2); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.more-menu .button[aria-expanded="true"] .more-menu__chevron { transform: rotate(180deg); }
+.more-menu__panel {
+  position: absolute; top: calc(100% + var(--space-1)); left: 0; z-index: 70; min-width: 16rem; margin: 0; padding: var(--space-2);
+  list-style: none; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay);
+}
+.more-menu__panel > li { margin: 0; }
+.more-menu__panel button {
+  display: flex; align-items: center; width: 100%; min-height: var(--tap-target); padding: var(--space-2) var(--space-3);
+  border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-primary-strong);
+  font: inherit; font-weight: var(--weight-medium); text-align: left; cursor: pointer;
+}
+.more-menu__panel button:hover:not(:disabled) { background: var(--color-primary-soft); }
+.more-menu__panel button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
 
 /* "My care" and "My records": a button that opens a small panel of links under it. */
 .nav-group { position: relative; margin: 0; }
@@ -1979,12 +2016,12 @@ select.input {
 
 /* ---------- Dashboard and onboarding ---------- */
 
-/* Quick actions: equal tiles, icon above a one-line label. At most 3 columns, and never narrower than 12rem,
-   so the longest label ("Medication overview") fits on one line: 1 column on small phones, 2, then 3 from about 39rem.
+/* Quick actions (four at most): equal tiles, icon above a one-line label. At most 4 columns, never narrower than
+   13rem, so the labels stay on one line and no tile sits alone: 1 column on small phones, 2 x 2, then 4 in a row.
    Labels are short on purpose ("Log vitals"); "for Rana" sits in the line above and in each link's name. */
 .quick-actions__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(max(min(100%, 12rem), calc((100% - 2 * var(--space-3)) / 3)), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(min(100%, 13rem), calc((100% - 3 * var(--space-3)) / 4)), 1fr));
   grid-auto-rows: 1fr;
   gap: var(--space-3);
   margin: var(--space-4) 0 0;

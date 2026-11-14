@@ -14,6 +14,7 @@ Disallow: /emergency-card
 Disallow: /visit-prep
 Disallow: /visit-prep-share
 Disallow: /medical-documents
+Disallow: /health-assistant
 Disallow: /test-results
 Disallow: /medications
 Disallow: /medication-overview

@@ -212,7 +212,7 @@ export default function MedicalDocumentsPage() {
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />
             </li>
           ))}</ul> : <EmptyState title="No documents match these filters." action={<Button variant="secondary" onClick={() => { setSearch(""); setFilterType(""); setDateFrom(""); setDateTo(""); }}>Clear filters</Button>}>Try another file name, type, or date range.</EmptyState>}
-        </> : <EmptyState title="No documents added yet." action={<Button onClick={() => inputRef.current?.click()}>Add the first document</Button>}>Upload medical files so they are ready when this profile needs them.</EmptyState>}
+        </> : <EmptyState title="No documents added yet.">Use Add documents above to upload medical files, so they are ready when this profile needs them.</EmptyState>}
       </Card>
       {documents?.length > 0 && <p className="section"><Button href="/visit-prep" variant="secondary">Attach documents to visit preparation</Button></p>}
     </PageLayout>

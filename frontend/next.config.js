@@ -84,6 +84,11 @@ const nextConfig = {
   // Only the Docker image (frontend/Dockerfile) sets NEXT_STANDALONE: it runs Next's small standalone server.
   // Vercel builds are unchanged.
   ...(process.env.NEXT_STANDALONE === "true" ? { output: "standalone" } : {}),
+  // The health assistant moved from /test-results (it answers questions, not only test results). 308, so old
+  // links and bookmarks keep working.
+  async redirects() {
+    return [{ source: "/test-results", destination: "/health-assistant", permanent: true }];
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
   },

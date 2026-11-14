@@ -53,10 +53,8 @@ function MicrophoneIcon() {
 const QUICK_ICONS = {
   vitals: <path d="M3 12h4l2-5 4 10 2-5h6" />,
   medication: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5" /></>,
-  overview: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h10M7 17h6" /></>,
   appointment: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M12 12v6M9 15h6" /></>,
   document: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M12 11v6M9 14l3-3 3 3" /></>,
-  visit: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 13l2 2 4-4" /></>,
 };
 
 function QuickAction({ href, icon, label, fullLabel }) {
@@ -145,10 +143,8 @@ export default function DashboardPage() {
           <ul className="quick-actions__list">
             <QuickAction href="/vitals" icon="vitals" label="Log vitals" fullLabel={`Log vitals${actionFor}`} />
             <QuickAction href="/medications" icon="medication" label="Add medication" fullLabel={`Add medication${actionFor}`} />
-            <QuickAction href="/medication-overview" icon="overview" label="Medication overview" fullLabel="Medication overview" />
             <QuickAction href="/appointments" icon="appointment" label="Add appointment" fullLabel={`Add appointment${actionFor}`} />
             <QuickAction href="/medical-documents" icon="document" label="Upload document" fullLabel={`Upload document${actionFor}`} />
-            <QuickAction href="/visit-prep" icon="visit" label="Prepare for a visit" fullLabel={`Prepare for a visit${actionFor}`} />
           </ul>
         </nav>
       </section>

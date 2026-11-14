@@ -23,6 +23,10 @@ describe("next.config.js", () => {
   beforeEach(() => jest.spyOn(console, "warn").mockImplementation(() => {}));
   afterEach(() => { process.env = ORIGINAL_ENV; jest.restoreAllMocks(); });
 
+  test("the old health assistant address redirects permanently (308) to /health-assistant", async () => {
+    expect(await loadConfig({}).redirects()).toEqual([{ source: "/test-results", destination: "/health-assistant", permanent: true }]);
+  });
+
   test("local development falls back to localhost:5000", async () => {
     expect(await destination({})).toBe("http://localhost:5000/api/:path*");
   });

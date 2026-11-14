@@ -22,7 +22,7 @@ const URGENCY_LABELS = {
   unclear: "Ask a clinician to review this report",
 };
 
-export default function TestResultsPage() {
+export default function HealthAssistantPage() {
   const { activeProfile } = useActiveProfile();
   const [file, setFile] = useState(null);
   const [question, setQuestion] = useState("");
@@ -241,7 +241,6 @@ export default function TestResultsPage() {
         <div className="assistant-chat__main">
         <header className="assistant-chat__header">
           <div>
-            <span className="assistant-chat__status">Health assistant</span>
             {activeProfile?.fullName && <p>Conversation for <strong>{activeProfile.fullName}</strong></p>}
           </div>
           {(messages.length > 0 || result) && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
@@ -274,7 +273,6 @@ export default function TestResultsPage() {
               </p>
             </div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
-            <p>Ask in English or Arabic, or attach an English or Arabic written test report. The assistant replies in English.</p>
             <div className="assistant-chat__suggestions" role="group" aria-label="Suggested questions">
               {["What does a high cholesterol result mean?", "How can I prepare for a blood test?", "What should I ask my doctor about a new medicine?"].map((suggestion) => (
                 <button className="assistant-chat__suggestion" key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>
@@ -313,7 +311,7 @@ export default function TestResultsPage() {
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
           I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
         </label>
-        <p className="report-privacy-note">Questions and written reports may be in English or Arabic; assistant replies are in English. Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
+        <p className="report-privacy-note">Chats are saved to this profile; attached files are not kept. <a href="/privacy#ai-health-assistant">How your data is used</a></p>
       </form>
 
       {result && (
@@ -383,4 +381,4 @@ export default function TestResultsPage() {
   );
 }
 
-TestResultsPage.requireSignIn = true;
+HealthAssistantPage.requireSignIn = true;

@@ -511,6 +511,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/emergency-card",
             "/medications",
             "/medication-overview",
+            "/health-assistant",
             "/my-health",
             "/water-and-sleep",
             "/profile",
@@ -531,7 +532,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.ensure_signed_in()
 
     def test_accessibility_core_pages_and_keyboard(self):
-        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/test-results")
+        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/health-assistant")
         for path in pages:
             with self.subTest(path=path):
                 self.open(path)
@@ -792,6 +793,12 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.open_account_menu()
             self.click((By.CSS_SELECTOR, "#account-menu a[href='/profile']"))
             self.wait.until(EC.url_contains("/profile"))
+
+    def test_old_health_assistant_address_redirects(self):
+        # /test-results moved to /health-assistant; old links and bookmarks keep working (308 in next.config.js).
+        self.open("/test-results")
+        self.wait.until(EC.url_contains("/health-assistant"))
+        self.wait_for_text("Health assistant", (By.TAG_NAME, "h1"))
 
     def test_wellbeing_support_numbers_show_individual_verification_dates(self):
         self.open("/dashboard")
@@ -1114,13 +1121,18 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         download = self.visible((By.CSS_SELECTOR, f"section[aria-labelledby='visit-prep-attached-heading'] a[href*='{uploaded['id']}']"))
         self.assertIn("/api/medical-documents/", download.get_attribute("href"))
 
+        # Edit, Print/PDF and Export sit under "More"; "Share with a doctor" is the one primary button.
+        self.visible(self.button("Share with a doctor"))
+        self.click(self.button("More"))
         self.click(self.button("Edit visit sheet"))
         note = "Ask the clinician to review this X-ray."
         self.type_into("visit-prep-notes", note)
         self.click(self.button("Save changes"))
         notes = (By.CSS_SELECTOR, "section[aria-labelledby='visit-prep-notes-heading']")
         self.wait_for_text(note, notes)
+        self.click(self.button("More"))
         self.visible(self.button("Print or save as PDF"))
+        self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
 
         # Emulate the browser's print stylesheet and verify it leaves the actual summary visible.
         self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "print"})

@@ -8,7 +8,7 @@ module.exports = [
   ["Medical documents", "/medical-documents", "files uploads lab imaging reports"],
   ["Appointments", "/appointments", "calendar visits schedule"],
   ["Hospitals and clinics", "/providers", "healthcare providers directory hospital"],
-  ["Health assistant", "/test-results", "test results reports chat"],
+  ["Health assistant", "/health-assistant", "test results reports chat"],
   ["Visit preparation", "/visit-prep", "doctor summary print"],
   ["Water and sleep", "/water-and-sleep", "fluids hydration rest"],
   ["Notifications", "/notifications", "alerts bell"],
