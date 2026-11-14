@@ -90,7 +90,7 @@ test("shows server-validated RAG source version and review date", async () => {
   }] });
   render(<TestResultsPage />);
   fireEvent.click(await screen.findByRole("button", { name: "Sourced answer" }));
-  expect(await screen.findByText(/version 1\.2\.0/)).toHaveTextContent("reviewed 20/10/2026");
+  expect(await screen.findByText(/version 1\.2\.0/)).toHaveTextContent("reviewed 20 October 2026");
   expect(screen.getByRole("link", { name: "Hemoglobin overview" })).toHaveAttribute("href", "https://example.test/hemoglobin");
 });
 

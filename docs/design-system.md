@@ -315,3 +315,4 @@ Write like a kind nurse would talk: short, plain, calm, no hype.
 - Say what happened and what to do next: "Could not save your profile. Please try again."
 - No exclamation-mark excitement, no "AI-powered", no "smart".
 - Sentence case for new headings and buttons ("Save changes", not "Save Changes").
+- Dates and times always go through `frontend/lib/dates.js`: `formatDate()` gives "11 November 2026" and `formatDateTime()` gives "11 November 2026, 01:44". Both use Beirut time whatever the device is set to. No seconds, no "11/11/2026", and no ISO dates like "2026-10-29" on screen. Never cut the day out of a timestamp with `.slice(0, 10)`: that is the UTC day, which is the day before between midnight and 02:00 (03:00 in summer) in Beirut.

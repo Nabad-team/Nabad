@@ -192,6 +192,24 @@ describe("Visit preparation page", () => {
     expect(screen.getByText("Updated medication dose")).toBeInTheDocument();
   });
 
+  test("dates symptom checks and doctor links by the Beirut calendar day, also in the export", async () => {
+    // 01:44 on 11 November in Beirut is 23:44 on 10 November in UTC: this used to show as "10 November 2026".
+    getSymptomsForProfile.mockResolvedValue([{ id: "late-check", symptoms: "Chest tightness", createdAt: "2026-11-10T23:44:00.000Z", urgencyResult: { label: "Routine / self-care" }, conversation: [] }]);
+    getVisitPrepShares.mockResolvedValue({ shares: [{ id: "share-late", createdAt: "2026-11-10T22:30:00.000Z", expiresAt: inAWeek, viewCount: 0, confirmedAt: null, revokedAt: null }] });
+    const exporter = visitPrepExport.exportVisitPrep.mockResolvedValue(undefined);
+    renderPage();
+    const symptoms = await screen.findByRole("list", { name: "Recent symptom checks" });
+    expect(symptoms).toHaveTextContent("11 November 2026, 01:44");
+    expect(document.body).not.toHaveTextContent("10 November 2026");
+    expect(await screen.findByText(/Created 11 November 2026/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/);
+    fireEvent.click(screen.getByRole("button", { name: "Export sheet with attachments" }));
+    await waitFor(() => expect(exporter).toHaveBeenCalled());
+    const [, text] = exporter.mock.calls[0][0].sections.find(([title]) => title === "Recent symptom checks");
+    expect(text).toContain("11 November 2026, 01:44");
+    exporter.mockReset();
+  });
+
   test("exports saved edits with only selected attachments and reports export failures", async () => {
     const exporter = visitPrepExport.exportVisitPrep.mockResolvedValue(undefined);
     getMedicalDocuments.mockResolvedValue({ documents: [

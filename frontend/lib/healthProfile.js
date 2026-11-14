@@ -1,3 +1,4 @@
+import { formatDate } from "./dates";
 // Words and small rules for "My health" (pages/my-health.js), shared with the dashboard card.
 // The values are the backend's (healthProfile.js); these are the labels people see.
 
@@ -31,17 +32,14 @@ export function factText(fact) {
   }
 }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-// "12 Oct" in the user's time zone, with the year when it isn't this year ("12 Oct 2025").
-export function shortDate(iso, now = new Date()) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  const text = `${date.getDate()} ${MONTHS[date.getMonth()]}`;
-  return date.getFullYear() === now.getFullYear() ? text : `${text} ${date.getFullYear()}`;
+// "12 October 2026" in Beirut time (the shared date format), or "" when there is no valid date.
+export function shortDate(iso) {
+  if (!iso || Number.isNaN(new Date(iso).getTime())) return "";
+  return formatDate(iso);
 }
 const SOURCES = { user: "You added this", lab_report: "From a lab report", symptom_check: "From a symptom check" };
 const SUGGESTED_FROM = { lab_report: "Suggested from a lab report", symptom_check: "Suggested from a symptom check", user: "Suggested" };
-// Where a fact came from and when: "You added this, 12 Oct", plus "updated 14 Oct" once changed on a later day.
+// Where a fact came from and when: "You added this, 12 October 2026", plus "updated 14 October 2026" once changed on a later day.
 export function sourceText(fact, now = new Date()) {
   const words = (fact.status === "suggested" ? SUGGESTED_FROM : SOURCES)[fact.source] || "Added";
   const recorded = shortDate(fact.recordedAt, now);

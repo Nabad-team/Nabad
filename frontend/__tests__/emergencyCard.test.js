@@ -28,7 +28,8 @@ test("the private card displays patient identity and every required health secti
   expect(EmergencyCardPage.requireSignIn).toBe(true);
   const card = await screen.findByRole("article", { name: "Emergency information card for Card Patient" });
   for (const text of ["Asthma", "A recorded condition", "Penicillin", "Example medicine", "Emergency Person", "O+"]) expect(within(card).getByText(text)).toBeInTheDocument();
-  expect(card).toHaveTextContent("12 Apr 1990");
+  expect(card).toHaveTextContent("12 April 1990");
+  expect(card).toHaveTextContent("Prepared 31 October 2026, 12:00 (Beirut time).");
   expect(card).toHaveTextContent("Reaction: Hives");
   expect(card).toHaveTextContent("Dose: 5 mg");
   expect(card).toHaveTextContent("Frequency: Once daily");

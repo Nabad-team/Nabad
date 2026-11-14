@@ -9,6 +9,7 @@ import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addVital, deleteVital, listVitals } from "../lib/vitalsApi";
+import { formatDateTime } from "../lib/dates";
 
 const nowLocal = () => {
   const date = new Date();
@@ -16,7 +17,7 @@ const nowLocal = () => {
   return date.toISOString().slice(0, 16);
 };
 const numberOrUndefined = value => value === "" ? undefined : Number(value);
-const dateText = value => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const dateText = formatDateTime;
 
 function TrendChart({ title, readings, lines, unit }) {
   const points = readings.slice().reverse().map((reading, index) => ({ reading, x: readings.length === 1 ? 50 : 6 + index * 88 / (readings.length - 1) }));

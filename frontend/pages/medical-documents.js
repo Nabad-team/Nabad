@@ -11,6 +11,7 @@ import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 import { announceNotificationsChanged } from "../lib/notificationApi";
+import { formatDate } from "../lib/dates";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const DOCUMENT_TYPE_GROUPS = [
@@ -23,7 +24,7 @@ const DocumentTypeOptions = () => DOCUMENT_TYPE_GROUPS.map(([group, types]) => (
   <optgroup key={group} label={group}>{types.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</optgroup>
 ));
 const prettySize = (size) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
-const prettyDate = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+const prettyDate = formatDate;
 const dateLabel = (value) => value ? prettyDate(`${value}T00:00:00`) : "Date not provided";
 
 function fileToPayload(file) {
