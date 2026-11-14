@@ -112,7 +112,7 @@ Workspace pages use a wider column while forms keep their 28rem maximum. Progres
 
 ## The signature: the heartbeat line
 
-The pulse from the logo, used in **two places only**. Don't add it elsewhere, and don't change the logo.
+The pulse from the logo, used in **two places only**, plus the Nabad assistant drawn from it (below). Don't add it elsewhere, and don't change the logo.
 
 1. **Under page titles**: `PageTitle` draws it for you.
    ```jsx
@@ -123,6 +123,23 @@ The pulse from the logo, used in **two places only**. Don't add it elsewhere, an
    import { HeartbeatLoader } from "../components/ui/Heartbeat";
    {loading && <HeartbeatLoader label="Loading your medicines..." />}
    ```
+
+### The Nabad assistant
+
+A small friendly face drawn from the pulse line: the big beat of the heartbeat becomes a rounded head peeking up ("Pulse peek"). It is not a person, a doctor or a nurse. `components/NabadAssistant.js`:
+
+```jsx
+import NabadAssistant, { AssistantLoader } from "../components/NabadAssistant";
+<NabadAssistant size="4.5rem" title="Nabad assistant" />            // full drawing, 4rem and up
+<NabadAssistant size="3rem" crop="head" title="Nabad assistant" />  // cropped to the head, bigger eyes: 2 to 3rem
+<AssistantLoader label="Checking your symptoms" />                  // the line draws itself; still with reduced motion
+```
+
+- **Only in calm places:** onboarding (step 1), empty states (the symptom-check history), the health assistant greeting, and the symptom-check loader.
+- **Never** on urgent or emergency results, next to the emergency dialog, on the emergency card (or its offline copy), or on any "Call 140" screen or bar. The symptom check hides it as soon as a result is urgent or an emergency.
+- Name it "Nabad assistant" (`title`) where it carries meaning. In the loader it is decorative, so only the label is announced.
+- Next to the assistant, keep the existing wording "Nabad gives guidance, not a diagnosis."
+- Line in `--color-primary`, eyes and smile in `--color-primary-strong`, round ends, no fills. Below about 3rem use `crop="head"` so the face stays readable.
 
 ---
 
@@ -229,7 +246,7 @@ Use `role="alert"` for errors that need attention now and `role="status"` for ca
 
 ### Symptom check result
 
-While a check runs, the submit button reads "Checking..." and is disabled, and `HeartbeatLoader` shows "Checking your symptoms". When the result arrives (or follow-up answers update it), the page moves focus to the result card, scrolls to it (instantly with reduced motion) and announces one short line in a live region that is always on the page. Emergencies are the exception: the emergency dialog takes focus and the card keeps `role="alert"`.
+While a check runs, the submit button reads "Checking..." and is disabled, and `AssistantLoader` (the Nabad assistant tracing its pulse line) shows "Checking your symptoms". When the result arrives (or follow-up answers update it), the page moves focus to the result card, scrolls to it (instantly with reduced motion) and announces one short line in a live region that is always on the page. Emergencies are the exception: the emergency dialog takes focus and the card keeps `role="alert"`.
 
 The card starts with the level's icon, "Urgency: <label>" and one short line, then a 4-step scale (Routine / self-care, See a doctor soon, Urgent, Emergency) using the triage API's own labels. The current step has its colour, its icon, bold text, "This result" and `aria-current="step"`. The scale only displays the server's level; it never decides one.
 
@@ -238,7 +255,7 @@ The card starts with the level's icon, "Urgency: <label>" and one short line, th
 A small calm label next to a heading. Never red: teal informs, gray marks what is no longer current, amber asks for a second look.
 
 ```jsx
-<h3>Find hospitals and clinics <Badge>Coming soon</Badge></h3>
+<figcaption><Badge tone="neutral">Sample</Badge> An example result</figcaption>
 <Badge tone="neutral">Discontinued</Badge>   // gray, for things no longer current
 <Badge tone="warning">Missing dose</Badge>   // amber, something worth checking (still not red)
 ```
@@ -298,8 +315,8 @@ Four original line drawings in one style: teal outlines, round line ends, no fil
 
 | Component | Shows | Used on |
 | --- | --- | --- |
-| `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing hero (large: `size="100%" strokeWidth={0.7} viewBox="14 28.4 88 80.6"`), landing (symptom check), onboarding step 1, symptoms page with no profile |
-| `MedicineBox` | A first-aid box with a cross | Landing (emergency hospital) |
+| `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing (symptom check card), onboarding step 1, symptoms page with no profile |
+| `MedicineBox` | A first-aid box with a cross | Landing (emergency hospital card) |
 | `SmallHouse` | A small house with a door, window and plant | Landing (hospitals and clinics), onboarding step 3 |
 | `TwoHearts` | A large heart with a half-size heart tucked in front of its lower right side (the small one in the darker teal) | Caregiver spots: landing (family care), onboarding step 2, "No linked profiles yet" |
 
@@ -309,7 +326,16 @@ import { MedicineBox } from "../components/illustrations";
 <MedicineBox size="5rem" title="A first-aid box" /> // meaningful image (rare)
 ```
 
-Keep them small (4 to 7rem) and friendly. Use them on the landing page, in onboarding and in empty states, not as decoration on every page. Drawn larger (like the landing hero), pass a thinner `strokeWidth` so the line looks as fine as at the small sizes, and a `viewBox` that crops to the drawing.
+### The landing page sample result
+
+The landing hero shows a **sample symptom-check result** instead of a drawing, so visitors see what Nabad gives back. It is built in HTML from the real result styles (`.urgency`, `.urgency__indicator`, `.urgency-scale__*`), uses the triage API's own wording for "See a doctor soon", and is always:
+
+- labelled as a sample (a "Sample" badge and the caption "An example result, with made-up symptoms"),
+- made-up, generic symptoms, never a real person's data,
+- a calm level (never urgent or emergency), and
+- not interactive: no links or buttons inside it.
+
+Keep the illustrations themselves small (4 to 7rem) and friendly. Use them on the landing page, in onboarding and in empty states, not as decoration on every page. Drawn larger (like the landing hero), pass a thinner `strokeWidth` so the line looks as fine as at the small sizes, and a `viewBox` that crops to the drawing.
 
 To add a new one, follow the same rules: 120x120 viewBox, `stroke="currentColor"`, stroke width 2.5, round caps and joins, no fills. Where one line passes behind another, end it with its round cap a little before the crossing rather than crossing or cutting it.
 

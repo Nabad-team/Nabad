@@ -8,6 +8,7 @@ import { request } from "../lib/api";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getReportConversations, deleteReportConversation } from "../lib/reportConversationApi";
 import { formatDate } from "../lib/dates";
+import NabadAssistant from "../components/NabadAssistant";
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "csv", "jpg", "jpeg", "png", "webp"]);
@@ -20,17 +21,6 @@ const URGENCY_LABELS = {
   routine: "Review this with the ordering clinician",
   unclear: "Ask a clinician to review this report",
 };
-
-function ResultsIcon() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-      <path d="M13 5h15l10 10v25H13a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4Z" />
-      <path d="M28 5v10h10M16 23h12M16 29h9" />
-      <circle cx="32" cy="32" r="7" />
-      <path d="m37 37 5 5" />
-    </svg>
-  );
-}
 
 export default function TestResultsPage() {
   const { activeProfile } = useActiveProfile();
@@ -275,7 +265,14 @@ export default function TestResultsPage() {
           </section>
         ) : !result ? (
           <section className="assistant-chat__welcome" aria-labelledby="assistant-welcome-title">
-            <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
+            {/* The assistant greeting: the Nabad assistant, its name, and the existing "guidance, not a diagnosis" wording. */}
+            <div className="assistant-greeting">
+              <NabadAssistant size="3rem" crop="head" title="Nabad assistant" />
+              <p className="assistant-greeting__text">
+                <span className="assistant-greeting__name">Nabad assistant</span>
+                <span className="assistant-greeting__note">Nabad gives guidance, not a diagnosis.</span>
+              </p>
+            </div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
             <p>Ask in English or Arabic, or attach an English or Arabic written test report. The assistant replies in English.</p>
             <div className="assistant-chat__suggestions" role="group" aria-label="Suggested questions">

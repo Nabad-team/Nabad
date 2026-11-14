@@ -260,8 +260,8 @@ export default function AppointmentsPage() {
     try {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
-      if (permission === "granted") setNotice("Browser reminders are enabled while this page is open.");
-      else if (permission === "denied") setError("Notifications are blocked in your browser settings. You can change that there.");
+      if (permission === "granted") setNotice("Browser pop-ups are on. They show while Nabad is open in this browser; your reminders also appear in your notifications.");
+      else if (permission === "denied") setError("Browser pop-ups were not allowed. You can change that in your browser settings.");
     } catch {
       setError("We couldn't enable browser notifications. Please check your browser settings.");
     }
@@ -291,10 +291,10 @@ export default function AppointmentsPage() {
   return (
     <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
       <PageTitle>{listName}</PageTitle>
-      <p className="page-intro">Keep your doctor's appointments together and get browser reminders before visits while this page is open.</p>
-      {notificationPermission === "default" && <Button variant="secondary" onClick={enableReminders}>Enable reminders</Button>}
-      {notificationPermission === "denied" && <p className="text-muted text-sm">Notifications are blocked in browser settings. Change that setting, then reload this page to try again.</p>}
-      {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser notifications are not available here. Reminders only work while this page is open.</p>}
+      <p className="page-intro">Keep your doctor's appointments together. Before each visit, at the time you choose, a reminder appears in your notifications (the bell at the top), even when this page is closed.</p>
+      {notificationPermission === "default" && <Button variant="secondary" onClick={enableReminders}>Also show browser pop-ups</Button>}
+      {notificationPermission === "denied" && <p className="text-muted text-sm">Browser pop-ups are blocked in your browser settings. Your reminders still appear in your notifications.</p>}
+      {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser pop-ups are not available here. Your reminders still appear in your notifications.</p>}
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
@@ -346,7 +346,6 @@ export default function AppointmentsPage() {
           )}
         </>
       )}
-      <p className="section"><a href="/medications">Back to medications</a></p>
     </PageLayout>
   );
 }

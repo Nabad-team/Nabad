@@ -19,20 +19,37 @@ function verificationDates(value) {
   };
 }
 
-export default function ProviderFacts({ provider: p, showLiveStatus = true, drivingMinutes }) {
+// The badges a result card shows side by side: distance, driving time, opening status, 24/7 ER, and
+// "possibly outdated" when the listing is due for a check.
+export function ProviderBadges({ provider: p, showLiveStatus = true, drivingMinutes }) {
+  const verification = verificationDates(p.verifiedAt);
+  return <ul className="provider-badges" aria-label={t("keyFacts", { name: p.name })}>
+    {p.distanceKm != null && <li><Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge></li>}
+    {Number.isFinite(drivingMinutes) && <li><Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge></li>}
+    {showLiveStatus && <li><Badge tone={p.openingStatus === "open" ? "info" : "neutral"}>{t(p.openingStatus || "unknown")}</Badge></li>}
+    <li><Badge tone={p.emergency24h === true ? "info" : "neutral"}>{t(p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : "erUnknown")}</Badge></li>
+    {(!verification || verification.outdated) && <li><Badge tone="warning">{t("possiblyOutdated")}</Badge></li>}
+  </ul>;
+}
+
+// variant="full": every fact (the provider page and the comparison). variant="details": the "More details" part of a
+// result card, which leaves out only what the card already shows above it (type and city, the badges, Call, Directions).
+export default function ProviderFacts({ provider: p, showLiveStatus = true, drivingMinutes, variant = "full" }) {
+  const full = variant === "full";
   const feedback = p.feedback;
   const waiting = feedback?.waiting;
   const verification = verificationDates(p.verifiedAt);
   return <>
-    <p>{t(p.type)}{p.city ? ` \u00b7 ${p.city}` : ""}{p.district ? ` \u00b7 ${t("district")}: ${p.district}` : ""}</p>
+    {full ? <p>{t(p.type)}{p.city ? ` \u00b7 ${p.city}` : ""}{p.district ? ` \u00b7 ${t("district")}: ${p.district}` : ""}</p>
+      : p.district && <p>{t("district")}: {p.district}</p>}
     <p>{p.address || t("addressUnknown")}</p>
-    {(!verification || verification.outdated) && <p><Badge tone="neutral">{t("possiblyOutdated")}</Badge> {t("confirmBeforeVisiting")}</p>}
-    {p.distanceKm != null && <p><Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge></p>}
-    {Number.isFinite(drivingMinutes) && <p><Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge></p>}
+    {(!verification || verification.outdated) && <p>{full && <><Badge tone="neutral">{t("possiblyOutdated")}</Badge> </>}{t("confirmBeforeVisiting")}</p>}
+    {full && p.distanceKm != null && <p><Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge></p>}
+    {full && Number.isFinite(drivingMinutes) && <p><Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge></p>}
     {p.locationApproximate && <p>{t("approximatePin")}</p>}
     <p>{p.specialties?.length ? p.specialties.map(s => t(`specialties.${s}`)).join(", ") : t("specialtiesUnknown")}</p>
-    {showLiveStatus && <p><Badge tone={p.openingStatus === "open" ? "info" : "neutral"}>{t(p.openingStatus || "unknown")}</Badge></p>}
-    <p><Badge tone={p.emergency24h === true ? "info" : "neutral"}>{t(p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : "erUnknown")}</Badge></p>
+    {full && showLiveStatus && <p><Badge tone={p.openingStatus === "open" ? "info" : "neutral"}>{t(p.openingStatus || "unknown")}</Badge></p>}
+    {full && <p><Badge tone={p.emergency24h === true ? "info" : "neutral"}>{t(p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : "erUnknown")}</Badge></p>}
     <p>{p.services?.length ? `${t("service")}: ${p.services.map(s => t(`services.${s}`)).join(", ")}` : t("servicesUnknown")}</p>
     <p className="text-muted">{t("servicesNote")}</p>
     {p.servicesReviewedAt && <p className="text-muted">{t("servicesChecked", { date: formatDate(p.servicesReviewedAt) })}</p>}
@@ -51,8 +68,8 @@ export default function ProviderFacts({ provider: p, showLiveStatus = true, driv
       <ul>{p.hours.map((slot, i) => <li key={i}>{t(`day${slot.day}`)}: {time(slot.start)}\u2013{time(slot.end)} {slot.end < slot.start ? t("overnight") : ""}</li>)}</ul>
     </details>}
     <p className="text-muted">{t("hoursNote")}</p>
-    {p.phone && <p><a href={`tel:${p.phone}`}>{t("call", { name: p.name })}</a></p>}
-    {Number.isFinite(p.latitude) && Number.isFinite(p.longitude) ? <p><a className="button button--secondary" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${p.latitude},${p.longitude}`)}`} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p> : <p>{t("locationUnknown")}</p>}
+    {full && p.phone && <p><a href={`tel:${p.phone}`}>{t("call", { name: p.name })}</a></p>}
+    {hasMapLocation(p) ? full && <p><a className="button button--secondary" href={directionsUrl(p)} target="_blank" rel="noopener noreferrer">{t("directions")}</a></p> : <p>{t("locationUnknown")}</p>}
     {verification ? <>
       <p className="text-muted">{t("checked", { date: verification.checked })}</p>
       <p className="text-muted">{t("reviewDue", { date: verification.due })}</p>
@@ -60,4 +77,6 @@ export default function ProviderFacts({ provider: p, showLiveStatus = true, driv
     <div className="provider-sources">{p.sources?.map((url, i) => <a key={url} href={url} target="_blank" rel="noopener noreferrer">{t("source", { number: i + 1 })}</a>)}</div>
   </>;
 }
+export const hasMapLocation = (p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude);
+export const directionsUrl = (p) => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${p.latitude},${p.longitude}`)}`;
 function time(minutes) { return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`; }

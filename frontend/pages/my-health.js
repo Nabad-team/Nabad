@@ -512,9 +512,9 @@ export default function MyHealthPage() {
             <p className="text-muted">This is exactly what Nabad will use when it gives {who ? `${who} ` : "you "}guidance.</p>
             <pre className="health-summary">{profile.summary}</pre>
             <p className="text-muted">
-              The last line, about water and sleep, appears only when something was logged in the last 7 days: today's fluids
-              (with the daily goal, if one is set) and the average sleep. It lists facts only. You can update them
-              in <a href="/water-and-sleep">Water and sleep</a>.
+              If anything here is wrong or out of date, change it above, so the guidance stays right for {who || "you"}.
+              If water or sleep was logged in the past week, the last line also shows today&apos;s drinks and the average
+              sleep. You can change those in <a href="/water-and-sleep">Water and sleep</a>.
             </p>
           </section>
         </div>

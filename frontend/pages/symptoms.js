@@ -43,7 +43,7 @@ import {
   useAccessibility,
 } from "../context/AccessibilityContext";
 import { formatDateTime } from "../lib/dates";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import NabadAssistant, { AssistantLoader } from "../components/NabadAssistant";
 
 
 // Same limits as the API.
@@ -603,6 +603,9 @@ export default function SymptomsPage() {
   }
 
 
+  // The Nabad assistant only appears on calm screens: never next to an urgent or emergency result or the emergency dialog.
+  const calmScreen = !emergencyAlert && !["urgent", "emergency"].includes(urgency?.level);
+
   const emergencyContactPhone =
     emergencyContact?.phone
       ? String(
@@ -757,7 +760,7 @@ export default function SymptomsPage() {
         </div>
       </form>
 
-      {checking && <HeartbeatLoader label="Checking your symptoms" />}
+      {checking && <AssistantLoader label="Checking your symptoms" />}
 
       <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
 
@@ -848,7 +851,7 @@ export default function SymptomsPage() {
         <h2 id="symptom-history-heading">Previous symptom checks</h2>
         {/* SCRUM-156 */}
         <p><a href="/my-history">Ask a question about your history</a>, for example when you last had a symptom.</p>
-        {history.length === 0 ? <p className="text-muted">Your saved conversations will appear here.</p> : (
+        {history.length === 0 ? <EmptyState illustration={calmScreen ? <NabadAssistant size="4.5rem" title="Nabad assistant" /> : null} title="No symptom checks yet.">Your saved conversations will appear here.</EmptyState> : (
           <ul className="symptom-history__list">
             {history.slice(0, 10).map((record) => (
               <li key={record.id}>

@@ -188,3 +188,38 @@ describe("Urgency result card", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
+
+describe("Nabad assistant on the symptom check", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useActiveProfile.mockReturnValue({ activeProfile: { id: "profile-1", fullName: "Maya Hamdan" } });
+    addSymptomRecord.mockResolvedValue({ id: "symptom-1" });
+    getEmergencyContact.mockResolvedValue({ contact: null });
+    Element.prototype.scrollIntoView = jest.fn();
+  });
+
+  test("the loader is the assistant's tracing pulse line, announced only as Checking your symptoms", async () => {
+    const user = userEvent.setup({ delay: null });
+    assessUrgency.mockReturnValue(new Promise(() => {}));
+    render(<SymptomsPage />);
+    await user.type(screen.getByRole("textbox", { name: "Symptoms" }), "mild headache since yesterday");
+    await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
+    const loader = screen.getByText("Checking your symptoms").closest('[role="status"]');
+    const mascot = loader.querySelector("svg.nabad-assistant--tracing");
+    expect(mascot).not.toBeNull();
+    expect(mascot).toHaveAttribute("aria-hidden", "true");
+    expect(loader).toHaveTextContent(/^Checking your symptoms$/);
+  });
+
+  test("shows in the empty history while calm, and never next to an urgent or emergency result", async () => {
+    const user = userEvent.setup({ delay: null });
+    addSymptomRecord.mockRejectedValue(new Error("offline")); // keep the history empty after the check
+    assessUrgency.mockResolvedValue(URGENT);
+    render(<SymptomsPage />);
+    expect(document.querySelectorAll(".nabad-assistant")).toHaveLength(1);
+    await user.type(screen.getByRole("textbox", { name: "Symptoms" }), "high fever since this morning");
+    await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
+    await screen.findByRole("heading", { name: "Urgency: Urgent" });
+    expect(document.querySelectorAll(".nabad-assistant")).toHaveLength(0);
+  });
+});
