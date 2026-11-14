@@ -25,7 +25,8 @@ review. Missing dates and overdue checks display a warning.
 The directory can show estimated driving minutes for the current page of
 non-emergency results after the visitor requests them. Set
 `OPENROUTESERVICE_API_KEY` in the backend to enable it. The request sends the
-visitor's location and verified destination coordinates to OpenRouteService.
+visitor's location and verified destination coordinates to HeiGIT OpenRouteService
+at `api.heigit.org`. Nabad does not send user IDs, account details or health information.
 Coordinates are sent in a request body and kept out of shareable links. Results
 exclude live traffic. Missing routes and approximate facility pins have no
 estimate. The directory and directions remain usable if routing is unavailable.

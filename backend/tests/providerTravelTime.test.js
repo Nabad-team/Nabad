@@ -8,7 +8,10 @@ test("travel requests reject nonnumeric origins and invalid or oversized facilit
   assert.throws(() => parseTravelRequest({ ...origin, lat: "33.9", ids: ["clinic"] }));
   assert.throws(() => parseTravelRequest({ ...origin, ids: [{ $ne: "" }] }));
   assert.throws(() => parseTravelRequest({ ...origin, ids: Array(21).fill("clinic") }));
-  assert.deepEqual(parseTravelRequest({ ...origin, ids: ["clinic", "clinic"] }), { ...origin, ids: ["clinic"] });
+  assert.deepEqual(
+    parseTravelRequest({ ...origin, ids: ["clinic", "clinic"], userId: "ignored" }),
+    { ...origin, ids: ["clinic"] },
+  );
 });
 
 test("the road matrix uses known destinations and omits facilities without a route", async t => {
@@ -21,7 +24,8 @@ test("the road matrix uses known destinations and omits facilities without a rou
     ] }) };
   });
   t.mock.method(globalThis, "fetch", async (url, options) => {
-    assert.match(url, /\/matrix\/driving-car$/);
+    assert.equal(url, "https://api.heigit.org/openrouteservice/v2/matrix/driving-car");
+    assert.deepEqual(options.headers, { Authorization: "test-key", "Content-Type": "application/json" });
     assert.deepEqual(JSON.parse(options.body), {
       locations: [[35.5, 33.9], [35.4, 33.8], [35.8, 34.1]], sources: [0], destinations: [1, 2], metrics: ["duration"],
     });
