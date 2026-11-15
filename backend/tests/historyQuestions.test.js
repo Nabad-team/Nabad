@@ -113,7 +113,7 @@ describe("finding the records and answering", () => {
     await Medication.create({ owner: me._id, profileId: me._id, name: "Amoxicillin", dose: "500", unit: "mg", frequency: "three times a day", startDate: new Date("2026-03-10"), endDate: new Date("2026-03-17"), status: "discontinued" });
     await Medication.create({ owner: me._id, profileId: me._id, name: "Vitamin D", dose: "1000", unit: "IU", frequency: "once a day", startDate: new Date("2026-06-01") });
     await MedicalDocument.create({ owner: me._id, profileId: me._id, filename: "cbc-results.pdf", mimeType: "application/pdf", documentType: "lab", documentDate: new Date("2026-09-20"), size: 3, data: Buffer.from("pdf") });
-    await MedicalDocument.create({ owner: me._id, profileId: me._id, filename: "card-front.jpg", mimeType: "image/jpeg", documentType: "insurance_card", documentDate: new Date("2026-08-01"), size: 3, data: Buffer.from("jpg") });
+    await MedicalDocument.create({ owner: me._id, profileId: me._id, filename: "referral-letter.jpg", mimeType: "image/jpeg", documentType: "letter", documentDate: new Date("2026-08-01"), size: 3, data: Buffer.from("jpg") });
   }, { timeout: 240000 });
   after(async () => { await mongoose.disconnect(); if (mongo) await mongo.stop(); });
 
@@ -155,8 +155,9 @@ describe("finding the records and answering", () => {
     assert.deepEqual(now.records.map((r) => r.title), ["Vitamin D"]);
     const docs = await answer("did I upload any lab results since September");
     assert.deepEqual(docs.records.map((r) => [r.title, r.detail]), [["cbc-results.pdf", "Lab result"]]);
-    const card = await answer("where is my insurance card document");
-    assert.deepEqual(card.records.map((r) => [r.title, r.detail]), [["card-front.jpg", "Insurance card"]]);
+    // Identification and coverage files are kept with the profile (ProfileCoverage), not with medical documents.
+    const letter = await answer("where is my referral letter document");
+    assert.deepEqual(letter.records.map((r) => [r.title, r.detail]), [["referral-letter.jpg", "Letter"]]);
   });
 
   test("the first time, and nothing found", async () => {

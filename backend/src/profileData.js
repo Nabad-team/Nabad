@@ -55,6 +55,7 @@ const PROFILE_MODELS = [
   HealthFact,
   Notification,
   MedicalDocument,
+  require("./models/ProfileCoverage"),
   require("./models/VitalReading"),
 ];
 

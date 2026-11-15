@@ -102,6 +102,8 @@ function createApp() {
   // Medical documents are sent as base64 JSON and need the same route-local body parsing
   // so the ordinary 100 KB API limit below does not reject uploads before their route runs.
   app.use("/api/medical-documents", require("./routes/medicalDocuments"));
+  // Identity and coverage files are private profile data, separate from medical records and visit sharing.
+  app.use("/api/profile-coverage", require("./routes/profileCoverage"));
   app.use("/api/emergency-card", require("./routes/emergencyCard"));
   app.use("/api/visit-prep", require("./routes/visitPrep"));
   app.use("/api/visit-prep-shares", require("./routes/visitPrepShares"));

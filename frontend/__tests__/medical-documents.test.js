@@ -71,21 +71,6 @@ describe("Medical documents page", () => {
     window.removeEventListener(NOTIFICATIONS_CHANGED, notificationChanged);
   });
 
-  test("uploads optional patient coverage and identification documents", async () => {
-    uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-nssf", filename: "nssf-card.pdf", documentType: "nssf", documentDate: "", size: 1024, uploadedAt: "2026-10-12T10:00:00.000Z" } });
-    renderPage();
-    await screen.findByText(/No documents added yet/);
-    fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [new File(["nssf"], "nssf-card.pdf", { type: "application/pdf" })] } });
-    await screen.findByRole("region", { name: "Details for 1 file" });
-    expect(screen.getByRole("option", { name: "Patient ID" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Medical insurance card" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Document type")).toHaveAccessibleDescription(/upload only documents needed for patient matching/i);
-    fireEvent.change(screen.getByLabelText("Document type"), { target: { value: "nssf" } });
-    fireEvent.click(screen.getByRole("button", { name: "Upload 1 file" }));
-    expect(await screen.findByRole("link", { name: "Download" })).toBeInTheDocument();
-    expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "nssf-card.pdf" }), { documentType: "nssf", documentDate: "" });
-  });
-
   test("uploads a DICOM X-ray file even when the browser does not identify its MIME type", async () => {
     uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-dcm", filename: "scan.dcm", size: 12, uploadedAt: "2026-10-12T10:00:00.000Z" } });
     renderPage();

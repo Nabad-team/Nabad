@@ -10,6 +10,7 @@ const Appointment = require("./models/Appointment");
 const ReportConversation = require("./models/ReportConversation");
 const Notification = require("./models/Notification");
 const MedicalDocument = require("./models/MedicalDocument");
+const ProfileCoverage = require("./models/ProfileCoverage");
 const { HydrationEntry, SleepEntry, WellbeingSettings } = require("./models/Wellbeing");
 const { preferencesView } = require("./notifications");
 
@@ -29,6 +30,13 @@ const base64Data = (value) => {
 };
 // Calendar dates stored as UTC midnight (date of birth, water and sleep days): "YYYY-MM-DD".
 const day = (value) => (value ? new Date(value).toISOString().slice(0, 10) : null);
+const coverageDocument = (document) => document ? {
+  filename: document.filename,
+  mimeType: document.mimeType,
+  size: document.size,
+  uploadedAt: document.uploadedAt,
+  dataBase64: base64Data(document.data),
+} : null;
 
 // Fields that every collection has, never exported: the owner is always this account, and records are grouped under
 // the profile they belong to.
@@ -41,6 +49,14 @@ const TIMESTAMPS = { createdAt: "createdAt", updatedAt: "updatedAt" };
 
 // Health data kept per profile (the account owner's own, or a linked family profile's).
 const PROFILE_COLLECTIONS = [
+  {
+    key: "identificationAndCoverage", model: ProfileCoverage, single: true,
+    fields: {
+      _id: ["id", id], hasInsurance: "hasInsurance", hasNssf: "hasNssf",
+      patientId: ["patientId", coverageDocument], insuranceCard: ["insuranceCard", coverageDocument],
+      nssfDocument: ["nssfDocument", coverageDocument], ...TIMESTAMPS,
+    },
+  },
   {
     key: "visitPreparationShares", model: require("./models/VisitPrepShare"),
     fields: {
