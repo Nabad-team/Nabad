@@ -114,7 +114,7 @@ test("search, discontinued toggle and the active-only filter", async () => {
   expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual(["Omar Khoury"]);
   await user.clear(search);
   await user.type(search, "nobody here");
-  expect(screen.getByText("Nobody matches these filters.")).toBeInTheDocument();
+  expect(screen.getByText(/^Nobody matches these filters. Try a different name/)).toBeInTheDocument();
   await user.clear(search);
 
   await user.click(screen.getByRole("checkbox", { name: "Show discontinued medications" }));

@@ -6,6 +6,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
+import Card from "../components/ui/Card";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addVital, deleteVital, listVitals } from "../lib/vitalsApi";
@@ -88,7 +89,7 @@ export default function VitalsPage() {
     {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
     {message && <Alert tone="success" as="p" role="status">{message}</Alert>}
 
-    {profileId && <section className="section vitals-log" aria-labelledby="log-vitals-heading">
+    {profileId && <Card className="section vitals-log" aria-labelledby="log-vitals-heading">
       <h2 id="log-vitals-heading">Log a reading</h2>
       <p className="text-muted">Enter one or more measurements. These readings do not replace medical advice.</p>
       <form onSubmit={submit} className="form vitals-form">
@@ -101,13 +102,13 @@ export default function VitalsPage() {
         </div>
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : `Save reading${who ? ` for ${who}` : ""}`}</Button>
       </form>
-    </section>}
+    </Card>}
 
-    <section className="section" aria-labelledby="vitals-history-heading">
+    <Card className="section" aria-labelledby="vitals-history-heading">
       <div className="vitals-history__heading"><div><h2 id="vitals-history-heading">History and trends</h2><p className="text-muted">Up to 1,000 readings are shown.</p></div>
         <label className="field__label" htmlFor="vitals-range">Time range<select id="vitals-range" className="input" value={range} onChange={e => setRange(e.target.value)}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select></label>
       </div>
-      {readings === null && profileId && !error ? <HeartbeatLoader label="Loading vital readings..." /> : sorted.length === 0 ? <EmptyState title="No vital readings in this range yet.">Log a reading above, or choose a wider time range.</EmptyState> : <>
+      {readings === null && profileId && !error ? <HeartbeatLoader label="Loading vital readings..." /> : sorted.length === 0 ? <EmptyState title="No vital readings in this range yet: log a reading above, or choose a wider time range." /> : <>
         <div className="vitals-charts">
           <TrendChart title="Blood pressure" readings={sorted.filter(r => r.systolic !== null)} lines={[{ key: "systolic", label: "Systolic" }, { key: "diastolic", label: "Diastolic" }]} unit="mmHg" />
           <TrendChart title="Heart rate" readings={sorted.filter(r => r.heartRate !== null)} lines={[{ key: "heartRate", label: "Heart rate" }]} unit="bpm" />
@@ -116,7 +117,7 @@ export default function VitalsPage() {
         <div className="vitals-table-wrap"><table className="vitals-table"><caption>Vital readings, newest first</caption><thead><tr><th>Date</th><th>Blood pressure</th><th>Heart rate</th><th>Temperature</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{sorted.map(reading => <tr key={reading.id}><td>{dateText(reading.recordedAt)}</td><td>{reading.systolic === null ? "—" : `${reading.systolic}/${reading.diastolic} mmHg`}</td><td>{reading.heartRate === null ? "—" : `${reading.heartRate} bpm`}</td><td>{reading.temperature === null ? "—" : `${reading.temperature}°C`}</td><td><Button variant="danger" size="small" disabled={busy} onClick={() => remove(reading)} aria-label={`Delete reading from ${dateText(reading.recordedAt)}`}>Delete</Button></td></tr>)}</tbody></table></div>
         <p className="section"><Button href="/visit-prep" variant="secondary">Review vitals before a visit</Button></p>
       </>}
-    </section>
+    </Card>
   </PageLayout>;
 }
 

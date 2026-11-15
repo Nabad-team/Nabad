@@ -54,7 +54,7 @@ describe("Water and sleep page", () => {
     expect(screen.queryByRole("button", { name: "Undo last drink" })).not.toBeInTheDocument();
     expect(log()).not.toBeInTheDocument();
     expect(within(await sleepSection()).getByLabelText("Hours slept")).toHaveValue(null);
-    expect(screen.getByText("Nothing logged this week yet.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing logged this week yet: the week will show here as you log water and sleep.")).toBeInTheDocument();
     expect(screen.queryByRole("figure")).not.toBeInTheDocument();
   });
 
@@ -86,7 +86,7 @@ describe("Water and sleep page", () => {
     expect(await count()).toHaveTextContent("0.25 L today");
     await act(async () => { fail(new Error("Could not save drink")); });
     expect(await count()).toHaveTextContent("Nothing logged yet today");
-    expect(screen.getByText("Nothing logged this week yet.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing logged this week yet: the week will show here as you log water and sleep.")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Could not save drink");
     expect(glass).toBeEnabled();
   });

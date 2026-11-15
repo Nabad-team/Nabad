@@ -188,7 +188,7 @@ describe("Profile Page", () => {
     test("shows a message when there are no linked profiles", async () => {
       renderProfilePage();
 
-      expect(await screen.findByText("No linked profiles yet.")).toBeInTheDocument();
+      expect(await screen.findByText(/^No linked profiles yet:/)).toBeInTheDocument();
     });
 
     test("adding a dependent shows it in the list with relationship and age", async () => {
@@ -206,7 +206,7 @@ describe("Profile Page", () => {
       expect(await screen.findByText("Dependent added.")).toBeInTheDocument();
       expect(screen.getByText("Sami Haddad", { selector: "strong" })).toBeInTheDocument();
       expect(screen.getByText(/child, age 7/)).toBeInTheDocument();
-      expect(screen.queryByText("No linked profiles yet.")).not.toBeInTheDocument();
+      expect(screen.queryByText(/^No linked profiles yet:/)).not.toBeInTheDocument();
 
       // It is also saved through the profile API.
       expect((await listLinkedProfiles())[0].fullName).toBe("Sami Haddad");

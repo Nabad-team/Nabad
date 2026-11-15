@@ -188,9 +188,9 @@ export default function MedicationOverviewPage() {
             <p className="overview-totals" role="status" aria-live="polite">{totalsSentence(totals, showDiscontinued)}</p>
 
             {visible.length === 0 ? (
-              <EmptyState illustration={<MedicineBox size="5rem" />} title={filtered ? "Nobody matches these filters." : "No medications yet."}>
-                {filtered ? "Try a different name, or clear the search and filters." : "Add medications on the Medications page and they will appear here."}
-              </EmptyState>
+              <EmptyState illustration={<MedicineBox size="4rem" />}
+                title={filtered ? "Nobody matches these filters. Try a different name, or clear the search and filters." : "No medications yet: add them on My medications and they will appear here."}
+                action={filtered ? null : <Button variant="secondary" href="/medications">Open My medications</Button>} />
             ) : (
               <div className="overview-people">
                 {visible.map(({ profile, medications }) => (

@@ -79,9 +79,9 @@ describe("Medications page", () => {
 
   test("shows the empty state when there are no medications yet", async () => {
     renderPage();
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
-    expect(screen.getByText("Add the ones you take so they're ready for your doctor.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add medication" })).toBeInTheDocument();
+    expect(await screen.findByText("No medications yet: add the ones you take so they're ready for your doctor.")).toBeInTheDocument();
+    // One primary action in the header row, and the empty state's own button.
+    expect(screen.getAllByRole("button", { name: "Add medication" })).toHaveLength(2);
   });
 
   test("custom daily times persist per medication and can be edited and removed", async () => {
@@ -111,7 +111,7 @@ describe("Medications page", () => {
 
   test("new medications accept multiple times and reject empty or duplicate reminders", async () => {
     const user = userEvent.setup({ delay: null }); renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
     await user.type(screen.getByLabelText("Medication name"), "Test medicine");
     await user.click(screen.getByRole("button", { name: "Add reminder time" }));
     await user.click(screen.getByRole("button", { name: "Save medication" }));
@@ -168,7 +168,7 @@ describe("Medications page", () => {
   test("adds a medication", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
 
     const form = screen.getByRole("form", { name: "Add a medication" });
     expect(within(form).getByLabelText("Medication name")).toHaveFocus();
@@ -192,7 +192,7 @@ describe("Medications page", () => {
   test("explains what's wrong instead of saving an invalid medication", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
     const form = screen.getByRole("form", { name: "Add a medication" });
 
     await user.click(within(form).getByRole("button", { name: "Save medication" }));
@@ -212,7 +212,7 @@ describe("Medications page", () => {
     const user = userEvent.setup({ delay: null });
     mockApi.addMedication.mockRejectedValueOnce(new Error("Too many changes in a short time. Please wait a few minutes and try again."));
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
     await user.type(screen.getByLabelText("Medication name"), "Aspirin");
     await user.click(screen.getByRole("button", { name: "Save medication" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Too many changes in a short time.");
@@ -289,7 +289,7 @@ describe("Medications page", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Paracetamol was deleted.");
     expect(mockApi.deleteMedication).toHaveBeenCalledWith("self", "1");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/^No medications yet:/)).toBeInTheDocument();
   });
 
   test("offers to try again when the list can't be loaded", async () => {
@@ -298,7 +298,7 @@ describe("Medications page", () => {
     renderPage();
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load your medications.");
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/^No medications yet:/)).toBeInTheDocument();
   });
 
   test("has the page title and a dashboard logo link in the header", async () => {
@@ -345,7 +345,7 @@ describe("Medications for a family member", () => {
     actAsChild();
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Add medication for Sami Haddad" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication for Sami Haddad" }))[0]);
     await user.type(screen.getByLabelText("Medication name"), "Ventolin");
     await user.click(screen.getByRole("button", { name: "Save medication" }));
     expect(await screen.findByText("Ventolin was added to Sami Haddad's list.")).toBeInTheDocument();
@@ -393,8 +393,7 @@ describe("Medications for a family member", () => {
     mockMedications = mockMedications.filter((m) => m.profileId !== childId);
     actAsChild();
     renderPage();
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
-    expect(screen.getByText("Add the ones Sami Haddad takes so they're ready for their doctor.")).toBeInTheDocument();
+    expect(await screen.findByText("No medications yet: add the ones Sami Haddad takes so they're ready for their doctor.")).toBeInTheDocument();
   });
 
   test("after a family member is removed, the page goes back to the caregiver's own list", async () => {
@@ -438,7 +437,7 @@ describe("Medications page: add from a prescription", () => {
     await user.click(await screen.findByRole("button", { name: "More" }));
     await user.click(screen.getByRole("button", { name: "Add from a prescription" }));
     const panel = screen.getByRole("region", { name: "Add from a prescription" });
-    expect(screen.queryByText("No medications yet.")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^No medications yet:/)).not.toBeInTheDocument();
     await user.upload(within(panel).getByLabelText("Prescription photo or PDF"), new File([new Uint8Array([137, 80, 78, 71])], "rx.png", { type: "image/png" }));
     await user.click(within(panel).getByRole("checkbox", { name: /I agree/ }));
     await user.click(within(panel).getByRole("button", { name: "Read prescription" }));

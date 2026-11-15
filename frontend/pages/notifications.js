@@ -136,9 +136,7 @@ export default function NotificationsPage() {
       {loadError && <div className="stack"><Alert tone="danger" as="p" role="alert">{loadError}</Alert><Button variant="secondary" onClick={() => load(page)}>Try again</Button></div>}
       {!loadError && items === null && <HeartbeatLoader label="Loading notifications..." />}
       {items !== null && visibleItems.length === 0 && (
-        <EmptyState title={hasFilters ? "No notifications match these filters." : "No notifications yet."}>
-          {hasFilters ? "Try changing the search or showing all notifications for everyone." : "Appointment reminders, care circle alerts and other important alerts will appear here."}
-        </EmptyState>
+        <EmptyState title={hasFilters ? "No notifications match these filters. Try changing the search or showing all notifications for everyone." : "No notifications yet: appointment reminders, care circle alerts and other important alerts will appear here."} />
       )}
       {visibleItems.length > 0 && (
         <ul className="notification-list" aria-label="Notifications">

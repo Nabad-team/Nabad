@@ -31,7 +31,7 @@ describe("Notifications page", () => {
     render(<NotificationsPage />);
     expect(NotificationsPage.requireSignIn).toBe(true);
     expect(screen.getByRole("heading", { level: 1, name: "Notifications" })).toBeInTheDocument();
-    expect(await screen.findByText("No notifications yet.")).toBeInTheDocument();
+    expect(await screen.findByText("No notifications yet: appointment reminders, care circle alerts and other important alerts will appear here.")).toBeInTheDocument();
     expect(document.querySelector("title")).toHaveTextContent("Notifications · Nabad");
   });
 
@@ -66,7 +66,7 @@ describe("Notifications page", () => {
     await user.selectOptions(screen.getByLabelText("Show"), "unread");
     await waitFor(async () => expect(await titles()).toEqual(["Mine unread"]));
     await user.selectOptions(screen.getByLabelText("Person"), "sami");
-    expect(await screen.findByText("No notifications match these filters.")).toBeInTheDocument();
+    expect(await screen.findByText("No notifications match these filters. Try changing the search or showing all notifications for everyone.")).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Show"), "all");
     await waitFor(async () => expect(await titles()).toEqual(["Sami's"]));
     expect(fake.calls).toContainEqual(["getNotifications", { page: 1, limit: 20, profileId: "sami", unread: false }]);

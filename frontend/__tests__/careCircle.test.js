@@ -52,8 +52,8 @@ describe("Care circle page", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Care circle" })).toBeInTheDocument();
     expect(screen.getByText("People in your care circle are told when a symptom check needs attention. They never see your symptoms.")).toBeInTheDocument();
     expect(document.querySelector("title")).toHaveTextContent("Care circle · Nabad");
-    expect(await screen.findByText("No one is in your care circle yet.")).toBeInTheDocument();
-    expect(screen.getByText("You're not in anyone's care circle.")).toBeInTheDocument();
+    expect(await screen.findByText("No one is in your care circle yet: invite someone you trust, like a family member or a close friend.")).toBeInTheDocument();
+    expect(screen.getByText("You're not in anyone's care circle. When someone invites you, open the link in their email to join.")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Waiting to accept" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "My profile" })).toHaveAttribute("href", "/profile");
   });
@@ -147,7 +147,7 @@ describe("Care circle page", () => {
     render(<CareCirclePage />);
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load your care circle.");
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText("No one is in your care circle yet.")).toBeInTheDocument();
+    expect(await screen.findByText("No one is in your care circle yet: invite someone you trust, like a family member or a close friend.")).toBeInTheDocument();
   });
 });
 

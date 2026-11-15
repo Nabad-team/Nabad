@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
+import Card from "../components/ui/Card";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { formatDate, todayString } from "../lib/dates";
@@ -308,6 +309,7 @@ export default function AppointmentsPage() {
       {!loadError && !profilesError && appointments === null && <HeartbeatLoader label="Loading appointments..." />}
       {appointments !== null && (
         <>
+          <Card as="div" className="page-card">
           <Calendar
             month={month}
             appointments={appointments}
@@ -324,8 +326,10 @@ export default function AppointmentsPage() {
             {selectedMedications.map((medication) => <div key={medication.id} className="calendar-details__item"><strong>{medication.time} · {medication.name}</strong><span>Medication</span></div>)}
             <Button size="small" onClick={() => openNewAppointment(selectedDate)}>Add appointment for this day</Button>
           </section>}
+          </Card>
+          <Card as="div" className="page-card">
           {editing === "add" && <div id="new-appointment"><AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} /></div>}
-          {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet.">Add your next doctor's visit so Nabad can remind you.</EmptyState>}
+          {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet: add your next doctor's visit so Nabad can remind you." action={<Button variant="secondary" onClick={() => openNewAppointment()}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>} />}
           {appointments.length > 0 && (
             <ul className="appointment-list" aria-label={listName}>
               {appointments.map((appointment) => (
@@ -346,6 +350,7 @@ export default function AppointmentsPage() {
               ))}
             </ul>
           )}
+          </Card>
         </>
       )}
     </PageLayout>

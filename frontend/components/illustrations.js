@@ -57,6 +57,22 @@ export function MedicineBox(props) {
   );
 }
 
+// A clipboard with a few lines: a list or record with nothing on it yet (the default empty-state drawing).
+export function Clipboard(props) {
+  return (
+    <Drawing {...props}>
+      {/* board */}
+      <path d="M36.4 26.6c-4.4.1-7.2 2.9-7.3 7.2-.6 20.6-.6 41.4.1 62.2.1 4.2 2.9 6.9 7.2 7 15.9.4 31.7.4 47.6-.1 4.2-.1 6.9-2.8 7-7 .5-20.8.5-41.6-.1-62.3-.1-4.2-2.8-6.9-7.1-7" />
+      {/* clip */}
+      <path d="M48 31.4v-6.6c0-2.3 1.7-4 4-4h3.6c.8-3.4 2.6-5.2 4.6-5.2s3.8 1.8 4.6 5.2h3.4c2.3 0 4 1.7 4 4v6.6c-8.1.3-16.1.3-24.2 0z" />
+      {/* lines */}
+      <path d="M43.6 54.4c10.8-.4 21.8-.4 32.8 0" />
+      <path d="M43.6 67.6c10.8-.3 21.8-.3 32.8 .1" />
+      <path d="M43.6 80.8c7.2-.3 14.4-.3 21.6 0" />
+    </Drawing>
+  );
+}
+
 // A small house with a door and a window: home, or care close to home.
 export function SmallHouse(props) {
   return (
