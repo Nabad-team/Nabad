@@ -35,6 +35,18 @@ describe("Notifications page", () => {
     expect(document.querySelector("title")).toHaveTextContent("Notifications · Nabad");
   });
 
+  test("loads with a placeholder in the card, and the settings link sits inside the card", async () => {
+    render(<NotificationsPage />);
+    // The fake API answers asynchronously, so the first render is the loading state.
+    const card = document.querySelector(".page-card.notifications");
+    expect(within(card).getByRole("status")).toHaveTextContent("Loading notifications...");
+    expect(card.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(document.querySelector(".loader")).toBeNull();
+    expect(within(card).getByRole("link", { name: "Choose which notifications you get" })).toHaveAttribute("href", "/profile#notifications-heading");
+    expect(await screen.findByText(/No notifications yet/)).toBeInTheDocument();
+    expect(card.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
   test("lists notifications newest first, with unread ones marked and the person's name", async () => {
     fake.seedNotification({ title: "Older", read: true });
     fake.seedNotification({ title: "Sami's appointment", profileId: "sami", message: "Sami's appointment at AUBMC is in 1 hour (10:00)." });

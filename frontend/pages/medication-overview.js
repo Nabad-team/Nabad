@@ -10,7 +10,7 @@ import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import EmptyState from "../components/ui/EmptyState";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { MedicationOverviewSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
   getMedicationOverview,
@@ -141,7 +141,7 @@ export default function MedicationOverviewPage() {
           </div>
         )}
 
-        {!loadError && overview === null && <HeartbeatLoader label="Loading the medication overview..." />}
+        {!loadError && overview === null && <MedicationOverviewSkeleton label="Loading the medication overview..." />}
 
         {overview && (
           <>

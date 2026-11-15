@@ -7,7 +7,7 @@ import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { CardsSkeleton } from "../components/ui/Skeleton";
 import OfflineEmergencyCard from "../components/OfflineEmergencyCard";
 import { formatDate, formatDateTime } from "../lib/dates";
 
@@ -50,7 +50,7 @@ export default function EmergencyCardPage() {
       <OfflineEmergencyCard card={card} owner={selfProfile?.email} />
       {!profileId ? <p>Select a profile to prepare its emergency card.</p>
         : error ? <Alert tone="danger" role="alert">{error}</Alert>
-          : !card ? <HeartbeatLoader label="Preparing emergency card..." /> : null}
+          : !card ? <CardsSkeleton label="Preparing emergency card..." count={1} /> : null}
     </div>
     {card && <article className="emergency-card" aria-label={`Emergency information card for ${card.profile.fullName}`}>
       <header className="emergency-card__heading">

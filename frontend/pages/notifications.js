@@ -7,7 +7,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Card from "../components/ui/Card";
 import EmptyState from "../components/ui/EmptyState";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { RowsSkeleton } from "../components/ui/Skeleton";
 import { CallButton } from "../components/NotificationBell";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
@@ -115,12 +115,12 @@ export default function NotificationsPage() {
   return (
     <PageLayout title="Notifications" header={<ProfileHeader />}>
       <PageTitle lead="Reminders and alerts from Nabad for you and the people you look after. Notifications are kept for 90 days.">Notifications</PageTitle>
-      <p className="page-intro text-sm"><a href="/profile#notifications-heading">Choose which notifications you get</a></p>
 
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
 
       <Card as="div" className="page-card notifications">
+      <p className="notifications__settings text-sm"><a href="/profile#notifications-heading">Choose which notifications you get</a></p>
       <div className="notification-filters" role="group" aria-label="Filter notifications">
         <Input as="select" id="notification-show" label="Show" value={show} onChange={(event) => setShow(event.target.value)}>
           <option value="all">All</option>
@@ -136,7 +136,7 @@ export default function NotificationsPage() {
       </div>
 
       {loadError && <div className="stack"><Alert tone="danger" as="p" role="alert">{loadError}</Alert><Button variant="secondary" onClick={() => load(page)}>Try again</Button></div>}
-      {!loadError && items === null && <HeartbeatLoader label="Loading notifications..." />}
+      {!loadError && items === null && <RowsSkeleton label="Loading notifications..." />}
       {items !== null && visibleItems.length === 0 && (
         <EmptyState title={hasFilters ? "No notifications match these filters. Try changing the search or showing all notifications for everyone." : "No notifications yet: appointment reminders, care circle alerts and other important alerts will appear here."} />
       )}

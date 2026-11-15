@@ -62,6 +62,57 @@ describe("Pages that need sign-in", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  test("shows the loading placeholder, not the page and not /login, while checking", async () => {
+    getSession.mockReturnValue(new Promise(() => {}));
+    const { container } = render(<MyApp Component={PrivatePage} pageProps={{}} />);
+
+    await act(async () => {});
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading...");
+    expect(container.querySelector(".loader")).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  test("a failed check that isn't a 401 (sleeping server, lost connection) is tried again instead of sending a signed-in user to /login", async () => {
+    jest.useFakeTimers();
+    try {
+      const offline = () => Promise.reject(Object.assign(new Error("Cannot connect to Nabad."), { status: 0 }));
+      getSession.mockImplementationOnce(offline).mockImplementationOnce(() => Promise.reject(Object.assign(new Error("Bad gateway"), { status: 502 })))
+        .mockResolvedValue(SESSION);
+      const { container } = render(<MyApp Component={PrivatePage} pageProps={{}} />);
+      await act(async () => {});
+      expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+      await act(async () => { jest.advanceTimersByTime(1000); });
+      await act(async () => { jest.advanceTimersByTime(3000); });
+      expect(screen.getByText("Private health data")).toBeInTheDocument();
+      expect(getSession).toHaveBeenCalledTimes(3);
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("when the check keeps failing, the page says so and Try again asks once more; nobody is sent to /login", async () => {
+    jest.useFakeTimers();
+    try {
+      getSession.mockImplementation(() => Promise.reject(Object.assign(new Error("Nabad took too long to respond."), { status: 0 })));
+      render(<MyApp Component={PrivatePage} pageProps={{}} />);
+      await act(async () => {});
+      for (const wait of [1000, 3000, 8000]) await act(async () => { jest.advanceTimersByTime(wait); });
+      expect(screen.getByRole("alert")).toHaveTextContent("We couldn't check that you're signed in.");
+      expect(screen.getByRole("alert")).toHaveTextContent("140");
+      expect(replace).not.toHaveBeenCalled();
+      expect(getSession).toHaveBeenCalledTimes(4);
+
+      getSession.mockResolvedValue(SESSION);
+      await act(async () => { screen.getByRole("button", { name: "Try again" }).click(); });
+      expect(screen.getByText("Private health data")).toBeInTheDocument();
+      expect(replace).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test("sends a signed-out visitor to log in, remembering the page, without showing it", async () => {
     asPath = "/profile?tab=contacts";
     getSession.mockImplementation(signedOut);

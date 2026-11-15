@@ -5,7 +5,7 @@ import PageLayout from "../../components/ui/PageLayout";
 import PageTitle from "../../components/ui/PageTitle";
 import Button from "../../components/ui/Button";
 import Alert from "../../components/ui/Alert";
-import { HeartbeatLoader } from "../../components/ui/Heartbeat";
+import { CardsSkeleton } from "../../components/ui/Skeleton";
 import { useSessionStatus } from "../../components/SessionTimeout";
 import { signOut, signInRequiredUrl } from "../../lib/session";
 import { CARE_CIRCLE_PROMISE, acceptCareCircleInvite, lookupCareCircleInvite, longDate } from "../../lib/careCircleApi";
@@ -49,7 +49,7 @@ export default function AcceptCareCircleInvitePage() {
   return (
     <PageLayout title="Join a care circle" header={<ProfileHeader />}>
       <PageTitle>Join a care circle</PageTitle>
-      {loading && <HeartbeatLoader label="Checking your invitation..." />}
+      {loading && <CardsSkeleton label="Checking your invitation..." count={1} />}
       {lookupError && (
         <div className="stack prose">
           <Alert tone="danger" as="p" role="alert">{lookupError}</Alert>

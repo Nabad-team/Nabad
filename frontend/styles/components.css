@@ -302,6 +302,7 @@
 .assistant-greeting__name { display: block; font-weight: var(--weight-semibold); color: var(--color-primary-strong); }
 .assistant-greeting__note { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }
 
+/* The Symptom check's loader (AssistantLoader), the only animated loader left. */
 .loader {
   display: flex;
   align-items: center;
@@ -310,38 +311,6 @@
   color: var(--color-text-muted);
 }
 
-.loader__line {
-  width: 4.5rem;
-  height: 1.5rem;
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
-
-.loader__track {
-  stroke: var(--color-primary-line);
-}
-
-.loader__pulse {
-  stroke: currentColor;
-  stroke-dasharray: 28 72;
-  animation: heartbeat-travel 1.6s linear infinite;
-}
-
-@keyframes heartbeat-travel {
-  from {
-    stroke-dashoffset: 100;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .loader__pulse {
-    animation: none;
-    stroke-dasharray: none;
-  }
-}
 
 /* ---------- Buttons ---------- */
 
@@ -4750,6 +4719,10 @@ select.input {
    "Loading" status; the shapes are aria-hidden. A slow shimmer, still with reduced motion. */
 .skeleton__shapes { display: block; }
 .skeleton__stack { display: grid; gap: var(--space-2); align-content: start; min-width: 0; }
+.skeleton__rows { display: grid; gap: var(--space-5); margin: 0; padding: 0; list-style: none; }
+/* An action in progress (uploading, reading a prescription, searching): one quiet status line, no animation. */
+.progress-note { margin: 0 0 var(--space-4); }
+.notifications__settings { margin: 0 0 var(--space-4); }
 .skeleton__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .skeleton__row--between { justify-content: space-between; }
 .skeleton__page-title { margin-bottom: var(--space-5); }

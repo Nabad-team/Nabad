@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Alert from "./ui/Alert";
 import { NOTIFICATION_TYPES, getNotificationPreferences, updateNotificationPreferences } from "../lib/notificationApi";
 import Card from "./ui/Card";
+import { LinesSkeleton } from "./ui/Skeleton";
 
 // Which notifications the user gets in the app, one switch per type. Each change is saved straight away.
 // Emergency alerts and urgent caregiver alerts are always on: they are shown checked and can't be changed.
@@ -39,6 +40,7 @@ export default function NotificationPreferences() {
       <p>Choose which notifications Nabad shows you in the app, in the bell at the top of the page and on <a href="/notifications">Notifications</a>.</p>
       {message && <Alert tone="success" as="p" role="status">{message}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+      {!preferences && !error && <LinesSkeleton label="Loading notification settings..." lines={5} />}
       {preferences && (
         <fieldset className="form notification-preferences__list">
           <legend className="visually-hidden">Notification types</legend>

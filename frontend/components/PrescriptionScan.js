@@ -3,7 +3,6 @@ import Input from "./ui/Input";
 import Button from "./ui/Button";
 import Alert from "./ui/Alert";
 import Badge from "./ui/Badge";
-import { HeartbeatLoader } from "./ui/Heartbeat";
 import { MEDICATION_FORMS } from "../lib/medicationApi";
 import { PRESCRIPTION_TYPES, readPrescription, applyPrescription, endDateFor } from "../lib/prescriptionApi";
 import { formatDate, todayString } from "../lib/dates";
@@ -114,7 +113,7 @@ export default function PrescriptionScan({ profileId, listName, onDone, onCancel
             <span>I agree to send this prescription to Nabad's AI provider to read it. Nabad doesn't keep the photo.</span>
           </label>
           {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-          {step === "reading" ? <HeartbeatLoader label="Reading the prescription..." /> : (
+          {step === "reading" ? <p className="text-muted progress-note" role="status">Reading the prescription...</p> : (
             <div className="form-actions">
               <Button type="submit">Read prescription</Button>
               <Button variant="secondary" onClick={onCancel}>Cancel</Button>

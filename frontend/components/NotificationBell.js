@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "./ui/Button";
+import { LinesSkeleton } from "./ui/Skeleton";
 import useDisclosure from "./useDisclosure";
 import {
   NOTIFICATIONS_CHANGED,
@@ -132,7 +133,7 @@ export default function NotificationBell() {
             <Button variant="secondary" size="small" onClick={markAll} disabled={!count}>Mark all as read</Button>
           </div>
           {error && <p className="field__error" role="alert">{error}</p>}
-          {!error && latest === null && <p className="text-muted text-sm">Loading notifications...</p>}
+          {!error && latest === null && <LinesSkeleton label="Loading notifications..." lines={3} />}
           {latest?.length === 0 && <p className="text-muted text-sm">You have no notifications yet.</p>}
           {latest?.length > 0 && (
             <ul className="notification-panel__list" aria-label="Latest notifications">

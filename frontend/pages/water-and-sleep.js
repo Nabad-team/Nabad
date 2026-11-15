@@ -9,7 +9,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { CardsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { todayString } from "../lib/dates";
 import {
@@ -399,7 +399,7 @@ export default function WaterAndSleepPage() {
           <div><Button variant="secondary" onClick={load}>Try again</Button></div>
         </div>
       )}
-      {!loadError && !profilesError && !today && <HeartbeatLoader label="Loading water and sleep..." />}
+      {!loadError && !profilesError && !today && <CardsSkeleton label="Loading water and sleep..." count={2} grid />}
 
       {today && history && (
         // key: a fresh form for each profile, so nothing typed for one person shows up for another.

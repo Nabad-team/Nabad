@@ -4,6 +4,7 @@ import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import { LinesSkeleton } from "../components/ui/Skeleton";
 import { request } from "../lib/api";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getReportConversations, deleteReportConversation } from "../lib/reportConversationApi";
@@ -30,6 +31,8 @@ export default function HealthAssistantPage() {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [conversations, setConversations] = useState([]);
+  // False until the saved chats have loaded (or failed), so "Your saved chats will appear here." never flashes first.
+  const [conversationsLoaded, setConversationsLoaded] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,6 +51,7 @@ export default function HealthAssistantPage() {
     setConsent(false);
     setError("");
     setConversations([]);
+    setConversationsLoaded(false);
     setConversationId(null);
     setMessages([]);
     setResult(null);
@@ -55,7 +59,8 @@ export default function HealthAssistantPage() {
     setHistoryError("");
     getReportConversations(profileId)
       .then((data) => { if (current && profileRef.current === profileId) setConversations(data.conversations); })
-      .catch(() => { if (current && profileRef.current === profileId) setHistoryError("Saved conversations could not be loaded."); });
+      .catch(() => { if (current && profileRef.current === profileId) setHistoryError("Saved conversations could not be loaded."); })
+      .finally(() => { if (current && profileRef.current === profileId) setConversationsLoaded(true); });
     const input = document.getElementById("test-report-file");
     if (input) input.value = "";
     return () => { current = false; pendingRequest.current?.controller.abort(); pendingRequest.current = null; };
@@ -225,7 +230,7 @@ export default function HealthAssistantPage() {
 
       <section className="assistant-chat" aria-label="Health assistant conversation">
         <aside className="assistant-chat__sidebar" aria-label="Chat history">
-          <Button type="button" onClick={newConversation} disabled={busy}>+ New chat</Button>
+          <Button type="button" onClick={newConversation} disabled={busy}>New chat</Button>
           <h2>Recent chats</h2>
           {historyError && conversations.length === 0 && <p className="text-muted" role="status">{historyError}</p>}
           {conversations.length > 0 ? <ul>{conversations.map((conversation) => (
@@ -236,7 +241,7 @@ export default function HealthAssistantPage() {
               </button>
               <button type="button" className="assistant-chat__delete" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`} disabled={busy}>x</button>
             </li>
-          ))}</ul> : <p className="text-muted">Your saved chats will appear here.</p>}
+          ))}</ul> : !conversationsLoaded ? <LinesSkeleton label="Loading your saved chats..." lines={3} /> : <p className="text-muted">Your saved chats will appear here.</p>}
         </aside>
         <div className="assistant-chat__main">
         <header className="assistant-chat__header">
