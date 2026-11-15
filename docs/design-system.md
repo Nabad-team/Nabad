@@ -3,7 +3,7 @@
 Nabad should feel like a good clinic: calm, warm and human. Not an AI product, not a tech template.
 
 **Do:** a soft neutral canvas, white surfaces, left-aligned text, generous space, clear actions and plain kind words. Keep teal as the main identity color.
-**Don't:** gradients, glow, glassy cards, sparkle icons, emoji as icons, 3D blobs, centering everything, a shadow or a box around every block.
+**Don't:** gradients, glow, glassy cards, sparkle icons, emoji as icons, 3D blobs, centering everything, boxes nested inside boxes.
 
 Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`) and a few components:
 
@@ -13,7 +13,7 @@ Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`
 | `frontend/styles/base.css` | Defaults for `body`, headings, links, form controls, focus ring |
 | `frontend/styles/components.css` | Classes used by the components below |
 | `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `MoreMenu`, `Heartbeat` |
-| `frontend/components/illustrations.js` | The four line drawings |
+| `frontend/components/illustrations.js` | The five line drawings |
 
 **Rule of thumb:** a new page should need no `style={{...}}` and no hex colors. If you need a color or a size, use a token (`var(--color-primary)`, `var(--space-4)`). If you need something new, add it to the system rather than to your page.
 
@@ -45,11 +45,11 @@ Every signed-in page follows the same frame, so the app reads as one product:
    </PageTitle>
    ```
    Show the primary action once the page's data has loaded (an add form opened before then would be reset). Pages whose sections each have their own Add (My health) or that are tools (Find care, Symptom check) have no header action.
-3. **Cards.** Page content sits in the same `Card` the dashboard uses.
+3. **Cards.** Page content sits in the same `Card` the dashboard uses (see [Card](#card)); several short sections go in a two-column `card-grid`.
 4. **Data first.** The list or history (or its empty state) comes first; the primary action opens the form inline and moves focus into it.
 5. **Empty states** use the one `EmptyState` component.
 
-A short form inside the wide column keeps its 28rem width and starts at the left edge, like the text above it.
+A short form keeps its 28rem width inside its card. On a page of short sections, the card grid puts two cards side by side from 64rem, so the wide column never looks half empty.
 
 ## A new page in 30 seconds
 
@@ -303,23 +303,28 @@ A small calm label next to a heading. Never red: teal informs, gray marks what i
 
 ### Card
 
-A quiet box for grouping related things (e.g. the emergency contact). **Use it only when grouping helps.** Most content sits directly on the page, separated by headings and space.
+The white surface the dashboard uses. On signed-in pages, **page content sits in cards**: one card per section (My health, My profile), or one card around a page's list (My medications, My appointments, My vitals, My documents). The page header row stays on the canvas, above the cards. Inside a card, rows are separated by thin lines or light borders, not by another shadowed card.
 
 ```jsx
 <Card aria-labelledby="contact-heading"><h2 id="contact-heading">Emergency contact</h2>...</Card>
-<Card tone="danger">...</Card>   // destructive settings ("Danger zone")
+<Card as="div" className="page-card">...list...</Card>   // a page's main list; consecutive page cards get 24px between them
+<Card tone="danger">...</Card>                          // destructive settings ("Danger zone")
 ```
+
+**Card grid.** A page made of several short sections (My profile, My health) puts its cards in `<div className="card-grid">`: one column on phones and tablets, two from 64rem, so 28rem forms don't leave half of the wide column empty. Cards fill in reading order (left to right, then down). `className="card--full"` makes a card span both columns (long or wide content: Download my data, Danger zone, Suggestions to review, What Nabad's guidance takes into account); anything in the grid that isn't a card (alerts, the "knows you" bar) spans both columns too.
 
 ### EmptyState
 
-For a list or area with nothing in it yet: a small drawing, one sentence, and the next step if there is one.
+The one empty state for every list or area with nothing in it yet: **a drawing, one line, one button.** Write the line as one sentence that says what's missing and what to do next ("No appointments yet: add your next doctor's visit so Nabad can remind you."). The button is the next step, usually the page's primary action again, as a secondary button; leave it out when there is nothing to do (no notifications yet, no search matches).
 
 ```jsx
-<EmptyState illustration={<MedicineBox size="5rem" />} title="No medicines yet."
-            action={<Button variant="secondary">Add a medicine</Button>}>
-  Add the medicines you take, so they are ready when you need them.
-</EmptyState>
+<EmptyState illustration={<MedicineBox size="4rem" />}
+            title="No medications yet: add the ones you take so they're ready for your doctor."
+            action={<Button variant="secondary" onClick={openForm}>Add medication</Button>} />
+<EmptyState title="No notifications yet: appointment reminders and other alerts will appear here." />   // the clipboard by default
 ```
+
+Drawings are 4rem. The default is the clipboard; use the medicine box for medications, the two hearts for people you care for and water and sleep, the person with a phone or the Nabad assistant on the symptom check. On phones (under 30rem) the drawing, line and button stack.
 
 ### Dialog
 
@@ -352,14 +357,15 @@ For a list or area with nothing in it yet: a small drawing, one sentence, and th
 
 ## Illustrations
 
-Four original line drawings in one style: teal outlines, round line ends, no fills or gradients, slightly uneven lines so they feel hand-drawn. `TwoHearts` adds a second line color with the class `illustration__strong` (the darker heading teal). They are decorative (hidden from screen readers) unless you pass a `title`.
+Five original line drawings in one style: teal outlines, round line ends, no fills or gradients, slightly uneven lines so they feel hand-drawn. `TwoHearts` adds a second line color with the class `illustration__strong` (the darker heading teal). They are decorative (hidden from screen readers) unless you pass a `title`.
 
 | Component | Shows | Used on |
 | --- | --- | --- |
 | `PersonWithPhone` | A person holding a phone with a pulse on screen | Landing (symptom check card), onboarding step 1, symptoms page with no profile |
 | `MedicineBox` | A first-aid box with a cross | Landing (emergency hospital card) |
 | `SmallHouse` | A small house with a door, window and plant | Landing (hospitals and clinics), onboarding step 3 |
-| `TwoHearts` | A large heart with a half-size heart tucked in front of its lower right side (the small one in the darker teal) | Caregiver spots: landing (family care), onboarding step 2, "No linked profiles yet" |
+| `TwoHearts` | A large heart with a half-size heart tucked in front of its lower right side (the small one in the darker teal) | Caregiver spots: landing (family care), onboarding step 2, "No linked profiles yet", care circle and water and sleep empty states |
+| `Clipboard` | A clipboard with a few lines | The default `EmptyState` drawing (vitals, documents, appointments, notifications, My health) |
 
 ```jsx
 import { MedicineBox } from "../components/illustrations";

@@ -10,6 +10,7 @@ import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
+import Card from "../components/ui/Card";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
@@ -315,20 +316,20 @@ export default function MedicationsPage() {
       {!loadError && !profilesError && medications === null && <HeartbeatLoader label="Loading medications..." />}
 
       {medications !== null && (
-        <>
+        <Card as="div" className="page-card">
           {editing === "add" && <div id="new-medication"><MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} /></div>}
           {editing === "prescription" && <PrescriptionScan profileId={profileId} listName={listName} onDone={handlePrescriptionDone} onCancel={() => setEditing(null)} />}
 
           {medications.length === 0 && editing !== "add" && editing !== "prescription" && (
-            <EmptyState illustration={<MedicineBox size="5rem" />} title="No medications yet.">
-              {forSelf ? "Add the ones you take so they're ready for your doctor." : `Add the ones ${name} takes so they're ready for their doctor.`}
-            </EmptyState>
+            <EmptyState illustration={<MedicineBox size="4rem" />}
+              title={forSelf ? "No medications yet: add the ones you take so they're ready for your doctor." : `No medications yet: add the ones ${name} takes so they're ready for their doctor.`}
+              action={<Button variant="secondary" onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>} />
           )}
 
           {medications.length > 0 && (
             <div className="medication-browser">
               <Input id="medication-search" type="search" label="Search medications" placeholder="Name, dose or notes" value={query} onChange={(event) => setQuery(event.target.value)} />
-              {matching.length === 0 ? <EmptyState title="No medications match your search.">Try a different name, dose or note.</EmptyState> : <>
+              {matching.length === 0 ? <EmptyState title="No medications match your search. Try a different name, dose or note." /> : <>
                 {activeMedications.length > 0 && <ul className="medication-list" aria-label={forSelf ? "Active medications" : `Active medications for ${name}`}>{activeMedications.map(medicationRow)}</ul>}
                 {discontinuedMedications.length > 0 && <details className="medication-archive">
                   <summary>Discontinued medications ({discontinuedMedications.length})</summary>
@@ -337,7 +338,7 @@ export default function MedicationsPage() {
               </>}
             </div>
           )}
-        </>
+        </Card>
       )}
 
       {toDelete && (

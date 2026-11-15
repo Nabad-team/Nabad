@@ -634,7 +634,7 @@ export default function SymptomsPage() {
         <EmptyState
           illustration={
             <PersonWithPhone
-              size="5rem"
+              size="4rem"
             />
           }
           title="No active profile selected."
@@ -851,7 +851,7 @@ export default function SymptomsPage() {
         <h2 id="symptom-history-heading">Previous symptom checks</h2>
         {/* SCRUM-156 */}
         <p><a href="/my-history">Ask a question about your history</a>, for example when you last had a symptom.</p>
-        {history.length === 0 ? <EmptyState illustration={calmScreen ? <NabadAssistant size="4.5rem" title="Nabad assistant" /> : null} title="No symptom checks yet.">Your saved conversations will appear here.</EmptyState> : (
+        {history.length === 0 ? <EmptyState illustration={calmScreen ? <NabadAssistant size="4.5rem" title="Nabad assistant" /> : null} title="No symptom checks yet: your saved conversations will appear here." /> : (
           <ul className="symptom-history__list">
             {history.slice(0, 10).map((record) => (
               <li key={record.id}>

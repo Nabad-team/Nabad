@@ -3,6 +3,7 @@ import { beginTwoFactorSetup, enableTwoFactor, disableTwoFactor, getMe } from ".
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
+import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
@@ -42,6 +43,7 @@ export default function SecurityPage() {
     <PageLayout title="Account security" header={<ProfileHeader showPicture={false} />}>
       <PageTitle>Account security</PageTitle>
       {error && <Alert tone="danger" as="p" role="alert" className="auth-message">{error}</Alert>}
+      <Card as="div" className="security-card">
       {authProvider === "google" && (
         <p className="prose">You sign in with Google, so Google protects your sign-in and Nabad does not send email codes. To add a second step, turn on 2-Step Verification in your Google account.</p>
       )}
@@ -73,6 +75,7 @@ export default function SecurityPage() {
         </form>
       )}
       </>}
+      </Card>
       <p className="section"><a href="/profile">Back to profile</a></p>
     </PageLayout>
   );

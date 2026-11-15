@@ -3,6 +3,7 @@ import Input from "./ui/Input";
 import Button from "./ui/Button";
 import Alert from "./ui/Alert";
 import { confirmDataExport, downloadDataExport } from "../lib/dataExportApi";
+import Card from "./ui/Card";
 
 // "Download my data" on the profile page: explains what the file holds, asks the user to confirm it's them
 // (password, or email for Google-only accounts), then downloads nabad-data-YYYY-MM-DD.json.
@@ -43,7 +44,7 @@ export default function DataExport({ isGoogleAccount = false }) {
   }
 
   return (
-    <section className="section" aria-labelledby="data-export-heading">
+    <Card className="card--full" aria-labelledby="data-export-heading">
       <h2 id="data-export-heading">Download my data</h2>
       <p>Get a copy of everything Nabad stores about your account, in one file you can keep or take elsewhere. It includes:</p>
       <ul>
@@ -81,6 +82,6 @@ export default function DataExport({ isGoogleAccount = false }) {
           </div>
         </form>
       )}
-    </section>
+    </Card>
   );
 }

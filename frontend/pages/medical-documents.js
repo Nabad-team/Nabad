@@ -211,8 +211,8 @@ export default function MedicalDocumentsPage() {
               <Button type="button" variant="danger" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />
             </li>
-          ))}</ul> : <EmptyState title="No documents match these filters." action={<Button variant="secondary" onClick={() => { setSearch(""); setFilterType(""); setDateFrom(""); setDateTo(""); }}>Clear filters</Button>}>Try another file name, type, or date range.</EmptyState>}
-        </> : <EmptyState title="No documents added yet.">Use Add documents above to upload medical files, so they are ready when this profile needs them.</EmptyState>}
+          ))}</ul> : <EmptyState title="No documents match these filters. Try another file name, type, or date range." action={<Button variant="secondary" onClick={() => { setSearch(""); setFilterType(""); setDateFrom(""); setDateTo(""); }}>Clear filters</Button>} />}
+        </> : <EmptyState title="No documents added yet: upload medical files, so they are ready when this profile needs them." action={<Button variant="secondary" onClick={() => inputRef.current?.click()} disabled={busy || !profileId}>Add documents</Button>} />}
       </Card>
       {documents?.length > 0 && <p className="section"><Button href="/visit-prep" variant="secondary">Attach documents to visit preparation</Button></p>}
     </PageLayout>

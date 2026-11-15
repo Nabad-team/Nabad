@@ -5,6 +5,7 @@ import Alert from "./ui/Alert";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 import { HeartbeatLoader } from "./ui/Heartbeat";
+import Card from "./ui/Card";
 
 // The account's emergency contact. Three views:
 //   - no contact yet  -> the add form
@@ -95,7 +96,7 @@ export default function EmergencyContact() {
   );
 
   return (
-    <section aria-labelledby="emergency-heading" className="section">
+    <Card aria-labelledby="emergency-heading">
       <h2 id="emergency-heading">Emergency contact</h2>
       <p className="text-muted">The person we show during an emergency alert. This contact belongs to your account.</p>
       {body}
@@ -110,6 +111,6 @@ export default function EmergencyContact() {
           </div>
         </Dialog>
       )}
-    </section>
+    </Card>
   );
 }

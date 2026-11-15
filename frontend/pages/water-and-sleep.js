@@ -427,9 +427,7 @@ export default function WaterAndSleepPage() {
           <section className="section" aria-labelledby="week-heading">
             <h2 id="week-heading">This week</h2>
             {!summary.hasData ? (
-              <EmptyState illustration={<TwoHearts size="5rem" />} title="Nothing logged this week yet.">
-                The week will show here as you log water and sleep.
-              </EmptyState>
+              <EmptyState illustration={<TwoHearts size="4rem" />} title="Nothing logged this week yet: the week will show here as you log water and sleep." />
             ) : (
               <>
                 {observation && <Alert tone="info" as="p">{observation}</Alert>}
