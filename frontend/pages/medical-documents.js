@@ -5,8 +5,11 @@ import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
+import MoreMenu from "../components/ui/MoreMenu";
+import InlinePanel from "../components/ui/InlinePanel";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
@@ -83,6 +86,7 @@ export default function MedicalDocumentsPage() {
   const { activeProfile } = useActiveProfile();
   const profileId = activeProfile?.id;
   const inputRef = useRef(null);
+  const addButtonRef = useRef(null);
   const profileRef = useRef(profileId);
   profileRef.current = profileId;
   const [documents, setDocuments] = useState(null);
@@ -94,6 +98,8 @@ export default function MedicalDocumentsPage() {
   const [deletingId, setDeletingId] = useState("");
   const [documentType, setDocumentType] = useState("other");
   const [documentDate, setDocumentDate] = useState("");
+  // Files chosen with "Add documents", waiting for their type and date before they upload.
+  const [pendingFiles, setPendingFiles] = useState(null);
   const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -102,30 +108,42 @@ export default function MedicalDocumentsPage() {
   useEffect(() => {
     if (!profileId) return undefined;
     const requested = profileId;
-    setDocuments(null); setError("");
+    setDocuments(null); setError(""); setPendingFiles(null);
     getMedicalDocuments(requested)
       .then((data) => { if (profileRef.current === requested) setDocuments(data.documents); })
       .catch(() => { if (profileRef.current === requested) setError("We couldn't load this profile's documents. Please refresh the page."); });
   }, [profileId]);
 
-  async function handleFiles(event) {
+  // Step 1: files are chosen and checked, then the details panel asks for their type and date.
+  function handleFiles(event) {
     const files = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!files.length) return;
-    const targetProfileId = profileId;
-    if (!targetProfileId) return;
+    if (!files.length || !profileId) return;
     if (files.length > 10) { setError("Choose up to 10 files at a time."); return; }
     for (const file of files) {
       if (!file.size) { setError(`${file.name} is empty.`); return; }
       if (file.size > MAX_SIZE) { setError(`${file.name} is larger than 10 MB.`); return; }
     }
+    setError(""); setNotice("");
+    setDocumentType("other"); setDocumentDate("");
+    setPendingFiles(files);
+  }
+
+  // Step 2: upload them with the details from the panel.
+  async function uploadPending(event) {
+    event.preventDefault();
+    const files = pendingFiles || [];
+    const targetProfileId = profileId;
+    if (!files.length || !targetProfileId) return;
+    const details = { documentType, documentDate };
+    setPendingFiles(null);
     setBusy(true); setError(""); setNotice(""); setUploadProgress("");
     let uploaded = 0;
     try {
       for (const file of files) {
         const payload = await fileToPayload(file);
         if (profileRef.current === targetProfileId) setUploadProgress(`Processing ${file.name}`);
-        const result = await uploadMedicalDocument(targetProfileId, payload, { documentType, documentDate });
+        const result = await uploadMedicalDocument(targetProfileId, payload, details);
         announceNotificationsChanged();
         uploaded += 1;
         if (profileRef.current === targetProfileId) {
@@ -141,6 +159,9 @@ export default function MedicalDocumentsPage() {
       }
     } finally { setBusy(false); setUploadProgress(""); }
   }
+
+  const chooseFiles = () => inputRef.current?.click();
+  const forName = activeProfile?.isSelf === false ? ` for ${activeProfile.fullName}` : "";
 
   const visibleDocuments = (documents || []).filter((document) => {
     const type = document.documentType || "other";
@@ -166,25 +187,38 @@ export default function MedicalDocumentsPage() {
 
   return (
     <PageLayout title="My documents" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle lead="Medical and administrative documents, kept together and ready for a visit.">My documents</PageTitle>
-      <Card className="medical-documents section" aria-labelledby="documents-heading">
+      <PageTitle lead="Medical and administrative documents, kept together and ready for a visit."
+        action={<Button ref={addButtonRef} onClick={chooseFiles} disabled={busy || !profileId}>
+          <span className="medical-documents__plus" aria-hidden="true">+</span> Add documents{forName}
+        </Button>}
+        more={documents?.length > 0 && <MoreMenu id="documents-more" items={[{ label: "Attach documents to visit preparation", href: "/visit-prep" }]} />}>
+        My documents
+      </PageTitle>
+      <input ref={inputRef} className="visually-hidden" type="file" multiple onChange={handleFiles} aria-label="Choose medical documents" tabIndex={-1} />
+
+      {/* After choosing files: their type and date, for every file in this upload. */}
+      {pendingFiles && <InlinePanel id="document-details" title={pendingFiles.length === 1 ? "Details for 1 file" : `Details for ${pendingFiles.length} files`} onClose={() => setPendingFiles(null)} returnFocusTo={addButtonRef}>
+        <ul className="medical-documents__pending">{pendingFiles.map((file, index) => <li key={`${file.name}-${index}`}>{file.name} <span className="text-muted">· {prettySize(file.size)}</span></li>)}</ul>
+        <form onSubmit={uploadPending} className="form">
+          <Input as="select" id="medical-document-type" label="Document type" value={documentType} onChange={(event) => setDocumentType(event.target.value)}
+            hint="For coverage and identification, upload only documents needed for patient matching, billing or care access.">
+            <DocumentTypeOptions />
+          </Input>
+          <Input id="medical-document-date" label="Document date (if known)" type="date" min="1900-01-01" max="2100-12-31" value={documentDate} onChange={(event) => setDocumentDate(event.target.value)}
+            hint="These details will be used for every file in this upload." />
+          <div className="form-actions">
+            <Button type="submit">{pendingFiles.length === 1 ? "Upload 1 file" : `Upload ${pendingFiles.length} files`}</Button>
+            <Button variant="secondary" onClick={() => setPendingFiles(null)}>Cancel</Button>
+          </div>
+        </form>
+      </InlinePanel>}
+
+      <Card className="medical-documents" aria-labelledby="documents-heading">
         <div className="medical-documents__header">
           <div>
             <h2 id="documents-heading">{activeProfile?.isSelf ? "Your documents" : `${activeProfile?.fullName || "Profile"}'s documents`}</h2>
             <p className="text-muted">Store medical records and optional coverage or identification documents for this profile. Any file type up to 10 MB each.</p>
           </div>
-          <div className="medical-documents__metadata">
-            <label className="field__label" htmlFor="medical-document-type">Document type</label>
-            <select id="medical-document-type" className="input" value={documentType} onChange={(event) => setDocumentType(event.target.value)} disabled={busy}>
-              <DocumentTypeOptions />
-            </select>
-            <p className="text-muted">For coverage and identification, upload only documents needed for patient matching, billing or care access.</p>
-            <label className="field__label" htmlFor="medical-document-date">Document date (if known)</label>
-            <input id="medical-document-date" className="input" type="date" min="1900-01-01" max="2100-12-31" value={documentDate} onChange={(event) => setDocumentDate(event.target.value)} disabled={busy} />
-            <p className="text-muted">These details will be used for every file in this upload.</p>
-          </div>
-          <Button type="button" onClick={() => inputRef.current?.click()} disabled={busy || !profileId} aria-label="Add medical documents"><span className="medical-documents__plus" aria-hidden="true">+</span> Add documents{activeProfile?.isSelf === false ? ` for ${activeProfile.fullName}` : ""}</Button>
-          <input ref={inputRef} className="visually-hidden" type="file" multiple onChange={handleFiles} aria-label="Choose medical documents" />
         </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
@@ -212,9 +246,8 @@ export default function MedicalDocumentsPage() {
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />
             </li>
           ))}</ul> : <EmptyState title="No documents match these filters. Try another file name, type, or date range." action={<Button variant="secondary" onClick={() => { setSearch(""); setFilterType(""); setDateFrom(""); setDateTo(""); }}>Clear filters</Button>} />}
-        </> : <EmptyState title="No documents added yet: upload medical files, so they are ready when this profile needs them." action={<Button variant="secondary" onClick={() => inputRef.current?.click()} disabled={busy || !profileId}>Add documents</Button>} />}
+        </> : <EmptyState title="No documents added yet: upload medical files, so they are ready when this profile needs them." action={<Button variant="secondary" onClick={chooseFiles} disabled={busy || !profileId}>Add documents{forName}</Button>} />}
       </Card>
-      {documents?.length > 0 && <p className="section"><Button href="/visit-prep" variant="secondary">Attach documents to visit preparation</Button></p>}
     </PageLayout>
   );
 }

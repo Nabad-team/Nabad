@@ -12,7 +12,7 @@ Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`
 | `frontend/styles/tokens.css` | Colors, font, type scale, spacing, radius, shadows (CSS variables) |
 | `frontend/styles/base.css` | Defaults for `body`, headings, links, form controls, focus ring |
 | `frontend/styles/components.css` | Classes used by the components below |
-| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `MoreMenu`, `Heartbeat` |
+| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `MoreMenu`, `InlinePanel`, `Heartbeat` |
 | `frontend/components/illustrations.js` | The five line drawings |
 
 **Rule of thumb:** a new page should need no `style={{...}}` and no hex colors. If you need a color or a size, use a token (`var(--color-primary)`, `var(--space-4)`). If you need something new, add it to the system rather than to your page.
@@ -46,7 +46,13 @@ Every signed-in page follows the same frame, so the app reads as one product:
    ```
    Show the primary action once the page's data has loaded (an add form opened before then would be reset). Pages whose sections each have their own Add (My health) or that are tools (Find care, Symptom check) have no header action.
 3. **Cards.** Page content sits in the same `Card` the dashboard uses (see [Card](#card)); several short sections go in a two-column `card-grid`.
-4. **Data first.** The list or history (or its empty state) comes first; the primary action opens the form inline and moves focus into it.
+4. **Data first.** The list or history (or its empty state) comes first. The primary action opens the form in an `InlinePanel` just under the header row:
+   ```jsx
+   {open && <InlinePanel id="log-vitals" title="Log a reading" onClose={close} returnFocusTo={buttonRef}>...form...</InlinePanel>}
+   ```
+   The panel is a labelled card (a region named by its h2) with a teal edge. Opening it moves focus to its first field; Escape and Cancel close it, and focus goes back to the button that opened it (also after saving). The opening button has `aria-expanded` and `aria-controls`.
+   - **My vitals:** History and trends first; **Log reading** opens the form. More: Review vitals before a visit.
+   - **My documents:** the list first; **Add documents** opens the file picker, and the panel then asks for the type and date of the chosen files ("Details for 2 files", "Upload 2 files"). Files are checked (count, empty, 10 MB) before the panel opens. More: Attach documents to visit preparation.
 5. **Empty states** use the one `EmptyState` component.
 
 A short form keeps its 28rem width inside its card. On a page of short sections, the card grid puts two cards side by side from 64rem, so the wide column never looks half empty.

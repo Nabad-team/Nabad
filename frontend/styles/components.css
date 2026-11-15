@@ -91,10 +91,9 @@
 .medical-documents__list p { margin: 0; }
 .medical-documents__header { align-items: flex-start; flex-wrap: wrap; }
 .medical-documents__header > div { max-width: 38rem; }
-.medical-documents__metadata { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 1.3fr); align-items: center; gap: var(--space-2) var(--space-3); flex: 1 1 28rem; }
-.medical-documents__metadata p { grid-column: 1 / -1; }
 .medical-documents__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; gap: var(--space-2) var(--space-3); margin-top: var(--space-5); }
 .medical-documents__plus { font-size: 1.5em; line-height: 0.8; }
+.medical-documents__pending { margin: 0 0 var(--space-4); padding-left: var(--space-5); overflow-wrap: anywhere; }
 .medical-documents__list { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
 .medical-documents__list li { flex-wrap: wrap; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); margin-top: var(--space-3); background: var(--color-surface); }
 .medical-documents__list li > div { min-width: 0; overflow-wrap: anywhere; }
@@ -109,9 +108,6 @@
 
 @media (max-width: 38rem) {
   .medical-documents__header { flex-direction: column; }
-  .medical-documents__metadata { width: 100%; grid-template-columns: 1fr; flex: none; }
-  .medical-documents__metadata p { grid-column: auto; }
-  .medical-documents__header .button { width: 100%; }
   .medical-documents__filters, .medical-documents__edit .form { grid-template-columns: 1fr; }
   .medical-documents__list li { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
   .medical-documents__list li > div, .medical-documents__list li > p { grid-column: 1 / -1; }
@@ -593,6 +589,9 @@ select.input {
 }
 
 /* Signed-in page template: page content sits in cards (see docs/design-system.md). */
+/* A form opened in place by the page's primary button (InlinePanel), above the page's data. */
+.inline-panel { margin-bottom: var(--space-5); border-color: var(--color-primary); }
+.inline-panel > h2:focus { outline: none; }
 .page-card + .page-card { margin-top: var(--space-5); }
 .card > h2:first-child { margin-top: 0; }
 .card .medication { box-shadow: none; }
