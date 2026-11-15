@@ -282,6 +282,30 @@ describe("Dashboard Page", () => {
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 
+  test("the Next step card sits under the title, above Symptom check, and loads the data only once", async () => {
+    renderDashboard();
+    const card = await screen.findByRole("region", { name: "Next step" });
+    // The demo user has health basics left to fill in (and no dose or visit coming up).
+    expect(card).toHaveTextContent("Add your health basics for safer guidance");
+    expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
+    const title = screen.getByRole("heading", { level: 1 });
+    const symptomCheck = screen.getByRole("heading", { name: "Symptom check" });
+    expect(title.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(card.compareDocumentPosition(symptomCheck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The card and Your progress share one set of requests.
+    await screen.findByRole("img", { name: /My health: In progress/ });
+    expect(fakeHealth.calls.filter(([name]) => name === "getHealthProfile")).toHaveLength(1);
+  });
+
+  test("the Next step card follows the Acting for profile", async () => {
+    const child = await addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
+    fakeHealth.seedAge(child.id, "2018-04-02", 8);
+    localStorage.setItem("nabad-active-profile-id", child.id);
+    renderDashboard();
+    const card = await screen.findByRole("region", { name: "Next step" });
+    expect(card).toHaveTextContent("Add Sami's health basics for safer guidance");
+  });
+
   test("the medication ring records taken today without a checklist below the rings", async () => {
     fakeMedications.seedMedication("self", { id: "aspirin", name: "Aspirin", dose: "81", unit: "mg" });
     fakeMedications.seedMedication("self", { id: "vitamin", name: "Vitamin D", taken: true });

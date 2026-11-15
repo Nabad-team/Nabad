@@ -2,6 +2,8 @@ import ProfileHeader from "../components/ProfileHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCorner from "../components/WellbeingCorner";
 import ProgressSummary from "../components/ProgressSummary";
+import NextStepCard from "../components/NextStepCard";
+import useDashboardData from "../components/useDashboardData";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
@@ -73,6 +75,8 @@ export default function DashboardPage() {
   const { activeProfile, error, loading } = useActiveProfile();
   const forName = activeProfile?.isSelf === false ? firstName(activeProfile.fullName) : "";
   const actionFor = forName ? ` for ${forName}` : "";
+  // Loaded once for the Next step card and Your progress.
+  const data = useDashboardData(activeProfile?.id);
 
   const { preferences } = useAccessibility();
 
@@ -99,6 +103,8 @@ export default function DashboardPage() {
       )}
 
       {loading && <HeartbeatLoader />}
+
+      {activeProfile && <NextStepCard data={data} forName={forName} />}
 
       <section
         className="check-in"
@@ -134,7 +140,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {activeProfile && <ProgressSummary />}
+      {activeProfile && <ProgressSummary data={data} />}
 
       <section className="quick-actions section" aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading">Quick actions</h2>

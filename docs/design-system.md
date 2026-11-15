@@ -220,7 +220,7 @@ Phone     [Nabad] [Search]                                                      
 - **Workspace navigation** (`NAV_ITEMS` in `AppHeader.js`) is **one row** below the desktop account bar: Symptom check (always first), Dashboard, the **My care** dropdown (My appointments, My medications, Medication overview, Water and sleep), the **My records** dropdown (My health, My vitals, My documents, Visit preparation), Health assistant and Find care. The phone menu shows the same items in the same order, with My care and My records as labelled groups. A new page goes into one of the groups rather than adding a seventh item to the row.
 - **Dropdowns** are disclosure buttons (`aria-expanded`, `aria-controls`), not ARIA menus: links stay links. Enter or Space opens one and focuses its first link; Down/Up move between links (on the closed button they open it at the first/last link), Home/End jump, Escape closes it and returns focus to the button; a click outside or tabbing out closes it. When one of its pages is open, the group button gets the current-page style and the name "My care, current section", and the link inside has `aria-current="page"`.
 - **One name per page.** A link's label is exactly the page's `<title>` and `<h1>` (for example "My medications", "Symptom check"), also in simplified mode. Personal records use "My …" (My health, My vitals, My medications, My appointments, My documents, My profile); tools keep plain names (Symptom check, Visit preparation, Health assistant, Find care, Water and sleep). For a linked profile the title names them instead ("Vitals for Rania"). The dashboard doesn't repeat the menu as tiles; its quick actions are equal icon tiles with one-line labels.
-- **Say it once.** A page doesn't repeat what the header or another page already offers. The dashboard keeps the symptom check, Your progress (with the upcoming appointment), at most four quick actions and a compact Wellbeing Corner (today's message and the two support numbers; tips and notes under "More"). Apart from the footer line, 140 appears once per page.
+- **Say it once.** A page doesn't repeat what the header or another page already offers. The dashboard keeps the Next step card (when something applies), the symptom check, Your progress (with the upcoming appointment), at most four quick actions and a compact Wellbeing Corner (today's message and the two support numbers; tips and notes under "More"). Apart from the footer line, 140 appears once per page.
 - **Badges state known facts only.** Find care cards show distance, driving time, open/closed per published hours and the 24/7 ER status only when known; nothing says "not verified" on the card. One note above the list explains this, and "Information may be outdated" sits under More details. "Estimate driving times" and "Show map" sit side by side from 40rem (`.provider-tools`) and stack on phones.
 - **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
 - **Phones (under 40rem / 640px):** the top bar has the logo, search and the bell; navigation moves to the **bottom tab bar** (below).
@@ -305,6 +305,23 @@ Use `role="alert"` for errors that need attention now and `role="status"` for ca
 While a check runs, the submit button reads "Checking..." and is disabled, and `AssistantLoader` (the Nabad assistant tracing its pulse line) shows "Checking your symptoms". When the result arrives (or follow-up answers update it), the page moves focus to the result card, scrolls to it (instantly with reduced motion) and announces one short line in a live region that is always on the page. Emergencies are the exception: the emergency dialog takes focus and the card keeps `role="alert"`.
 
 The card starts with the level's icon, "Urgency: <label>" and one short line, then a 4-step scale (Routine / self-care, See a doctor soon, Urgent, Emergency) using the triage API's own labels. The current step has its colour, its icon, bold text, "This result" and `aria-current="step"`. The scale only displays the server's level; it never decides one.
+
+### Next step (dashboard)
+
+`components/NextStepCard.js`, with the choice made in `lib/nextStep.js`. It's one short line and one button for the active profile ("Acting for"), picked from data the dashboard already loads (`components/useDashboardData.js`, shared with Your progress so nothing is fetched twice). The first rule that applies wins:
+
+| # | When | Line | Button |
+|---|------|------|--------|
+| 1 | A medication dose (its `times`) is due in the next 3 hours | Take Amlodipine 5 mg at 08:00 | Open medications |
+| 2 | An appointment in the next 3 days (72 hours) | Cardiology check-up on Friday: prepare your visit ("today", "tomorrow" or the weekday) | Prepare visit |
+| 3 | My health basics not all 5 filled in | Add your health basics for safer guidance | Open my health |
+| 4 | No sleep logged today | Log last night's sleep | Log sleep |
+
+- Nothing applies, or the data is still loading: the card isn't shown. It waits for every source, so it never swaps one line for another.
+- Every time is Beirut time (`APP_TIME_ZONE`), whatever the device's time zone. A dose after midnight belongs to tomorrow, so ticking today's check-in doesn't hide it. A once-a-day medication already checked off today is skipped. With two or more doses a day the next dose still shows, because the check-in is one tick per day.
+- For a linked profile the line names them: "Sami's Amlodipine 5 mg is due at 08:00", "Cardiology check-up for Sami on Friday: prepare the visit", "Add Sami's health basics for safer guidance", "Log Sami's sleep from last night".
+- Plain reminders only, never medical advice. It sits under the email bar and the page title and above Symptom check, and it is never placed above or instead of an emergency message.
+- Looks like: a white card with a teal left edge, a small "Next step" label (its h2), the line in large text, and one secondary button (it must not compete with the teal Symptom check panel).
 
 ### One primary action, and "More"
 
