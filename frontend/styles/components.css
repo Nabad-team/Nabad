@@ -2329,6 +2329,37 @@ select.input {
   }
 }
 
+/* Dashboard "Next step" (components/NextStepCard.js): one line and one button, above Symptom check.
+   A white card with a teal edge, so it reads as a reminder and doesn't compete with the teal Symptom check panel. */
+.next-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5);
+  border-left: 0.25rem solid var(--color-primary);
+}
+
+.next-step__copy {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.next-step__label {
+  margin: 0 0 var(--space-1);
+  color: var(--color-primary-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.next-step__text {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
 /* The one main thing to do on the dashboard: a light teal panel with its actions. */
 .check-in {
   padding: clamp(1.25rem, 3vw, 2rem);
