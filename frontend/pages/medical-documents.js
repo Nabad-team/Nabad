@@ -179,10 +179,10 @@ export default function MedicalDocumentsPage() {
   }
 
   return (
-    <PageLayout title="My documents" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle lead="X-rays, lab results and letters, kept together and ready for a visit."
+    <PageLayout title="My documents" header={<ProfileHeader />}>
+      <PageTitle lead="X-rays, lab results and letters, kept together and ready for a visit. Any file type up to 10 MB each."
         action={<Button ref={addButtonRef} onClick={chooseFiles} disabled={busy || !profileId}>
-          <span className="medical-documents__plus" aria-hidden="true">+</span> Add documents{forName}
+          Add documents{forName}
         </Button>}
         more={documents?.length > 0 && <MoreMenu id="documents-more" items={[{ label: "Attach documents to visit preparation", href: "/visit-prep" }]} />}>
         My documents
@@ -209,7 +209,6 @@ export default function MedicalDocumentsPage() {
         <div className="medical-documents__header">
           <div>
             <h2 id="documents-heading">{activeProfile?.isSelf ? "Your documents" : `${activeProfile?.fullName || "Profile"}'s documents`}</h2>
-            <p className="text-muted">Store X-rays, lab results and letters for this profile. Any file type up to 10 MB each.</p>
           </div>
         </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}

@@ -384,7 +384,7 @@ export default function WaterAndSleepPage() {
   const goal = history?.goal;
 
   return (
-    <PageLayout title="Water and sleep" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Water and sleep" header={<ProfileHeader />}>
       {who ? (
         <PageTitle lead={`A simple daily log of ${who}'s water and sleep.`}>Water and sleep for {who}</PageTitle>
       ) : (

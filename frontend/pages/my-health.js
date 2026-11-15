@@ -426,7 +426,7 @@ export default function MyHealthPage() {
   const emergencyCard = <Button variant="secondary" href="/emergency-card">Emergency information card</Button>;
 
   return (
-    <PageLayout title="My health" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="My health" header={<ProfileHeader />}>
       {who ? (
         <PageTitle lead={`Nabad uses this to give safer guidance for ${who}. Everything here is optional, and you can change it anytime.`} action={emergencyCard}>Health for {who}</PageTitle>
       ) : (

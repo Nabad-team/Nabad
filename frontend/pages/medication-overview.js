@@ -8,6 +8,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
+import Card from "../components/ui/Card";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
@@ -57,7 +58,7 @@ function PersonSection({ profile, medications, showDiscontinued, recentChangeDay
   const who = profile.isSelf ? "your" : `${profile.name}'s`;
   const hiddenDiscontinued = !showDiscontinued && profile.counts.discontinued > 0;
   return (
-    <section className="overview-person" aria-labelledby={headingId} id={sectionId(profile)}>
+    <Card className="overview-person" aria-labelledby={headingId} id={sectionId(profile)}>
       <div className="overview-person__heading">
         {/* The distinguishing detail is part of the heading, so two people with the same name also sound different to screen readers. */}
         <h2 id={headingId}>
@@ -84,7 +85,7 @@ function PersonSection({ profile, medications, showDiscontinued, recentChangeDay
           {profile.isSelf ? "Edit your medications" : `Edit ${who} medications`}
         </Link>
       </p>
-    </section>
+    </Card>
   );
 }
 
@@ -125,9 +126,11 @@ export default function MedicationOverviewPage() {
   const sameNames = sameNameDetails(profiles);
 
   return (
-    <PageLayout title="Medication overview" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Medication overview" header={<ProfileHeader />}>
       <div className="medication-overview">
-        <PageTitle lead="Every medication for you and the people you look after, in one place. Open a person's own medications page to make changes.">
+        <PageTitle lead="Every medication for you and the people you look after, in one place. Open a person's own medications page to make changes."
+          action={overview && <Button onClick={() => window.print()}>Print for handover</Button>}
+          loadingActions={overview === null && !loadError ? 1 : 0}>
           Medication overview
         </PageTitle>
 
@@ -171,10 +174,6 @@ export default function MedicationOverviewPage() {
                   <input type="checkbox" checked={showDiscontinued} onChange={(event) => setShowDiscontinued(event.target.checked)} />
                   Show discontinued medications
                 </label>
-              </div>
-              <div className="button-row">
-                <Button variant="secondary" onClick={() => window.print()}>Print for handover</Button>
-                <Button variant="secondary" href="/medications">Back to medications</Button>
               </div>
             </div>
 
