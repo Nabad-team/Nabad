@@ -790,6 +790,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             ("my-records", (By.CSS_SELECTOR, "#nav-group-my-records a[href='/my-health']"), "/my-health"),
             ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/medications']"), "/medications"),
             ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/water-and-sleep']"), "/water-and-sleep"),
+            ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/wellbeing']"), "/wellbeing"),
         ):
             with self.subTest(path=path):
                 self.open("/dashboard")

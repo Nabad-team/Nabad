@@ -13,7 +13,8 @@ import WindDown from "../components/wellbeing/WindDown";
 import WellbeingHelp from "../components/wellbeing/WellbeingHelp";
 import { EXERCISES, reflectionQuestionFor } from "../lib/wellbeingExercises";
 
-// Wellbeing exercises, opened from the dashboard's Wellbeing Corner (/wellbeing?start=breathing and so on).
+// Wellbeing: the calm exercises, in the My care menu and opened from the dashboard's Wellbeing Corner
+// (/wellbeing?start=breathing and so on). The title is the menu label exactly ("One name per page").
 // Calm, short, and nothing is saved: no mood, answers, ticks or history. The exercise runs in a panel under the
 // header; the support block (140, 1564, when to reach out) sits with it, or at the bottom when no exercise is open,
 // so 140 appears once on the page apart from the footer. Never linked from a symptom-check result.
@@ -41,8 +42,8 @@ export default function WellbeingPage() {
   const exercise = EXERCISES.find((item) => item.key === open);
   const question = reflectionQuestionFor();
   return (
-    <PageLayout title="Wellbeing exercises" header={<ProfileHeader />}>
-      <PageTitle lead="Short, calm exercises that can help you slow down. Nothing you do here is saved.">Wellbeing exercises</PageTitle>
+    <PageLayout title="Wellbeing" header={<ProfileHeader />}>
+      <PageTitle lead="Short, calm exercises that can help you slow down. Nothing you do here is saved.">Wellbeing</PageTitle>
 
       {exercise && (
         <InlinePanel key={exercise.key} id={`exercise-${exercise.key}`} title={exercise.title} onClose={close} returnFocusTo={opener.current}>
