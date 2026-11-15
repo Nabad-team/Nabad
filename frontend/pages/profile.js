@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import ProfilePicture from "../components/ProfilePicture";
+import GettingStartedSetting from "../components/GettingStartedSetting";
 import Dialog from "../components/Dialog";
 import EmergencyContact from "../components/EmergencyContact";
 import DataExport from "../components/DataExport";
@@ -274,6 +275,7 @@ export default function ProfilePage() {
                 <p><span className="details__label">Date of birth</span>{profile.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not set"}</p>
               </div>
               <Button variant="secondary" onClick={startEditing}>{simplified ? "Change" : "Edit"}</Button>
+              <GettingStartedSetting />
             </>
           )}
 

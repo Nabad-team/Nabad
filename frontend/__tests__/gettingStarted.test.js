@@ -4,11 +4,12 @@ import fs from "fs";
 import path from "path";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import DashboardFirstSteps from "../components/GettingStartedCard";
+import GettingStartedSetting from "../components/GettingStartedSetting";
 import { emergencyCardHasContent, gettingStartedSteps, progressText } from "../lib/gettingStarted";
 import { pickNextStep, sentence } from "../lib/nextStep";
-import { getMe, hideGettingStarted } from "../lib/api";
+import { getMe, hideGettingStarted, showGettingStarted } from "../lib/api";
 
-jest.mock("../lib/api", () => ({ getMe: jest.fn(), hideGettingStarted: jest.fn() }));
+jest.mock("../lib/api", () => ({ getMe: jest.fn(), hideGettingStarted: jest.fn(), showGettingStarted: jest.fn() }));
 
 const FULL_HEALTH = { dateOfBirth: "1990-04-12", facts: ["sex", "height", "weight", "bloodType"].map((category) => ({ category })) };
 const EMPTY = { health: { dateOfBirth: "", facts: [] }, medications: [], symptoms: [], emergencyCard: { emergencyContact: null, bloodType: "", conditions: [], allergies: [], medications: [] } };
@@ -159,6 +160,35 @@ describe("the card on the dashboard", () => {
       });
     }).filter((file) => !file.endsWith("GettingStartedCard.js"));
     expect(users).toEqual([path.join("pages", "dashboard.js")]);
+  });
+});
+
+describe("Show getting started again (My profile)", () => {
+  test("only while it is hidden; clears the flag on the server and says so", async () => {
+    getMe.mockResolvedValue({ user: { gettingStartedHidden: true } });
+    showGettingStarted.mockReset().mockResolvedValue({ gettingStartedHidden: false });
+    await act(async () => { render(<GettingStartedSetting />); });
+    expect(screen.getByText("The Getting started card on your dashboard is hidden.")).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Show getting started again" })); });
+    expect(showGettingStarted).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("status")).toHaveTextContent("Getting started will show on your dashboard again.");
+    expect(screen.getByRole("link", { name: "Go to the dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.queryByRole("button", { name: "Show getting started again" })).toBeNull();
+  });
+
+  test("shows nothing while the card isn't hidden", async () => {
+    let result;
+    await act(async () => { result = render(<GettingStartedSetting />); });
+    expect(result.container).toBeEmptyDOMElement();
+  });
+
+  test("if it fails, it says so and keeps the button", async () => {
+    getMe.mockResolvedValue({ user: { gettingStartedHidden: true } });
+    showGettingStarted.mockReset().mockRejectedValue(new Error("offline"));
+    await act(async () => { render(<GettingStartedSetting />); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Show getting started again" })); });
+    expect(screen.getByRole("alert")).toHaveTextContent("We couldn't change that.");
+    expect(screen.getByRole("button", { name: "Show getting started again" })).toBeEnabled();
   });
 });
 

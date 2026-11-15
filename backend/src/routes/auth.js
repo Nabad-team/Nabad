@@ -440,6 +440,12 @@ router.post("/getting-started/hide", requireAuth, asyncRoute(async (req, res) =>
   return res.json({ gettingStartedHidden: true });
 }));
 
+// "Show getting started again" on My profile: clears the flag. Steps already done still show as done.
+router.post("/getting-started/show", requireAuth, asyncRoute(async (req, res) => {
+  await User.findByIdAndUpdate(req.userId, { gettingStartedHidden: false });
+  return res.json({ gettingStartedHidden: false });
+}));
+
 // Opened from the emailed link. No sign-in needed: the user may open the link on another device.
 // The lookup and the update happen in one atomic step, so a token can only be used once.
 router.post("/verify-email", verifyLimiter, asyncRoute(async (req, res) => {

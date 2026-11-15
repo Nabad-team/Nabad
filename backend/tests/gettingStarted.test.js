@@ -49,6 +49,19 @@ test("a new account shows the card; Hide is remembered on the server for that ac
   assert.equal((await call("/auth/me", { cookie: cookieFor(sami) })).body.user.gettingStartedHidden, false);
 });
 
-test("hiding needs sign-in", async () => {
+test("Show getting started again clears the flag for that account only", async () => {
+  const rana = await makeUser("rana.show@example.test");
+  const sami = await makeUser("sami.show@example.test");
+  await call("/auth/getting-started/hide", { method: "POST", cookie: cookieFor(rana) });
+  await call("/auth/getting-started/hide", { method: "POST", cookie: cookieFor(sami) });
+  const show = await call("/auth/getting-started/show", { method: "POST", cookie: cookieFor(rana) });
+  assert.equal(show.status, 200);
+  assert.deepEqual(show.body, { gettingStartedHidden: false });
+  assert.equal((await call("/auth/me", { cookie: cookieFor(rana) })).body.user.gettingStartedHidden, false);
+  assert.equal((await call("/auth/me", { cookie: cookieFor(sami) })).body.user.gettingStartedHidden, true);
+});
+
+test("hiding and showing need sign-in", async () => {
   assert.equal((await call("/auth/getting-started/hide", { method: "POST" })).status, 401);
+  assert.equal((await call("/auth/getting-started/show", { method: "POST" })).status, 401);
 });

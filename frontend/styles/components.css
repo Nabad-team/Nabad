@@ -4836,3 +4836,5 @@ select.input {
   .getting-started__step { grid-template-columns: 2rem minmax(0, 1fr); }
   .getting-started__step > .button, .getting-started__done { grid-column: 2; justify-self: start; }
 }
+.getting-started-setting { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 0.0625rem solid var(--color-border); }
+.getting-started-setting p { margin: 0 0 var(--space-2); }
