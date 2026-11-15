@@ -6,6 +6,7 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import { TwoHearts } from "../../components/illustrations";
 import Alert from "../../components/ui/Alert";
+import Card from "../../components/ui/Card";
 import EmptyState from "../../components/ui/EmptyState";
 import Dialog from "../../components/Dialog";
 import { HeartbeatLoader } from "../../components/ui/Heartbeat";
@@ -88,7 +89,7 @@ export default function CareCirclePage() {
   }
 
   return (
-    <PageLayout title="Care circle" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Care circle" header={<ProfileHeader />}>
       <PageTitle lead={CARE_CIRCLE_PROMISE}>Care circle</PageTitle>
 
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
@@ -97,8 +98,8 @@ export default function CareCirclePage() {
       {!loadError && data === null && <HeartbeatLoader label="Loading your care circle..." />}
 
       {data && (
-        <>
-          <section className="section" aria-labelledby="invite-heading">
+        <div className="card-grid">
+          <Card aria-labelledby="invite-heading">
             <h2 id="invite-heading">Invite someone</h2>
             <p>
               They get an email with a link to join. When one of your symptom checks, or a check for someone in your family on Nabad,
@@ -126,9 +127,9 @@ export default function CareCirclePage() {
               </div>
               {full && <p className="text-muted">Your care circle is full. Remove someone or cancel an invitation to invite someone else.</p>}
             </form>
-          </section>
+          </Card>
 
-          <section className="section" aria-labelledby="members-heading">
+          <Card aria-labelledby="members-heading">
             <h2 id="members-heading">People in your care circle</h2>
             {data.members.length === 0 ? (
               <EmptyState illustration={<TwoHearts size="4rem" />} title="No one is in your care circle yet: invite someone you trust, like a family member or a close friend." />
@@ -142,10 +143,10 @@ export default function CareCirclePage() {
                 ))}
               </ul>
             )}
-          </section>
+          </Card>
 
           {data.pending.length > 0 && (
-            <section className="section" aria-labelledby="pending-heading">
+            <Card aria-labelledby="pending-heading">
               <h2 id="pending-heading">Waiting to accept</h2>
               <ul className="plain-list">
                 {data.pending.map((invite) => (
@@ -155,10 +156,10 @@ export default function CareCirclePage() {
                   </li>
                 ))}
               </ul>
-            </section>
+            </Card>
           )}
 
-          <section className="section" aria-labelledby="circles-heading">
+          <Card aria-labelledby="circles-heading">
             <h2 id="circles-heading">Circles I'm in</h2>
             <p>You get an alert in Nabad and by email when one of these people's symptom checks needs attention. You never see their symptoms.</p>
             {data.circles.length === 0 ? (
@@ -173,8 +174,8 @@ export default function CareCirclePage() {
                 ))}
               </ul>
             )}
-          </section>
-        </>
+          </Card>
+        </div>
       )}
 
       {confirming && (

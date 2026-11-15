@@ -288,7 +288,7 @@ export default function MedicationsPage() {
   </li>;
 
   return (
-    <PageLayout title={forSelf ? "My medications" : `Medications for ${name}`} header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title={forSelf ? "My medications" : `Medications for ${name}`} header={<ProfileHeader />}>
       {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
       <PageTitle
         lead={forSelf

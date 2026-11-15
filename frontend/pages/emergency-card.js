@@ -36,7 +36,7 @@ export default function EmergencyCardPage() {
   // Never paint or print the previous patient's snapshot during a profile switch.
   const card = state && state.profileId === profileId ? state.card : null;
   const error = state && state.profileId === profileId ? state.error : "";
-  return <PageLayout title="Emergency information card" header={<ProfileHeader showPicture={false} />}>
+  return <PageLayout title="Emergency information card" header={<ProfileHeader />}>
     <div className="emergency-card-controls">
       <PageTitle lead="Keep your important health information ready to show a healthcare provider.">Emergency information card</PageTitle>
       <p>Review the card before printing. It contains private health information; keep the printed copy somewhere safe.</p>

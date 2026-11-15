@@ -134,7 +134,7 @@ export default function ProvidersPage() {
     else locate(false, start);
   }
   const field = key => ({ value: draft[key], onChange: e => setDraft(old => ({ ...old, [key]: e.target.value })) });
-  return <PageLayout title={t("title")} header={<ProfileHeader showPicture={false} />}>
+  return <PageLayout title={t("title")} header={<ProfileHeader />}>
     <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
     {filters?.emergency24h && <Alert tone="danger">
       <p><a href="tel:140">{t("emergencyCall")}</a> {t("emergencyHelp")}</p>
@@ -144,7 +144,6 @@ export default function ProvidersPage() {
       {filters.lat == null && <p>{t("emergencyUnranked")}</p>}
       {locationError && <p role="alert">{locationError}</p>}
     </Alert>}
-    <p className="text-muted">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
     {notice && <p role="status">{notice}</p>}
     {favoriteError && <Alert tone="danger" role="alert"><p>{favoriteError}</p>
       {!favorites && <Button variant="secondary" onClick={() => setFavoriteRetry(value => value + 1)}>{t("retryFavorites")}</Button>}
@@ -232,8 +231,12 @@ export default function ProvidersPage() {
       <p>{error}</p><Button variant="secondary" onClick={() => setRetry(value => value + 1)}>{t("retry")}</Button>
     </Alert> : <>
       <p role="status">{t("count", { count: data.total })}</p>
-      {/* One short directory note for every result, instead of the same notes on each card. */}
-      <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
+      {/* The info notes: one short directory note for every result (instead of the same notes on each card), and
+          how saving works. */}
+      <div className="provider-notes">
+        <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
+        <p className="text-muted provider-saved-note">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
+      </div>
       {!filters.emergency24h && travelIds.length > 0 && <p id="provider-travel-hint">{t("travelHint")}</p>}
       {/* Side by side from 40rem, stacked on phones. */}
       <div className="provider-tools">

@@ -114,7 +114,7 @@ export default function ProviderDetailPage() {
     catch { setNotice("Copy the shareable link shown below."); }
   }
   const control = key => ({ value: form[key], onChange: e => setForm(old => ({ ...old, [key]: e.target.value })) });
-  return <PageLayout title={provider?.name || "Provider details"} header={<ProfileHeader showPicture={false} />}>
+  return <PageLayout title={provider?.name || "Provider details"} header={<ProfileHeader />}>
     <Button href="/providers" variant="secondary">Back to providers</Button>
     {loading ? <HeartbeatLoader label="Loading provider details" /> : error ? <Alert tone="danger" role="alert">
       <p>{error}</p><Button variant="secondary" onClick={() => setRetry(n => n + 1)}>Try again</Button>

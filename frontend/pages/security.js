@@ -40,7 +40,7 @@ export default function SecurityPage() {
   }
 
   return (
-    <PageLayout title="Account security" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Account security" header={<ProfileHeader />}>
       <PageTitle>Account security</PageTitle>
       {error && <Alert tone="danger" as="p" role="alert" className="auth-message">{error}</Alert>}
       <Card as="div" className="security-card">

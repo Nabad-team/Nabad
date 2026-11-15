@@ -5,6 +5,7 @@ import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import Card from "../components/ui/Card";
 import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { CallButton } from "../components/NotificationBell";
@@ -112,11 +113,14 @@ export default function NotificationsPage() {
   const hasFilters = show === "unread" || person || search.trim();
   const visibleItems = (items || []).filter((item) => `${item.title} ${item.message}`.toLowerCase().includes(search.trim().toLowerCase()));
   return (
-    <PageLayout title="Notifications" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>Notifications</PageTitle>
-      <p className="page-intro">Reminders and alerts from Nabad for you and the people you look after. Notifications are kept for 90 days.</p>
-      <p className="text-sm"><a href="/profile#notifications-heading">Choose which notifications you get</a></p>
+    <PageLayout title="Notifications" header={<ProfileHeader />}>
+      <PageTitle lead="Reminders and alerts from Nabad for you and the people you look after. Notifications are kept for 90 days.">Notifications</PageTitle>
+      <p className="page-intro text-sm"><a href="/profile#notifications-heading">Choose which notifications you get</a></p>
 
+      {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
+      {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+
+      <Card as="div" className="page-card notifications">
       <div className="notification-filters" role="group" aria-label="Filter notifications">
         <Input as="select" id="notification-show" label="Show" value={show} onChange={(event) => setShow(event.target.value)}>
           <option value="all">All</option>
@@ -131,8 +135,6 @@ export default function NotificationsPage() {
         <Button variant="secondary" onClick={markAll} disabled={!items?.some((item) => !item.read)}>Mark all as read</Button>
       </div>
 
-      {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
-      {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loadError && <div className="stack"><Alert tone="danger" as="p" role="alert">{loadError}</Alert><Button variant="secondary" onClick={() => load(page)}>Try again</Button></div>}
       {!loadError && items === null && <HeartbeatLoader label="Loading notifications..." />}
       {items !== null && visibleItems.length === 0 && (
@@ -164,8 +166,9 @@ export default function NotificationsPage() {
         </ul>
       )}
       {items?.length > 0 && hasMore && (
-        <div className="section"><Button variant="secondary" onClick={loadMore} disabled={loadingMore}>{loadingMore ? "Loading..." : "Show older notifications"}</Button></div>
+        <div className="notifications__more"><Button variant="secondary" onClick={loadMore} disabled={loadingMore}>{loadingMore ? "Loading..." : "Show older notifications"}</Button></div>
       )}
+      </Card>
     </PageLayout>
   );
 }

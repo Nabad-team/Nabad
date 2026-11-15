@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
+import ProfilePicture from "../components/ProfilePicture";
 import Dialog from "../components/Dialog";
 import EmergencyContact from "../components/EmergencyContact";
 import DataExport from "../components/DataExport";
@@ -244,14 +245,14 @@ export default function ProfilePage() {
 
   return (
     <PageLayout title="My profile" header={<ProfileHeader />}>
+      <PageTitle lead="Your account details and settings, and the people you look after.">My profile</PageTitle>
       {/* The details on this page are always the account owner's, so explain that
           while acting as a dependent (the banner above names who is active). */}
       {activeProfile && !activeProfile.isSelf && (
-        <p className="text-muted">
+        <p className="page-intro">
           You're managing {activeProfile.fullName}'s care. Account settings below belong to you.
         </p>
       )}
-      <PageTitle>My profile</PageTitle>
 
       {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
       {!profile && !loadError && <HeartbeatLoader />}
@@ -262,6 +263,7 @@ export default function ProfilePage() {
       {profile && (
         <Card aria-labelledby="owner-heading">
           <h2 id="owner-heading">{simplified ? "Your details" : "Account owner"}</h2>
+          <ProfilePicture profile={selfProfile} />
 
           {!isEditing && (
             <>
@@ -339,6 +341,13 @@ export default function ProfilePage() {
       <Card aria-labelledby="linked-heading">
         <h2 id="linked-heading">{simplified ? "People you help" : "Linked profiles"}</h2>
         {dependentMessage && <Alert tone="success" as="p" role="status" className="profile-message">{dependentMessage}</Alert>}
+        {/* While acting for a family member, their picture (it used to sit at the top of this page). */}
+        {activeProfile && !activeProfile.isSelf && (
+          <div className="profile-picture__linked">
+            <h3>Picture for {activeProfile.fullName}</h3>
+            <ProfilePicture profile={activeProfile} />
+          </div>
+        )}
 
         {linkedProfiles.length === 0 && (
           <EmptyState illustration={<TwoHearts size="4rem" />}

@@ -44,7 +44,9 @@ Every signed-in page follows the same frame, so the app reads as one product:
      My appointments
    </PageTitle>
    ```
-   Show the primary action once the page's data has loaded (an add form opened before then would be reset). Pages whose sections each have their own Add (My health) or that are tools (Find care, Symptom check) have no header action.
+   Show the primary action once the page's data has loaded (an add form opened before then would be reset). Pages whose sections each have their own Add (My health) or that are tools (Find care, Symptom check) have no header action. Medication overview's primary action is **Print for handover**; Visit preparation's is **Share with a doctor**, with More beside it. The menu already links every page, so a page has no "Back to ..." button.
+   The page's description is the `lead`, directly under the title (Notifications, My profile). Notes that belong to one part of the page go in that part's card instead of floating under the title: My appointments' reminder sentence sits in the calendar card, and Find care's "Saved providers belong to your account..." sits with the directory note above the results.
+   **Primary add buttons are text only, with no "+" or other icon** (Add medication, Add appointment, Log reading, Add documents). The label already says what happens, and one style keeps the header rows identical. Don't add an icon to one of them; if icons are ever wanted, add the same one to all of them in the same change.
 3. **Cards.** Page content sits in the same `Card` the dashboard uses (see [Card](#card)); several short sections go in a two-column `card-grid`.
 4. **Data first.** The list or history (or its empty state) comes first. The primary action opens the form in an `InlinePanel` just under the header row:
    ```jsx
@@ -52,7 +54,7 @@ Every signed-in page follows the same frame, so the app reads as one product:
    ```
    The panel is a labelled card (a region named by its h2) with a teal edge. Opening it moves focus to its first field; Escape and Cancel close it, and focus goes back to the button that opened it (also after saving). The opening button has `aria-expanded` and `aria-controls`.
    - **My vitals:** History and trends first; **Log reading** opens the form. More: Review vitals before a visit.
-   - **My documents:** the list first; **Add documents** opens the file picker, and the panel then asks for the type and date of the chosen files ("Details for 2 files", "Upload 2 files"). Files are checked (count, empty, 10 MB) before the panel opens. More: Attach documents to visit preparation.
+   - **My documents:** the list first (the card has its heading only; the page's lead already describes it, including "Any file type up to 10 MB each"); **Add documents** opens the file picker, and the panel then asks for the type and date of the chosen files ("Details for 2 files", "Upload 2 files"). Files are checked (count, empty, 10 MB) before the panel opens. More: Attach documents to visit preparation.
 5. **Empty states** use the one `EmptyState` component.
 
 A short form keeps its 28rem width inside its card. On a page of short sections, the card grid puts two cards side by side from 64rem, so the wide column never looks half empty.
@@ -203,7 +205,7 @@ Give every page a `title`: `<PageLayout title="My profile">` shows "My profile �
 
 ### Signed-in header
 
-Every signed-in page uses `<ProfileHeader />`. It draws the header bar (`components/AppHeader.js`), then the picture controls (unless `showPicture={false}`) and, when acting for a family member, the "Acting as" banner.
+Every signed-in page uses `<ProfileHeader />`. It draws the header bar (`components/AppHeader.js`) and, when acting for a family member, the "Acting as" banner. The profile picture and "Upload picture" are not in the header: they sit in My profile's Account owner card (`components/ProfilePicture.js`, the account owner's picture), and while acting for a family member their picture sits in the Linked profiles card ("Picture for Maya").
 
 ```
 Desktop   [Nabad]  [Search]                                                 [Bell] [Profile ▾] [(RH)▾]
@@ -325,7 +327,7 @@ The card starts with the level's icon, "Urgency: <label>" and one short line, th
 
 ### One primary action, and "More"
 
-When a page has several actions, show the main one as the primary button and put the rest in a **More** button: `<MoreMenu id="..." items={[{ label, onClick } | { label, href }]} />` (`components/ui/MoreMenu.js`, built on `useDisclosure`: `aria-expanded`, Escape and outside click close it, focus goes to its first item). Falsy items are skipped, and with no items it renders nothing. Visit preparation: **Share with a doctor** (opens the sharing panel and focuses its first control) and **More** with Edit visit sheet, Print or save as PDF, and Export sheet with attachments. My medications: **Add medication**, and More with Add from a prescription and Medication overview. My appointments: **Add appointment**, and More with Get pop-up reminders on this device (only while the browser can still ask). Styles: `.more-menu`, `.more-menu__panel`.
+When a page has several actions, show the main one as the primary button and put the rest in a **More** button: `<MoreMenu id="..." items={[{ label, onClick } | { label, href }]} />` (`components/ui/MoreMenu.js`, built on `useDisclosure`: `aria-expanded`, Escape and outside click close it, focus goes to its first item). Falsy items are skipped, and with no items it renders nothing. Visit preparation: **Share with a doctor** (opens the sharing panel and focuses its first control) and **More** with Edit visit sheet, Print or save as PDF, and Export sheet with attachments, both in the title row. Its "Recent symptom checks" card shows the 5 newest with a "Show all (N)" toggle; the hidden ones stay in the page, so the shared doctor link, the export, the PDF and paper keep every check. My medications: **Add medication**, and More with Add from a prescription and Medication overview. My appointments: **Add appointment**, and More with Get pop-up reminders on this device (only while the browser can still ask). Styles: `.more-menu`, `.more-menu__panel`.
 
 ### Badge
 
@@ -339,7 +341,7 @@ A small calm label next to a heading. Never red: teal informs, gray marks what i
 
 ### Card
 
-The white surface the dashboard uses. On signed-in pages, **page content sits in cards**: one card per section (My health, My profile), or one card around a page's list (My medications, My appointments, My vitals, My documents). The page header row stays on the canvas, above the cards. Inside a card, rows are separated by thin lines or light borders, not by another shadowed card.
+The white surface the dashboard uses. On signed-in pages, **page content sits in cards**: one card per section (My health, My profile, Care circle), one card around a page's list (My medications, My appointments, My vitals, My documents, Notifications, with its filters inside the card), or one card per person (Medication overview). The page header row stays on the canvas, above the cards. Inside a card, rows are separated by thin lines or light borders, not by another shadowed card.
 
 ```jsx
 <Card aria-labelledby="contact-heading"><h2 id="contact-heading">Emergency contact</h2>...</Card>

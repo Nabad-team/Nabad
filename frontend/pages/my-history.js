@@ -67,7 +67,7 @@ export default function MyHistoryPage() {
   const { result, error, loading, asked } = state;
   const cited = new Set(result?.sources || []);
   return (
-    <PageLayout title="Ask about my history" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Ask about my history" header={<ProfileHeader />}>
       <PageTitle lead={forSelf
         ? "Ask about your past symptom checks, visits, medicines and documents saved in Nabad."
         : `Ask about ${name}'s past symptom checks, visits, medicines and documents saved in Nabad.`}>

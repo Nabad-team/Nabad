@@ -86,7 +86,7 @@ export default function DashboardPage() {
     <PageLayout
       title="Dashboard"
       variant="dashboard"
-      header={<ProfileHeader showPicture={false} />}
+      header={<ProfileHeader />}
     >
       <EmailVerificationBanner />
 

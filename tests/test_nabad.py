@@ -1150,7 +1150,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             printed_text = self.driver.execute_script("return document.querySelector('.visit-prep').innerText")
             self.assertIn(filename, printed_text)
             self.assertIn(note, printed_text)
-            self.assertEqual(self.driver.execute_script("return getComputedStyle(document.querySelector('.visit-prep__actions')).display"), "none")
+            self.assertEqual(self.driver.execute_script("return getComputedStyle(document.querySelector('.page-title__actions')).display"), "none")
         finally:
             self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "screen"})
 
