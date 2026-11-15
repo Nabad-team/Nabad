@@ -157,7 +157,7 @@ export default function NotificationsPage() {
               <div className="button-row">
                 {item.phone && <CallButton item={item} />}
                 {!item.read && <Button variant="secondary" size="small" onClick={() => markRead(item)} aria-label={`Mark "${item.title}" as read`}>Mark as read</Button>}
-                <Button variant="danger" size="small" onClick={() => remove(item)} aria-label={`Delete "${item.title}"`}>Delete</Button>
+                <Button variant="danger-quiet" size="small" onClick={() => remove(item)} aria-label={`Delete "${item.title}"`}>Delete</Button>
               </div>
             </li>
           ))}

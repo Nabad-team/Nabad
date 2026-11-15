@@ -282,7 +282,7 @@ export default function MedicationsPage() {
       <div className="button-row">
         <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>
         <Button variant="secondary" size="small" onClick={() => handleStatus(medication)} disabled={busyId === medication.id} aria-label={`${statusAction(medication)}: ${medication.name}`}>{statusAction(medication)}</Button>
-        <Button variant="danger" size="small" onClick={() => { setNotice(""); setError(""); setToDelete(medication); }} aria-label={`Delete ${medication.name}`}>Delete</Button>
+        <Button variant="danger-quiet" size="small" onClick={() => { setNotice(""); setError(""); setToDelete(medication); }} aria-label={`Delete ${medication.name}`}>Delete</Button>
       </div>
     </>}
   </li>;
@@ -322,8 +322,7 @@ export default function MedicationsPage() {
 
           {medications.length === 0 && editing !== "add" && editing !== "prescription" && (
             <EmptyState illustration={<MedicineBox size="4rem" />}
-              title={forSelf ? "No medications yet: add the ones you take so they're ready for your doctor." : `No medications yet: add the ones ${name} takes so they're ready for their doctor.`}
-              action={<Button variant="secondary" onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>} />
+              title={forSelf ? "No medications yet: add the ones you take so they're ready for your doctor." : `No medications yet: add the ones ${name} takes so they're ready for their doctor.`} />
           )}
 
           {medications.length > 0 && (

@@ -242,11 +242,11 @@ export default function MedicalDocumentsPage() {
               <div><strong>{document.filename}</strong><p className="text-muted">Uploaded {prettyDate(document.uploadedAt)} · {prettySize(document.size)}</p></div>
               <p>{DOCUMENT_TYPES.find(([value]) => value === (document.documentType || "other"))?.[1] || "Other"} · {dateLabel(document.documentDate)}</p>
               <a href={medicalDocumentDownloadUrl(profileId, document.id)} className="button button--secondary">Download</a>
-              <Button type="button" variant="danger" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
+              <Button type="button" variant="danger-quiet" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />
             </li>
           ))}</ul> : <EmptyState title="No documents match these filters. Try another file name, type, or date range." action={<Button variant="secondary" onClick={() => { setSearch(""); setFilterType(""); setDateFrom(""); setDateTo(""); }}>Clear filters</Button>} />}
-        </> : <EmptyState title="No documents added yet: upload medical files, so they are ready when this profile needs them." action={<Button variant="secondary" onClick={chooseFiles} disabled={busy || !profileId}>Add documents{forName}</Button>} />}
+        </> : <EmptyState title="No documents added yet: upload medical files, so they are ready when this profile needs them." />}
       </Card>
     </PageLayout>
   );

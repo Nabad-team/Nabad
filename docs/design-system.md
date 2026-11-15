@@ -235,11 +235,14 @@ Phone     [Nabad]                                                              [
 ```jsx
 <Button>Save</Button>                                   // primary: the main action. Usually one per screen.
 <Button variant="secondary">Cancel</Button>             // everything else: Cancel, Back, Edit, Skip
-<Button variant="danger">Delete my account</Button>     // only for deleting data
+<Button variant="danger-quiet" size="small">Delete</Button>  // Delete on a list row: red text and outline
+<Button variant="danger">Yes, delete</Button>           // solid red: only the final step that deletes data
 <Button href="/profile" variant="secondary">My profile</Button>   // a link that looks like a button
 <Button size="small">Sign out</Button>                  // smaller text, still 44px tall
 <Button block type="submit">Log in</Button>             // full width (single-column forms)
 ```
+
+**Delete buttons:** rows in a list (vitals, medications, documents, appointments, notifications) use the quiet `danger-quiet` style. Solid red `danger` is kept for the final confirm step (inside the confirmation dialog) and the Danger zone, so solid red always means "this happens now". The "Call 140" buttons are not delete buttons and stay solid red.
 
 `type` defaults to `"button"`, so pass `type="submit"` for form submit buttons. Navigation should be a link (`href`), not a button with `onClick`.
 
@@ -321,7 +324,7 @@ The white surface the dashboard uses. On signed-in pages, **page content sits in
 
 ### EmptyState
 
-The one empty state for every list or area with nothing in it yet: **a drawing, one line, one button.** Write the line as one sentence that says what's missing and what to do next ("No appointments yet: add your next doctor's visit so Nabad can remind you."). The button is the next step, usually the page's primary action again, as a secondary button; leave it out when there is nothing to do (no notifications yet, no search matches).
+The one empty state for every list or area with nothing in it yet: **a drawing, one line, one button.** Write the line as one sentence that says what's missing and what to do next ("No appointments yet: add your next doctor's visit so Nabad can remind you."). The button is the next step, as a secondary button. Leave it out when the page's header row already has that action (Log reading, Add documents, Add appointment, Add medication: the line alone is enough) and when there is nothing to do (no notifications yet). Keep it when the next step is somewhere the header doesn't offer (Clear filters, Add an allergy in its My health card, Open My medications on the overview).
 
 ```jsx
 <EmptyState illustration={<MedicineBox size="4rem" />}
