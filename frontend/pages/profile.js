@@ -251,15 +251,16 @@ export default function ProfilePage() {
           You're managing {activeProfile.fullName}'s care. Account settings below belong to you.
         </p>
       )}
-      <PageTitle>{simplified ? "Profile" : "My profile"}</PageTitle>
+      <PageTitle>My profile</PageTitle>
 
       {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
       {!profile && !loadError && <HeartbeatLoader />}
 
       {message && <Alert tone="success" as="p" role="status" className="profile-message">{message}</Alert>}
 
+      <div className="card-grid">
       {profile && (
-        <section aria-labelledby="owner-heading">
+        <Card aria-labelledby="owner-heading">
           <h2 id="owner-heading">{simplified ? "Your details" : "Account owner"}</h2>
 
           {!isEditing && (
@@ -318,31 +319,30 @@ export default function ProfilePage() {
               </div>
             </form>
           )}
-        </section>
+        </Card>
       )}
 
       {activeProfile && <ProfileCoverage profile={activeProfile} />}
 
-      <section className="section" aria-labelledby="security-heading">
+      <Card aria-labelledby="security-heading">
         <h2 id="security-heading">{simplified ? "Sign-in safety" : "Account security"}</h2>
         <p>{simplified ? "Keep your account safe." : "Manage your sign-in verification settings."}</p>
         <a href="/security" aria-label={simplified ? "Open sign-in safety settings" : undefined}>
           {simplified ? "Open safety settings" : "Open security settings"}
         </a>
-      </section>
+      </Card>
 
       <NotificationPreferences />
 
       <AccessibilitySettings />
 
-      <section className="section" aria-labelledby="linked-heading">
+      <Card aria-labelledby="linked-heading">
         <h2 id="linked-heading">{simplified ? "People you help" : "Linked profiles"}</h2>
         {dependentMessage && <Alert tone="success" as="p" role="status" className="profile-message">{dependentMessage}</Alert>}
 
         {linkedProfiles.length === 0 && (
-          <EmptyState illustration={<TwoHearts size="5rem" />} title="No linked profiles yet.">
-            {simplified ? "Add a person you help." : "Add someone you look after. You can then switch to their profile from the menu at the top."}
-          </EmptyState>
+          <EmptyState illustration={<TwoHearts size="4rem" />}
+            title={simplified ? "No linked profiles yet: add a person you help." : "No linked profiles yet: add someone you look after, then switch to their profile from the menu at the top."} />
         )}
         {linkedProfiles.length > 0 && (
           <ul className="plain-list">
@@ -416,17 +416,18 @@ export default function ProfilePage() {
             </div>
           </form>
         )}
-      </section>
+      </Card>
 
       <EmergencyContact />
 
       <DataExport isGoogleAccount={isGoogleAccount} />
 
-      <Card tone="danger" aria-labelledby="danger-heading" className="section">
+      <Card tone="danger" aria-labelledby="danger-heading" className="card--full">
         <h2 id="danger-heading">Danger zone</h2>
         <p className="text-muted">Deleting your account is permanent and cannot be undone.</p>
         <Button variant="danger" onClick={openDeleteAccount}>Delete my account</Button>
       </Card>
+      </div>
 
       {profileToRemove && (
         <Dialog title="Remove linked profile" onDismiss={() => setProfileToRemove(null)}>

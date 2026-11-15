@@ -234,7 +234,7 @@ test("works out hours slept from bedtime and wake-up time, across midnight", asy
   const cookie = token(await user());
   const cases = [
     ["23:30", "07:00", 7.5], ["22:00", "06:15", 8.25], ["01:00", "08:00", 7], ["13:00", "15:30", 2.5],
-    ["23:40", "07:00", 7.33], ["00:00", "23:59", 23.98], ["23:59", "00:00", 0.02], ["21:00", "21:30", 0.5],
+    ["23:40", "07:00", 7.33], ["00:00", "23:59", 23.98], ["21:00", "21:30", 0.5],
   ];
   for (const [bedtime, wakeTime, hours] of cases) {
     const saved = await logSleep(cookie, { bedtime, wakeTime, quality: 3 });
@@ -252,12 +252,14 @@ test("works out hours slept from bedtime and wake-up time, across midnight", asy
 
 test("rejects invalid sleep entries with a clear message", async () => {
   const cookie = token(await user());
-  const HOURS = "Enter the hours slept, from 0 to 24, in half hours (for example 7.5).";
+  const HOURS = "Enter the hours slept, from 0.5 to 24, in half hours (for example 7.5).";
+  const TOO_SHORT = "That's less than half an hour of sleep. Check the times, or enter the hours slept.";
   const QUALITY = "Choose how well you slept, from 1 (very poorly) to 5 (very well).";
   const BOTH = "Enter both bedtime and wake-up time, or neither.";
   const TIME = "Enter times as HH:MM, for example 23:30.";
   const cases = [
-    [{ ...sleep7, hours: -1 }, HOURS], [{ ...sleep7, hours: 24.5 }, HOURS], [{ ...sleep7, hours: 7.25 }, HOURS],
+    [{ ...sleep7, hours: -1 }, HOURS], [{ ...sleep7, hours: 0 }, HOURS], [{ ...sleep7, hours: 0.25 }, HOURS], [{ ...sleep7, hours: 24.5 }, HOURS],
+    [{ bedtime: "23:30", wakeTime: "23:45", quality: 3 }, TOO_SHORT], [{ bedtime: "23:59", wakeTime: "00:00", quality: 3 }, TOO_SHORT], [{ ...sleep7, hours: 7.25 }, HOURS],
     [{ ...sleep7, hours: "7" }, HOURS], [{ quality: 3 }, HOURS],
     [{ ...sleep7, quality: 0 }, QUALITY], [{ ...sleep7, quality: 6 }, QUALITY], [{ ...sleep7, quality: 3.5 }, QUALITY], [{ hours: 7 }, QUALITY],
     [{ bedtime: "23:00", quality: 3 }, BOTH], [{ wakeTime: "07:00", hours: 8, quality: 3 }, BOTH], [{ bedtime: "", wakeTime: "07:00", quality: 3 }, BOTH],
@@ -279,10 +281,11 @@ test("rejects invalid sleep entries with a clear message", async () => {
     assert.equal(response.status, 400, date);
     assert.equal(response.body.error, "Choose a morning from the past year, up to today.");
   }
-  // The edges are fine: 0 and 24 hours, and a morning a few weeks ago.
-  assert.equal((await logSleep(cookie, { hours: 0, quality: 1 })).status, 201);
+  // The edges are fine: half an hour (typed, or from times), 24 hours, and a morning a few weeks ago.
+  assert.equal((await logSleep(cookie, { hours: 0.5, quality: 1 })).status, 201);
+  assert.equal((await logSleep(cookie, { bedtime: "23:30", wakeTime: "00:00", quality: 1 }, { date: day(-1) })).status, 201);
   assert.equal((await logSleep(cookie, { hours: 24, quality: 5 }, { date: day(-20) })).status, 201);
-  assert.equal(await SleepEntry.countDocuments(), 2);
+  assert.equal(await SleepEntry.countDocuments(), 3);
 });
 
 test("history lists the last 7, 14 or 30 days, oldest first, with gaps as null", async () => {
@@ -447,4 +450,14 @@ test("deleting the account deletes its own and every dependent's water, sleep an
   }
   assert.equal(await HydrationEntry.countDocuments(), 1);
   assert.equal(await SleepEntry.countDocuments(), 1);
+});
+
+test("a night saved as 0 hours before the half-hour minimum still loads and is not rewritten", async () => {
+  const account = await user();
+  const cookie = token(account);
+  await SleepEntry.create({ owner: account._id, profileId: account._id, date: new Date(`${TODAY}T00:00:00Z`), hours: 0, quality: 2 });
+  const response = await history(cookie);
+  assert.equal(response.status, 200);
+  assert.equal(response.body.days.find((entry) => entry.date === TODAY).sleep.hours, 0);
+  assert.equal((await SleepEntry.findOne()).hours, 0);
 });

@@ -7,6 +7,8 @@ import Alert from "../components/ui/Alert";
 import { request } from "../lib/api";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getReportConversations, deleteReportConversation } from "../lib/reportConversationApi";
+import { formatDate } from "../lib/dates";
+import NabadAssistant from "../components/NabadAssistant";
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "csv", "jpg", "jpeg", "png", "webp"]);
@@ -20,18 +22,7 @@ const URGENCY_LABELS = {
   unclear: "Ask a clinician to review this report",
 };
 
-function ResultsIcon() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-      <path d="M13 5h15l10 10v25H13a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4Z" />
-      <path d="M28 5v10h10M16 23h12M16 29h9" />
-      <circle cx="32" cy="32" r="7" />
-      <path d="m37 37 5 5" />
-    </svg>
-  );
-}
-
-export default function TestResultsPage() {
+export default function HealthAssistantPage() {
   const { activeProfile } = useActiveProfile();
   const [file, setFile] = useState(null);
   const [question, setQuestion] = useState("");
@@ -241,7 +232,7 @@ export default function TestResultsPage() {
             <li key={conversation.id}>
               <button type="button" className={`assistant-chat__history-link${conversationId === conversation.id ? " is-current" : ""}`} onClick={() => openConversation(conversation)} aria-label={conversation.title} aria-current={conversationId === conversation.id ? "page" : undefined} disabled={busy}>
                 <span>{conversation.title}</span>
-                <small>{new Date(conversation.updatedAt).toLocaleDateString("en-GB")}</small>
+                <small>{formatDate(conversation.updatedAt)}</small>
               </button>
               <button type="button" className="assistant-chat__delete" onClick={() => removeConversation(conversation)} aria-label={`Delete ${conversation.title}`} disabled={busy}>x</button>
             </li>
@@ -250,7 +241,6 @@ export default function TestResultsPage() {
         <div className="assistant-chat__main">
         <header className="assistant-chat__header">
           <div>
-            <span className="assistant-chat__status">Health assistant</span>
             {activeProfile?.fullName && <p>Conversation for <strong>{activeProfile.fullName}</strong></p>}
           </div>
           {(messages.length > 0 || result) && <Button type="button" variant="secondary" size="small" onClick={newConversation} disabled={busy}>New chat</Button>}
@@ -265,7 +255,7 @@ export default function TestResultsPage() {
                 {message.evidence?.length > 0 && <p className="report-chat__evidence"><strong>From the report:</strong> {message.evidence.join(" / ")}</p>}
                 {message.citations?.length > 0 && <div className="report-chat__sources">
                   <strong>Reviewed sources:</strong>
-                  <ul>{message.citations.map((source) => <li key={`${source.id}-${source.version || "legacy"}`}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}{source.version && ` · version ${source.version}`}{source.reviewedAt && ` · reviewed ${new Date(source.reviewedAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}`}</li>)}</ul>
+                  <ul>{message.citations.map((source) => <li key={`${source.id}-${source.version || "legacy"}`}><a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.title}</a> — {source.publisher}{source.version && ` · version ${source.version}`}{source.reviewedAt && ` · reviewed ${formatDate(source.reviewedAt)}`}</li>)}</ul>
                 </div>}
                 {message.disclaimer && <p className="report-chat__disclaimer">{message.disclaimer}</p>}
               </article>
@@ -274,9 +264,15 @@ export default function TestResultsPage() {
           </section>
         ) : !result ? (
           <section className="assistant-chat__welcome" aria-labelledby="assistant-welcome-title">
-            <div className="assistant-chat__welcome-icon"><ResultsIcon /></div>
+            {/* The assistant greeting: the Nabad assistant, its name, and the existing "guidance, not a diagnosis" wording. */}
+            <div className="assistant-greeting">
+              <NabadAssistant size="3rem" crop="head" title="Nabad assistant" />
+              <p className="assistant-greeting__text">
+                <span className="assistant-greeting__name">Nabad assistant</span>
+                <span className="assistant-greeting__note">Nabad gives guidance, not a diagnosis.</span>
+              </p>
+            </div>
             <h2 id="assistant-welcome-title">What can I help you understand?</h2>
-            <p>Ask in English or Arabic, or attach an English or Arabic written test report. The assistant replies in English.</p>
             <div className="assistant-chat__suggestions" role="group" aria-label="Suggested questions">
               {["What does a high cholesterol result mean?", "How can I prepare for a blood test?", "What should I ask my doctor about a new medicine?"].map((suggestion) => (
                 <button className="assistant-chat__suggestion" key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>
@@ -315,7 +311,7 @@ export default function TestResultsPage() {
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
           I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
         </label>
-        <p className="report-privacy-note">Questions and written reports may be in English or Arabic; assistant replies are in English. Chat messages, assistant replies, and report findings are saved to this profile for later review. Uploaded files are not stored; attach the report again when you need the assistant to read it. You can delete saved conversations from the list above.</p>
+        <p className="report-privacy-note">Chats are saved to this profile; attached files are not kept. <a href="/privacy#ai-health-assistant">How your data is used</a></p>
       </form>
 
       {result && (
@@ -385,4 +381,4 @@ export default function TestResultsPage() {
   );
 }
 
-TestResultsPage.requireSignIn = true;
+HealthAssistantPage.requireSignIn = true;

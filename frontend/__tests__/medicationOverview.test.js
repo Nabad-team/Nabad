@@ -114,7 +114,7 @@ test("search, discontinued toggle and the active-only filter", async () => {
   expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual(["Omar Khoury"]);
   await user.clear(search);
   await user.type(search, "nobody here");
-  expect(screen.getByText("Nobody matches these filters.")).toBeInTheDocument();
+  expect(screen.getByText(/^Nobody matches these filters. Try a different name/)).toBeInTheDocument();
   await user.clear(search);
 
   await user.click(screen.getByRole("checkbox", { name: "Show discontinued medications" }));
@@ -160,10 +160,10 @@ const pairs = (medication) => medicationDetails(medication).map((d) => `${d.labe
 
 test("every medication field has a label, so no value is a bare number", () => {
   // The case from production: "487 mg injection · 5" showed an unlabelled 5.
-  expect(pairs(med({ name: "x", dose: "487", unit: "mg", form: "injection", frequency: "5", times: [], updatedAt: "2026-10-01T09:30:00" }))).toEqual([
+  expect(pairs(med({ name: "x", dose: "487", unit: "mg", form: "injection", frequency: "5", times: [], updatedAt: "2026-10-01T06:30:00Z" }))).toEqual([
     "Dose: 487 mg", "Route / form: Injection", "Frequency: 5", "Started: 1 September 2026", "Last updated: 1 October 2026, 09:30",
   ]);
-  expect(pairs(med({ name: "x", dose: "", unit: "mg", frequency: "", times: ["08:00", "20:00"], endDate: "2026-09-30", updatedAt: "2026-10-01T09:30:00" }))).toEqual([
+  expect(pairs(med({ name: "x", dose: "", unit: "mg", frequency: "", times: ["08:00", "20:00"], endDate: "2026-09-30", updatedAt: "2026-10-01T06:30:00Z" }))).toEqual([
     "Dose: Not recorded", "Route / form: Tablet", "Frequency: Not recorded", "Times: 08:00, 20:00", "Dates: 1 September 2026 to 30 September 2026", "Last updated: 1 October 2026, 09:30",
   ]);
   for (const medication of [...amal.medications, ...omar.medications]) {

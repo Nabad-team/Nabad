@@ -1,5 +1,4 @@
 import ProfileHeader from "../components/ProfileHeader";
-import { MainNavigation } from "../components/AppHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCorner from "../components/WellbeingCorner";
 import ProgressSummary from "../components/ProgressSummary";
@@ -50,10 +49,30 @@ function MicrophoneIcon() {
   );
 }
 
+// Quick actions: one small line icon each (same style as the menu icons), so every button reads the same way.
+const QUICK_ICONS = {
+  vitals: <path d="M3 12h4l2-5 4 10 2-5h6" />,
+  medication: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5" /></>,
+  appointment: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M12 12v6M9 15h6" /></>,
+  document: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M12 11v6M9 14l3-3 3 3" /></>,
+};
+
+function QuickAction({ href, icon, label, fullLabel }) {
+  return (
+    <li>
+      <a href={href} className="quick-action" aria-label={fullLabel}>
+        <svg {...iconProps} className="quick-action__icon">{QUICK_ICONS[icon]}</svg>
+        <span>{label}</span>
+      </a>
+    </li>
+  );
+}
+
 export default function DashboardPage() {
   // The active profile can be the user or a linked dependent.
   const { activeProfile, error, loading } = useActiveProfile();
-  const actionFor = activeProfile?.isSelf === false ? ` for ${firstName(activeProfile.fullName)}` : "";
+  const forName = activeProfile?.isSelf === false ? firstName(activeProfile.fullName) : "";
+  const actionFor = forName ? ` for ${forName}` : "";
 
   const { preferences } = useAccessibility();
 
@@ -86,9 +105,7 @@ export default function DashboardPage() {
         aria-labelledby="check-in-heading"
       >
         <h2 id="check-in-heading">
-          {simplified
-            ? "How do you feel?"
-            : "Check how you're feeling"}
+          Symptom check
         </h2>
 
         <p className={simplified ? "simplified-only-text" : ""}>
@@ -121,23 +138,15 @@ export default function DashboardPage() {
 
       <section className="quick-actions section" aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading">Quick actions</h2>
-        <p className="text-muted">Go straight to something you want to update.</p>
+        <p className="text-muted">{forName ? `Go straight to something you want to update for ${forName}.` : "Go straight to something you want to update."}</p>
         <nav aria-label="Quick actions">
           <ul className="quick-actions__list">
-            <li><Button href="/vitals" variant="secondary">Log vitals{actionFor}</Button></li>
-            <li><Button href="/medications" variant="secondary">Add medication{actionFor}</Button></li>
-            <li><Button href="/medication-overview" variant="secondary">Medication overview</Button></li>
-            <li><Button href="/appointments" variant="secondary">Add appointment{actionFor}</Button></li>
-            <li><Button href="/medical-documents" variant="secondary">Upload document{actionFor}</Button></li>
-            <li><Button href="/visit-prep" variant="secondary">Prepare for a visit{actionFor}</Button></li>
+            <QuickAction href="/vitals" icon="vitals" label="Log vitals" fullLabel={`Log vitals${actionFor}`} />
+            <QuickAction href="/medications" icon="medication" label="Add medication" fullLabel={`Add medication${actionFor}`} />
+            <QuickAction href="/appointments" icon="appointment" label="Add appointment" fullLabel={`Add appointment${actionFor}`} />
+            <QuickAction href="/medical-documents" icon="document" label="Upload document" fullLabel={`Upload document${actionFor}`} />
           </ul>
         </nav>
-      </section>
-
-      <section className="dashboard-navigation section" aria-label="Dashboard sections">
-        <h2>Explore your health space</h2>
-        <p className="text-muted">Keep track of the details that matter to you.</p>
-        <MainNavigation includeMedicalDocuments />
       </section>
 
       <WellbeingCorner />

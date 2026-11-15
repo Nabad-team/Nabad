@@ -19,7 +19,7 @@ If any of the three is down, the check fails and counts as downtime. The monthly
 
 ## When it alerts
 
-When a check fails, UptimeRobot emails the alert contacts on the UptimeRobot account (today Gerges, who set the monitor up under SCRUM-283), and emails again when the site is back up. Whoever sees the alert first tells the team, then checks, in this order:
+When a check fails, UptimeRobot emails the alert contacts on the UptimeRobot account (today Gerges, who set the monitor up under SCRUM-283; Gmail forwards them to Leen, see [operations.md](./operations.md#who-has-access)), and emails again when the site is back up. Whoever sees the alert first tells the team, then checks, in this order:
 
 1. **Render logs.** `nabad-backend-nhv5` → **Logs** and **Events**: did the service crash, fail to start, run out of memory, or is a deploy in progress? A startup error about missing or wrong settings points to the environment variables.
 2. **Atlas.** Is the "Nabad" cluster up? Look for a paused cluster, an Atlas incident, connection limits or a changed network access list. If the API runs but `/api/health/ready` doesn't answer `ready`, the database is the likely cause.

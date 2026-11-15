@@ -117,6 +117,7 @@ async function fillProfile(owner, profileId, label) {
   await MedicalDocument.create({ ...ids, filename: `${label.toLowerCase()}-lab.pdf`, mimeType: "application/pdf", size: 4, data: Buffer.from("PDF!") });
   await require("../src/models/VisitPrep").create({ ...ids, overrides: { background: `${label} history` }, notes: `${label} visit notes`, documentIds: [] });
   await VisitPrepShare.create({ ...ids, tokenHash: crypto.createHash("sha256").update(`${label}-${crypto.randomUUID()}`).digest("hex"), patientName: `${label} patient`, sections: [{ title: "History", text: `${label} shared history` }], expiresAt: new Date(Date.now() + 86400000) });
+  await require("../src/models/ProfileCoverage").create({ ...ids, hasInsurance: true, insuranceCard: { filename: `${label.toLowerCase()}-insurance.pdf`, mimeType: "application/pdf", size: 4, data: Buffer.from("PDF!") } });
 }
 
 // --- The registry ---
@@ -192,6 +193,9 @@ test("the file has every registered collection for the user's own and linked pro
       if (single) assert.ok(entry[key], `${label}: ${key} is missing`);
       else assert.equal(entry[key].length, 1, `${label}: ${key} should have one record`);
     }
+    // Identification and coverage files are exported with their contents, like medical documents.
+    assert.equal(entry.identificationAndCoverage.insuranceCard.filename, `${label.toLowerCase()}-insurance.pdf`);
+    assert.equal(entry.identificationAndCoverage.insuranceCard.dataBase64, Buffer.from("PDF!").toString("base64"));
     assert.equal(entry.medications[0].name, `${label} medication`);
     assert.deepEqual(entry.medications[0].reminderTimes, ["08:30", "20:30"]);
     assert.equal(entry.medications[0].reminderTimeZone, "Asia/Beirut");

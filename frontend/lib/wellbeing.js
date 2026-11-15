@@ -1,3 +1,4 @@
+import { formatDate, formatTime } from "./dates";
 // Wording and weekly summaries for water and sleep, shared by the page, the doctor summary and the dashboard card.
 // Kept plain and calm: no medical claims, no causes, no alarms. Fluids are stored in millilitres and shown in litres.
 // A goal is { type: "atLeast" | "atMost", ml } or null. "atMost" is a limit (for people on fluid restriction):
@@ -6,7 +7,6 @@
 export const QUALITY_WORDS = ["Very poorly", "Poorly", "Okay", "Well", "Very well"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const FULL_DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // Quick-add amounts, and the limits the server checks (backend: models/Wellbeing.js).
 export const GLASS_ML = 250;
@@ -28,11 +28,8 @@ export const formatNumber = (value) => String(Math.round(value * 10) / 10);
 export const sleptText = (quality) => `Slept ${QUALITY_WORDS[quality - 1].toLowerCase()}`;
 // "23:30 to 07:00", or "" when the times weren't entered.
 export const sleepTimesText = (sleep) => (sleep && sleep.bedtime && sleep.wakeTime ? `${sleep.bedtime} to ${sleep.wakeTime}` : "");
-// An ISO timestamp -> "08:05" in the user's own time zone.
-export function timeText(at) {
-  const date = new Date(at);
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
+// An ISO timestamp -> "08:05" in Beirut time (the shared helper).
+export const timeText = formatTime;
 
 // "23:30", "07:00" -> 7.5: a wake-up time earlier in the day than bedtime is the next morning.
 // null unless both are "HH:MM" and different. Matches the server, which works the hours out itself.
@@ -47,7 +44,7 @@ export function hoursBetween(bedtime, wakeTime) {
   return Math.round((((wake - bed + 1440) % 1440) / 60) * 100) / 100;
 }
 
-// "2026-10-12" -> "Mon" / "Monday" / "Mon 12 Oct". Read from the date string, so the time zone never shifts the day.
+// "2026-10-12" -> "Mon" / "Monday" / "Mon 12 October 2026". Read from the date string, so the time zone never shifts the day.
 function dateParts(date) {
   const [year, month, day] = date.split("-").map(Number);
   return { weekday: new Date(Date.UTC(year, month - 1, day)).getUTCDay(), month, day };
@@ -55,8 +52,7 @@ function dateParts(date) {
 export const shortDay = (date) => DAY_NAMES[dateParts(date).weekday];
 export const longDay = (date) => FULL_DAY_NAMES[dateParts(date).weekday];
 export function shortDate(date) {
-  const { weekday, month, day } = dateParts(date);
-  return `${DAY_NAMES[weekday]} ${day} ${MONTH_NAMES[month - 1]}`;
+  return `${DAY_NAMES[dateParts(date).weekday]} ${formatDate(date)}`;
 }
 
 // "Drink at least 2.0 L a day" / "Stay under 1.5 L a day"

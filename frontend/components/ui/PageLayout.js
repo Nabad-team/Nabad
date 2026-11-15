@@ -19,10 +19,12 @@ export function pageTitle(title) {
 // that grow on bigger screens. The text inside stays left-aligned.
 //   title:  the browser tab title, e.g. "Log in" (shown as "Log in · Nabad"). Leave it out only on the landing page.
 //   header: what goes in the top bar. Defaults to the logo alone; signed-in pages pass <ProfileHeader />.
-//   width:  "content" (62rem, most pages) or "wide" (74rem, the landing page).
+//   width:  "wide" (74rem) or "content" (62rem). Leave it out: pages with a header (every signed-in page) get
+//           "wide", so their content lines up with the header's edges; sign-in and info pages get "content".
 //   variant: "auth" centers a compact form panel; "dashboard" arranges the check-in actions.
 //   footer: optional page-specific note, shown above the site footer that every page gets.
-export default function PageLayout({ title, header, width = "content", variant, footer, children }) {
+export default function PageLayout({ title, header, width: requestedWidth, variant, footer, children }) {
+  const width = requestedWidth || (header === undefined ? "content" : "wide");
   const container = width === "wide" ? "container container--wide" : "container";
   const fullTitle = pageTitle(title);
   return (

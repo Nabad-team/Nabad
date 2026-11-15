@@ -1,7 +1,7 @@
 // Automated tests for the Nabad landing page.
 // These tests run automatically on every pull request.
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import HomePage from "../pages/index";
 
 // The page reads the URL query from the router. Each test can change mockQuery.
@@ -72,13 +72,49 @@ describe("Landing Page", () => {
     expect(emergencyCall).toHaveTextContent("You do not need to sign in");
   });
 
-  test("marks only the features that are not ready yet as coming soon", () => {
+  test("every feature card links to its page, and nothing says Coming soon", () => {
     render(<HomePage />);
 
-    const comingSoon = screen.getAllByText("Coming soon").map((badge) => badge.closest("h3").textContent);
-    expect(comingSoon).toEqual([
-      "The right hospital in an emergency Coming soon",
+    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument();
+    const features = screen.getByRole("heading", { name: "How Nabad helps" }).closest("section");
+    expect(within(features).getAllByRole("heading", { level: 3 }).map((heading) => [heading.textContent, heading.querySelector("a")?.getAttribute("href")])).toEqual([
+      ["Symptom check", "/symptoms"],
+      ["The right hospital in an emergency", "/providers?emergency24h=true"],
+      ["Find hospitals and clinics", "/providers"],
+      ["Care for your family", "/profile"],
     ]);
+  });
+
+  test("lists the other things an account has, matching what exists", () => {
+    render(<HomePage />);
+
+    const more = screen.getByRole("heading", { name: "Also in your account" }).closest("section");
+    for (const name of ["Medications and reminders", "Vitals", "Documents", "Visit preparation", "Care circle", "Offline emergency card"]) {
+      expect(within(more).getByText(name)).toBeInTheDocument();
+    }
+  });
+
+  test("has a slim Call 140 bar near the top, and keeps the larger box", () => {
+    render(<HomePage />);
+
+    const bar = screen.getByRole("link", { name: "Emergency? Call 140" });
+    expect(bar).toHaveAttribute("href", "tel:140");
+    const main = document.querySelector("main");
+    expect(main.querySelector("a")).toBe(bar);
+    expect(screen.getByRole("link", { name: "Emergency? Call 140 (Lebanese Red Cross) now" })).toBeInTheDocument();
+  });
+
+  test("shows a clearly labelled sample result instead of a drawing", () => {
+    render(<HomePage />);
+
+    const sample = screen.getByRole("figure", { name: /An example result, with made-up symptoms/ });
+    expect(within(sample).getByText("Sample")).toBeInTheDocument();
+    expect(sample).toHaveTextContent("Urgency: See a doctor soon");
+    const current = within(sample).getAllByRole("listitem").filter((step) => step.getAttribute("aria-current") === "step");
+    expect(current.map((step) => step.textContent)).toEqual(["See a doctor soonThis result"]);
+    // Nothing in the sample can be clicked or focused.
+    expect(within(sample).queryAllByRole("link")).toHaveLength(0);
+    expect(within(sample).queryAllByRole("button")).toHaveLength(0);
   });
 
   test("credits the team only once, in the site footer", () => {

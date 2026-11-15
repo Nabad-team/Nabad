@@ -6,12 +6,13 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import MoreMenu from "../components/ui/MoreMenu";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getHealthProfile } from "../lib/healthProfileApi";
 import { factText } from "../lib/healthProfile";
 import { getSymptomsForProfile } from "../lib/symptomApi";
 import { getMedicalDocuments, medicalDocumentDownloadUrl } from "../lib/medicalDocumentApi";
-import { formatDate } from "../lib/dates";
+import { formatDate, formatDateTime } from "../lib/dates";
 import { exportVisitPrep } from "../lib/visitPrepExport";
 import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
 import { createVisitPrepShare, getVisitPrep, getVisitPrepShares, revokeVisitPrepShare, saveVisitPrep } from "../lib/visitPrepApi";
@@ -60,6 +61,13 @@ export default function VisitPrepPage() {
   const sharesRef = useRef(shares);
   sharesRef.current = shares;
   const [shareExpiry, setShareExpiry] = useState("7");
+  // "Share with a doctor" opens the sharing panel and moves focus to its first control. The panel also stays
+  // open whenever links exist, so the clinician's confirmation status is always visible.
+  const [sharingOpen, setSharingOpen] = useState(false);
+  const [focusSharing, setFocusSharing] = useState(0);
+  useEffect(() => {
+    if (focusSharing) document.getElementById("visit-prep-share-expiry")?.focus();
+  }, [focusSharing]);
   const [newShareUrl, setNewShareUrl] = useState("");
   const [sharing, setSharing] = useState(false);
   const [refreshingShares, setRefreshingShares] = useState(false);
@@ -80,7 +88,7 @@ export default function VisitPrepPage() {
     setNotice("");
     setOverrides({});
     setSectionDrafts({});
-    setShares([]); setNewShareUrl("");
+    setShares([]); setNewShareUrl(""); setSharingOpen(false);
     Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId), getVisitPrep(profileId), getVisitPrepShares(profileId)])
       .then(async ([health, symptoms, sheet, shared]) => {
         let savedDocuments = null;
@@ -244,6 +252,8 @@ export default function VisitPrepPage() {
     finally { setRefreshingShares(false); }
   }
 
+  const showSharing = sharingOpen || shares.length > 0 || Boolean(newShareUrl);
+
   return (
     <PageLayout title="Visit preparation" header={<ProfileHeader showPicture={false} />}>
       <PageTitle lead="A structured summary of saved symptom checks and confirmed health information." >Visit preparation</PageTitle>
@@ -251,13 +261,19 @@ export default function VisitPrepPage() {
       {!data && !error && <HeartbeatLoader label="Preparing your summary..." />}
       {data && (
         <>
+        {/* One primary action, and the rest under More. The sharing panel opens from the primary button and stays
+            open while links exist, so a clinician's confirmation is always visible. */}
         <div className="visit-prep__actions">
-          {!editing && <Button variant="secondary" disabled={exporting || saving} onClick={startEditing}>Edit visit sheet</Button>}
-          <Button variant="secondary" disabled={editing || exporting || saving} onClick={printSheet}>Print or save as PDF</Button>
-          <Button variant="secondary" disabled={editing || exporting || saving} onClick={exportSheet}>{exporting ? "Exporting..." : "Export sheet with attachments"}</Button>
+          <Button aria-expanded={showSharing} aria-controls="visit-prep-sharing" disabled={editing}
+            onClick={() => { setSharingOpen(true); setFocusSharing((count) => count + 1); }}>Share with a doctor</Button>
+          <MoreMenu id="visit-prep-more" items={[
+            !editing && { label: "Edit visit sheet", disabled: exporting || saving, onClick: startEditing },
+            { label: "Print or save as PDF", disabled: editing || exporting || saving, onClick: printSheet },
+            { label: exporting ? "Exporting..." : "Export sheet with attachments", disabled: editing || exporting || saving, onClick: exportSheet },
+          ]} />
         </div>
         {notice && <p className="visit-prep__notice" role="status">{notice}</p>}
-        <Card className="section visit-prep__sharing" aria-labelledby="visit-prep-sharing-heading">
+        {showSharing && <Card id="visit-prep-sharing" className="section visit-prep__sharing" aria-labelledby="visit-prep-sharing-heading">
           <h2 id="visit-prep-sharing-heading">Share securely with a doctor</h2>
           <p className="text-muted">Create a read-only snapshot. The unguessable link expires automatically, can be revoked, and lets the clinician mark the sheet accurate.</p>
           <div className="visit-prep__share-controls">
@@ -273,9 +289,9 @@ export default function VisitPrepPage() {
             <ul className="visit-prep__shares" aria-label="Shared visit links">{shares.map((share) => {
             const expired = new Date(share.expiresAt) <= new Date();
             const inactive = Boolean(share.revokedAt) || expired;
-            return <li className={share.confirmedAt ? "visit-prep__share--confirmed" : ""} key={share.id}><div><strong>{share.confirmedAt ? `✓ Confirmed accurate by ${share.confirmedBy}` : inactive ? (share.revokedAt ? "Revoked" : "Expired") : "Awaiting clinician confirmation"}</strong><span className="text-muted">Created {formatDate(share.createdAt.slice(0, 10))} · expires {formatDate(share.expiresAt.slice(0, 10))}{share.confirmedAt ? ` · confirmed ${formatDate(share.confirmedAt.slice(0, 10))}` : ""}{share.viewCount ? ` · opened ${share.viewCount} time${share.viewCount === 1 ? "" : "s"}` : ""}</span></div>{!inactive && <Button size="small" variant="secondary" type="button" disabled={sharing} onClick={() => revokeShare(share)}>Revoke</Button>}</li>;
+            return <li className={share.confirmedAt ? "visit-prep__share--confirmed" : ""} key={share.id}><div><strong>{share.confirmedAt ? `✓ Confirmed accurate by ${share.confirmedBy}` : inactive ? (share.revokedAt ? "Revoked" : "Expired") : "Awaiting clinician confirmation"}</strong><span className="text-muted">Created {formatDate(share.createdAt)} · expires {formatDate(share.expiresAt)}{share.confirmedAt ? ` · confirmed ${formatDate(share.confirmedAt)}` : ""}{share.viewCount ? ` · opened ${share.viewCount} time${share.viewCount === 1 ? "" : "s"}` : ""}</span></div>{!inactive && <Button size="small" variant="secondary" type="button" disabled={sharing} onClick={() => revokeShare(share)}>Revoke</Button>}</li>;
           })}</ul></>}
-        </Card>
+        </Card>}
         {editing && <Card className="section visit-prep__editor" aria-labelledby="visit-prep-editor-heading">
           <h2 id="visit-prep-editor-heading">Review and edit your visit sheet</h2>
           <p className="text-muted">Add or correct anything you want your clinician to know. Saved changes and document selections are kept for this profile when you return.</p>
@@ -365,7 +381,7 @@ export default function VisitPrepPage() {
             {symptomRecords.length ? <ol className="visit-prep__symptoms" aria-label="Recent symptom checks">
               {symptomRecords.map((record) => (
                 <li key={record.id}>
-                  <p><strong>{formatDate(String(record.createdAt || "").slice(0, 10))}</strong>{record.urgencyResult?.label ? ` · ${record.urgencyResult.label}` : ""}</p>
+                  <p><strong>{record.createdAt ? formatDateTime(record.createdAt) : "Date not recorded"}</strong>{record.urgencyResult?.label ? ` · ${record.urgencyResult.label}` : ""}</p>
                   <p>{record.symptoms || record.description}</p>
                   {record.conversation?.length > 2 && <ul aria-label="Follow-up details">{record.conversation.slice(2).filter((message) => message.role === "patient").map((message, index) => <li key={`${record.id}-${index}`}>{message.content}</li>)}</ul>}
                 </li>

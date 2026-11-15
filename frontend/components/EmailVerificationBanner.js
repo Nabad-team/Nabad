@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { getMe, resendVerificationEmail } from "../lib/api";
-import Alert from "./ui/Alert";
-import Button from "./ui/Button";
 
 // Reminds a signed-in user whose email is not verified yet, with a button to resend the link.
 // Shows nothing while loading, when the email is verified, or if the check fails,
@@ -28,16 +26,18 @@ export default function EmailVerificationBanner() {
     } finally { setSending(false); }
   }
 
+  // One slim line; the longer reason is the link's description for screen readers.
   return (
-    <Alert tone="warning" as="section" aria-label="Email verification" className="banner">
-      <p>
-        <strong>Please verify your email.</strong> We sent a link to {user.email}. Verifying it keeps your account secure and makes sure password reset emails reach you.
+    <section aria-label="Email verification" className="verify-bar">
+      <p className="verify-bar__line">
+        <strong>Please verify your email</strong> <span className="verify-bar__email">(sent to {user.email}).</span>{" "}
+        <button type="button" className="link-button" onClick={resend} disabled={sending} aria-describedby="verify-bar-why">
+          {sending ? "Sending..." : "Resend email"}
+        </button>
+        <span id="verify-bar-why" className="visually-hidden">Verifying your email keeps your account secure and makes sure password reset emails reach you.</span>
       </p>
-      <Button variant="secondary" size="small" onClick={resend} disabled={sending}>
-        {sending ? "Sending..." : "Resend verification email"}
-      </Button>
-      {message && <p role="status" className="banner__message">{message}</p>}
-      {error && <p role="alert" className="banner__message field__error">{error}</p>}
-    </Alert>
+      {message && <p role="status" className="verify-bar__message">{message}</p>}
+      {error && <p role="alert" className="verify-bar__message field__error">{error}</p>}
+    </section>
   );
 }

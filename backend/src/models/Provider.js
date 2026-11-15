@@ -12,7 +12,7 @@ const schema = new mongoose.Schema({
   slug: { type: String, required: true, unique: true, match: /^[a-z0-9-]+$/ },
   legacySlugs: { type: [String], default: [], validate: values => values.length <= 10 && values.every(value => /^[a-z0-9-]+$/.test(value)) },
   name: { type: String, required: true, maxlength: 200 },
-  type: { type: String, required: true, enum: ["hospital", "clinic"] },
+  type: { type: String, required: true, enum: ["hospital", "clinic", "laboratory", "imaging-center"] },
   city: { type: String, default: "" },
   district: { type: String, default: "" },
   governorate: { type: String, default: "" },

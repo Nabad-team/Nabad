@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import MedicalDocumentsPage from "../pages/medical-documents";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { getMyProfile, addLinkedProfile } from "../lib/profileApi";
@@ -40,7 +40,9 @@ describe("Medical documents page", () => {
     renderPage();
     expect(await screen.findByText(/No documents added yet/)).toBeInTheDocument();
     expect(getMedicalDocuments).toHaveBeenCalledWith("self");
-    expect(screen.getByRole("button", { name: "Add medical documents" })).toBeInTheDocument();
+    // Data first: no upload form until files are chosen. Add documents is in the header row only.
+    expect(screen.getAllByRole("button", { name: "Add documents" })).toHaveLength(1);
+    expect(screen.queryByLabelText("Document type")).not.toBeInTheDocument();
     expect(screen.getByText(/Any file type up to 10 MB each/)).toBeInTheDocument();
   });
 
@@ -50,11 +52,18 @@ describe("Medical documents page", () => {
     uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-1", filename: "blood-test.pdf", documentType: "lab", documentDate: "2026-10-10", size: 2048, uploadedAt: "2026-10-12T10:00:00.000Z" } });
     renderPage();
     await screen.findByText(/No documents added yet/);
-    fireEvent.change(screen.getByLabelText("Document type"), { target: { value: "lab" } });
-    fireEvent.change(screen.getByLabelText("Document date (if known)"), { target: { value: "2026-10-10" } });
     const file = new File(["%PDF-1.4 test"], "blood-test.pdf", { type: "application/pdf" });
     fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [file] } });
-    expect(await screen.findByText("blood-test.pdf")).toBeInTheDocument();
+    // Type and date are asked after the files are chosen, in a panel that takes focus.
+    const panel = await screen.findByRole("region", { name: "Details for 1 file" });
+    expect(within(panel).getByText("blood-test.pdf")).toBeInTheDocument();
+    expect(screen.getByLabelText("Document type")).toHaveFocus();
+    expect(uploadMedicalDocument).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Document type"), { target: { value: "lab" } });
+    fireEvent.change(screen.getByLabelText("Document date (if known)"), { target: { value: "2026-10-10" } });
+    fireEvent.click(within(panel).getByRole("button", { name: "Upload 1 file" }));
+    expect(await screen.findByRole("link", { name: "Download" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Details for 1 file" })).not.toBeInTheDocument();
     expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "blood-test.pdf", mimeType: "application/pdf", data: expect.any(String) }), { documentType: "lab", documentDate: "2026-10-10" });
     expect(screen.getByRole("link", { name: "Download" })).toHaveAttribute("href", "/api/medical-documents/doc-1/download?profileId=self");
     expect(await screen.findByRole("status")).toHaveTextContent("Document uploaded.");
@@ -68,7 +77,8 @@ describe("Medical documents page", () => {
     await screen.findByText(/No documents added yet/);
     const file = new File(["dicom data"], "scan.dcm", { type: "" });
     fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [file] } });
-    expect(await screen.findByText("scan.dcm")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Upload 1 file" }));
+    expect(await screen.findByRole("link", { name: "Download" })).toBeInTheDocument();
     expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "scan.dcm", mimeType: "application/octet-stream" }), { documentType: "other", documentDate: "" });
   });
 
@@ -128,5 +138,45 @@ describe("Medical documents page", () => {
     expect(deleteMedicalDocument).toHaveBeenCalledWith("self", "doc-delete");
     expect(screen.queryByText("mistaken-upload.pdf")).not.toBeInTheDocument();
     confirm.mockRestore();
+  });
+});
+
+describe("My documents: choosing files first", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    getMedicalDocuments.mockReset().mockResolvedValue({ documents: [] });
+    uploadMedicalDocument.mockReset();
+    mockStatus = "signedIn";
+  });
+
+  test("Cancel closes the details panel without uploading and returns focus to Add documents", async () => {
+    renderPage();
+    await screen.findByText(/No documents added yet/);
+    const add = screen.getAllByRole("button", { name: "Add documents" })[0];
+    add.focus();
+    fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [new File(["a"], "a.pdf"), new File(["b"], "b.pdf")] } });
+    const panel = await screen.findByRole("region", { name: "Details for 2 files" });
+    fireEvent.click(within(panel).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(add).toHaveFocus());
+    expect(screen.queryByRole("region", { name: "Details for 2 files" })).not.toBeInTheDocument();
+    expect(uploadMedicalDocument).not.toHaveBeenCalled();
+  });
+
+  test("Escape closes the details panel", async () => {
+    renderPage();
+    await screen.findByText(/No documents added yet/);
+    fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [new File(["a"], "a.pdf")] } });
+    const panel = await screen.findByRole("region", { name: "Details for 1 file" });
+    fireEvent.keyDown(within(panel).getByLabelText("Document type"), { key: "Escape" });
+    expect(screen.queryByRole("region", { name: "Details for 1 file" })).not.toBeInTheDocument();
+  });
+
+  test("checks the files before asking for details", async () => {
+    renderPage();
+    await screen.findByText(/No documents added yet/);
+    fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [new File([], "empty.pdf")] } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("empty.pdf is empty.");
+    expect(screen.queryByRole("region", { name: /Details for/ })).not.toBeInTheDocument();
   });
 });

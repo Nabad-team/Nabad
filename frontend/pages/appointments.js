@@ -7,9 +7,10 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
+import MoreMenu from "../components/ui/MoreMenu";
+import Card from "../components/ui/Card";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { useAccessibility } from "../context/AccessibilityContext";
 import { formatDate, todayString } from "../lib/dates";
 import {
   REMINDER_OPTIONS,
@@ -183,8 +184,6 @@ function Calendar({ month, appointments, medications, selectedDate, onMonthChang
 
 export default function AppointmentsPage() {
   const { activeProfile, error: profilesError } = useActiveProfile();
-  const { preferences } = useAccessibility();
-  const simplified = preferences.simplifiedMode;
   const [appointments, setAppointments] = useState(null);
   useSearchTarget(appointments, "appointment");
   const [medications, setMedications] = useState([]);
@@ -263,8 +262,8 @@ export default function AppointmentsPage() {
     try {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
-      if (permission === "granted") setNotice("Browser reminders are enabled while this page is open.");
-      else if (permission === "denied") setError("Notifications are blocked in your browser settings. You can change that there.");
+      if (permission === "granted") setNotice("Browser pop-ups are on. They show while Nabad is open in this browser; your reminders also appear in your notifications.");
+      else if (permission === "denied") setError("Browser pop-ups were not allowed. You can change that in your browser settings.");
     } catch {
       setError("We couldn't enable browser notifications. Please check your browser settings.");
     }
@@ -274,6 +273,8 @@ export default function AppointmentsPage() {
     setNotice("");
     setNewAppointmentFields({ ...emptyFields(), appointmentDate: date });
     setEditing("add");
+    // The form focuses its first field when it opens; if it is already open, focus it again.
+    if (editing === "add") document.getElementById("new-title")?.focus();
   }
 
   async function remove(appointment) {
@@ -288,16 +289,19 @@ export default function AppointmentsPage() {
     }
   }
 
-  const listName = forSelf ? "Your appointments" : `Appointments for ${name}`;
+  const listName = forSelf ? "My appointments" : `Appointments for ${name}`;
   const selectedAppointments = selectedDate ? appointments?.filter((appointment) => appointment.appointmentDate === selectedDate) || [] : [];
   const selectedMedications = selectedDate ? medicationEventsForDate(medications, selectedDate) : [];
   return (
-    <PageLayout title="Appointments" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>{simplified ? "Calendar" : listName}</PageTitle>
-      <p className="page-intro">Keep your doctor's appointments together and get browser reminders before visits while this page is open.</p>
-      {notificationPermission === "default" && <Button variant="secondary" onClick={enableReminders}>Enable reminders</Button>}
-      {notificationPermission === "denied" && <p className="text-muted text-sm">Notifications are blocked in browser settings. Change that setting, then reload this page to try again.</p>}
-      {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser notifications are not available here. Reminders only work while this page is open.</p>}
+    <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
+      <PageTitle lead="Keep your doctor's appointments together."
+        action={appointments !== null && <Button onClick={() => openNewAppointment()} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-appointment" : undefined}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>}
+        more={<MoreMenu id="appointments-more" items={[notificationPermission === "default" && { label: "Get pop-up reminders on this device", onClick: enableReminders }]} />}>
+        {listName}
+      </PageTitle>
+      <p className="page-intro">Before each visit, at the time you choose, a reminder appears in your notifications (the bell at the top), even when this page is closed.</p>
+      {notificationPermission === "denied" && <p className="text-muted text-sm">Browser pop-ups are blocked in your browser settings. Your reminders still appear in your notifications.</p>}
+      {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser pop-ups are not available here. Your reminders still appear in your notifications.</p>}
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
@@ -305,6 +309,7 @@ export default function AppointmentsPage() {
       {!loadError && !profilesError && appointments === null && <HeartbeatLoader label="Loading appointments..." />}
       {appointments !== null && (
         <>
+          <Card as="div" className="page-card">
           <Calendar
             month={month}
             appointments={appointments}
@@ -321,12 +326,10 @@ export default function AppointmentsPage() {
             {selectedMedications.map((medication) => <div key={medication.id} className="calendar-details__item"><strong>{medication.time} · {medication.name}</strong><span>Medication</span></div>)}
             <Button size="small" onClick={() => openNewAppointment(selectedDate)}>Add appointment for this day</Button>
           </section>}
-          {editing === "add" ? (
-            <AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} />
-          ) : (
-            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button></div>
-          )}
-          {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet.">Add your next doctor's visit so Nabad can remind you.</EmptyState>}
+          </Card>
+          <Card as="div" className="page-card">
+          {editing === "add" && <div id="new-appointment"><AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} /></div>}
+          {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet: add your next doctor's visit so Nabad can remind you." />}
           {appointments.length > 0 && (
             <ul className="appointment-list" aria-label={listName}>
               {appointments.map((appointment) => (
@@ -340,16 +343,16 @@ export default function AppointmentsPage() {
                       <p className="appointment__place"><strong>{appointment.hospital}</strong>{appointment.location && ` · ${appointment.location}`}</p>
                       <p className="text-muted text-sm">Reminder: {reminderText(appointment.reminderMinutes)}</p>
                       {appointment.notes && <p className="appointment__notes"><span className="text-muted">Notes:</span> {appointment.notes}</p>}
-                      <div className="button-row"><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)} aria-label={`Edit ${appointment.title}`}>Edit</Button><Button variant="secondary" size="small" onClick={() => remove(appointment)} aria-label={`Delete ${appointment.title}`}>Delete</Button></div>
+                      <div className="button-row"><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)} aria-label={`Edit ${appointment.title}`}>Edit</Button><Button variant="danger-quiet" size="small" onClick={() => remove(appointment)} aria-label={`Delete ${appointment.title}`}>Delete</Button></div>
                     </>
                   )}
                 </li>
               ))}
             </ul>
           )}
+          </Card>
         </>
       )}
-      <p className="section"><a href="/medications">Back to medications</a></p>
     </PageLayout>
   );
 }

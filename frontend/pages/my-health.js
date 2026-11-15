@@ -5,6 +5,8 @@ import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import Card from "../components/ui/Card";
+import EmptyState from "../components/ui/EmptyState";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
@@ -145,10 +147,10 @@ function KnowsYou({ filled, who }) {
 // Suggestions (for example from a lab report, in a later phase) wait here until the user confirms or dismisses them.
 function Suggestions({ suggestions, busy, onConfirm, onDismiss }) {
   return (
-    <section className="section" aria-labelledby="suggestions-heading">
+    <Card className="card--full" aria-labelledby="suggestions-heading">
       <h2 id="suggestions-heading">Suggestions to review</h2>
       {suggestions.length === 0 ? (
-        <p className="text-muted">Nothing to review. Later, when Nabad reads something like a lab report for you, what it finds will wait here for you to check. Nothing is used until you confirm it.</p>
+        <EmptyState title="Nothing to review. Later, when Nabad reads something like a lab report for you, what it finds will wait here for you to check; nothing is used until you confirm it." />
       ) : (
         <ul className="health-list" aria-label="Suggestions to review">
           {suggestions.map((fact) => (
@@ -162,7 +164,7 @@ function Suggestions({ suggestions, busy, onConfirm, onDismiss }) {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -199,7 +201,7 @@ function Conditions({ facts, who, busy, change, changeOrThrow, profileId }) {
   const others = facts.filter((fact) => fact.value.code === "other");
 
   return (
-    <section className="section" aria-labelledby="conditions-heading">
+    <Card aria-labelledby="conditions-heading">
       <h2 id="conditions-heading">Long-term conditions</h2>
       <fieldset className="choice-group health-checklist">
         <legend>{who ? `Does ${who} have any of these?` : "Do you have any of these?"}</legend>
@@ -252,7 +254,7 @@ function Conditions({ facts, who, busy, change, changeOrThrow, profileId }) {
       ) : (
         <Button variant="secondary" size="small" onClick={() => setAdding(true)}>Add another condition</Button>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -307,10 +309,11 @@ function AllergyForm({ initial, who, busy, onSave, onCancel }) {
 function Allergies({ facts, who, busy, change, changeOrThrow, profileId }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const addButton = <Button variant="secondary" size="small" onClick={() => { setEditingId(null); setAdding(true); }}>Add an allergy</Button>;
   return (
-    <section className="section" aria-labelledby="allergies-heading">
+    <Card aria-labelledby="allergies-heading">
       <h2 id="allergies-heading">Allergies</h2>
-      {facts.length === 0 && !adding && <p className="text-muted">No allergies added.</p>}
+      {facts.length === 0 && !adding && <EmptyState title="No allergies added." action={addButton} />}
       {facts.length > 0 && (
         <ul className="health-list" aria-label="Allergies">
           {facts.map((fact) => (editingId === fact.id ? (
@@ -342,10 +345,8 @@ function Allergies({ facts, who, busy, change, changeOrThrow, profileId }) {
           onSave={(value) => changeOrThrow(() => addHealthFact(profileId, "allergy", value)).then(() => setAdding(false))}
           onCancel={() => setAdding(false)}
         />
-      ) : (
-        <Button variant="secondary" size="small" onClick={() => { setEditingId(null); setAdding(true); }}>Add an allergy</Button>
-      )}
-    </section>
+      ) : facts.length > 0 && addButton}
+    </Card>
   );
 }
 
@@ -421,16 +422,17 @@ export default function MyHealthPage() {
     />
   );
   const sections = { busy, who, change, changeOrThrow, profileId };
+  // My health has no single primary task (each section has its own Add), so the header row holds this link.
+  const emergencyCard = <Button variant="secondary" href="/emergency-card">Emergency information card</Button>;
 
   return (
     <PageLayout title="My health" header={<ProfileHeader showPicture={false} />}>
       {who ? (
-        <PageTitle lead={`Nabad uses this to give safer guidance for ${who}. Everything here is optional, and you can change it anytime.`}>Health for {who}</PageTitle>
+        <PageTitle lead={`Nabad uses this to give safer guidance for ${who}. Everything here is optional, and you can change it anytime.`} action={emergencyCard}>Health for {who}</PageTitle>
       ) : (
-        <PageTitle lead="Nabad uses this to give you safer guidance. Everything here is optional, and you can change it anytime.">My health</PageTitle>
+        <PageTitle lead="Nabad uses this to give you safer guidance. Everything here is optional, and you can change it anytime." action={emergencyCard}>My health</PageTitle>
       )}
 
-      <p><Button variant="secondary" href="/emergency-card">Emergency information card</Button></p>
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loadError && (
@@ -443,7 +445,7 @@ export default function MyHealthPage() {
 
       {profile && (
         // key: fresh forms for each profile, so nothing typed for one person shows up for another.
-        <div key={profileId}>
+        <div key={profileId} className="card-grid">
           <KnowsYou filled={basicsFilled(profile)} who={who} />
 
           <Suggestions
@@ -452,7 +454,7 @@ export default function MyHealthPage() {
             onDismiss={(item) => change(() => dismissSuggestion(profileId, item.id))}
           />
 
-          <section className="section" aria-labelledby="basics-heading">
+          <Card aria-labelledby="basics-heading">
             <h2 id="basics-heading">Basics</h2>
             <ul className="health-list" aria-label="Basics">
               <li className="health-item">
@@ -468,25 +470,25 @@ export default function MyHealthPage() {
               {single("weight", { input: "number", unit: "kg", step: "0.1" })}
               {single("bloodType", { input: "select", options: BLOOD_TYPE_OPTIONS, hint: "It's on a blood test or a donor card. \"I don't know\" is fine." })}
             </ul>
-          </section>
+          </Card>
 
           {pregnancyRelevant(profile) && (
-            <section className="section" aria-labelledby="pregnancy-heading">
+            <Card aria-labelledby="pregnancy-heading">
               <h2 id="pregnancy-heading">Pregnancy</h2>
               <p className="text-muted">Some guidance and medicines are different during pregnancy.</p>
               <ul className="health-list" aria-label="Pregnancy">
                 {single("pregnancy", { input: "radio", options: PREGNANCY_OPTIONS })}
               </ul>
-            </section>
+            </Card>
           )}
 
           <Conditions facts={facts("condition")} {...sections} />
           <Allergies facts={facts("allergy")} {...sections} />
 
-          <section className="section" aria-labelledby="medications-heading">
+          <Card aria-labelledby="medications-heading">
             <h2 id="medications-heading">Medications</h2>
             {profile.medications.length === 0 ? (
-              <p className="text-muted">No current medications.</p>
+              <EmptyState title="No current medications." />
             ) : (
               <ul className="health-list" aria-label="Current medications">
                 {profile.medications.map((medication) => (
@@ -498,25 +500,25 @@ export default function MyHealthPage() {
             )}
             <p className="text-muted">These come from the medications list, where you can change them.</p>
             <Button variant="secondary" size="small" href="/medications">Manage medications</Button>
-          </section>
+          </Card>
 
-          <section className="section" aria-labelledby="lifestyle-heading">
+          <Card className={pregnancyRelevant(profile) ? undefined : "card--full"} aria-labelledby="lifestyle-heading">
             <h2 id="lifestyle-heading">Lifestyle</h2>
             <ul className="health-list" aria-label="Lifestyle">
               {single("smoking", { input: "radio", options: SMOKING_OPTIONS })}
             </ul>
-          </section>
+          </Card>
 
-          <section className="section" aria-labelledby="summary-heading">
+          <Card className="card--full" aria-labelledby="summary-heading">
             <h2 id="summary-heading">What Nabad's guidance takes into account</h2>
             <p className="text-muted">This is exactly what Nabad will use when it gives {who ? `${who} ` : "you "}guidance.</p>
             <pre className="health-summary">{profile.summary}</pre>
             <p className="text-muted">
-              The last line, about water and sleep, appears only when something was logged in the last 7 days: today's fluids
-              (with the daily goal, if one is set) and the average sleep. It lists facts only. You can update them
-              in <a href="/water-and-sleep">Water and sleep</a>.
+              If anything here is wrong or out of date, change it above, so the guidance stays right for {who || "you"}.
+              If water or sleep was logged in the past week, the last line also shows today&apos;s drinks and the average
+              sleep. You can change those in <a href="/water-and-sleep">Water and sleep</a>.
             </p>
-          </section>
+          </Card>
         </div>
       )}
 

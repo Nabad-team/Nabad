@@ -40,7 +40,12 @@ Reports never automatically overwrite the published directory. An authorized dir
 
     node scripts/provider-corrections.js
 
-The command is read-only and does not contact Jira. It omits author identity from the review output. Do not paste raw report text into public tickets; it may contain information a user should not have included. Verify proposed changes against an authoritative source, apply the existing curated-data update process and advance the appropriate source-check date.
+The default command lists pending corrections and feedback with an ID and revision timestamp, omitting author identity. An operator with access to the existing database can record a decision:
+
+    node scripts/provider-corrections.js approve correction ID UPDATED_AT
+    node scripts/provider-corrections.js reject feedback ID UPDATED_AT
+
+Both actions accept either kind of contribution. Use the exact `updatedAt` from the review queue so a decision cannot apply to an edited submission. Only approved feedback contributes to public ratings and waiting reports. Older feedback without a decision enters the review queue. A correction decision records the review outcome. Apply any sourced directory changes through the curated-data update process and advance the appropriate source-check date. Keep raw submissions in the private review workflow.
 
 ## Security and account data
 

@@ -69,11 +69,11 @@ describe("Dashboard Page", () => {
     ).toBeInTheDocument();
   });
 
-  test("offers medical documents alongside the dashboard section tiles", async () => {
+  test("doesn't repeat the menu as a second set of section tiles", async () => {
     renderDashboard();
     await screen.findByText("Welcome, Demo");
-    const sections = screen.getByRole("region", { name: "Dashboard sections" });
-    expect(within(sections).getByRole("link", { name: "Medical documents" })).toHaveAttribute("href", "/medical-documents");
+    expect(screen.queryByRole("heading", { name: "Explore your health space" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Dashboard sections" })).not.toBeInTheDocument();
   });
 
   test("offers direct quick actions for common health tasks", async () => {
@@ -84,7 +84,15 @@ describe("Dashboard Page", () => {
     expect(within(quickActions).getByRole("link", { name: "Add medication" })).toHaveAttribute("href", "/medications");
     expect(within(quickActions).getByRole("link", { name: "Add appointment" })).toHaveAttribute("href", "/appointments");
     expect(within(quickActions).getByRole("link", { name: "Upload document" })).toHaveAttribute("href", "/medical-documents");
-    expect(within(quickActions).getByRole("link", { name: "Prepare for a visit" })).toHaveAttribute("href", "/visit-prep");
+    // Four at most: Medication overview lives in My care and on My medications, visit prep in My records.
+    expect(within(quickActions).getAllByRole("link")).toHaveLength(4);
+    expect(within(quickActions).queryByRole("link", { name: "Medication overview" })).not.toBeInTheDocument();
+    expect(within(quickActions).queryByRole("link", { name: "Prepare for a visit" })).not.toBeInTheDocument();
+    // Equal tiles: every action has an icon and a short one-line label.
+    for (const link of within(quickActions).getAllByRole("link")) {
+      expect(link).toHaveClass("quick-action");
+      expect(link.querySelector("svg.quick-action__icon")).not.toBeNull();
+    }
   });
 
   test("welcomes the user by their saved name", async () => {
@@ -108,10 +116,10 @@ describe("Dashboard Page", () => {
   test("links to the security settings once, from the account menu", async () => {
     renderDashboard();
     await screen.findByText("Welcome, Demo");
-    expect(screen.queryByRole("link", { name: "Security" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Account security" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
-    const links = screen.getAllByRole("link", { name: "Security" });
+    const links = screen.getAllByRole("link", { name: "Account security" });
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute("href", "/security");
   });
@@ -204,7 +212,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
     await screen.findByText("Welcome, Demo");
 
-    expect(screen.getByRole("heading", { name: "Check how you're feeling" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Symptom check" })).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Type your symptoms" })
     ).toHaveAttribute("href", "/symptoms");
@@ -214,7 +222,7 @@ describe("Dashboard Page", () => {
     ).toHaveAttribute("href", "/symptoms?voice=1");
   });
 
-  test("uses short labels in simplified mode while keeping accessible names", async () => {
+  test("simplified mode keeps the same names as the page titles", async () => {
     localStorage.setItem(
       "nabad-accessibility-preferences",
       JSON.stringify({ simplifiedMode: true })
@@ -222,11 +230,12 @@ describe("Dashboard Page", () => {
 
     renderDashboard();
 
-    expect(await screen.findByRole("heading", { name: "How do you feel?" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Symptom check" })).toBeInTheDocument();
+    expect(screen.getByText("Choose how to tell us.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     const accountMenu = document.getElementById("account-menu");
-    expect(within(accountMenu).getByRole("link", { name: "Safety check" })).toHaveTextContent("Safety");
-    expect(within(accountMenu).getByRole("link", { name: "My profile" })).toHaveTextContent("Profile");
+    expect(within(accountMenu).getByRole("link", { name: "My profile" })).toHaveTextContent("My profile");
+    expect(within(accountMenu).getByRole("link", { name: "Account security" })).toHaveTextContent("Account security");
   });
 
   test("shows health, water and sleep progress as rings", async () => {
@@ -313,5 +322,23 @@ describe("Dashboard Page", () => {
     await act(async () => { rejectSave(new Error("Offline")); });
     expect(screen.getByRole("button", { name: "Mark taken: Aspirin" })).toBeEnabled();
     expect(screen.getByRole("alert")).toHaveTextContent("couldn't update today's medication check-in");
+  });
+
+  test("is short: the Wellbeing Corner is one compact card, and 140 shows once besides the footer", async () => {
+    renderDashboard();
+    await screen.findByText("Welcome, Demo");
+    const corner = screen.getByRole("region", { name: "Wellbeing Corner" });
+    // Today's message and both numbers stay visible; tips and notes are under More.
+    expect(within(corner).getByRole("link", { name: "Call 1564" })).toHaveAttribute("href", "tel:1564");
+    expect(within(corner).getByRole("link", { name: "Call 140" })).toHaveAttribute("href", "tel:140");
+    const more = corner.querySelector("details.wellbeing-corner__more");
+    expect(more).not.toHaveAttribute("open");
+    expect(within(more).getByText("Simple wellbeing tips")).toBeInTheDocument();
+    // The self-harm result's "View mental health support" link still lands on this card.
+    expect(document.getElementById("wellbeing-corner-heading")).toBe(within(corner).getByRole("heading", { level: 2 }));
+    const main = document.querySelector("main");
+    const footer = document.querySelector("footer");
+    const visibleText = [...main.querySelectorAll("*")].filter((el) => !el.closest("details:not([open]) > :not(summary)") && !footer?.contains(el) && el.children.length === 0).map((el) => el.textContent).join(" ");
+    expect(visibleText.match(/\b140\b/g)).toHaveLength(1);
   });
 });

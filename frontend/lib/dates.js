@@ -25,11 +25,57 @@ export function calculateAge(dateOfBirth) {
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-// "1984-05-02" -> "2 May 1984". Read from the string itself, not new Date(), so the time zone can never shift the day.
-// Anything that isn't a "YYYY-MM-DD" date is returned unchanged.
-export function formatDate(dateString) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString || "");
-  if (!match) return dateString;
-  const [, year, month, day] = match;
-  return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}`;
+// Nabad is used in Lebanon, so every date and time shown to people is in Beirut time,
+// whatever time zone the device or the server is set to.
+export const APP_TIME_ZONE = "Asia/Beirut";
+
+const beirutParts = new Intl.DateTimeFormat("en-GB", {
+  timeZone: APP_TIME_ZONE, year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+});
+
+// The calendar day and clock time of a moment in Beirut, as numbers (month 1-12).
+function partsInBeirut(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (value == null || value === "" || Number.isNaN(date.getTime())) return null;
+  const parts = Object.fromEntries(beirutParts.formatToParts(date).map(({ type, value: part }) => [type, part]));
+  return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day), hour: Number(parts.hour) % 24, minute: Number(parts.minute) };
+}
+
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+const pad = (n) => String(n).padStart(2, "0");
+
+// The Beirut calendar day of a timestamp as "YYYY-MM-DD" (for grouping and comparing days).
+export function beirutDayString(value) {
+  if (typeof value === "string" && DATE_ONLY.test(value)) return value;
+  const parts = partsInBeirut(value);
+  return parts ? `${parts.year}-${pad(parts.month)}-${pad(parts.day)}` : "";
+}
+
+// The one date format shown to people: "11 November 2026".
+// A "YYYY-MM-DD" date is read from the string itself, so no time zone can shift the day (dates of birth, appointment days).
+// A timestamp (ISO string, Date or milliseconds) shows its calendar day in Beirut.
+// Anything that isn't a date is returned unchanged.
+export function formatDate(value) {
+  const match = typeof value === "string" ? DATE_ONLY.exec(value) : null;
+  if (match) {
+    const [, year, month, day] = match;
+    return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}`;
+  }
+  const parts = partsInBeirut(value);
+  if (!parts) return value;
+  return `${parts.day} ${MONTHS[parts.month - 1]} ${parts.year}`;
+}
+
+// The one date-and-time format shown to people: "11 November 2026, 01:44" in Beirut time (24-hour clock, no seconds).
+// Returns "" for a missing or invalid value.
+export function formatDateTime(value) {
+  const parts = partsInBeirut(value);
+  if (!parts) return "";
+  return `${parts.day} ${MONTHS[parts.month - 1]} ${parts.year}, ${pad(parts.hour)}:${pad(parts.minute)}`;
+}
+
+// Just the Beirut clock time: "01:44".
+export function formatTime(value) {
+  const parts = partsInBeirut(value);
+  return parts ? `${pad(parts.hour)}:${pad(parts.minute)}` : "";
 }

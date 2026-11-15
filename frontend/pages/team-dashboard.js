@@ -6,6 +6,7 @@ import Card from "../components/ui/Card";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { getUsageSummary } from "../lib/usageApi";
+import { formatDateTime } from "../lib/dates";
 
 // SCRUM-311: "As a developer, I want usage analytics (e.g. number of triage sessions run) so that the team
 // can track adoption." Anonymous daily totals for the Nabad team: symptom checks, initial checks,
@@ -96,7 +97,7 @@ export default function TeamDashboardPage() {
           {summary && (
             <>
               <p className="usage-period">
-                {dayLabel(summary.from)} to {dayLabel(summary.to)} (days in UTC). Updated {new Date(summary.generatedAt).toLocaleString("en-GB", { timeZone: "Asia/Beirut" })} (Beirut time).
+                {dayLabel(summary.from)} to {dayLabel(summary.to)} (days in UTC). Updated {formatDateTime(summary.generatedAt)} (Beirut time).
               </p>
               <ul className="usage-totals" aria-label="Totals for the period">
                 {METRICS.map((metric) => (

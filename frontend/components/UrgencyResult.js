@@ -20,6 +20,67 @@ const LEVELS = [
   "routine",
 ];
 
+// The four triage levels from lowest to highest, with the exact labels the triage API uses
+// (backend/src/triage/urgency.js). Display only: which level applies is always decided by the server.
+export const URGENCY_SCALE = [
+  ["routine", "Routine / self-care"],
+  ["soon", "See a doctor soon"],
+  ["urgent", "Urgent"],
+  ["emergency", "Emergency"],
+];
+
+// One line icon per level, so the level never depends on colour alone (the label is always written too).
+export function UrgencyIcon({ level, className = "urgency__icon" }) {
+  const paths = {
+    routine: <><path d="M4 11.5 12 5l8 6.5V20H4Z" /><path d="M10 20v-5h4v5" /></>,
+    soon: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
+    urgent: <><path d="M12 3.5 21.5 20h-19Z" /><path d="M12 10v4.5M12 17.4h.01" /></>,
+    emergency: <><circle cx="12" cy="12" r="9" /><path d="M12 6.8v6.4M12 16.8h.01" /></>,
+  };
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      {paths[level]}
+    </svg>
+  );
+}
+
+// The 4-step scale under the result. The current step is marked by its colour, its icon, bold text,
+// a written "This result" and aria-current, so it never relies on colour alone.
+function UrgencyScale({ level }) {
+  return (
+    <div className="urgency-scale">
+      <p id="urgency-scale-label" className="urgency-scale__label">Urgency scale, from lowest to highest</p>
+      <ol aria-labelledby="urgency-scale-label" className="urgency-scale__steps">
+        {URGENCY_SCALE.map(([key, label]) => {
+          const current = key === level;
+          return (
+            <li key={key} className={`urgency-scale__step urgency-scale__step--${key}${current ? " urgency-scale__step--current" : ""}`}
+              aria-current={current ? "step" : undefined}>
+              {current && <UrgencyIcon level={key} className="urgency-scale__icon" />}
+              <span className="urgency-scale__name">{label}</span>
+              {current && <span className="urgency-scale__you">This result</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+// "What the AI check noted" can repeat a sentence that is already shown above it (for example the meaning
+// under "What you told us"). Show each sentence once: keep the earlier copy, drop it from the AI list.
+const sameText = (text) => String(text || "").trim().replace(/\s+/g, " ").toLowerCase();
+export function unrepeatedReasons(reasons = [], explanation = null) {
+  const shown = new Set([
+    explanation?.summary,
+    ...(explanation?.triggers || []).map((trigger) => trigger.meaning),
+    ...(explanation?.fromMyHealth || []),
+    ...(explanation?.watchFor || []),
+  ].filter(Boolean).map(sameText));
+  return reasons.filter((reason) => !shown.has(sameText(reason)));
+}
+
 
 export default function UrgencyResult({
   result,
@@ -118,31 +179,40 @@ export default function UrgencyResult({
           : "You can monitor this";
 
 
+  const aiReasons = unrepeatedReasons(result.reasons, explanation);
+
+  // Emergencies keep role="alert". Other results are announced by the page's own live region
+  // (pages/symptoms.js), which then moves focus here (tabIndex -1).
   return (
     <section
+      id="symptom-result"
+      tabIndex={-1}
       aria-labelledby="urgency-heading"
       role={
         isEmergency
           ? "alert"
-          : "status"
+          : undefined
       }
       className={`urgency urgency--${level}`}
     >
-      <h2 id="urgency-heading">
-        {preliminary
-          ? "Urgency so far"
-          : "Urgency"}
-        : {result.label}
-      </h2>
+      <div className="urgency__indicator">
+        <UrgencyIcon level={level} />
+        <div>
+          <h2 id="urgency-heading">
+            {preliminary
+              ? "Urgency so far"
+              : "Urgency"}
+            : {result.label}
+          </h2>
+          <p className="urgency__summary">
+            <strong>
+              {shortAction}
+            </strong>
+          </p>
+        </div>
+      </div>
 
-
-      {simplified && (
-        <p className="urgency__summary">
-          <strong>
-            {shortAction}
-          </strong>
-        </p>
-      )}
+      <UrgencyScale level={level} />
 
 
       {preliminary && (
@@ -227,7 +297,7 @@ export default function UrgencyResult({
 
           {!simplified &&
             result.ai?.used &&
-            result.reasons?.length >
+            aiReasons.length >
               0 && (
               <>
                 <p className="urgency__label">
@@ -238,7 +308,7 @@ export default function UrgencyResult({
                 </p>
 
                 <ul>
-                  {result.reasons.map(
+                  {aiReasons.map(
                     (reason) => (
                       <li
                         key={

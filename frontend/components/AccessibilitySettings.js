@@ -1,10 +1,11 @@
 import { useAccessibility } from "../context/AccessibilityContext";
+import Card from "./ui/Card";
 
 export default function AccessibilitySettings() {
   const { preferences, preferencesSaved, updatePreferences } = useAccessibility();
 
   return (
-    <section className="section accessibility-settings" aria-labelledby="accessibility-heading">
+    <Card className="accessibility-settings" aria-labelledby="accessibility-heading">
       <h2 id="accessibility-heading">Accessibility</h2>
       <p>Change how Nabad looks and reads. Your choices are saved on this device.</p>
       {preferencesSaved === false && <p role="status">Your changes apply for this session, but couldn't be saved on this device.</p>}
@@ -44,6 +45,6 @@ export default function AccessibilitySettings() {
           <span>Simplified mode (large icons and shorter text)</span>
         </label>
       </div>
-    </section>
+    </Card>
   );
 }

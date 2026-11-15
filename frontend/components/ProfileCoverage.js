@@ -44,9 +44,9 @@ function DocumentUpload({ profileId, kind, label, document, onChanged }) {
     {document ? <>
       <p><strong>{document.filename}</strong> <span className="text-muted">({prettySize(document.size)})</span></p>
       <div className="form-actions">
-        <a className="button button--secondary" href={profileDocumentDownloadUrl(profileId, kind)}>Download</a>
+        <Button variant="secondary" href={profileDocumentDownloadUrl(profileId, kind)}>Download</Button>
         <Button variant="secondary" onClick={() => input.current?.click()} disabled={busy}>Replace</Button>
-        <Button variant="danger" onClick={remove} disabled={busy}>Remove</Button>
+        <Button variant="danger-quiet" onClick={remove} disabled={busy}>Remove</Button>
       </div>
     </> : <Button variant="secondary" onClick={() => input.current?.click()} disabled={busy}>{busy ? "Uploading..." : `Upload ${label.toLowerCase()}`}</Button>}
     <input ref={input} className="visually-hidden" type="file" accept={ACCEPT} onChange={upload} aria-label={`Choose ${label.toLowerCase()}`} />
@@ -75,7 +75,7 @@ export default function ProfileCoverage({ profile }) {
     finally { setSaving(false); }
   }
 
-  return <Card className="section" aria-labelledby="coverage-heading">
+  return <Card aria-labelledby="coverage-heading">
     <h2 id="coverage-heading">Identification and coverage</h2>
     <p className="text-muted">Private administrative documents for {profile?.isSelf ? "your profile" : profile?.fullName}. They are not included with medical documents or visit preparation.</p>
     {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}

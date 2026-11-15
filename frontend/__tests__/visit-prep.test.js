@@ -31,6 +31,17 @@ jest.mock("../components/SessionTimeout", () => ({
 // Links must still be active whenever the tests run, so their expiry is relative to today, not a fixed date.
 const inAWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+// Edit, Print/PDF and Export are under "More"; this opens it (if needed) and returns the action's button.
+async function moreAction(name) {
+  const more = await screen.findByRole("button", { name: "More" });
+  if (more.getAttribute("aria-expanded") !== "true") fireEvent.click(more);
+  return screen.findByRole("button", { name });
+}
+// "Share with a doctor" opens the sharing panel.
+async function openSharing() {
+  fireEvent.click(await screen.findByRole("button", { name: "Share with a doctor" }));
+}
+
 function renderPage() {
   return render(<ActiveProfileProvider><VisitPrepPage /></ActiveProfileProvider>);
 }
@@ -143,7 +154,7 @@ describe("Visit preparation page", () => {
   test("lets the user review and add notes, and cancel discards an uncommitted draft", async () => {
     renderPage();
 
-    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.click(await moreAction("Edit visit sheet"));
     const notes = screen.getByRole("textbox", { name: "Notes for your clinician" });
     fireEvent.change(notes, { target: { value: "Ask about headaches after exercise." } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -152,18 +163,47 @@ describe("Visit preparation page", () => {
     expect(screen.getByText("Ask about headaches after exercise.")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("included in this visit sheet and its printout");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.click((await moreAction("Edit visit sheet")));
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for your clinician" }), { target: { value: "Discard this draft." } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByText("Discard this draft.")).not.toBeInTheDocument();
     expect(screen.getByText("Ask about headaches after exercise.")).toBeInTheDocument();
   });
 
+  test("has one primary action, Share with a doctor, and puts Edit, Print/PDF and Export under More", async () => {
+    renderPage();
+    const share = await screen.findByRole("button", { name: "Share with a doctor" });
+    expect(share).toHaveClass("button--primary");
+    expect(document.querySelectorAll(".visit-prep__actions .button--primary")).toHaveLength(1);
+    // Sharing is closed until asked for.
+    expect(share).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("heading", { name: "Share securely with a doctor" })).not.toBeInTheDocument();
+    const more = screen.getByRole("button", { name: "More" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(more);
+    const panel = document.getElementById(more.getAttribute("aria-controls"));
+    expect(within(panel).getAllByRole("button").map((button) => button.textContent)).toEqual(["Edit visit sheet", "Print or save as PDF", "Export sheet with attachments"]);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(more).toHaveFocus();
+    fireEvent.click(share);
+    expect(share).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("heading", { name: "Share securely with a doctor" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Link expires after")).toHaveFocus());
+  });
+
+  test("keeps the sharing panel open while links exist, so a confirmation stays visible", async () => {
+    getVisitPrepShares.mockResolvedValue({ shares: [{ id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 1, confirmedAt: null, revokedAt: null }] });
+    renderPage();
+    expect(await screen.findByRole("heading", { name: "Share securely with a doctor" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share with a doctor" })).toHaveAttribute("aria-expanded", "true");
+  });
+
   test("prints the prepared summary so it can be printed or saved as a PDF", async () => {
 
     renderPage();
 
-    const button = await screen.findByRole("button", { name: "Print or save as PDF" });
+    const button = await moreAction("Print or save as PDF");
     expect(screen.getByRole("heading", { name: "Patient and health background" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Recent symptom checks" })).toBeInTheDocument();
 
@@ -174,8 +214,8 @@ describe("Visit preparation page", () => {
 
   test("edits generated background, medications and symptoms before sharing", async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
-    expect(screen.getByRole("button", { name: "Export sheet with attachments" })).toBeDisabled();
+    fireEvent.click(await moreAction("Edit visit sheet"));
+    expect((await moreAction("Export sheet with attachments"))).toBeDisabled();
     for (const [label, value] of [["Patient and health background", "Corrected history"], ["Current medications", "Updated medication dose"], ["Recent symptom checks", "Symptoms started on Monday"]]) {
       fireEvent.change(screen.getByRole("textbox", { name: label }), { target: { value } });
     }
@@ -185,11 +225,29 @@ describe("Visit preparation page", () => {
     expect(screen.getByText("Updated medication dose")).toBeInTheDocument();
     expect(screen.getByText("Symptoms started on Monday")).toBeInTheDocument();
     expect(screen.queryByText("No active medications recorded.")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.click((await moreAction("Edit visit sheet")));
     expect(screen.getByRole("textbox", { name: "Current medications" })).toHaveValue("Updated medication dose");
     fireEvent.change(screen.getByRole("textbox", { name: "Current medications" }), { target: { value: "Discard" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.getByText("Updated medication dose")).toBeInTheDocument();
+  });
+
+  test("dates symptom checks and doctor links by the Beirut calendar day, also in the export", async () => {
+    // 01:44 on 11 November in Beirut is 23:44 on 10 November in UTC: this used to show as "10 November 2026".
+    getSymptomsForProfile.mockResolvedValue([{ id: "late-check", symptoms: "Chest tightness", createdAt: "2026-11-10T23:44:00.000Z", urgencyResult: { label: "Routine / self-care" }, conversation: [] }]);
+    getVisitPrepShares.mockResolvedValue({ shares: [{ id: "share-late", createdAt: "2026-11-10T22:30:00.000Z", expiresAt: inAWeek, viewCount: 0, confirmedAt: null, revokedAt: null }] });
+    const exporter = visitPrepExport.exportVisitPrep.mockResolvedValue(undefined);
+    renderPage();
+    const symptoms = await screen.findByRole("list", { name: "Recent symptom checks" });
+    expect(symptoms).toHaveTextContent("11 November 2026, 01:44");
+    expect(document.body).not.toHaveTextContent("10 November 2026");
+    expect(await screen.findByText(/Created 11 November 2026/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/);
+    fireEvent.click((await moreAction("Export sheet with attachments")));
+    await waitFor(() => expect(exporter).toHaveBeenCalled());
+    const [, text] = exporter.mock.calls[0][0].sections.find(([title]) => title === "Recent symptom checks");
+    expect(text).toContain("11 November 2026, 01:44");
+    exporter.mockReset();
   });
 
   test("exports saved edits with only selected attachments and reports export failures", async () => {
@@ -199,21 +257,21 @@ describe("Visit preparation page", () => {
       { id: "lab", filename: "lab.pdf", documentType: "lab" },
     ] });
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.click(await moreAction("Edit visit sheet"));
     fireEvent.change(screen.getByRole("textbox", { name: "Current medications" }), { target: { value: "Corrected dose" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await screen.findByText("Corrected dose");
     fireEvent.click(screen.getByRole("button", { name: "Choose uploaded documents" }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /scan.pdf/ }));
     await screen.findByRole("heading", { name: "Documents attached to this visit" });
-    fireEvent.click(screen.getByRole("button", { name: "Export sheet with attachments" }));
+    fireEvent.click((await moreAction("Export sheet with attachments")));
     expect(exporter).toHaveBeenCalledWith(expect.objectContaining({
       sections: expect.arrayContaining([["Current medications", "Corrected dose"]]),
       documents: [expect.objectContaining({ id: "xray" })],
     }));
-    expect(await screen.findByRole("button", { name: "Export sheet with attachments" })).toBeEnabled();
+    expect(await moreAction("Export sheet with attachments")).toBeEnabled();
     exporter.mockRejectedValue(new Error("Could not attach scan.pdf"));
-    fireEvent.click(screen.getByRole("button", { name: "Export sheet with attachments" }));
+    fireEvent.click((await moreAction("Export sheet with attachments")));
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not attach scan.pdf");
     exporter.mockReset();
   });
@@ -223,7 +281,7 @@ describe("Visit preparation page", () => {
     getVisitPrep.mockImplementation(async () => saved);
     saveVisitPrep.mockImplementation(async (id, sheet) => { saved = sheet; return sheet; });
     const view = renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.click(await moreAction("Edit visit sheet"));
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for your clinician" }), { target: { value: "Keep this note" } });
     fireEvent.change(screen.getByRole("textbox", { name: "Current medications" }), { target: { value: "Saved dose" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -237,7 +295,7 @@ describe("Visit preparation page", () => {
   test("keeps the edit draft open if saving fails", async () => {
     saveVisitPrep.mockRejectedValue(new Error("Connection lost"));
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Edit visit sheet" }));
+    fireEvent.click(await moreAction("Edit visit sheet"));
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for your clinician" }), { target: { value: "Unsaved note" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Connection lost");
@@ -254,6 +312,7 @@ describe("Visit preparation page", () => {
     window.confirm = jest.fn(() => true);
     renderPage();
 
+    await openSharing();
     fireEvent.click(await screen.findByRole("button", { name: "Create secure link" }));
     await waitFor(() => expect(createVisitPrepShare).toHaveBeenCalledWith("self", expect.objectContaining({
       patientName: "Demo User", expiresInDays: 7, documentIds: [], sections: expect.arrayContaining([expect.objectContaining({ title: "Current medications" })]),

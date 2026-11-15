@@ -178,7 +178,7 @@ describe("Profile Page", () => {
     expect(await screen.findByRole("heading", { name: "Identification and coverage" })).toBeInTheDocument();
     expect(screen.getByText(/not included with medical documents or visit preparation/i)).toBeInTheDocument();
     expect(screen.queryByText("Medical insurance card", { selector: "h3" })).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText("This patient has medical insurance"));
+    await user.click(await screen.findByLabelText("This patient has medical insurance"));
     expect(await screen.findByRole("heading", { name: "Medical insurance card" })).toBeInTheDocument();
     await user.upload(screen.getByLabelText("Choose medical insurance card"), new File(["card"], "insurance.pdf", { type: "application/pdf" }));
     expect(await screen.findByText("insurance.pdf")).toBeInTheDocument();
@@ -213,7 +213,7 @@ describe("Profile Page", () => {
     test("shows a message when there are no linked profiles", async () => {
       renderProfilePage();
 
-      expect(await screen.findByText("No linked profiles yet.")).toBeInTheDocument();
+      expect(await screen.findByText(/^No linked profiles yet:/)).toBeInTheDocument();
     });
 
     test("adding a dependent shows it in the list with relationship and age", async () => {
@@ -231,7 +231,7 @@ describe("Profile Page", () => {
       expect(await screen.findByText("Dependent added.")).toBeInTheDocument();
       expect(screen.getByText("Sami Haddad", { selector: "strong" })).toBeInTheDocument();
       expect(screen.getByText(/child, age 7/)).toBeInTheDocument();
-      expect(screen.queryByText("No linked profiles yet.")).not.toBeInTheDocument();
+      expect(screen.queryByText(/^No linked profiles yet:/)).not.toBeInTheDocument();
 
       // It is also saved through the profile API.
       expect((await listLinkedProfiles())[0].fullName).toBe("Sami Haddad");

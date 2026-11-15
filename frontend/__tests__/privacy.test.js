@@ -52,7 +52,7 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/November 7, 2026/)
+      screen.getByText(/November 14, 2026/)
     ).toBeInTheDocument();
   });
 
@@ -87,6 +87,9 @@ describe("Privacy Policy Page", () => {
     expect(screen.getByText("Brevo")).toBeInTheDocument();
     expect(screen.getByText("Google")).toBeInTheDocument();
     expect(screen.getByText("OpenStreetMap")).toBeInTheDocument();
+    expect(screen.getByText("HeiGIT OpenRouteService").closest("li")).toHaveTextContent(
+      "Nabad does not send your user ID, account details or health information."
+    );
     expect(screen.getByText("Sentry")).toBeInTheDocument();
   });
 
