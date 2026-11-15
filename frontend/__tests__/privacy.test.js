@@ -52,7 +52,7 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/November 14, 2026/)
+      screen.getByText(/November 16, 2026/)
     ).toBeInTheDocument();
   });
 
@@ -126,4 +126,10 @@ test("provider contribution privacy and deletion choices are explained", () => {
   render(<PrivacyPolicy />);
   expect(screen.getByRole("heading", { name: "Provider visit feedback and corrections" })).toBeInTheDocument();
   expect(screen.getByText(/Your note and incorrect-information reports are private/)).toBeInTheDocument();
+});
+
+test("says the care circle alert email never shows the level or health details", () => {
+  const { container } = render(<PrivacyPolicy />);
+  expect(container).toHaveTextContent("The email only asks them to contact you and to open Nabad: its subject and first line never say how urgent the check was or anything about your health.");
+  expect(container).toHaveTextContent("How urgent the check was (urgent or emergency) and when it happened, in Nabad only");
 });

@@ -20,6 +20,8 @@ import {
   deleteAppointment,
 } from "../lib/appointmentApi";
 import { getMedications } from "../lib/medicationApi";
+import { appointmentPopup } from "../lib/appointmentPopup";
+
 
 const emptyFields = () => ({
   title: "", hospital: "", location: "", appointmentDate: todayString(),
@@ -240,9 +242,10 @@ export default function AppointmentsPage() {
       if (!reminderDue(appointment, now)) return;
       if (notifiedRef.current.get(key) === signature) return;
       notifiedRef.current.set(key, signature);
-      new Notification(`Reminder: ${appointment.title}`, {
-        body: `${formatDate(appointment.appointmentDate)} at ${appointment.appointmentTime} · ${appointment.hospital}`,
-      });
+      // Pop-ups can show on a locked screen, so they say only that there is an appointment and when: never its
+      // title, clinic or date (all inside Nabad). See appointmentPopup().
+      const popup = appointmentPopup(appointment);
+      new Notification(popup.title, { body: popup.body });
     });
   }, [appointments, now, profileId]);
 

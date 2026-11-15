@@ -30,14 +30,16 @@ function alertText({ inviterName, personName, level }) {
   return { title: "Care circle alert", message };
 }
 
-function alertEmail({ to, inviterName, message, phone }) {
+// The alert email. Its subject and first line show in inbox previews and on locked phones, so they hold no medical
+// words and no urgency level: only who to contact. The level and the in-app message are in Nabad after signing in.
+function alertEmail({ to, inviterName, level, phone }) {
   return {
     to,
-    subject: `Care circle alert from ${inviterName}`,
+    subject: level === "emergency" ? `Please contact ${inviterName} now` : `Please check in with ${inviterName}`,
     text: [
-      message,
-      ...(phone ? [`You can call ${inviterName} on ${phone}.`] : []),
+      "Open Nabad to see why.",
       `Open Nabad: ${origin()}/notifications`,
+      ...(phone ? [`You can call ${inviterName} on ${phone}.`] : []),
       "If you think someone is in danger, call 140 now.",
       `You get this email because ${inviterName} added you to their care circle on Nabad. Nabad never shares their symptoms or health details with you.`,
     ].join("\n\n"),
@@ -85,7 +87,7 @@ async function alertCareCircle({ requestId, owner, profileId, level, checkId, no
     const created = await notify(member._id, "self", "caregiver_urgent", { title, message, link: "/notifications", phone, dedupeKey });
     if (!created) continue;
     alerted += 1;
-    sendEmail({ requestId }, alertEmail({ to: member.email, inviterName, message, phone }), "care_circle_alert_email_not_sent");
+    sendEmail({ requestId }, alertEmail({ to: member.email, inviterName, level, phone }), "care_circle_alert_email_not_sent");
   }
   logEvent("care_circle_alerted", { requestId, reason: `members:${alerted}` });
   return alerted;
@@ -101,4 +103,4 @@ async function deleteCareCircles(userId) {
   await CareCircle.deleteMany({ $or: [{ inviter: userId }, { member: userId }] });
 }
 
-module.exports = { alertCareCircle, alertCareCircleInBackground, deleteCareCircles, alertText, inviteEmail, shortName, hash, ALERT_LEVELS };
+module.exports = { alertCareCircle, alertCareCircleInBackground, deleteCareCircles, alertText, alertEmail, inviteEmail, shortName, hash, ALERT_LEVELS };

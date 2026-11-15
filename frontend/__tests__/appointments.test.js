@@ -126,6 +126,10 @@ describe("appointment reminder permissions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(notification).toHaveBeenCalledTimes(2));
-    expect(notification.mock.calls[1][0]).toContain("Check-up");
+    // Pop-ups can show on a locked screen: only that there is an appointment and its time, never its title,
+    // clinic or date.
+    expect(notification.mock.calls[0]).toEqual(["Nabad reminder", { body: "You have an appointment at 10:10. Open Nabad for details." }]);
+    expect(notification.mock.calls[1]).toEqual(["Nabad reminder", { body: "You have an appointment at 11:20. Open Nabad for details." }]);
+    for (const call of notification.mock.calls) expect(JSON.stringify(call)).not.toMatch(/Check-up|Clinic|2026|November/);
   });
 });
