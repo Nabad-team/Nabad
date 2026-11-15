@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> November 14, 2026
+        <strong>Last updated:</strong> November 16, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -144,13 +144,16 @@ export default function PrivacyPolicy() {
         You can invite people you trust to your care circle. When one of your
         symptom checks, or a check for one of your linked profiles, comes out
         urgent or an emergency, Nabad tells them in the app and by email.
+        The email only asks them to contact you and to open Nabad: its subject
+        and first line never say how urgent the check was or anything about
+        your health. They see the details below only in Nabad, after signing in.
       </p>
 
       <p>People in your care circle can see:</p>
 
       <ul>
         <li>Your name, and the name of the linked profile the check was for</li>
-        <li>How urgent the check was (urgent or emergency) and when it happened</li>
+        <li>How urgent the check was (urgent or emergency) and when it happened, in Nabad only</li>
         <li>Your phone number, if you saved one on your profile, so they can call you</li>
       </ul>
 

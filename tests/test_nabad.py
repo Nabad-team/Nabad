@@ -44,7 +44,8 @@ TRUSTED_DEVICE_COOKIE = "trustedDevice"
 
 VERIFY_SUBJECT = "Verify your Nabad email"
 INVITE_SUBJECT = "invited you to their Nabad care circle"
-CARE_ALERT_SUBJECT = "Care circle alert from"
+# The care circle alert email names only who to contact: no level or medical words (backend/src/careCircle.js).
+CARE_ALERT_SUBJECT = "Please contact"
 CIRCLES_HEADING = "Circles I'm in"
 CODE_SUBJECT = "Your Nabad verification code"
 EXPORT_SUBJECT = "A copy of your Nabad data was downloaded"
@@ -1346,8 +1347,11 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             for cookie in caregiver_cookies:
                 self.driver.add_cookie({key: cookie[key] for key in ("name", "value", "path", "secure", "httpOnly", "sameSite") if key in cookie})
             alert_email = Mailpit.wait_for_text(self.driver, caregiver_email, CARE_ALERT_SUBJECT)
-            self.assertIn(f"{RunAccount.name}'s symptom check needs attention (emergency).", alert_email)
+            self.assertIn("Open Nabad to see why.", alert_email)
+            # The level and the alert's wording are only inside Nabad, never in the email.
             self.assertNotIn("SELENIUM-PRIVATE-WORDS", alert_email)
+            for word in ("needs attention", "emergency", "urgent"):
+                self.assertNotIn(word, alert_email.lower())
             self.open("/dashboard")
             bell = (By.XPATH, "//header//button[starts-with(@aria-label, 'Notifications')]")
             self.wait.until(lambda d: "unread" in (d.find_element(*bell).get_attribute("aria-label") or ""))

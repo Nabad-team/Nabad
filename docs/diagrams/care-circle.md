@@ -48,11 +48,11 @@ sequenceDiagram
     TR->>DB: Active members only (pending invitees get nothing)
     TR->>DB: notify(member, caregiver_urgent): always on,<br/>dedupe key per check, so one alert per check
     TR-)EM: Alert email, only if the notification was created
-    EM-)M: Care circle alert from Rana
+    EM-)M: "Please contact Rana now" (urgent: "Please check in with Rana")<br/>First line "Open Nabad to see why.", no level or medical words
     M->>FE: Bell: Rana's symptom check needs attention (emergency). Call button
     end
 
-    Note over I,M: Shared with the member: the person's name, the level, a link to Nabad and the inviter's phone if saved.<br/>Never shared: symptoms, answers, advice, records or any other health detail.
+    Note over I,M: Shared with the member: the person's name, the level (in Nabad only, never in the email), a link to Nabad and the inviter's phone if saved.<br/>Never shared: symptoms, answers, advice, records or any other health detail.
 ```
 
 - **Invitations** are one document per person in [models/CareCircle.js](../../backend/src/models/CareCircle.js). Only the token's hash is stored; the token itself is only in the email. Expired invitations are removed by a TTL index.
