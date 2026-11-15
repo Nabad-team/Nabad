@@ -30,6 +30,7 @@ export const MAIN_LINKS = [
   link("/medication-overview", "Medication overview", "overview"),
   link("/appointments", "My appointments", "calendar"),
   link("/water-and-sleep", "Water and sleep", "wellbeing"),
+  link("/wellbeing", "Wellbeing", "calm"),
   link("/providers", providerText("title"), "care"),
 ];
 // Pages about the account itself, in the account menu.
@@ -51,7 +52,7 @@ const TAB_LINKS = ["/symptoms", "/dashboard", "/providers"].map((href) => WORKSP
 export const NAV_ITEMS = [
   { href: "/symptoms" },
   { href: "/dashboard" },
-  { id: "my-care", label: "My care", links: ["/appointments", "/medications", "/medication-overview", "/water-and-sleep"] },
+  { id: "my-care", label: "My care", links: ["/appointments", "/medications", "/medication-overview", "/water-and-sleep", "/wellbeing"] },
   { id: "my-records", label: "My records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
   { href: "/health-assistant" },
   { href: "/providers" },

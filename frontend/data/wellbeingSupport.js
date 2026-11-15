@@ -19,3 +19,11 @@ export const wellbeingSupport = [
     sourceUrl: "https://www.redcross.org.lb/ems-article/",
   },
 ];
+
+// Embrace's official website, linked from the help shown with every wellbeing exercise. Reviewed like the numbers
+// above (docs/wellbeing-support-verification.md): the date is the day the URL was checked, not a live check.
+export const embraceWebsite = {
+  name: "Embrace",
+  url: "https://embracelebanon.org/",
+  verifiedOn: "2026-11-15",
+};

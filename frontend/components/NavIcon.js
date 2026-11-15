@@ -13,6 +13,8 @@ export default function NavIcon({ name }) {
     documents: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h8" /></>,
     summary: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h5" /></>,
     menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
+    // Wellbeing: the breathing circle, inside and out.
+    calm: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /></>,
     care: <><circle cx="10.5" cy="10" r="3.5" /><path d="M4 20c.7-3.1 2.8-4.5 6.5-4.5S16.3 16.9 17 20M17 4v6M14 7h6" /></>,
   };
   return <svg className="app-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;

@@ -5,6 +5,9 @@ import DoctorSummary from "../components/DoctorSummary";
 import { TwoHearts } from "../components/illustrations";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
+import Card from "../components/ui/Card";
+import WindDown from "../components/wellbeing/WindDown";
+import WellbeingHelp from "../components/wellbeing/WellbeingHelp";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
@@ -461,6 +464,14 @@ export default function WaterAndSleepPage() {
               </>
             )}
           </section>
+
+          {/* A calm evening checklist; the ticks stay on screen only. The support block keeps 140 and 1564 with it. */}
+          <Card aria-labelledby="wind-down-heading" className="section wind-down-card">
+            <h2 id="wind-down-heading">Bedtime wind-down</h2>
+            <p className="text-muted">A few small steps that can help you get ready for sleep.</p>
+            <WindDown id="sleep-wind-down" sleepHref="#sleep-heading" />
+            <WellbeingHelp id="wind-down-help" />
+          </Card>
         </div>
       )}
 
