@@ -8,7 +8,7 @@ import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { SkeletonRegion, Bone, NextStepSkeleton, ProgressSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
 
@@ -102,7 +102,13 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      {loading && <HeartbeatLoader />}
+      {/* While the profile loads: the title and Next step as placeholders (one "Loading..." for screen readers). */}
+      {loading && (
+        <SkeletonRegion label="Loading...">
+          <div className="skeleton__stack skeleton__page-title"><Bone size="heading" width="16rem" /><Bone width="22rem" /></div>
+          <NextStepSkeleton />
+        </SkeletonRegion>
+      )}
 
       {activeProfile && <NextStepCard data={data} forName={forName} />}
 
@@ -140,7 +146,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {activeProfile && <ProgressSummary data={data} />}
+      {activeProfile ? <ProgressSummary data={data} /> : loading && <div className="skeleton" aria-hidden="true"><ProgressSkeleton /></div>}
 
       <section className="quick-actions section" aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading">Quick actions</h2>

@@ -6,6 +6,7 @@ import { basicsFilled } from "../lib/healthProfile";
 import { formatDate, todayString } from "../lib/dates";
 import { setMedicationTaken } from "../lib/medicationApi";
 import useDashboardData from "./useDashboardData";
+import { SkeletonRegion, ProgressSkeleton } from "./ui/Skeleton";
 import { hoursText, litresText, sleptText } from "../lib/wellbeing";
 
 function ProgressRing({ label, value, progress, status, detail, href, linkLabel, complete = false, onAction, actionLabel, actionDisabled = false }) {
@@ -47,7 +48,7 @@ function ProgressRing({ label, value, progress, status, detail, href, linkLabel,
 export default function ProgressSummary({ data }) {
   const { activeProfile } = useActiveProfile();
   const own = useDashboardData(data ? null : activeProfile?.id);
-  const { profileId, profileRef, health, wellbeing, medications, setMedications, appointments, healthFailed, wellbeingFailed, medicationsFailed, appointmentsFailed } = data || own;
+  const { profileId, profileRef, health, wellbeing, medications, setMedications, appointments, healthFailed, wellbeingFailed, medicationsFailed, appointmentsFailed, loaded } = data || own;
   const who = activeProfile && !activeProfile.isSelf ? activeProfile.fullName : null;
   const [savingMedication, setSavingMedication] = useState(null);
   const [medicationError, setMedicationError] = useState("");
@@ -102,6 +103,9 @@ export default function ProgressSummary({ data }) {
       : goal.type === "atMost"
         ? `${litresText(water.totalMl)} of your ${litresText(goal.ml)} daily limit.`
         : `${litresText(water.totalMl)} of your ${litresText(goal.ml)} daily goal.`;
+
+  // Until every source has answered: the same card as grey shapes, so the rings don't jump in one by one.
+  if (!loaded) return <SkeletonRegion label="Loading your progress..."><ProgressSkeleton /></SkeletonRegion>;
 
   return (
     <Card aria-labelledby="progress-summary-heading" className="section progress-summary">

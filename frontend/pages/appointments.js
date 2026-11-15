@@ -9,7 +9,7 @@ import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
 import Card from "../components/ui/Card";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { AppointmentsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { formatDate, todayString } from "../lib/dates";
 import {
@@ -296,6 +296,7 @@ export default function AppointmentsPage() {
     <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
       <PageTitle lead="Keep your doctor's appointments together."
         action={appointments !== null && <Button onClick={() => openNewAppointment()} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-appointment" : undefined}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>}
+        loadingActions={appointments === null && !loadError ? 2 : 0}
         more={<MoreMenu id="appointments-more" items={[notificationPermission === "default" && { label: "Get pop-up reminders on this device", onClick: enableReminders }]} />}>
         {listName}
       </PageTitle>
@@ -306,7 +307,7 @@ export default function AppointmentsPage() {
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loadError && <div className="stack"><Alert tone="danger" as="p" role="alert">{loadError}</Alert><Button variant="secondary" onClick={load}>Try again</Button></div>}
-      {!loadError && !profilesError && appointments === null && <HeartbeatLoader label="Loading appointments..." />}
+      {!loadError && !profilesError && appointments === null && <AppointmentsSkeleton label="Loading appointments..." />}
       {appointments !== null && (
         <>
           <Card as="div" className="page-card">

@@ -7,7 +7,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Card from "../components/ui/Card";
 import EmptyState from "../components/ui/EmptyState";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { HealthSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
   getHealthProfile, addHealthFact, updateHealthFact, removeHealthFact, confirmSuggestion, dismissSuggestion,
@@ -441,7 +441,7 @@ export default function MyHealthPage() {
           <div><Button variant="secondary" onClick={load}>Try again</Button></div>
         </div>
       )}
-      {!loadError && !profilesError && !profile && <HeartbeatLoader label="Loading health information..." />}
+      {!loadError && !profilesError && !profile && <HealthSkeleton label="Loading health information..." />}
 
       {profile && (
         // key: fresh forms for each profile, so nothing typed for one person shows up for another.
