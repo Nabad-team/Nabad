@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import { render, screen, within } from "@testing-library/react";
+import PageTitle from "../components/ui/PageTitle";
 import { MedicationsSkeleton, AppointmentsSkeleton, DocumentsSkeleton, VitalsSkeleton, HealthSkeleton, ProvidersSkeleton, ProgressSkeleton, SkeletonRegion } from "../components/ui/Skeleton";
 
 const SKELETONS = { MedicationsSkeleton, AppointmentsSkeleton, DocumentsSkeleton, VitalsSkeleton, HealthSkeleton, ProvidersSkeleton };
@@ -40,5 +41,19 @@ describe("Loading placeholders", () => {
     expect(css).toMatch(/\.skeleton__bone \{[^}]*animation: skeleton-shimmer/);
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\n  \.skeleton__bone \{ animation: none;/);
     expect(css).toMatch(/@media print \{ \.skeleton \{ display: none; \} \}/);
+  });
+
+  test("a page title holds its action row while loading, hidden from screen readers", () => {
+    const { container, rerender } = render(<PageTitle loadingActions={2}>My medications</PageTitle>);
+    const placeholders = container.querySelectorAll(".page-title__placeholder");
+    expect(placeholders).toHaveLength(2);
+    placeholders.forEach((placeholder) => expect(placeholder).toHaveAttribute("aria-hidden", "true"));
+    expect(screen.queryByRole("button")).toBeNull();
+    // Once loaded the real action replaces them.
+    rerender(<PageTitle loadingActions={0} action={<button type="button">Add medication</button>}>My medications</PageTitle>);
+    expect(container.querySelectorAll(".page-title__placeholder")).toHaveLength(0);
+    // An action already shown takes one of the places.
+    rerender(<PageTitle loadingActions={2} more={<span>More</span>}>My appointments</PageTitle>);
+    expect(container.querySelectorAll(".page-title__placeholder")).toHaveLength(1);
   });
 });

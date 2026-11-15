@@ -296,6 +296,7 @@ export default function AppointmentsPage() {
     <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
       <PageTitle lead="Keep your doctor's appointments together."
         action={appointments !== null && <Button onClick={() => openNewAppointment()} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-appointment" : undefined}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>}
+        loadingActions={appointments === null && !loadError ? 2 : 0}
         more={<MoreMenu id="appointments-more" items={[notificationPermission === "default" && { label: "Get pop-up reminders on this device", onClick: enableReminders }]} />}>
         {listName}
       </PageTitle>

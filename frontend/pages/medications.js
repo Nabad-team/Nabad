@@ -295,6 +295,7 @@ export default function MedicationsPage() {
           ? (simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor.")
           : (simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`)}
         action={medications !== null && <Button onClick={() => open("add")} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-medication" : undefined}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>}
+        loadingActions={medications === null && !loadError ? 2 : 0}
         more={medications !== null && <MoreMenu id="medications-more" items={[
           { label: simplified ? "Add from a prescription photo" : "Add from a prescription", onClick: () => open("prescription") },
           { label: "Medication overview", href: "/medication-overview" },

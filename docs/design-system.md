@@ -359,6 +359,7 @@ The white surface the dashboard uses. On signed-in pages, **page content sits in
 
 - **One announcement:** the region has `aria-busy="true"` and one visually hidden `role="status"` line with the page's loading text. The shapes are `aria-hidden` and contain nothing focusable, so a screen reader hears "Loading" once, not once per shape. A placeholder that only holds a place for another region's loading (the dashboard's Next step) is `aria-hidden` with no status of its own.
 - **Same layout:** a page skeleton reuses the real list and card classes (`.medication`, `.appointment`, `.medical-documents__list li`, `.provider-card`, `.card-grid`, `.vitals-charts`, `.progress-summary__item`) and puts `<Bone />` shapes inside. A new list page adds its own skeleton the same way.
+- **Header actions:** a page that shows its primary action or More only after loading passes `loadingActions={2}` (or 1) to `PageTitle` while it loads. Button-shaped placeholders (`aria-hidden`) then hold the row, so the list doesn't move down when the buttons appear (My medications, My appointments).
 - **Motion:** a slow shimmer, and no animation with `prefers-reduced-motion`. Skeletons never print.
 - **Heartbeat or skeleton:** the heartbeat loader (`HeartbeatLoader`) stays for actions in progress (uploading, saving, checking symptoms). Skeletons are for a page's first load.
 - The Selenium accessibility audit waits until no `.loader` and no `[aria-busy="true"]` region is on screen before it scans.
