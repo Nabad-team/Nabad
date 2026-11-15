@@ -12,6 +12,8 @@ import { providerText } from "../lib/providerText";
 import useDisclosure from "./useDisclosure";
 import NotificationBell from "./NotificationBell";
 import HeaderSearch from "./HeaderSearch";
+import NavIcon from "./NavIcon";
+import BottomTabBar from "./BottomTabBar";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 // Each label is exactly the page's title, so people see the same name in the menu, the tab and the heading.
@@ -42,6 +44,8 @@ export const ACCOUNT_LINKS = [
 const DOCUMENT_LINK = link("/medical-documents", "My documents", "documents");
 const WORKSPACE_LINKS = [...MAIN_LINKS.slice(0, -1), DOCUMENT_LINK, MAIN_LINKS[MAIN_LINKS.length - 1]];
 const WORKSPACE_BY_HREF = new Map(WORKSPACE_LINKS.map((item) => [item.href, item]));
+// The phone bottom tab bar: these three links, then Menu.
+const TAB_LINKS = ["/symptoms", "/dashboard", "/providers"].map((href) => WORKSPACE_BY_HREF.get(href));
 // The workspace navigation, in order: single links, and two groups that open as dropdowns on desktop.
 // The phone menu shows the same items in the same order, with the groups as labelled card lists.
 export const NAV_ITEMS = [
@@ -60,24 +64,6 @@ function useCurrentPath() {
   const [path, setPath] = useState("");
   useEffect(() => { setPath(window.location.pathname); }, [router?.asPath]);
   return path;
-}
-
-function NavIcon({ name }) {
-  const paths = {
-    symptom: <><path d="M4 5h16v11H10l-4 4v-4H4Z" /><path d="M7 10.5h3l1.2-2.5 1.8 5 1.2-2.5H17" /></>,
-    overview: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h10M7 17h6" /></>,
-    dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
-    health: <><path d="M12 20S4 15.4 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 15.4 12 20 12 20Z" /><path d="M8.5 12h2l1-2.5 1.5 5 1-2.5h1.5" /></>,
-    vitals: <><path d="M3 12h4l2-5 4 10 2-5h6" /><path d="M4 4h16v16H4z" /></>,
-    results: <><path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 13h8M8 17h5" /><circle cx="17.5" cy="17.5" r="3.5" /><path d="m20 20 2 2" /></>,
-    medications: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5M14 15l3 3" /></>,
-    calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" /></>,
-    wellbeing: <><path d="M6 4v10M4 4v5a2 2 0 0 0 4 0V4M6 14v6" /><path d="M16 4v16M16 4c2.2 0 4 1.8 4 4v2h-4" /></>,
-    documents: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h8" /></>,
-    summary: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h5" /></>,
-    care: <><circle cx="10.5" cy="10" r="3.5" /><path d="M4 20c.7-3.1 2.8-4.5 6.5-4.5S16.3 16.9 17 20M17 4v6M14 7h6" /></>,
-  };
-  return <svg className="app-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 }
 
 function NavLinks({ links, path, className, simplified = false, cards = false, compact = false }) {
@@ -223,8 +209,8 @@ function ProfileSwitcher({ id, showLabel }) {
 // The signed-in header.
 //   Desktop: logo and account controls, with the workspace navigation in one row below
 //            (single links plus the "My care" and "My records" dropdowns).
-//   Phones (under 40rem / 640px): logo, the notifications bell and a "Menu" button that opens a full-width panel
-//            with everything else.
+//   Phones (under 40rem / 640px): logo, search and the notifications bell at the top, and the bottom tab bar
+//            (components/BottomTabBar.js) whose Menu tab opens a panel with everything else, just above the bar.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
 export default function AppHeader() {
   const { selfProfile, activeProfile } = useActiveProfile() || {};
@@ -236,85 +222,77 @@ export default function AppHeader() {
   const accountPage = ACCOUNT_LINKS.some((link) => link.href === path);
 
   return (
-    <header className="site-header app-header">
-      <div className="container container--wide app-header__bar">
-        <Logo href={signedIn ? "/dashboard" : "/"} />
-        {!signedIn && <nav aria-label="Public"><Link href="/providers">{providerText("title")}</Link></nav>}
-        {signedIn && <HeaderSearch key={activeProfile?.id || "pending"} profileId={activeProfile?.id} profileName={activeProfile?.fullName} />}
+    <>
+      <header className="site-header app-header">
+        <div className="container container--wide app-header__bar">
+          <Logo href={signedIn ? "/dashboard" : "/"} />
+          {!signedIn && <nav aria-label="Public"><Link href="/providers">{providerText("title")}</Link></nav>}
+          {signedIn && <HeaderSearch key={activeProfile?.id || "pending"} profileId={activeProfile?.id} profileName={activeProfile?.fullName} />}
 
-        {signedIn && (
-          <div className="app-header__end">
-            <NotificationBell />
-            <div className="app-header__account app-header__desktop">
-              <ProfileSwitcher id="profile-switcher-desktop" />
-              <div className="account-menu">
-                <button
-                  ref={account.buttonRef}
-                  type="button"
-                  className={`account-menu__button${accountPage ? " account-menu__button--current" : ""}`}
-                  aria-expanded={account.open}
-                  aria-controls="account-menu"
-                  aria-label="Account menu"
-                  onClick={account.toggle}
-                >
-                  <span aria-hidden="true" className="account-menu__avatar">
-                    <Avatar name={selfProfile?.fullName} size={36} />
-                  </span>
-                  <svg className="account-menu__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-                    <path d="M2.5 4.5 6 8l3.5-3.5" />
-                  </svg>
-                </button>
-                {account.open && (
-                  <div id="account-menu" ref={account.panelRef} className="account-menu__panel">
-                    {selfProfile && (
-                      <p className="account-menu__who">
-                        <strong>{selfProfile.fullName}</strong>
-                        {selfProfile.email && <span className="text-muted">{selfProfile.email}</span>}
-                      </p>
-                    )}
-                    <nav aria-label="Account">
-                      <NavLinks links={ACCOUNT_LINKS} path={path} className="account-menu__list" simplified={preferences.simplifiedMode} />
-                    </nav>
-                    <Button variant="secondary" size="small" block onClick={() => signOut()}>Sign out</Button>
-                  </div>
-                )}
+          {signedIn && (
+            <div className="app-header__end">
+              <NotificationBell />
+              <div className="app-header__account app-header__desktop">
+                <ProfileSwitcher id="profile-switcher-desktop" />
+                <div className="account-menu">
+                  <button
+                    ref={account.buttonRef}
+                    type="button"
+                    className={`account-menu__button${accountPage ? " account-menu__button--current" : ""}`}
+                    aria-expanded={account.open}
+                    aria-controls="account-menu"
+                    aria-label="Account menu"
+                    onClick={account.toggle}
+                  >
+                    <span aria-hidden="true" className="account-menu__avatar">
+                      <Avatar name={selfProfile?.fullName} size={36} />
+                    </span>
+                    <svg className="account-menu__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                      <path d="M2.5 4.5 6 8l3.5-3.5" />
+                    </svg>
+                  </button>
+                  {account.open && (
+                    <div id="account-menu" ref={account.panelRef} className="account-menu__panel">
+                      {selfProfile && (
+                        <p className="account-menu__who">
+                          <strong>{selfProfile.fullName}</strong>
+                          {selfProfile.email && <span className="text-muted">{selfProfile.email}</span>}
+                        </p>
+                      )}
+                      <nav aria-label="Account">
+                        <NavLinks links={ACCOUNT_LINKS} path={path} className="account-menu__list" simplified={preferences.simplifiedMode} />
+                      </nav>
+                      <Button variant="secondary" size="small" block onClick={() => signOut()}>Sign out</Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <Button
-              ref={mobile.buttonRef}
-              variant="secondary"
-              size="small"
-              className="app-header__menu-button"
-              aria-expanded={mobile.open}
-              aria-controls="mobile-menu"
-              onClick={mobile.toggle}
-            >
-              Menu
-            </Button>
+          )}
+        </div>
+
+        {signedIn && (
+          <nav aria-label="Workspace" className="workspace-nav container container--wide">
+            <WorkspaceLinks path={path} />
+          </nav>
+        )}
+
+        {signedIn && mobile.open && (
+          <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
+            <div className="container container--wide">
+              <nav aria-label="Main">
+                <WorkspaceLinks path={path} mobile />
+              </nav>
+              <ProfileSwitcher id="profile-switcher-mobile" showLabel />
+              <nav aria-label="Account">
+                <NavLinks links={ACCOUNT_LINKS} path={path} className="mobile-menu__list" simplified={preferences.simplifiedMode} />
+              </nav>
+              <Button variant="secondary" block onClick={() => signOut()}>Sign out</Button>
+            </div>
           </div>
         )}
-      </div>
-
-      {signedIn && (
-        <nav aria-label="Workspace" className="workspace-nav container container--wide">
-          <WorkspaceLinks path={path} />
-        </nav>
-      )}
-
-      {signedIn && mobile.open && (
-        <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
-          <div className="container container--wide">
-            <nav aria-label="Main">
-              <WorkspaceLinks path={path} mobile />
-            </nav>
-            <ProfileSwitcher id="profile-switcher-mobile" showLabel />
-            <nav aria-label="Account">
-              <NavLinks links={ACCOUNT_LINKS} path={path} className="mobile-menu__list" simplified={preferences.simplifiedMode} />
-            </nav>
-            <Button variant="secondary" block onClick={() => signOut()}>Sign out</Button>
-          </div>
-        </div>
-      )}
-    </header>
+      </header>
+      {signedIn && <BottomTabBar tabs={TAB_LINKS} path={path} menu={mobile} />}
+    </>
   );
 }

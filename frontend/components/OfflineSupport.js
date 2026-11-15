@@ -13,8 +13,8 @@ export default function OfflineSupport() {
     return ()=>{window.removeEventListener("online",update);window.removeEventListener("offline",update);};
   },[]);
   if(!offline)return null;
-  return <Alert tone="warning" role="status" title="You are offline">
+  return <div className="offline-banner"><Alert tone="warning" role="status" title="You are offline">
     Nabad cannot load or save new information. In an emergency in Lebanon, <a href="tel:140">call 140</a>.{" "}
     <a href="/offline.html">Open emergency help</a>.
-  </Alert>;
+  </Alert></div>;
 }

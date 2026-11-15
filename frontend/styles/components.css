@@ -137,11 +137,13 @@
   top: var(--space-4);
 }
 
+/* The page gutter, or more in iPhone landscape so nothing sits under the notch (viewport-fit=cover in _app.js). */
 .container {
   width: 100%;
   max-width: calc(var(--width-content) + 2 * var(--page-gutter));
   margin-inline: auto;
-  padding-inline: var(--page-gutter);
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right));
 }
 
 .container--wide {
@@ -632,8 +634,14 @@ select.input {
 
 /* ---------- Staging banner (StagingBanner.js; never on production) ---------- */
 
+/* The offline warning spans the screen above the header: clear of the notch in iPhone landscape. */
+.offline-banner {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 .staging-banner {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) max(var(--space-4), env(safe-area-inset-right)) var(--space-2) max(var(--space-4), env(safe-area-inset-left));
   border-bottom: 0.1875rem solid var(--color-warning);
   background: var(--color-warning-soft);
   color: var(--color-warning-strong);
@@ -1268,11 +1276,6 @@ select.input {
   background: var(--color-sunken);
 }
 
-.app-header__menu-button {
-  display: none;
-  margin-left: auto;
-}
-
 /* ---------- Notifications bell (components/NotificationBell.js) ---------- */
 
 .notification-bell {
@@ -1598,15 +1601,127 @@ select.input {
   .app-header__desktop {
     display: none;
   }
-
-  .app-header__menu-button {
-    display: inline-flex;
-  }
 }
 
 @media (min-width: 40rem) {
   .mobile-menu {
     display: none;
+  }
+}
+
+/* ---------- Bottom tab bar on phones (components/BottomTabBar.js) ----------
+   Under 40rem: fixed to the bottom, four equal tabs (icon above label, at least 44px), clear of the iPhone
+   home indicator and notch. Pages get the same space at the bottom so the bar never covers the footer
+   or its 140 link. The phone menu opens as a sheet just above the bar. Hidden from 40rem and on paper. */
+.tab-bar {
+  display: none;
+}
+
+@media (max-width: 39.99rem) {
+  .tab-bar {
+    position: fixed;
+    z-index: 15;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    border-top: 0.0625rem solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: 0 -0.25rem 1rem rgb(22 55 42 / 6%);
+  }
+
+  .tab-bar__list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tab-bar__list > li {
+    margin: 0;
+  }
+
+  .tab-bar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    width: 100%;
+    min-height: var(--tab-bar-height);
+    padding: var(--space-2) var(--space-1);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .tab-bar__item .app-nav__icon {
+    flex: none;
+  }
+
+  .tab-bar__item:hover {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+  }
+
+  .tab-bar__item:focus-visible {
+    outline-offset: -0.1875rem;
+  }
+
+  /* Current page: teal text and a teal bar on top (never color alone). */
+  .tab-bar__item[aria-current="page"],
+  .tab-bar__item--current,
+  .tab-bar__item[aria-expanded="true"] {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+    box-shadow: inset 0 0.1875rem 0 var(--color-primary);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* --tab-bar-space is the bar's measured height (BottomTabBar.js); the fallback is its usual height. */
+  body:has(.tab-bar) {
+    --tab-bar-offset: var(--tab-bar-space, calc(var(--tab-bar-height) + env(safe-area-inset-bottom)));
+    padding-bottom: var(--tab-bar-offset);
+  }
+
+  /* Toasts that stick to the bottom of the screen stay above the bar. */
+  body:has(.tab-bar) .action-toast {
+    bottom: calc(var(--tab-bar-offset) + var(--space-4));
+  }
+
+  .mobile-menu {
+    position: fixed;
+    z-index: 14;
+    left: 0;
+    right: 0;
+    bottom: var(--tab-bar-offset);
+    max-height: calc(100dvh - var(--tab-bar-offset) - 4rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-top: 0.0625rem solid var(--color-border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-overlay);
+  }
+}
+
+@media print {
+  .tab-bar,
+  .mobile-menu {
+    display: none !important;
+  }
+
+  body:has(.tab-bar) {
+    padding-bottom: 0 !important;
   }
 }
 
@@ -4256,7 +4371,7 @@ select.input {
 }
 
 /* Header search uses normal links and the existing keyboard focus styles. */
-.header-search { position: relative; flex: 1 1 16rem; min-width: 0; max-width: 32rem; }
+.header-search { position: relative; flex: 1 1 14rem; min-width: 0; max-width: 32rem; }
 .header-search__form { display: flex; gap: var(--space-2); }
 .header-search__form .input { min-width: 0; flex: 1; }
 .header-search__results { position: absolute; top: calc(100% + var(--space-2)); inset-inline: 0; z-index: 60; max-height: min(65vh, 34rem); overflow-y: auto; padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay); overflow-wrap: anywhere; }
