@@ -488,6 +488,22 @@ html[data-simplified-mode="true"] .urgency__summary {
   gap: var(--space-3);
 }
 
+/* Keep the whole checkbox label easy to tap, and ensure the checkbox itself meets
+   the WCAG 2.2 minimum target size even when browser-native controls render small. */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  flex: 0 0 auto;
+}
+
 .field {
   display: flex;
   flex-direction: column;
