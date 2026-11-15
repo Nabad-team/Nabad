@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "./ui/Button";
 import Alert from "./ui/Alert";
-import { HeartbeatLoader } from "./ui/Heartbeat";
+import { LinesSkeleton } from "./ui/Skeleton";
 import { getHistory } from "../lib/wellbeingApi";
 import { formatDate } from "../lib/dates";
 import { QUALITY_WORDS, averages, goalText, hoursText, litresText, shortDate, sleepTimesText } from "../lib/wellbeing";
@@ -35,7 +35,7 @@ export default function DoctorSummary({ profileId, name, today, onClose }) {
       </div>
     );
   }
-  if (!history) return <HeartbeatLoader label="Loading the summary..." />;
+  if (!history) return <LinesSkeleton label="Loading the summary..." lines={4} />;
 
   const { days, goal } = history;
   const { waterDays, sleepDays, waterMl, sleepHours } = averages(days);

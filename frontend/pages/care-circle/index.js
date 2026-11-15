@@ -9,7 +9,7 @@ import Alert from "../../components/ui/Alert";
 import Card from "../../components/ui/Card";
 import EmptyState from "../../components/ui/EmptyState";
 import Dialog from "../../components/Dialog";
-import { HeartbeatLoader } from "../../components/ui/Heartbeat";
+import { CardsSkeleton } from "../../components/ui/Skeleton";
 import { useActiveProfile } from "../../context/ActiveProfileContext";
 import {
   CARE_CIRCLE_PROMISE,
@@ -95,7 +95,7 @@ export default function CareCirclePage() {
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
       {loadError && <div className="stack"><Alert tone="danger" as="p" role="alert">{loadError}</Alert><Button variant="secondary" onClick={load}>Try again</Button></div>}
-      {!loadError && data === null && <HeartbeatLoader label="Loading your care circle..." />}
+      {!loadError && data === null && <CardsSkeleton label="Loading your care circle..." count={3} grid />}
 
       {data && (
         <div className="card-grid">

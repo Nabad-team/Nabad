@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Card from "./ui/Card";
 import Button from "./ui/Button";
 import Alert from "./ui/Alert";
-import { HeartbeatLoader } from "./ui/Heartbeat";
+import { LinesSkeleton } from "./ui/Skeleton";
 import { deleteProfileDocument, getProfileCoverage, profileDocumentDownloadUrl, updateProfileCoverage, uploadProfileDocument } from "../lib/profileCoverageApi";
 
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -15,6 +15,12 @@ const fileToPayload = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 const prettySize = (size) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
+
+// A label inside a sentence: "Patient ID" -> "patient ID", "Medical insurance card" -> "medical insurance card".
+// Only the first letter of an ordinary first word is lowered, so acronyms stay as written ("NSSF document", "ID").
+export function inSentence(label) {
+  return label.replace(/^[A-Z](?=[a-z])/, (letter) => letter.toLowerCase());
+}
 
 function DocumentUpload({ profileId, kind, label, document, onChanged }) {
   const input = useRef(null);
@@ -33,7 +39,7 @@ function DocumentUpload({ profileId, kind, label, document, onChanged }) {
     finally { setBusy(false); }
   }
   async function remove() {
-    if (!window.confirm(`Remove the saved ${label.toLowerCase()}?`)) return;
+    if (!window.confirm(`Remove the saved ${inSentence(label)}?`)) return;
     setBusy(true); setError("");
     try { onChanged(await deleteProfileDocument(profileId, kind)); }
     catch (deleteError) { setError(deleteError.message || "We couldn't remove this document."); }
@@ -48,8 +54,8 @@ function DocumentUpload({ profileId, kind, label, document, onChanged }) {
         <Button variant="secondary" onClick={() => input.current?.click()} disabled={busy}>Replace</Button>
         <Button variant="danger-quiet" onClick={remove} disabled={busy}>Remove</Button>
       </div>
-    </> : <Button variant="secondary" onClick={() => input.current?.click()} disabled={busy}>{busy ? "Uploading..." : `Upload ${label.toLowerCase()}`}</Button>}
-    <input ref={input} className="visually-hidden" type="file" accept={ACCEPT} onChange={upload} aria-label={`Choose ${label.toLowerCase()}`} />
+    </> : <Button variant="secondary" onClick={() => input.current?.click()} disabled={busy}>{busy ? "Uploading..." : `Upload ${inSentence(label)}`}</Button>}
+    <input ref={input} className="visually-hidden" type="file" accept={ACCEPT} onChange={upload} aria-label={`Choose ${inSentence(label)}`} />
     {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
   </div>;
 }
@@ -79,7 +85,7 @@ export default function ProfileCoverage({ profile }) {
     <h2 id="coverage-heading">Identification and coverage</h2>
     <p className="text-muted">Private administrative documents for {profile?.isSelf ? "your profile" : profile?.fullName}. They are not included with medical documents or visit preparation.</p>
     {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-    {!coverage ? !error && <HeartbeatLoader label="Loading coverage details..." /> : <>
+    {!coverage ? !error && <LinesSkeleton label="Loading coverage details..." lines={3} button /> : <>
       <DocumentUpload profileId={profileId} kind="patient_id" label="Patient ID" document={coverage.patientId} onChanged={setCoverage} />
       <label className="checkbox-row"><input type="checkbox" checked={coverage.hasInsurance} disabled={saving} onChange={(event) => toggle("hasInsurance", event.target.checked)} /> This patient has medical insurance</label>
       {coverage.hasInsurance && <DocumentUpload profileId={profileId} kind="insurance_card" label="Medical insurance card" document={coverage.insuranceCard} onChanged={setCoverage} />}

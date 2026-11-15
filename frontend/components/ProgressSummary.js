@@ -6,7 +6,7 @@ import { basicsFilled } from "../lib/healthProfile";
 import { formatDate, todayString } from "../lib/dates";
 import { setMedicationTaken } from "../lib/medicationApi";
 import useDashboardData from "./useDashboardData";
-import { SkeletonRegion, ProgressSkeleton } from "./ui/Skeleton";
+import { SkeletonRegion, ProgressSkeleton, LinesSkeleton } from "./ui/Skeleton";
 import { hoursText, litresText, sleptText } from "../lib/wellbeing";
 
 function ProgressRing({ label, value, progress, status, detail, href, linkLabel, complete = false, onAction, actionLabel, actionDisabled = false }) {
@@ -160,7 +160,7 @@ export default function ProgressSummary({ data }) {
         <div>
           <h3 id="upcoming-appointment-heading">Upcoming doctor’s appointment</h3>
           {appointmentsFailed ? <p className="text-muted">We couldn't load upcoming appointments.</p>
-            : !appointments ? <p className="text-muted">Loading appointments…</p>
+            : !appointments ? <LinesSkeleton label="Loading appointments…" lines={2} />
               : nextAppointment ? <p><strong>{nextAppointment.title}</strong> at {nextAppointment.hospital} · {formatDate(nextAppointment.appointmentDate)} at {nextAppointment.appointmentTime}</p>
                 : <p className="text-muted">No upcoming appointments on your calendar.</p>}
         </div>

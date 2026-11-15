@@ -23,7 +23,7 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { CardsSkeleton } from "../components/ui/Skeleton";
 import { TwoHearts } from "../components/illustrations";
 import AccessibilitySettings from "../components/AccessibilitySettings";
 import NotificationPreferences from "../components/NotificationPreferences";
@@ -255,7 +255,7 @@ export default function ProfilePage() {
       )}
 
       {loadError && <Alert tone="danger" as="p" role="alert">{loadError}</Alert>}
-      {!profile && !loadError && <HeartbeatLoader />}
+      {!profile && !loadError && <CardsSkeleton label="Loading..." count={4} grid />}
 
       {message && <Alert tone="success" as="p" role="status" className="profile-message">{message}</Alert>}
 

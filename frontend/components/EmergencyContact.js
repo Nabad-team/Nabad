@@ -4,7 +4,7 @@ import Dialog from "./Dialog";
 import Alert from "./ui/Alert";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
-import { HeartbeatLoader } from "./ui/Heartbeat";
+import { LinesSkeleton } from "./ui/Skeleton";
 import Card from "./ui/Card";
 
 // The account's emergency contact. Three views:
@@ -78,7 +78,7 @@ export default function EmergencyContact() {
   );
 
   let body;
-  if (loading) body = <HeartbeatLoader label="Loading emergency contact..." />;
+  if (loading) body = <LinesSkeleton label="Loading emergency contact..." lines={2} button />;
   else if (loadFailed) body = <Button variant="secondary" onClick={load}>Retry loading contact</Button>;
   else if (!contact || editing) body = form;
   else body = (

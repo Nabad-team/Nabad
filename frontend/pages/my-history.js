@@ -6,7 +6,6 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { askHistory } from "../lib/historyApi";
 import { formatDate } from "../lib/dates";
@@ -94,7 +93,7 @@ export default function MyHistoryPage() {
       </form>
 
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-      {loading && <HeartbeatLoader label="Searching the history..." />}
+      {loading && <p className="text-muted progress-note" role="status">Searching the history...</p>}
 
       {result && (
         <section className="history-answer" aria-labelledby="history-answer-title" aria-live="polite">

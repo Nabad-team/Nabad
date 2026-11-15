@@ -6,7 +6,7 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Alert from "../../components/ui/Alert";
-import { HeartbeatLoader } from "../../components/ui/Heartbeat";
+import { CardsSkeleton } from "../../components/ui/Skeleton";
 import { formatDateTime as dateTime } from "../../lib/dates";
 import { confirmSharedVisitPrep, getSharedVisitPrep, sharedDocumentDownloadUrl } from "../../lib/visitPrepApi";
 
@@ -42,7 +42,7 @@ export default function SharedVisitPrepPage() {
     <PageLayout title="Shared visit preparation">
       <PageTitle lead="A read-only visit summary shared securely by the patient or their caregiver.">Shared visit preparation</PageTitle>
       {error && <Alert tone="danger" role="alert">{error}</Alert>}
-      {!sheet && !error && <HeartbeatLoader label="Opening shared visit sheet..." />}
+      {!sheet && !error && <CardsSkeleton label="Opening shared visit sheet..." count={3} />}
       {sheet && <div className="stack visit-prep shared-visit-prep">
         <Alert tone="info" as="p">This snapshot was shared on {dateTime(sheet.createdAt)} and is available until {dateTime(sheet.expiresAt)}. Confirm details directly with the patient.</Alert>
         <Card className="section"><h2>Patient</h2><p>{sheet.patientName}</p></Card>

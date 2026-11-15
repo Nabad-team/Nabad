@@ -6,7 +6,9 @@ import Card from "./Card";
 //   - The shapes shimmer gently; with reduced motion turned on they stay still (styles/components.css).
 //   - Each page skeleton reuses the real list and card classes (.medication, .appointment, .provider-card...),
 //     so its padding, borders and grid match what replaces it.
-// The heartbeat (HeartbeatLoader) stays for actions in progress (uploading, saving), not for first loads.
+// Every signed-in page uses these while its data loads (docs/design-system.md, "Loading placeholders"). Actions in
+// progress (uploading, reading a prescription, searching) show a plain status line instead; the only animated
+// loader left is the Symptom check's (AssistantLoader in components/NabadAssistant.js) while it is checking.
 
 export function SkeletonRegion({ label = "Loading...", className = "", children }) {
   return (
@@ -168,6 +170,75 @@ export function DashboardSkeleton({ label, nextStep = true }) {
     <SkeletonRegion label={label}>
       {nextStep && <NextStepSkeleton />}
       <ProgressSkeleton />
+    </SkeletonRegion>
+  );
+}
+
+// A few lines of text, for a card or panel whose content is loading inside an already visible card
+// (Emergency contact, Identification and coverage, Notification settings, Account security, a sidebar list).
+export function LinesSkeleton({ label, lines = 3, button = false }) {
+  return (
+    <SkeletonRegion label={label}>
+      <div className="skeleton__stack">
+        {repeat(lines, (index) => <Bone key={index} width={WIDTHS[index % WIDTHS.length]} />)}
+        {button && <Bone size="button" width="9rem" />}
+      </div>
+    </SkeletonRegion>
+  );
+}
+
+// Rows of a list inside its page card: a title, a line and a row of small buttons (Notifications).
+export function RowsSkeleton({ label, rows = 3 }) {
+  return (
+    <SkeletonRegion label={label}>
+      <ul className="skeleton__rows">
+        {repeat(rows, (index) => (
+          <li key={index} className="skeleton__stack">
+            <Bone size="title" width={WIDTHS[index % WIDTHS.length]} />
+            <Bone width="80%" />
+            <div className="skeleton__row"><Bone size="button" width="7rem" /><Bone size="button" width="5rem" /></div>
+          </li>
+        ))}
+      </ul>
+    </SkeletonRegion>
+  );
+}
+
+// Section cards: grid (two columns from 64rem, like .card-grid on My profile, Care circle, Water and sleep) or
+// stacked page cards (Visit preparation, the shared visit sheet, Emergency card).
+export function CardsSkeleton({ label, count = 2, grid = false, title = false }) {
+  const cards = repeat(count, (index) => (
+    <Card key={index} as="div" className={grid ? undefined : "page-card"}>
+      <div className="skeleton__stack">
+        <Bone size="title" width={["40%", "30%", "45%", "35%"][index % 4]} />
+        {repeat(3, (row) => <Bone key={row} width={WIDTHS[(index + row) % WIDTHS.length]} />)}
+        <Bone size="button" width="8rem" />
+      </div>
+    </Card>
+  ));
+  return (
+    <SkeletonRegion label={label}>
+      {title && <div className="skeleton__stack skeleton__page-title"><Bone size="heading" width="14rem" /><Bone width="24rem" /></div>}
+      {grid ? <div className="card-grid">{cards}</div> : cards}
+    </SkeletonRegion>
+  );
+}
+
+// Medication overview: the search field and options, then one card per person with medication rows.
+export function MedicationOverviewSkeleton({ label }) {
+  return (
+    <SkeletonRegion label={label}>
+      <div className="skeleton__stack skeleton__filters"><Bone width="12rem" /><Bone size="field" /><div className="skeleton__row"><Bone width="16rem" /><Bone width="16rem" /></div></div>
+      <div className="overview-people">
+        {repeat(2, (index) => (
+          <Card key={index} as="div" className="overview-person">
+            <div className="skeleton__row skeleton__row--between"><Bone size="title" width={WIDTHS[index]} /><Bone width="4rem" /></div>
+            <ul className="overview-medications">
+              {repeat(2, (row) => <li key={row} className="overview-medication skeleton__stack"><Bone width="35%" /><Bone width="80%" /></li>)}
+            </ul>
+          </Card>
+        ))}
+      </div>
     </SkeletonRegion>
   );
 }
