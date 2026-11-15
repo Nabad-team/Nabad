@@ -156,7 +156,7 @@ The pulse from the logo, used in **two places only**, plus the Nabad assistant d
    ```jsx
    <PageTitle lead="Optional short sentence under the title.">Your medicines</PageTitle>
    ```
-2. **As the loading indicator**: a pulse travels along the line. It has `role="status"`, so screen readers announce the label.
+2. **As the loading indicator for actions in progress** (uploading, saving, checking symptoms): a pulse travels along the line. It has `role="status"`, so screen readers announce the label. A page's first load uses grey placeholders instead (see [Loading placeholders](#loading-placeholders-skeletons)).
    ```jsx
    import { HeartbeatLoader } from "../components/ui/Heartbeat";
    {loading && <HeartbeatLoader label="Loading your medicines..." />}
@@ -348,6 +348,20 @@ The white surface the dashboard uses. On signed-in pages, **page content sits in
 ```
 
 **Card grid.** A page made of several short sections (My profile, My health) puts its cards in `<div className="card-grid">`: one column on phones and tablets, two from 64rem, so 28rem forms don't leave half of the wide column empty. Cards fill in reading order (left to right, then down). `className="card--full"` makes a card span both columns (long or wide content: Download my data, Danger zone, Suggestions to review, What Nabad's guidance takes into account); anything in the grid that isn't a card (alerts, the "knows you" bar) spans both columns too.
+
+### Loading placeholders (skeletons)
+
+`components/ui/Skeleton.js`. While a page's data loads, it shows grey shapes in the page's final layout instead of blank space or "Loading...", so nothing jumps when the data arrives. They're used on the dashboard (Next step and Your progress), My vitals, My medications, My documents, My appointments, My health and Find care.
+
+```jsx
+{medications === null && <MedicationsSkeleton label="Loading medications..." />}
+```
+
+- **One announcement:** the region has `aria-busy="true"` and one visually hidden `role="status"` line with the page's loading text. The shapes are `aria-hidden` and contain nothing focusable, so a screen reader hears "Loading" once, not once per shape. A placeholder that only holds a place for another region's loading (the dashboard's Next step) is `aria-hidden` with no status of its own.
+- **Same layout:** a page skeleton reuses the real list and card classes (`.medication`, `.appointment`, `.medical-documents__list li`, `.provider-card`, `.card-grid`, `.vitals-charts`, `.progress-summary__item`) and puts `<Bone />` shapes inside. A new list page adds its own skeleton the same way.
+- **Motion:** a slow shimmer, and no animation with `prefers-reduced-motion`. Skeletons never print.
+- **Heartbeat or skeleton:** the heartbeat loader (`HeartbeatLoader`) stays for actions in progress (uploading, saving, checking symptoms). Skeletons are for a page's first load.
+- The Selenium accessibility audit waits until no `.loader` and no `[aria-busy="true"]` region is on screen before it scans.
 
 ### EmptyState
 

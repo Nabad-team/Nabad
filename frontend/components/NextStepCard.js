@@ -2,14 +2,16 @@ import Card from "./ui/Card";
 import Button from "./ui/Button";
 import { basicsFilled } from "../lib/healthProfile";
 import { pickNextStep } from "../lib/nextStep";
+import { NextStepSkeleton } from "./ui/Skeleton";
 
 // The dashboard's "Next step": one short line and one button for the active profile (lib/nextStep.js picks it).
 // It waits until every source has answered, so it never swaps one line for another, and it is hidden when
-// nothing applies. It sits under the email bar and the page title, above Symptom check, and never above or
+// nothing applies. While it waits, its place holds grey shapes (aria-hidden: Your progress announces the loading). It sits under the email bar and the page title, above Symptom check, and never above or
 // instead of an emergency message.
 //   data: useDashboardData()   forName: the linked profile's first name, "" for the user's own profile
 export default function NextStepCard({ data, forName = "", now }) {
-  if (!data?.loaded) return null;
+  if (!data) return null;
+  if (!data.loaded) return <div className="skeleton" aria-hidden="true"><NextStepSkeleton /></div>;
   const step = pickNextStep({
     medications: data.medications,
     appointments: data.appointments,

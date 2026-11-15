@@ -9,7 +9,7 @@ import EmptyState from "../components/ui/EmptyState";
 import Card from "../components/ui/Card";
 import MoreMenu from "../components/ui/MoreMenu";
 import InlinePanel from "../components/ui/InlinePanel";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { VitalsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addVital, deleteVital, listVitals } from "../lib/vitalsApi";
 import { formatDateTime } from "../lib/dates";
@@ -122,7 +122,7 @@ export default function VitalsPage() {
       <div className="vitals-history__heading"><div><h2 id="vitals-history-heading">History and trends</h2><p className="text-muted">Up to 1,000 readings are shown.</p></div>
         <label className="field__label" htmlFor="vitals-range">Time range<select id="vitals-range" className="input" value={range} onChange={e => setRange(e.target.value)}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select></label>
       </div>
-      {readings === null && profileId && !error ? <HeartbeatLoader label="Loading vital readings..." /> : sorted.length === 0 ? <EmptyState title="No vital readings in this range yet: log a reading, or choose a wider time range." /> : <>
+      {readings === null && profileId && !error ? <VitalsSkeleton label="Loading vital readings..." /> : sorted.length === 0 ? <EmptyState title="No vital readings in this range yet: log a reading, or choose a wider time range." /> : <>
         <div className="vitals-charts">
           <TrendChart title="Blood pressure" readings={sorted.filter(r => r.systolic !== null)} lines={[{ key: "systolic", label: "Systolic" }, { key: "diastolic", label: "Diastolic" }]} unit="mmHg" />
           <TrendChart title="Heart rate" readings={sorted.filter(r => r.heartRate !== null)} lines={[{ key: "heartRate", label: "Heart rate" }]} unit="bpm" />

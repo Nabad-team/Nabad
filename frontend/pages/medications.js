@@ -11,7 +11,7 @@ import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
 import Card from "../components/ui/Card";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { MedicationsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
 import {
@@ -313,7 +313,7 @@ export default function MedicationsPage() {
         </div>
       )}
 
-      {!loadError && !profilesError && medications === null && <HeartbeatLoader label="Loading medications..." />}
+      {!loadError && !profilesError && medications === null && <MedicationsSkeleton label="Loading medications..." />}
 
       {medications !== null && (
         <Card as="div" className="page-card">

@@ -11,6 +11,7 @@ import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
 import InlinePanel from "../components/ui/InlinePanel";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { DocumentsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 import { announceNotificationsChanged } from "../lib/notificationApi";
@@ -214,7 +215,7 @@ export default function MedicalDocumentsPage() {
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
         {busy && <HeartbeatLoader label={uploadProgress ? `${uploadProgress}...` : "Uploading documents..."} />}
-        {documents === null ? <HeartbeatLoader label="Loading documents..." /> : documents.length ? <>
+        {documents === null ? <DocumentsSkeleton label="Loading documents..." /> : documents.length ? <>
           <div className="medical-documents__filters" aria-label="Filter documents">
             <label className="field__label" htmlFor="filter-document-search">Search by file name</label>
             <input id="filter-document-search" className="input" type="search" value={search} onChange={(event) => setSearch(event.target.value)} />

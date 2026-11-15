@@ -11,7 +11,7 @@ import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { ProvidersSkeleton } from "../components/ui/Skeleton";
 import { getProviders, getProviderFavorites, setProviderFavorite, getProviderDrivingMinutes } from "../lib/providerApi";
 import { providerText as t } from "../lib/providerText";
 import ProviderMap from "../components/ProviderMap";
@@ -228,7 +228,7 @@ export default function ProvidersPage() {
       <Button type="submit">{t("submit")}</Button>
     </form>
     <div className="providers-layout__results">
-    {loading ? <HeartbeatLoader label={t("loading")} /> : error ? <Alert tone="danger" role="alert">
+    {loading ? <ProvidersSkeleton label={t("loading")} /> : error ? <Alert tone="danger" role="alert">
       <p>{error}</p><Button variant="secondary" onClick={() => setRetry(value => value + 1)}>{t("retry")}</Button>
     </Alert> : <>
       <p role="status">{t("count", { count: data.total })}</p>

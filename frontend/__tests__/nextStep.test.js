@@ -92,7 +92,10 @@ describe("NextStepCard", () => {
 
   test("waits until everything has loaded, and is hidden when nothing applies", () => {
     const { container, rerender } = render(<NextStepCard data={data({ loaded: false })} now={at("2026-11-19T10:00:00Z")} />);
-    expect(container).toBeEmptyDOMElement();
+    // While loading: grey shapes hold its place, hidden from screen readers (Your progress announces the loading).
+    expect(container.firstChild).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector(".skeleton__bone")).not.toBeNull();
+    expect(screen.queryByRole("region", { name: "Next step" })).toBeNull();
     const done = { dateOfBirth: "1990-01-01", facts: ["sex", "height", "weight", "bloodType"].map((category) => ({ category })) };
     rerender(<NextStepCard data={data({ health: done, wellbeing: { sleep: { hours: 7 } } })} now={at("2026-11-19T10:00:00Z")} />);
     expect(container).toBeEmptyDOMElement();
