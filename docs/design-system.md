@@ -211,8 +211,10 @@ Desktop   [Nabad]  [Search]                                                 [Bel
                                                                                       My profile
                                                                                       Account security
                                                                                       Sign out
-Phone     [Nabad]                                                              [Bell] [Menu]
-          ┌ Symptom check · Dashboard · ... · Acting for [▾] · My profile · Account security · Sign out ┐
+Phone     [Nabad] [Search]                                                            [Bell]
+          ...page...
+          ┌ Menu sheet (opened by the Menu tab): My care · My records · ... · Acting for [▾] · Sign out ┐
+          [ Symptom check ][ Dashboard ][ Find care ][ Menu ]      <- bottom tab bar, fixed
 ```
 
 - **Workspace navigation** (`NAV_ITEMS` in `AppHeader.js`) is **one row** below the desktop account bar: Symptom check (always first), Dashboard, the **My care** dropdown (My appointments, My medications, Medication overview, Water and sleep), the **My records** dropdown (My health, My vitals, My documents, Visit preparation), Health assistant and Find care. The phone menu shows the same items in the same order, with My care and My records as labelled groups. A new page goes into one of the groups rather than adding a seventh item to the row.
@@ -221,7 +223,15 @@ Phone     [Nabad]                                                              [
 - **Say it once.** A page doesn't repeat what the header or another page already offers. The dashboard keeps the symptom check, Your progress (with the upcoming appointment), at most four quick actions and a compact Wellbeing Corner (today's message and the two support numbers; tips and notes under "More"). Apart from the footer line, 140 appears once per page.
 - **Badges state known facts only.** Find care cards show distance, driving time, open/closed per published hours and the 24/7 ER status only when known; nothing says "not verified" on the card. One note above the list explains this, and "Information may be outdated" sits under More details. "Estimate driving times" and "Show map" sit side by side from 40rem (`.provider-tools`) and stack on phones.
 - **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
-- **Phones (under 40rem / 640px):** the logo and a **Menu** button. The menu is a full-width panel under the bar, in the page flow (not an overlay), with every link, the profile switcher ("Acting for") and Sign out.
+- **Phones (under 40rem / 640px):** the top bar has the logo, search and the bell; navigation moves to the **bottom tab bar** (below).
+- **Bottom tab bar** (`components/BottomTabBar.js`, phones only): fixed to the bottom, four equal tabs: **Symptom check, Dashboard, Find care, Menu** (`TAB_LINKS` in `AppHeader.js`). Rules:
+  - Every tab has an icon above a text label (never icon only) and is at least 44px tall (`--tab-bar-height`, 3.75rem).
+  - It is its own landmark, `<nav aria-label="Quick links">`, after the header. The current page's tab gets `aria-current="page"` (teal text, light teal fill and a teal bar on top). On any page that lives in the menu, Menu gets the current style and the name "Menu, current section".
+  - **Menu** is the phone menu's disclosure button: it opens a sheet just above the bar (scrolls on its own, at most the screen minus 4rem) with every link (My care and My records as labelled groups), "Acting for", the account links and Sign out. Keyboard and close behavior are the same as the other menus.
+  - **Never cover content:** pages get bottom padding equal to the bar's measured height (`--tab-bar-space`, set by the bar; the fallback is `--tab-bar-height` plus the safe area), so the footer and its 140 link stay visible. Anything sticky at the bottom (`.action-toast`) sits above the bar. A new bottom-fixed element must do the same.
+  - **Hidden** from 40rem (tablets and desktop keep the header row) and on paper (`@media print`: emergency card, medication overview, doctor summary, report printouts). The offline emergency page (`public/offline.html`) is static and never has it.
+  - Don't add a fifth tab: a new page goes in the menu.
+- **iPhone safe areas:** the viewport uses `viewport-fit=cover` (`pages/_app.js`), so every full-width element pads by `env(safe-area-inset-*)`: `.container` (header, page content, footer) uses `max(var(--page-gutter), env(safe-area-inset-left/right))`, and the tab bar, staging banner and offline banner pad by the insets too. A new full-width element that is not inside `.container` needs the same padding, or its text can go under the notch in landscape.
 - **From 40rem** the workspace row sits under the logo and account bar. It is one line on laptops and wide tablets; on narrow tablets or with very large text it wraps rather than scrolling.
 - **Current page:** its link gets `aria-current="page"`, shown as light teal with a teal underline (never color alone). On My profile or Security, the account button gets a teal ring.
 - **Keyboard:** the account menu and the phone menu are disclosure buttons too (`aria-expanded`, `aria-controls`):

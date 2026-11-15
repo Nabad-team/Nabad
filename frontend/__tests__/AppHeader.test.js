@@ -30,7 +30,8 @@ function renderHeader(path = "/dashboard") {
   );
 }
 const accountButton = () => screen.getByRole("button", { name: "Account menu" });
-const menuButton = () => screen.getByRole("button", { name: "Menu" });
+// The phone menu opens from the Menu tab of the bottom tab bar ("Menu, current section" on pages inside the menu).
+const menuButton = () => screen.getByRole("button", { name: /^Menu/ });
 
 describe("Header navigation", () => {
   beforeEach(() => {
@@ -145,7 +146,8 @@ describe("Header navigation", () => {
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Workspace" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Menu" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Menu/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Quick links" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Nabad/ })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Find care" })).toHaveAttribute("href", "/providers");
   });

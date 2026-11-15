@@ -1,3 +1,4 @@
+import Head from "next/head";
 import OfflineSupport from "../components/OfflineSupport";
 import StagingBanner from "../components/StagingBanner";
 import { IBM_Plex_Sans } from "next/font/google";
@@ -26,6 +27,11 @@ export default function MyApp({ Component, pageProps }) {
           --font-plex: ${plex.style.fontFamily};
         }
       `}</style>
+      {/* viewport-fit=cover lets env(safe-area-inset-*) report the iPhone notch and home indicator; the page gutters,
+          header, footer and phone tab bar pad by those insets (styles/components.css) so nothing hides under them. */}
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" key="viewport" />
+      </Head>
       <StagingBanner />
       <OfflineSupport />
       <AccessibilityProvider>
