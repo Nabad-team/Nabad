@@ -514,6 +514,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/health-assistant",
             "/my-health",
             "/water-and-sleep",
+            "/wellbeing",
             "/profile",
             "/security",
         ):
@@ -532,7 +533,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.ensure_signed_in()
 
     def test_accessibility_core_pages_and_keyboard(self):
-        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/health-assistant")
+        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/health-assistant", "/wellbeing")
         for path in pages:
             with self.subTest(path=path):
                 self.open(path)
@@ -545,6 +546,14 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/appointments")
         self.click(self.button("Add appointment"))
         audit_accessibility(self, self.driver, "appointment-add-form")
+        # A wellbeing exercise while it runs: the circle, the step line, Pause and Stop, and the support block.
+        self.open("/wellbeing?start=breathing")
+        self.click(self.button("Start"))
+        self.visible(self.button("Pause"))
+        self.visible((By.CSS_SELECTOR, "#exercise-breathing a[href='tel:140']"))
+        self.visible((By.CSS_SELECTOR, "#exercise-breathing a[href='tel:1564']"))
+        audit_accessibility(self, self.driver, "wellbeing-breathing-running")
+        self.click(self.button("Stop"))
         # The workspace dropdowns: open with the keyboard, audit while open, Escape closes and returns focus.
         self.open("/medications")
         care = self.visible((By.CSS_SELECTOR, "nav[aria-label='Workspace'] button[aria-controls='nav-group-my-care']"))
