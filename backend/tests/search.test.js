@@ -53,6 +53,10 @@ test('finds matching pages and all four data groups using minimal internal resul
   const encoded = JSON.stringify(result.body);
   for (const privateValue of ['NEVER RETURN', 'bytes', 'passwordHash', 'owner', 'profileId']) assert.ok(!encoded.includes(privateValue));
   assert.ok((await search({ q: 'medicine' })).body.pages.items.some(page => page.href === '/medications'));
+  // The Wellbeing page (breathing, grounding, bedtime wind-down) is findable by the words people use.
+  for (const q of ['wellbeing', 'breathing', 'sleep routine']) {
+    assert.ok((await search({ q })).body.pages.items.some(page => page.href === '/wellbeing' && page.label === 'Wellbeing'), q);
+  }
 });
 test('never mixes another account or another profile into any private result group', async () => {
   await records(owner, owner._id, 'Needle own'); await records(owner, child._id, 'Needle child'); await records(other, other._id, 'Needle foreign');

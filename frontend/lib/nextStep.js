@@ -31,6 +31,9 @@ function wallMinutes(day, time) {
   if (!date || !clock) return null;
   return Date.UTC(Number(date[1]), Number(date[2]) - 1, Number(date[3]), Number(clock[1]), Number(clock[2])) / 60000;
 }
+// The line can start with something the user typed ("checking on my date"), so its first letter is capitalised.
+export const sentence = (text) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
+
 const dayOf = (minutes) => new Date(minutes * 60000).toISOString().slice(0, 10);
 const startOfDay = (minutes) => Math.floor(minutes / 1440) * 1440;
 
@@ -74,7 +77,12 @@ function nextAppointment(appointments, nowMinutes) {
 // after an error: that source simply doesn't apply). basicsFilled: 0-5, or null when unknown.
 // forName: the first name when acting for a linked profile ("Sami"), so the line says whose step it is
 // ("Sami's Amlodipine 5 mg is due at 08:00", "Cardiology check-up for Sami on Friday: prepare the visit").
-export function pickNextStep({ medications, appointments, basicsFilled, wellbeing, now = new Date(), forName = "" }) {
+export function pickNextStep(options) {
+  const step = pickStep(options);
+  return step ? { ...step, text: sentence(step.text) } : null;
+}
+
+function pickStep({ medications, appointments, basicsFilled, wellbeing, now = new Date(), forName = "" }) {
   const nowMinutes = beirutNowMinutes(now);
 
   const dose = nextDose(medications, nowMinutes);
