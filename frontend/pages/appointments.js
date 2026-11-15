@@ -329,7 +329,7 @@ export default function AppointmentsPage() {
           </Card>
           <Card as="div" className="page-card">
           {editing === "add" && <div id="new-appointment"><AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} /></div>}
-          {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet: add your next doctor's visit so Nabad can remind you." action={<Button variant="secondary" onClick={() => openNewAppointment()}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>} />}
+          {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet: add your next doctor's visit so Nabad can remind you." />}
           {appointments.length > 0 && (
             <ul className="appointment-list" aria-label={listName}>
               {appointments.map((appointment) => (
@@ -343,7 +343,7 @@ export default function AppointmentsPage() {
                       <p className="appointment__place"><strong>{appointment.hospital}</strong>{appointment.location && ` · ${appointment.location}`}</p>
                       <p className="text-muted text-sm">Reminder: {reminderText(appointment.reminderMinutes)}</p>
                       {appointment.notes && <p className="appointment__notes"><span className="text-muted">Notes:</span> {appointment.notes}</p>}
-                      <div className="button-row"><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)} aria-label={`Edit ${appointment.title}`}>Edit</Button><Button variant="secondary" size="small" onClick={() => remove(appointment)} aria-label={`Delete ${appointment.title}`}>Delete</Button></div>
+                      <div className="button-row"><Button variant="secondary" size="small" onClick={() => setEditing(appointment.id)} aria-label={`Edit ${appointment.title}`}>Edit</Button><Button variant="danger-quiet" size="small" onClick={() => remove(appointment)} aria-label={`Delete ${appointment.title}`}>Delete</Button></div>
                     </>
                   )}
                 </li>

@@ -20,6 +20,7 @@ test("shows history, units and accessible trend charts", async () => {
   expect(screen.getByText("36.7°C")).toBeInTheDocument();
   expect(screen.getByRole("group", { name: /Blood pressure values/ })).toBeInTheDocument();
   expect(screen.getByRole("img", { name: /Systolic: 120 mmHg/ })).toHaveAttribute("tabindex", "0");
+  expect(screen.getByRole("button", { name: /^Delete reading from/ })).toHaveClass("button--danger-quiet");
   expect(listVitals).toHaveBeenCalledWith("self", "30");
 });
 
@@ -62,7 +63,7 @@ test("the empty state offers Log reading, and Review vitals before a visit is un
   const user = userEvent.setup({ delay: null });
   const { unmount } = render(<VitalsPage />);
   expect(await screen.findByText("No vital readings in this range yet: log a reading, or choose a wider time range.")).toBeInTheDocument();
-  expect(screen.getAllByRole("button", { name: "Log reading" })).toHaveLength(2);
+  expect(screen.getAllByRole("button", { name: "Log reading" })).toHaveLength(1);
   expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
   unmount();
   listVitals.mockResolvedValue({ readings: [sample] });

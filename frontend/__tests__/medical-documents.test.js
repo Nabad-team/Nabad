@@ -40,8 +40,8 @@ describe("Medical documents page", () => {
     renderPage();
     expect(await screen.findByText(/No documents added yet/)).toBeInTheDocument();
     expect(getMedicalDocuments).toHaveBeenCalledWith("self");
-    // Data first: no upload form until files are chosen. The header and the empty state each offer Add documents.
-    expect(screen.getAllByRole("button", { name: "Add documents" })).toHaveLength(2);
+    // Data first: no upload form until files are chosen. Add documents is in the header row only.
+    expect(screen.getAllByRole("button", { name: "Add documents" })).toHaveLength(1);
     expect(screen.queryByLabelText("Document type")).not.toBeInTheDocument();
     expect(screen.getByText(/Any file type up to 10 MB each/)).toBeInTheDocument();
   });

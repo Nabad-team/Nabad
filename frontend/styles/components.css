@@ -405,6 +405,19 @@
   color: #fff;
 }
 
+/* Delete on a list row: red text and outline, quiet until needed. The solid red button is kept for the
+   final confirm step ("Yes, delete"), so solid red always means "this happens now". */
+.button--danger-quiet {
+  background: var(--color-surface);
+  border-color: var(--color-danger);
+  color: var(--color-danger-strong);
+}
+
+.button--danger-quiet:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+}
+
 /* Smaller text and padding, but still a 44px tap target. */
 .button--small {
   padding-inline: var(--space-4);

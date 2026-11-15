@@ -1,5 +1,6 @@
 // The one button for the whole app. variant: "primary" (the main action on a screen, usually one),
-// "secondary" (other actions, Cancel, Back) or "danger" (only for actions that delete data).
+// "secondary" (other actions, Cancel, Back), "danger-quiet" (Delete on a list row: red text and outline)
+// or "danger" (solid red, only for the final step that deletes data, e.g. "Yes, delete").
 // Pass href to get a link that looks like a button (navigation should stay a link).
 // Every button is at least 44px tall, so it is easy to tap.
 import Link from "next/link";

@@ -80,8 +80,8 @@ describe("Medications page", () => {
   test("shows the empty state when there are no medications yet", async () => {
     renderPage();
     expect(await screen.findByText("No medications yet: add the ones you take so they're ready for your doctor.")).toBeInTheDocument();
-    // One primary action in the header row, and the empty state's own button.
-    expect(screen.getAllByRole("button", { name: "Add medication" })).toHaveLength(2);
+    // The header row has the one Add medication; the empty state doesn't repeat it.
+    expect(screen.getAllByRole("button", { name: "Add medication" })).toHaveLength(1);
   });
 
   test("custom daily times persist per medication and can be edited and removed", async () => {
@@ -283,8 +283,14 @@ describe("Medications page", () => {
     seed({ name: "Paracetamol" });
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Delete Paracetamol" }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Yes, delete" }));
+    // Quiet red outline on the card; solid red only on the final confirm step.
+    const deleteButton = await screen.findByRole("button", { name: "Delete Paracetamol" });
+    expect(deleteButton).toHaveClass("button--danger-quiet");
+    expect(deleteButton).not.toHaveClass("button--danger");
+    await user.click(deleteButton);
+    const confirm = within(screen.getByRole("dialog")).getByRole("button", { name: "Yes, delete" });
+    expect(confirm).toHaveClass("button--danger");
+    await user.click(confirm);
 
     expect(await screen.findByRole("status")).toHaveTextContent("Paracetamol was deleted.");
     expect(mockApi.deleteMedication).toHaveBeenCalledWith("self", "1");
