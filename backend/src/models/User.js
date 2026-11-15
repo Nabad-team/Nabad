@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema(
     profilePicture: { type: String, default: "" },
     authVersion: { type: Number, default: 0 },
     onboardingCompleted: { type: Boolean, default: false },
+    // The dashboard's "Getting started" card: hidden for good once the user pressed "Hide" or finished all four
+    // steps for their own profile. One flag for the account (all its profiles), never per device.
+    gettingStartedHidden: { type: Boolean, default: false },
     // Account-level directory bookmarks; atomic set operations prevent duplicate saves.
     favoriteProviders: { type: [String], default: [] },
     // Notification types the user turned off in the app (notifications.js). Safety-critical types can't be listed.

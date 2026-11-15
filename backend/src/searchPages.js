@@ -11,6 +11,7 @@ module.exports = [
   ["Health assistant", "/health-assistant", "test results reports chat"],
   ["Visit preparation", "/visit-prep", "doctor summary print"],
   ["Water and sleep", "/water-and-sleep", "fluids hydration rest"],
+  ["Wellbeing", "/wellbeing", "wellbeing breathing sleep routine bedtime wind-down grounding calm exercises reset"],
   ["Notifications", "/notifications", "alerts bell"],
   ["My profile", "/profile", "account settings emergency contact"],
   ["Security", "/security", "password two factor authentication"],

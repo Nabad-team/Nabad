@@ -56,6 +56,8 @@ export const logout = () => request("/auth/logout", { method: "POST" });
 export const getMe = () => request("/auth/me");
 export const getSession = () => request("/auth/session");
 export const completeOnboarding = () => request("/auth/onboarding/complete", { method: "POST" });
+// The dashboard's Getting started card: hidden for good for this account (stored on the server, not the device).
+export const hideGettingStarted = () => request("/auth/getting-started/hide", { method: "POST" });
 export const googleLoginUrl = () => API_BASE + "/auth/google";
 export const verifyEmail = (token) => request("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });
 export const resendVerificationEmail = () => request("/auth/verify-email/resend", { method: "POST" });

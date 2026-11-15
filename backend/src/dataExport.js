@@ -169,6 +169,7 @@ const ACCOUNT = {
     googleId: "Google's internal id for the account, used only to match Google sign-ins.",
     authVersion: "Internal: changes to sign out every session.",
     onboardingCompleted: "Internal: whether the welcome steps were shown.",
+    gettingStartedHidden: "Internal: whether the dashboard's Getting started card was hidden.",
     failedLoginAttempts: "Security internals: sign-in lockout.",
     lockUntil: "Security internals: sign-in lockout.",
     emailVerifyTokenHash: "Secret: hash of the email verification link.",

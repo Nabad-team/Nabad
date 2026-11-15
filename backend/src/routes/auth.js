@@ -413,7 +413,7 @@ router.post("/logout", asyncRoute(async (req, res) => {
 }));
 
 router.get("/me", requireAuth, asyncRoute(async (req, res) => {
-  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted emailVerified");
+  const user = await User.findById(req.userId).select("name email twoFactorEnabled authProvider onboardingCompleted emailVerified gettingStartedHidden");
   if (!user) return res.status(404).json({ error: "User not found." });
   // Google accounts created before verification existed are still verified: Google checked the email.
   const view = user.toObject();
@@ -431,6 +431,13 @@ router.get("/session", requireAuth, (req, res) => {
 router.post("/onboarding/complete", requireAuth, asyncRoute(async (req, res) => {
   await User.findByIdAndUpdate(req.userId, { onboardingCompleted: true });
   return res.json({ onboardingCompleted: true });
+}));
+
+// The dashboard's Getting started card: "Hide", or all four steps done. Only ever turns it off: nothing about
+// which steps were done is stored (the card works them out from data the account already has).
+router.post("/getting-started/hide", requireAuth, asyncRoute(async (req, res) => {
+  await User.findByIdAndUpdate(req.userId, { gettingStartedHidden: true });
+  return res.json({ gettingStartedHidden: true });
 }));
 
 // Opened from the emailed link. No sign-in needed: the user may open the link on another device.
