@@ -123,7 +123,7 @@ function AppointmentForm({ idPrefix, initial, title, submitLabel, onSave, onCanc
   );
 }
 
-function Calendar({ month, appointments, medications, selectedDate, onMonthChange, onDateSelect, onDateDoubleClick }) {
+function Calendar({ month, appointments, medications, selectedDate, onMonthChange, onDateSelect, onDateDoubleClick, children }) {
   const days = monthDays(month);
   const appointmentsByDate = appointments.reduce((groups, appointment) => {
     groups[appointment.appointmentDate] = (groups[appointment.appointmentDate] || []).concat(appointment);
@@ -149,6 +149,7 @@ function Calendar({ month, appointments, medications, selectedDate, onMonthChang
         <h2>{monthLabel(month)}</h2>
         <Button variant="secondary" size="small" onClick={() => onMonthChange(1)} aria-label="Next month">Next</Button>
       </div>
+      {children && <div className="calendar__notes">{children}</div>}
       <p className="calendar__hint">Select a date to review its schedule or add an appointment. Use the arrow keys to move between dates.</p>
       <div className="calendar__scroll" role="region" aria-label="Calendar dates" tabIndex="0">
       <div className="calendar__grid calendar__weekdays" aria-hidden="true">
@@ -293,16 +294,13 @@ export default function AppointmentsPage() {
   const selectedAppointments = selectedDate ? appointments?.filter((appointment) => appointment.appointmentDate === selectedDate) || [] : [];
   const selectedMedications = selectedDate ? medicationEventsForDate(medications, selectedDate) : [];
   return (
-    <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title={listName} header={<ProfileHeader />}>
       <PageTitle lead="Keep your doctor's appointments together."
         action={appointments !== null && <Button onClick={() => openNewAppointment()} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-appointment" : undefined}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>}
         loadingActions={appointments === null && !loadError ? 2 : 0}
         more={<MoreMenu id="appointments-more" items={[notificationPermission === "default" && { label: "Get pop-up reminders on this device", onClick: enableReminders }]} />}>
         {listName}
       </PageTitle>
-      <p className="page-intro">Before each visit, at the time you choose, a reminder appears in your notifications (the bell at the top), even when this page is closed.</p>
-      {notificationPermission === "denied" && <p className="text-muted text-sm">Browser pop-ups are blocked in your browser settings. Your reminders still appear in your notifications.</p>}
-      {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser pop-ups are not available here. Your reminders still appear in your notifications.</p>}
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <Alert tone="success" as="p" role="status">{notice}</Alert>}
       {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
@@ -319,7 +317,11 @@ export default function AppointmentsPage() {
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
             onDateSelect={setSelectedDate}
             onDateDoubleClick={openNewAppointment}
-          />
+          >
+            <p className="calendar__reminders">Before each visit, at the time you choose, a reminder appears in your notifications (the bell at the top), even when this page is closed.</p>
+            {notificationPermission === "denied" && <p className="text-muted text-sm">Browser pop-ups are blocked in your browser settings. Your reminders still appear in your notifications.</p>}
+            {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser pop-ups are not available here. Your reminders still appear in your notifications.</p>}
+          </Calendar>
           {selectedDate && <section className="calendar-details" aria-labelledby="calendar-details-heading" aria-live="polite">
             <div className="calendar-details__heading"><h2 id="calendar-details-heading">{formatDate(selectedDate)}</h2><Button variant="secondary" size="small" onClick={() => setSelectedDate("")}>Close</Button></div>
             {!selectedAppointments.length && !selectedMedications.length && <p className="text-muted">Nothing scheduled for this day.</p>}

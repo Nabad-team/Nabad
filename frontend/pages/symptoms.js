@@ -622,9 +622,7 @@ export default function SymptomsPage() {
       <PageLayout
         title="Symptom check"
         header={
-          <ProfileHeader
-            showPicture={false}
-          />
+          <ProfileHeader />
         }
       >
         <PageTitle>
@@ -648,9 +646,7 @@ export default function SymptomsPage() {
     <PageLayout
       title="Symptom check"
       header={
-        <ProfileHeader
-          showPicture={false}
-        />
+        <ProfileHeader />
       }
     >
       <PageTitle lead={simplified ? "Tell us how you feel." : "Tell us how you feel, and we'll help you understand how urgent it is."}>

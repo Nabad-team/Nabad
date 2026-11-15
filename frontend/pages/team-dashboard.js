@@ -72,7 +72,7 @@ export default function TeamDashboardPage() {
 
   const { summary, error, loading } = state;
   return (
-    <PageLayout title="Team dashboard" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Team dashboard" header={<ProfileHeader />}>
       <PageTitle lead="How many people use Nabad, day by day. Anonymous totals only: no names, emails, symptoms or results.">Team dashboard</PageTitle>
 
       {error === "notTeam" ? (

@@ -217,7 +217,7 @@ export default function HealthAssistantPage() {
   return (
     <PageLayout
       title="Health assistant"
-      header={<ProfileHeader showPicture={false} />}
+      header={<ProfileHeader />}
     >
       <PageTitle lead="Ask health questions, or attach a written test report and ask about its findings.">
         Health assistant

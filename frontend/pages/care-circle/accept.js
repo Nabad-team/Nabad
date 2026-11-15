@@ -47,7 +47,7 @@ export default function AcceptCareCircleInvitePage() {
 
   const loading = !lookupError && (invite === null || status === "checking");
   return (
-    <PageLayout title="Join a care circle" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title="Join a care circle" header={<ProfileHeader />}>
       <PageTitle>Join a care circle</PageTitle>
       {loading && <HeartbeatLoader label="Checking your invitation..." />}
       {lookupError && (

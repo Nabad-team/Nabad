@@ -92,7 +92,6 @@
 .medical-documents__header { align-items: flex-start; flex-wrap: wrap; }
 .medical-documents__header > div { max-width: 38rem; }
 .medical-documents__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; gap: var(--space-2) var(--space-3); margin-top: var(--space-5); }
-.medical-documents__plus { font-size: 1.5em; line-height: 0.8; }
 .medical-documents__pending { margin: 0 0 var(--space-4); padding-left: var(--space-5); overflow-wrap: anywhere; }
 .medical-documents__list { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
 .medical-documents__list li { flex-wrap: wrap; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); margin-top: var(--space-3); background: var(--color-surface); }
@@ -1487,6 +1486,15 @@ select.input {
   margin-block: var(--space-5);
 }
 
+/* Inside the page card, the filters start at the card's top edge. */
+.notifications .notification-filters {
+  margin-top: 0;
+}
+
+.notifications__more {
+  margin-top: var(--space-5);
+}
+
 .notification-filters .field {
   flex: 1 1 10rem;
 }
@@ -1750,15 +1758,30 @@ select.input {
   padding-top: var(--space-5);
 }
 
-.profile-strip__picture {
+/* The profile picture in My profile's Account owner card (components/ProfilePicture.js). */
+.profile-picture {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
-.profile-strip__error {
+.profile-picture__error {
   margin: var(--space-2) 0 0;
+}
+
+.profile-picture__linked {
+  margin-bottom: var(--space-5);
+}
+
+.profile-picture__linked h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
+}
+
+.profile-picture__linked .profile-picture {
+  margin-bottom: 0;
 }
 
 .acting-as {
@@ -3082,6 +3105,17 @@ select.input {
   text-align: center;
 }
 
+/* Reminder notes in the calendar card (pages/appointments.js), above the hint. */
+.calendar__notes {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.calendar__notes p {
+  margin: 0;
+}
+
 .calendar__hint {
   margin: 0;
   padding: var(--space-3) var(--space-4);
@@ -3774,6 +3808,9 @@ select.input {
   }
   .providers-layout .provider-filters .button[type="submit"] { width: 100%; }
 }
+/* Find care's info notes, above the tools and results. */
+.provider-notes { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+.provider-notes p { margin: 0; }
 .provider-directory-note { margin-top: 0; }
 
 /* Compact result cards: the facts people compare first, the main actions, then "More details". */
@@ -4045,7 +4082,13 @@ select.input {
 .visit-prep__document-options label:has(input:checked) { background: var(--color-primary-soft); border-color: var(--color-primary); }
 .visit-prep__document-options input { margin-top: 0.2rem; }
 .visit-prep__document-options li { margin: 0; }
-.visit-prep__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+/* Recent symptom checks: the newest five on screen until "Show all"; paper always shows every check. */
+@media screen {
+  .visit-prep__symptom--more { display: none; }
+}
+.visit-prep__symptoms-toggle { margin: var(--space-4) 0 0; }
+/* The actions moved into the title row, so the first card starts right under it, like other pages. */
+.visit-prep > .section:first-child { margin-top: 0; }
 .visit-prep__share-controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-3); }
 .visit-prep__share-controls .input { width: auto; min-width: 9rem; }
 .visit-prep__new-share { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
@@ -4122,7 +4165,8 @@ select.input {
   body:has(.visit-prep) .site-header,
   body:has(.visit-prep) .profile-strip,
   body:has(.visit-prep) .page-main > :not(.page-title):not(.visit-prep),
-  .visit-prep__actions,
+  body:has(.visit-prep) .page-title__actions,
+  .visit-prep__symptoms-toggle,
   .visit-prep__editor,
   .visit-prep__notice,
   .visit-prep__document-picker,
@@ -4206,11 +4250,8 @@ select.input {
   gap: var(--space-4);
 }
 
+/* Each person is a page card (components/ui/Card.js), so the overview reads like the other pages. */
 .overview-person {
-  padding: var(--space-4);
-  border: 0.0625rem solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
   scroll-margin-top: var(--space-6);
 }
 
@@ -4346,6 +4387,7 @@ select.input {
   body:has(.medication-overview) .page-main > :not(.medication-overview),
   .medication-overview .page-title .lead,
   .medication-overview .heartbeat-divider,
+  .medication-overview .page-title__actions,
   .overview-controls,
   .overview-no-linked,
   .overview-person__edit {
@@ -4395,6 +4437,7 @@ select.input {
 
   .overview-person {
     padding: var(--space-2) 0;
+    box-shadow: none;
     border: 0;
     border-top: 0.125rem solid #000;
     border-radius: 0;

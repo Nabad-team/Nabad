@@ -165,6 +165,28 @@ describe("Profile Page", () => {
     expect(screen.getByText("demo@nabad.app")).toBeInTheDocument();
   });
 
+  test("starts with the page title and its description, with the picture in the Account owner card", async () => {
+    renderProfilePage();
+    const owner = (await screen.findByRole("heading", { name: "Account owner" })).closest("section");
+    expect(within(owner).getByRole("button", { name: "Upload picture" })).toBeInTheDocument();
+    expect(within(owner).getByRole("img", { name: "Profile picture of Demo User" })).toBeInTheDocument();
+    const title = screen.getByRole("heading", { level: 1, name: "My profile" });
+    expect(title.closest(".page-title")).toHaveTextContent("Your account details and settings, and the people you look after.");
+    // Nothing but the header comes before the title.
+    expect(document.querySelector(".profile-strip")).toBeNull();
+  });
+
+  test("while acting as a dependent, their picture is in Linked profiles and the owner's stays in Account owner", async () => {
+    const maya = await addLinkedProfile({ fullName: "Maya", dateOfBirth: "2015-03-10", relationship: "child" });
+    localStorage.setItem("nabad-active-profile-id", maya.id);
+    renderProfilePage();
+    const owner = (await screen.findByRole("heading", { name: "Account owner" })).closest("section");
+    expect(within(owner).getByRole("img", { name: "Profile picture of Demo User" })).toBeInTheDocument();
+    const linked = screen.getByRole("heading", { name: "Linked profiles" }).closest("section");
+    expect(within(linked).getByRole("heading", { name: "Picture for Maya" })).toBeInTheDocument();
+    expect(within(linked).getByRole("img", { name: "Profile picture of Maya" })).toBeInTheDocument();
+  });
+
   test("does not show the managing note while acting as yourself", async () => {
     renderProfilePage();
     await screen.findByRole("heading", { name: "Account owner" });

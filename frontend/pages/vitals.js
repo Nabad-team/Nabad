@@ -92,7 +92,7 @@ export default function VitalsPage() {
   const sorted = useMemo(() => readings || [], [readings]);
   const who = activeProfile?.isSelf === false ? activeProfile.fullName : null;
 
-  return <PageLayout title={who ? `Vitals for ${who}` : "My vitals"} header={<ProfileHeader showPicture={false} />}>
+  return <PageLayout title={who ? `Vitals for ${who}` : "My vitals"} header={<ProfileHeader />}>
     <PageTitle lead={`Log measurements and see how they change over time${who ? ` for ${who}` : ""}.`}
       action={profileId && <Button ref={logButtonRef} onClick={openLog} aria-expanded={logging} aria-controls={logging ? "log-vitals" : undefined}>Log reading</Button>}
       more={sorted.length > 0 && <MoreMenu id="vitals-more" items={[{ label: "Review vitals before a visit", href: "/visit-prep" }]} />}>{who ? `Vitals for ${who}` : "My vitals"}</PageTitle>

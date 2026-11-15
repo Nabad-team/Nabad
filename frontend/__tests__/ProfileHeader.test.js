@@ -4,6 +4,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProfileHeader from "../components/ProfileHeader";
+import ProfilePicture from "../components/ProfilePicture";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import {
   addLinkedProfile,
@@ -25,12 +26,14 @@ jest.mock("../components/SessionTimeout", () => ({
   useSignedIn: () => true,
 }));
 
-// Renders the header inside the provider, like every page gets from _app.js.
+// Renders the header inside the provider, like every page gets from _app.js, with the active profile's
+// picture controls (on My profile they sit in the Account owner card).
 // Returns unmount so a test can "reload the page" by rendering again.
 function renderHeader() {
   return render(
     <ActiveProfileProvider>
       <ProfileHeader />
+      <ProfilePicture />
     </ActiveProfileProvider>
   );
 }

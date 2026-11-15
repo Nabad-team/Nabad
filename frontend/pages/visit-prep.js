@@ -22,6 +22,8 @@ const CATEGORY_LABELS = {
   pregnancy: "Pregnancy", smoking: "Smoking", condition: "Long-term condition", allergy: "Allergy",
 };
 const SUMMARY_LIMIT = 20;
+// Recent symptom checks shown on screen before "Show all".
+const SYMPTOMS_SHOWN = 5;
 const ALLERGY_TYPES = { medication: "Medication", food: "Food", other: "Other" };
 const MEDICATION_FORMS = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
 const DOCUMENT_TYPES = { imaging: "Imaging", lab: "Lab result", letter: "Letter", other: "Other" };
@@ -71,6 +73,7 @@ export default function VisitPrepPage() {
   const [newShareUrl, setNewShareUrl] = useState("");
   const [sharing, setSharing] = useState(false);
   const [refreshingShares, setRefreshingShares] = useState(false);
+  const [showAllSymptoms, setShowAllSymptoms] = useState(false);
   const sheetRef = useRef(null);
 
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function VisitPrepPage() {
     setNotice("");
     setOverrides({});
     setSectionDrafts({});
-    setShares([]); setNewShareUrl(""); setSharingOpen(false);
+    setShares([]); setNewShareUrl(""); setSharingOpen(false); setShowAllSymptoms(false);
     Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId), getVisitPrep(profileId), getVisitPrepShares(profileId)])
       .then(async ([health, symptoms, sheet, shared]) => {
         let savedDocuments = null;
@@ -255,23 +258,24 @@ export default function VisitPrepPage() {
   const showSharing = sharingOpen || shares.length > 0 || Boolean(newShareUrl);
 
   return (
-    <PageLayout title="Visit preparation" header={<ProfileHeader showPicture={false} />}>
-      <PageTitle lead="A structured summary of saved symptom checks and confirmed health information." >Visit preparation</PageTitle>
+    <PageLayout title="Visit preparation" header={<ProfileHeader />}>
+      {/* One primary action, and the rest under More, on the right of the title row like every other page. The sharing
+          panel opens from the primary button and stays open while links exist, so a clinician's confirmation is always visible. */}
+      <PageTitle lead="A structured summary of saved symptom checks and confirmed health information."
+        action={data && <Button aria-expanded={showSharing} aria-controls="visit-prep-sharing" disabled={editing}
+          onClick={() => { setSharingOpen(true); setFocusSharing((count) => count + 1); }}>Share with a doctor</Button>}
+        more={data && <MoreMenu id="visit-prep-more" items={[
+          !editing && { label: "Edit visit sheet", disabled: exporting || saving, onClick: startEditing },
+          { label: "Print or save as PDF", disabled: editing || exporting || saving, onClick: printSheet },
+          { label: exporting ? "Exporting..." : "Export sheet with attachments", disabled: editing || exporting || saving, onClick: exportSheet },
+        ]} />}
+        loadingActions={!data && !error ? 2 : 0}>
+        Visit preparation
+      </PageTitle>
       {error && <Alert tone="danger" role="alert">{error}</Alert>}
       {!data && !error && <HeartbeatLoader label="Preparing your summary..." />}
       {data && (
         <>
-        {/* One primary action, and the rest under More. The sharing panel opens from the primary button and stays
-            open while links exist, so a clinician's confirmation is always visible. */}
-        <div className="visit-prep__actions">
-          <Button aria-expanded={showSharing} aria-controls="visit-prep-sharing" disabled={editing}
-            onClick={() => { setSharingOpen(true); setFocusSharing((count) => count + 1); }}>Share with a doctor</Button>
-          <MoreMenu id="visit-prep-more" items={[
-            !editing && { label: "Edit visit sheet", disabled: exporting || saving, onClick: startEditing },
-            { label: "Print or save as PDF", disabled: editing || exporting || saving, onClick: printSheet },
-            { label: exporting ? "Exporting..." : "Export sheet with attachments", disabled: editing || exporting || saving, onClick: exportSheet },
-          ]} />
-        </div>
         {notice && <p className="visit-prep__notice" role="status">{notice}</p>}
         {showSharing && <Card id="visit-prep-sharing" className="section visit-prep__sharing" aria-labelledby="visit-prep-sharing-heading">
           <h2 id="visit-prep-sharing-heading">Share securely with a doctor</h2>
@@ -378,9 +382,11 @@ export default function VisitPrepPage() {
             <h2 id="visit-prep-symptoms-heading">Recent symptom checks</h2>
             <div data-summary-section="symptoms" className="visit-prep__summary-text">
             {overrides.symptoms !== undefined ? <p>{overrides.symptoms}</p> : <>
-            {symptomRecords.length ? <ol className="visit-prep__symptoms" aria-label="Recent symptom checks">
-              {symptomRecords.map((record) => (
-                <li key={record.id}>
+            {symptomRecords.length ? <ol id="visit-prep-symptom-list" className="visit-prep__symptoms" aria-label="Recent symptom checks">
+              {/* All of them stay in the page, so the shared link, the export, the PDF and paper keep every check;
+                  on screen only the newest few show until "Show all". */}
+              {symptomRecords.map((record, position) => (
+                <li key={record.id} className={!showAllSymptoms && position >= SYMPTOMS_SHOWN ? "visit-prep__symptom--more" : undefined}>
                   <p><strong>{record.createdAt ? formatDateTime(record.createdAt) : "Date not recorded"}</strong>{record.urgencyResult?.label ? ` · ${record.urgencyResult.label}` : ""}</p>
                   <p>{record.symptoms || record.description}</p>
                   {record.conversation?.length > 2 && <ul aria-label="Follow-up details">{record.conversation.slice(2).filter((message) => message.role === "patient").map((message, index) => <li key={`${record.id}-${index}`}>{message.content}</li>)}</ul>}
@@ -390,6 +396,12 @@ export default function VisitPrepPage() {
             {data.symptoms.length > SUMMARY_LIMIT && <p className="text-muted">Showing the {SUMMARY_LIMIT} most recent checks.</p>}
             </>}
             </div>
+            {/* Outside the summary text, so the button's label never reaches the shared link or the export. */}
+            {overrides.symptoms === undefined && symptomRecords.length > SYMPTOMS_SHOWN && <p className="visit-prep__symptoms-toggle">
+              <Button variant="secondary" size="small" aria-expanded={showAllSymptoms} aria-controls="visit-prep-symptom-list" onClick={() => setShowAllSymptoms((value) => !value)}>
+                {showAllSymptoms ? `Show the ${SYMPTOMS_SHOWN} newest` : `Show all (${symptomRecords.length})`}
+              </Button>
+            </p>}
           </Card>
           <p className="text-muted">Based on information saved in Nabad. Please review it with your clinician; it may not include everything you want to discuss.</p>
         </div>

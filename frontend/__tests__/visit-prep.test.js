@@ -174,7 +174,10 @@ describe("Visit preparation page", () => {
     renderPage();
     const share = await screen.findByRole("button", { name: "Share with a doctor" });
     expect(share).toHaveClass("button--primary");
-    expect(document.querySelectorAll(".visit-prep__actions .button--primary")).toHaveLength(1);
+    // On the right of the title row, like every other page.
+    expect(share.closest(".page-title__actions")).not.toBeNull();
+    expect(document.querySelectorAll(".page-title__actions .button--primary")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "More" }).closest(".page-title__actions")).not.toBeNull();
     // Sharing is closed until asked for.
     expect(share).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("heading", { name: "Share securely with a doctor" })).not.toBeInTheDocument();
@@ -190,6 +193,40 @@ describe("Visit preparation page", () => {
     expect(share).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("heading", { name: "Share securely with a doctor" })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText("Link expires after")).toHaveFocus());
+  });
+
+  test("shows the 5 newest symptom checks with Show all, while the shared link and export keep every check", async () => {
+    getSymptomsForProfile.mockResolvedValue(Array.from({ length: 7 }, (_, index) => ({
+      id: `check-${index}`, symptoms: `Symptom number ${index + 1}`, createdAt: `2026-11-0${7 - index}T10:00:00.000Z`, conversation: [],
+    })));
+    createVisitPrepShare.mockResolvedValue({ token: "t", share: { id: "s", createdAt: "2026-11-10T10:00:00.000Z", expiresAt: inAWeek, viewCount: 0 } });
+    const exporter = visitPrepExport.exportVisitPrep.mockResolvedValue(undefined);
+    renderPage();
+    const list = await screen.findByRole("list", { name: "Recent symptom checks" });
+    const items = within(list).getAllByRole("listitem");
+    expect(items).toHaveLength(7);
+    expect(items.filter((item) => item.classList.contains("visit-prep__symptom--more"))).toHaveLength(2);
+    expect(items[4]).not.toHaveClass("visit-prep__symptom--more");
+    const toggle = screen.getByRole("button", { name: "Show all (7)" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(within(list).getAllByRole("listitem").filter((item) => item.classList.contains("visit-prep__symptom--more"))).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "Show the 5 newest" })).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Show the 5 newest" }));
+
+    // Collapsed on screen, but the export and the doctor link still carry all 7, and never the button's label.
+    fireEvent.click(await moreAction("Export sheet with attachments"));
+    await waitFor(() => expect(exporter).toHaveBeenCalled());
+    const [, exported] = exporter.mock.calls[0][0].sections.find(([title]) => title === "Recent symptom checks");
+    expect(exported).toContain("Symptom number 7");
+    expect(exported).not.toMatch(/Show all|newest/);
+    exporter.mockReset();
+    await openSharing();
+    fireEvent.click(screen.getByRole("button", { name: "Create secure link" }));
+    await waitFor(() => expect(createVisitPrepShare).toHaveBeenCalled());
+    const shared = createVisitPrepShare.mock.calls[0][1].sections.find((section) => section.title === "Recent symptom checks");
+    expect(shared.text).toContain("Symptom number 1");
+    expect(shared.text).toContain("Symptom number 7");
   });
 
   test("keeps the sharing panel open while links exist, so a confirmation stays visible", async () => {
