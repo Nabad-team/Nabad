@@ -54,7 +54,7 @@ describe("Water and sleep page", () => {
     expect(screen.queryByRole("button", { name: "Undo last drink" })).not.toBeInTheDocument();
     expect(log()).not.toBeInTheDocument();
     expect(within(await sleepSection()).getByLabelText("Hours slept")).toHaveValue(null);
-    expect(screen.getByText("Nothing logged this week yet.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing logged this week yet: the week will show here as you log water and sleep.")).toBeInTheDocument();
     expect(screen.queryByRole("figure")).not.toBeInTheDocument();
   });
 
@@ -86,7 +86,7 @@ describe("Water and sleep page", () => {
     expect(await count()).toHaveTextContent("0.25 L today");
     await act(async () => { fail(new Error("Could not save drink")); });
     expect(await count()).toHaveTextContent("Nothing logged yet today");
-    expect(screen.getByText("Nothing logged this week yet.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing logged this week yet: the week will show here as you log water and sleep.")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Could not save drink");
     expect(glass).toBeEnabled();
   });
@@ -222,8 +222,14 @@ describe("Water and sleep page", () => {
     const section = await sleepSection();
 
     await user.click(within(section).getByRole("button", { name: "Save sleep" }));
-    expect(within(section).getByLabelText("Hours slept")).toHaveAccessibleDescription(/Enter the hours slept, from 0 to 24/);
+    expect(within(section).getByLabelText("Hours slept")).toHaveAccessibleDescription(/Enter the hours slept, from 0\.5 to 24/);
     expect(within(section).getByText("Choose how well the night went.")).toBeInTheDocument();
+    // 0 hours is not a night's sleep: at least half an hour, the same rule as the server.
+    await user.type(within(section).getByLabelText("Hours slept"), "0");
+    await user.click(within(section).getByRole("button", { name: "Save sleep" }));
+    expect(within(section).getByLabelText("Hours slept")).toHaveAccessibleDescription(/Enter the hours slept, from 0\.5 to 24/);
+    expect(within(section).getByLabelText("Hours slept")).toHaveAttribute("min", "0.5");
+    await user.clear(within(section).getByLabelText("Hours slept"));
 
     await user.type(within(section).getByLabelText("Hours slept"), "7.5");
     const quality = within(section).getByRole("group", { name: "How well did you sleep?" });
@@ -267,6 +273,10 @@ describe("Water and sleep page", () => {
     fireEvent.change(within(section).getByLabelText("Wake-up time"), { target: { value: "23:30" } });
     await user.click(within(section).getByRole("button", { name: "Save sleep" }));
     expect(within(section).getByText(/Bedtime and wake-up time can't be the same/)).toBeInTheDocument();
+
+    fireEvent.change(within(section).getByLabelText("Wake-up time"), { target: { value: "23:45" } });
+    await user.click(within(section).getByRole("button", { name: "Save sleep" }));
+    expect(within(section).getByText("That's less than half an hour of sleep. Check the times, or clear them and type the hours.")).toBeInTheDocument();
 
     fireEvent.change(within(section).getByLabelText("Wake-up time"), { target: { value: "06:45" } });
     expect(hours).toHaveValue(7.25);
@@ -343,9 +353,9 @@ describe("Water and sleep page", () => {
     expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Date", "Fluids", "Sleep", "Bedtime to wake-up", "Sleep quality", "Note"]);
     const rows = within(table).getAllByRole("row").slice(1).map((row) => Array.from(row.querySelectorAll("th, td"), (cell) => cell.textContent));
     expect(rows).toHaveLength(14);
-    expect(rows[0]).toEqual(["Mon 12 Oct", "0.75 L", "Not logged", "", "", ""]);
-    expect(rows[1]).toEqual(["Sun 11 Oct", "Not logged", "7.3 hours", "23:40 to 07:00", "Well", "Woke at 3"]);
-    expect(rows[13]).toEqual(["Tue 29 Sep", "1.2 L", "Not logged", "", "", ""]);
+    expect(rows[0]).toEqual(["Mon 12 October 2026", "0.75 L", "Not logged", "", "", ""]);
+    expect(rows[1]).toEqual(["Sun 11 October 2026", "Not logged", "7.3 hours", "23:40 to 07:00", "Well", "Woke at 3"]);
+    expect(rows[13]).toEqual(["Tue 29 September 2026", "1.2 L", "Not logged", "", "", ""]);
     expect(within(section).getByText(/Self-reported in Nabad, not measured by a clinician\. Made on 12 October 2026\./)).toBeInTheDocument();
 
     await user.click(within(section).getByRole("button", { name: "Print or save as PDF" }));

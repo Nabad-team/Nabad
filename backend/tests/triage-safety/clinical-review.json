@@ -1,0 +1,1316 @@
+{
+  "schemaVersion": 1,
+  "dataset": "nabad-triage-clinical-safety-v1",
+  "clinicalSignOff": "pending",
+  "instructions": "A qualified clinician reviews each case's message, expected level and maxAcceptable against the level definitions in cases.json. 'approved': the levels are right as written. 'changed': the clinician wanted different levels; cases.json is updated to them in the same pull request and notes say why. Either way, reviewedExpected and reviewedMaxAcceptable record the levels the clinician signed off, so a later edit to the case shows up as needing review again. Only the clinician's own review counts: never fill this in on their behalf.",
+  "cases": [
+    {
+      "id": "em-chest-arm-jaw",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-chest-heavy-caregiver",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-chest-not-sure",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-think-heart-attack",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-chest-past-mi-again",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-asthma-cant-talk",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-wheeze-blue-lips",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-breathless-at-rest-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-breathless-sofa",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-choking-toddler",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-stroke-caregiver-now",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-stroke-words-numb",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-tia-resolved",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-first-seizure",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-collapsed-wont-wake",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-fainted-racing-heart",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-head-stairs-confused",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-head-not-waking",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-chainsaw-bleeding",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-coughing-blood",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-vomit-blood",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-bee-sting-swelling",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-tongue-after-antibiotic",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-rash-not-fading",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-neck-fever",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-thunderclap-back-head",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-suicide-plan",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-teen-wants-to-die",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-paracetamol-pack",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-toddler-drank-bleach",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-black-tar-stool",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-diabetic-confused",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-curtain-vision",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-sepsis-no-pee-confused",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-baby-floppy-blotchy",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-boiling-water-burn",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-car-crash-neck",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-cousin-stabbed",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-ladder-legs",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-cauda-equina",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-ectopic-shoulder",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-teen-testicle-vomit",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-baby-button-battery",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-movements-less",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-pregnant-fit",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-infant-grunting",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-newborn-floppy-wont-feed",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "em-no-cough-cant-breathe",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-pre-eclampsia",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-head-vomited",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-head-warfarin",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-infant-fever-10wk",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-appendix-shift",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-kidney-infection",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-toddler-dry-nappy",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-ankle-no-weight",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-oven-cleaner-eye",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-pregnant-spotting",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-fever-40-2",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-fever-39-6",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-dad-cant-pass-urine",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-testicle-swollen-day",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-bloody-diarrhoea",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-finger-gaping",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-vomit-no-fluids-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-fever-high-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-asthma-inhaler-2h",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-older-chest-infection",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ur-stomach-severe-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-infant-fever-4mo",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-fever-39-4",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-fever-mid-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-breathless-exertion-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-vomit-fluids-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-uti-negations",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-child-ear",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-cough-3-weeks",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-tonsils-white",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-stitches-pus",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-back-pain-weeks",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-diarrhoea-week",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-toe-pus",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-shingles-like-rash",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-testicle-ache-weeks",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "so-blood-pee-older",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-cold-playing",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-headache-gradual-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-gym-legs",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-sticky-eye",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-mouth-ulcer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-mosquito-bites",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-negated-list",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-past-meningitis-neck",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-grandma-stroke-history",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-dry-hands",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-constipation",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-period-cramps",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-oven-tray-burn",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-teething",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-dad-mild-cold",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-mild-sunburn",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-no-chest-blocked-nose",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-cough-few-days",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-head-bump-playing",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-small-knife-cut",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-ankle-walking",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-stomach-mild-answer",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-medication-confused",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "ro-pregnant-back-ache",
+      "review": {
+        "status": "pending",
+        "reviewer": null,
+        "qualification": null,
+        "reviewedAt": null,
+        "reviewedExpected": null,
+        "reviewedMaxAcceptable": null,
+        "notes": ""
+      }
+    }
+  ]
+}

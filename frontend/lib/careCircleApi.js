@@ -1,4 +1,5 @@
 import { request } from "./api";
+import { formatDate } from "./dates";
 
 // The care circle (backend routes/careCircle.js): the people the user invited, and the circles the user is in.
 export const CARE_CIRCLE_PROMISE = "People in your care circle are told when a symptom check needs attention. They never see your symptoms.";
@@ -13,4 +14,4 @@ export const lookupCareCircleInvite = (token) => request("/care-circle/invites/l
 export const acceptCareCircleInvite = (token) => request("/care-circle/invites/accept", { method: "POST", body: JSON.stringify({ token }) });
 
 // "22 October 2026".
-export const longDate = (isoDate) => new Date(isoDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+export const longDate = (isoDate) => formatDate(isoDate);

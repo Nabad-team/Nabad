@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> November 7, 2026
+        <strong>Last updated:</strong> November 14, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -203,6 +203,12 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>OpenStreetMap</strong> map data for healthcare provider maps.
+        </li>
+        <li>
+          <strong>HeiGIT OpenRouteService</strong> estimates driving times when you
+          request them in the provider directory. Nabad sends your latitude and
+          longitude and the facilities&apos; coordinates over an encrypted connection.
+          Nabad does not send your user ID, account details or health information.
         </li>
         <li>
           <strong>Google Gemini</strong> AI service for the symptom check, the

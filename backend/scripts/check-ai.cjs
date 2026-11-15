@@ -41,4 +41,16 @@ async function main() {
   }
 }
 
-main().catch(() => { console.log(JSON.stringify({ check: "diagnostic", status: "failed", reason: "internal_error" })); process.exitCode = 1; });
+// SCRUM-310: the backup model and usage limits, printed last. Names and numbers only, never keys or URLs.
+function printFallbackAndLimits() {
+  const { readSettings } = require("../src/triage/ai/modelAccess");
+  const settings = readSettings();
+  console.log(JSON.stringify({ check: "fallback_and_limits",
+    fallbackConfigured: Boolean(settings.fallback), ...(settings.fallback ? { fallbackModel: settings.fallback.model } : {}),
+    limits: settings.limits, quotaTimeZone: settings.timeZone, triageReservePercent: settings.triageReservePercent,
+    triageDeadlineMs: settings.triageDeadlineMs, problems: settings.problems,
+  }));
+  if (settings.problems.length) process.exitCode = 1;
+}
+
+main().then(printFallbackAndLimits, () => { console.log(JSON.stringify({ check: "diagnostic", status: "failed", reason: "internal_error" })); process.exitCode = 1; });

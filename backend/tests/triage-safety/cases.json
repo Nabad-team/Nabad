@@ -1,0 +1,1429 @@
+{
+  "about": "Triage clinical safety set (SCRUM-309). Red-flag, borderline and must-not-escalate cases on top of the 50-case quality set (tests/triage-quality). Expected levels were written from the guidance in 'sources' before any case was run, and must never be lowered only to make a failing case pass. 'expected' is the least urgent safe level: anything less urgent is under-triage and always fails. 'maxAcceptable' (default: expected) is the most urgent level still clinically reasonable. See README.md in this folder.",
+  "levels": {
+    "emergency": "Now: call 140 or go to the nearest emergency department.",
+    "urgent": "Today, within a few hours.",
+    "soon": "See a doctor within 24 to 48 hours.",
+    "routine": "Self-care; book a regular appointment if it does not improve."
+  },
+  "sources": {
+    "nhs-999": "https://www.nhs.uk/nhs-services/urgent-and-emergency-care-services/when-to-call-999/",
+    "nhs-ae": "https://www.nhs.uk/nhs-services/urgent-and-emergency-care-services/when-to-go-to-ae/",
+    "nhs-stroke": "https://www.nhs.uk/conditions/stroke/symptoms/",
+    "nhs-anaphylaxis": "https://www.nhs.uk/conditions/anaphylaxis/",
+    "nhs-head-injury": "https://www.nhs.uk/conditions/head-injury-and-concussion/",
+    "nhs-sepsis": "https://www.nhs.uk/conditions/sepsis/",
+    "sepsis-trust": "https://sepsistrust.org/about-sepsis/spotting-the-signs-of-sepsis/",
+    "nhs-asthma-attack": "https://www.nhs.uk/conditions/asthma/asthma-attack/",
+    "nhs-ectopic": "https://www.nhs.uk/conditions/ectopic-pregnancy/symptoms/",
+    "nhs-pregnancy-help": "https://www.nhs.uk/pregnancy/common-symptoms/pregnancy-symptoms-you-need-to-get-help-for/",
+    "nhs-pre-eclampsia": "https://www.nhs.uk/conditions/pre-eclampsia/",
+    "cauda-equina-royal-free": "https://royalfree.nhs.uk/patients-and-visitors/patient-information-leaflets/cauda-equina-syndrome",
+    "nice-ng143": "https://www.nice.org.uk/guidance/ng143",
+    "nabad-levels": "The four Nabad urgency levels and their timeframes (backend/src/triage/urgency.js, LEVELS)."
+  },
+  "cases": [
+    {
+      "id": "em-chest-arm-jaw",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "pain in the middle of my chest going into my left arm and jaw, i feel clammy",
+      "why": "Chest pain spreading to the arm or jaw with sweating is a possible heart attack: call an ambulance."
+    },
+    {
+      "id": "em-chest-heavy-caregiver",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver",
+        "older-adult",
+        "everyday-wording"
+      ],
+      "says": "my mum is 72, she says her chest feels heavy and she is sweaty and short of breath",
+      "why": "Heavy chest with sweating and breathlessness in an older woman is a possible heart attack; women often describe heaviness rather than pain."
+    },
+    {
+      "id": "em-chest-not-sure",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "negation",
+        "everyday-wording"
+      ],
+      "says": "not sure if its anything but my chest has been really tight for an hour",
+      "why": "Chest tightness for an hour needs emergency assessment; uncertainty in the wording must not cancel the red flag."
+    },
+    {
+      "id": "em-think-heart-attack",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver"
+      ],
+      "says": "i think my husband is having a heart attack, hes grey and sweating",
+      "why": "A caregiver who thinks a heart attack is happening now should call an ambulance; it must not wait for the exact symptoms."
+    },
+    {
+      "id": "em-chest-past-mi-again",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "history"
+      ],
+      "says": "i had a heart attack 5 years ago and now i have the same crushing chest pain again",
+      "why": "A past heart attack is history, but crushing chest pain now is a current emergency."
+    },
+    {
+      "id": "em-asthma-cant-talk",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-asthma-attack",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my sons asthma is bad, his blue inhaler isnt helping and hes too breathless to talk",
+      "why": "Too breathless to speak and a reliever that is not helping are signs of a severe asthma attack: call an ambulance."
+    },
+    {
+      "id": "em-wheeze-blue-lips",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver",
+        "everyday-wording"
+      ],
+      "says": "my husband is wheezing and his lips look blue",
+      "why": "Blue lips mean low oxygen: call an ambulance."
+    },
+    {
+      "id": "em-breathless-at-rest-answer",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "i feel short of breath",
+      "answers": {
+        "breath-at-rest": "yes"
+      },
+      "why": "Breathlessness even at rest or while talking is a sign of severe breathing difficulty.",
+      "boundary": "Pair of so-breathless-exertion-answer: the same words, breathless only on exertion.",
+      "pairs": [
+        "so-breathless-exertion-answer"
+      ]
+    },
+    {
+      "id": "em-breathless-sofa",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "i get so out of breath even just sitting on the sofa, i cant finish a sentence",
+      "why": "Breathless at rest and unable to finish a sentence is severe breathing difficulty."
+    },
+    {
+      "id": "em-choking-toddler",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver",
+        "child"
+      ],
+      "says": "my toddler is choking on a grape and cant cough",
+      "why": "A choking child who cannot cough has a blocked airway: call an ambulance."
+    },
+    {
+      "id": "em-stroke-caregiver-now",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-stroke",
+      "tags": [
+        "caregiver",
+        "everyday-wording"
+      ],
+      "says": "i think my mother is having a stroke, her mouth is drooping on one side",
+      "why": "A caregiver describing face drooping happening now: possible stroke (FAST)."
+    },
+    {
+      "id": "em-stroke-words-numb",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-stroke",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "my words are coming out wrong and my right hand suddenly went numb 20 minutes ago",
+      "why": "Sudden speech problems and one-sided numbness are stroke symptoms: call an ambulance."
+    },
+    {
+      "id": "em-tia-resolved",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-stroke",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "about an hour ago my arm went weak and my speech was slurred for 10 minutes, now its back to normal",
+      "why": "Stroke symptoms that go away (a mini-stroke) still need an ambulance: the risk of a full stroke is high."
+    },
+    {
+      "id": "em-first-seizure",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver"
+      ],
+      "says": "my brother just had a seizure for the first time, he is awake now but very drowsy",
+      "why": "A first seizure needs an ambulance even if the person wakes up."
+    },
+    {
+      "id": "em-collapsed-wont-wake",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver",
+        "everyday-wording"
+      ],
+      "says": "my dad collapsed in the kitchen and he wont wake up",
+      "why": "Someone who is unconscious and cannot be woken needs an ambulance."
+    },
+    {
+      "id": "em-fainted-racing-heart",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [],
+      "says": "i fainted at work and my heart was racing before it happened",
+      "why": "Fainting with a racing heart before it can be a heart rhythm problem; loss of consciousness needs emergency care."
+    },
+    {
+      "id": "em-head-stairs-confused",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-head-injury",
+      "tags": [
+        "caregiver",
+        "older-adult",
+        "everyday-wording"
+      ],
+      "says": "my grandad fell down the whole flight of stairs and hit his head, now hes confused",
+      "why": "A fall down more than 5 stairs with a head injury and confusion: call an ambulance."
+    },
+    {
+      "id": "em-head-not-waking",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-head-injury",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my son hit his head on the pool edge, he was knocked out and still isnt waking up",
+      "why": "Knocked out and not woken up after a head injury: call an ambulance."
+    },
+    {
+      "id": "em-chainsaw-bleeding",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "cut my leg with a chainsaw and its bleeding a lot, i cant get it to stop",
+      "why": "Heavy bleeding that will not stop is an emergency."
+    },
+    {
+      "id": "em-coughing-blood",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [],
+      "says": "coughing up blood since this morning, quite a lot of it",
+      "why": "Coughing up a lot of blood needs emergency care."
+    },
+    {
+      "id": "em-vomit-blood",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "i threw up blood twice in the last hour",
+      "why": "Vomiting blood can be bleeding in the stomach: emergency."
+    },
+    {
+      "id": "em-bee-sting-swelling",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-anaphylaxis",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "got stung by a bee, my face is swelling up and im wheezing",
+      "why": "Swelling of the face with wheezing after a sting is anaphylaxis: call an ambulance."
+    },
+    {
+      "id": "em-tongue-after-antibiotic",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-anaphylaxis",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "started a new antibiotic today and now my tongue feels swollen and its hard to swallow",
+      "why": "A swollen tongue after a new medicine is a severe allergic reaction."
+    },
+    {
+      "id": "em-rash-not-fading",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "sepsis-trust",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my baby has a fever and spots that dont fade when i press a glass on them",
+      "why": "A rash that does not fade under a glass with a fever can be meningitis or sepsis: call an ambulance."
+    },
+    {
+      "id": "em-neck-fever",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "temp is 39 and i have a really stiff neck, i cant touch my chin to my chest",
+      "why": "Fever with a stiff neck is a sign of meningitis."
+    },
+    {
+      "id": "em-thunderclap-back-head",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "sudden severe headache like being hit on the back of my head, came on in seconds",
+      "why": "A sudden, extremely severe headache can be bleeding in the brain."
+    },
+    {
+      "id": "em-suicide-plan",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [],
+      "says": "i have a plan to kill myself tonight",
+      "why": "Thoughts of suicide with a plan need immediate help."
+    },
+    {
+      "id": "em-teen-wants-to-die",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver"
+      ],
+      "says": "my 16 year old daughter told me she wants to die",
+      "why": "A young person saying they want to die needs immediate support."
+    },
+    {
+      "id": "em-paracetamol-pack",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "caregiver",
+        "everyday-wording"
+      ],
+      "says": "my friend took a whole pack of paracetamol an hour ago",
+      "why": "A paracetamol overdose needs emergency treatment even when the person feels well; damage can be delayed."
+    },
+    {
+      "id": "em-toddler-drank-bleach",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my toddler drank some bleach from under the sink",
+      "why": "Swallowing bleach is poisoning: emergency."
+    },
+    {
+      "id": "em-black-tar-stool",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "my poo is black and sticky like tar and i feel faint",
+      "why": "Black, tar-like stools with faintness can be bleeding in the gut."
+    },
+    {
+      "id": "em-diabetic-confused",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver"
+      ],
+      "says": "my diabetic dad is sweaty, shaky and suddenly confused",
+      "why": "Sudden confusion in a person with diabetes can be very low blood sugar: emergency."
+    },
+    {
+      "id": "em-curtain-vision",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "i suddenly cant see out of my left eye, it went dark like a curtain",
+      "why": "Sudden loss of vision in one eye is an eye or stroke emergency."
+    },
+    {
+      "id": "em-sepsis-no-pee-confused",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-sepsis",
+      "tags": [
+        "caregiver",
+        "everyday-wording"
+      ],
+      "says": "my husband had the flu, now hes shivering like crazy, very confused and hasnt peed all day",
+      "why": "Uncontrollable shivering, new confusion and no urine all day after an infection are sepsis signs: call 999."
+    },
+    {
+      "id": "em-baby-floppy-blotchy",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "sepsis-trust",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my baby is very floppy, feels cold to touch and her skin looks blotchy",
+      "why": "A floppy baby with cold, mottled skin may have sepsis: call an ambulance."
+    },
+    {
+      "id": "em-boiling-water-burn",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my son pulled a kettle of boiling water over himself, burns on his chest and arm and the skin is peeling off",
+      "why": "A large scald on a child's chest and arm is a severe burn: emergency department."
+    },
+    {
+      "id": "em-car-crash-neck",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [],
+      "says": "was in a car crash 20 minutes ago and my neck really hurts",
+      "why": "A road accident with neck pain may be a spinal injury: emergency."
+    },
+    {
+      "id": "em-cousin-stabbed",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver"
+      ],
+      "says": "my cousin got stabbed in the stomach",
+      "why": "A stab wound is an emergency."
+    },
+    {
+      "id": "em-ladder-legs",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [],
+      "says": "fell off a ladder at work and i cant feel my legs",
+      "why": "A fall with loss of feeling in the legs may be a spinal injury: call an ambulance."
+    },
+    {
+      "id": "em-cauda-equina",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "cauda-equina-royal-free",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "bad lower back pain and now numbness around my bottom and i cant control when i pee",
+      "why": "Back pain with numbness around the bottom and loss of bladder control are signs of cauda equina syndrome: go to A&E immediately."
+    },
+    {
+      "id": "em-ectopic-shoulder",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ectopic",
+      "tags": [
+        "pregnancy",
+        "everyday-wording"
+      ],
+      "says": "im 7 weeks pregnant, sudden sharp pain low on one side of my belly and pain in the tip of my shoulder, i feel dizzy",
+      "why": "Sudden one-sided pain, shoulder tip pain and dizziness in early pregnancy can be a ruptured ectopic pregnancy: call an ambulance."
+    },
+    {
+      "id": "em-teen-testicle-vomit",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my 14 year old son woke up with sudden terrible pain in his testicle and hes being sick",
+      "why": "Sudden severe testicle pain with vomiting can be torsion, which needs surgery within hours."
+    },
+    {
+      "id": "em-baby-button-battery",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "caregiver",
+        "child"
+      ],
+      "says": "i think my baby swallowed a button battery",
+      "why": "A swallowed button battery can burn through the gullet within hours."
+    },
+    {
+      "id": "em-movements-less",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-pregnancy-help",
+      "tags": [
+        "pregnancy",
+        "everyday-wording"
+      ],
+      "says": "38 weeks and baby is moving much less than normal today",
+      "why": "Reduced movements late in pregnancy need to be checked straight away."
+    },
+    {
+      "id": "em-pregnant-fit",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "caregiver",
+        "pregnancy",
+        "everyday-wording"
+      ],
+      "says": "my pregnant sister is having a fit",
+      "why": "A seizure in pregnancy can be eclampsia: call an ambulance."
+    },
+    {
+      "id": "em-infant-grunting",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my 3 month old is breathing really fast and grunting, the skin under her ribs is sucking in",
+      "why": "Grunting and the chest pulling in under the ribs in a baby are red-flag breathing signs."
+    },
+    {
+      "id": "em-newborn-floppy-wont-feed",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my newborn is very floppy and sleepy and wont wake up for feeds",
+      "why": "A floppy baby who cannot be woken for feeds is a red-flag sign."
+    },
+    {
+      "id": "em-no-cough-cant-breathe",
+      "expected": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-999",
+      "tags": [
+        "negation",
+        "everyday-wording"
+      ],
+      "says": "no fever no cough but i cant catch my breath even sitting down",
+      "why": "Denied symptoms must not cancel breathlessness at rest."
+    },
+    {
+      "id": "ur-pre-eclampsia",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-pre-eclampsia",
+      "tags": [
+        "pregnancy",
+        "everyday-wording"
+      ],
+      "says": "34 weeks pregnant with a terrible headache that painkillers dont help, blurry vision and my face and hands suddenly swelled",
+      "why": "Severe headache, blurred vision and sudden swelling in late pregnancy are pre-eclampsia warning signs that need checking immediately."
+    },
+    {
+      "id": "ur-head-vomited",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-head-injury",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "hit my head on a cupboard an hour ago and ive been sick twice since",
+      "why": "Vomiting after a head injury needs assessment today."
+    },
+    {
+      "id": "ur-head-warfarin",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "borderline",
+      "source": "nhs-head-injury",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "im on warfarin and i bumped my head on the car door, small bump, i feel ok",
+      "why": "A head injury on a blood thinner needs assessment today even when the person feels well.",
+      "boundary": "Pair of ro-head-bump-playing: a minor bump, but on a blood thinner.",
+      "pairs": [
+        "ro-head-bump-playing"
+      ]
+    },
+    {
+      "id": "ur-infant-fever-10wk",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "borderline",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child"
+      ],
+      "says": "my 10 week old has a temperature of 38.1",
+      "why": "A temperature of 38°C or more in a baby under 3 months is high risk.",
+      "boundary": "Pair of so-infant-fever-4mo: same temperature, older than 3 months.",
+      "pairs": [
+        "so-infant-fever-4mo"
+      ]
+    },
+    {
+      "id": "ur-appendix-shift",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "pain started around my belly button and moved to the lower right, it hurts more when i cough and i feel sick",
+      "why": "Pain moving to the lower right of the abdomen, worse on coughing, is typical of appendicitis."
+    },
+    {
+      "id": "ur-kidney-infection",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "burning when i pee for 3 days and now pain in my back on the right side with a fever and shivering",
+      "why": "Urinary symptoms with back pain, fever and shivering suggest a kidney infection, which needs treatment today."
+    },
+    {
+      "id": "ur-toddler-dry-nappy",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my 2 year old has had diarrhoea all day, hasnt had a wet nappy since this morning and is very sleepy",
+      "why": "Reduced urine output and unusual sleepiness in a young child with diarrhoea are amber or red signs: assessment today."
+    },
+    {
+      "id": "ur-ankle-no-weight",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "twisted my ankle, its very swollen and i cant put any weight on it",
+      "why": "Not being able to put weight on an injured ankle may be a fracture: get it checked today.",
+      "boundary": "Pair of ro-ankle-walking: a twisted ankle that takes weight.",
+      "pairs": [
+        "ro-ankle-walking"
+      ]
+    },
+    {
+      "id": "ur-oven-cleaner-eye",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "got oven cleaner in my eye",
+      "why": "A chemical in the eye needs rinsing and assessment today."
+    },
+    {
+      "id": "ur-pregnant-spotting",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-pregnancy-help",
+      "tags": [
+        "pregnancy",
+        "everyday-wording"
+      ],
+      "says": "im pregnant about 8 weeks and ive started spotting with some cramps",
+      "why": "Bleeding with cramps in early pregnancy should be checked the same day."
+    },
+    {
+      "id": "ur-fever-40-2",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "my temperature hit 40.2 and paracetamol isnt bringing it down",
+      "why": "A very high fever that does not come down should be checked today.",
+      "boundary": "Pair of so-fever-39-4: below the 39.5 line.",
+      "pairs": [
+        "so-fever-39-4"
+      ]
+    },
+    {
+      "id": "ur-fever-39-6",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "temperature of 39.6 and my whole body aches",
+      "why": "39.5°C and above is the app's high-fever line (follow-up option 39.5-plus).",
+      "boundary": "Just above the 39.5 line; so-fever-39-4 is just below.",
+      "pairs": [
+        "so-fever-39-4"
+      ]
+    },
+    {
+      "id": "ur-dad-cant-pass-urine",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "caregiver",
+        "older-adult",
+        "everyday-wording"
+      ],
+      "says": "my 80 year old father hasnt been able to pass urine since last night and his belly is swollen",
+      "why": "Not being able to pass urine at all needs treatment today."
+    },
+    {
+      "id": "ur-testicle-swollen-day",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nhs-ae",
+      "tags": [],
+      "says": "my right testicle has been swollen and sore since yesterday",
+      "why": "A painful swollen testicle should be checked today.",
+      "boundary": "Pair of em-teen-testicle-vomit (sudden, severe) and so-testicle-ache-weeks (mild, weeks).",
+      "pairs": [
+        "em-teen-testicle-vomit",
+        "so-testicle-ache-weeks"
+      ]
+    },
+    {
+      "id": "ur-bloody-diarrhoea",
+      "expected": "urgent",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [],
+      "says": "bloody diarrhoea since yesterday with bad cramps",
+      "why": "Blood in diarrhoea should be checked today."
+    },
+    {
+      "id": "ur-finger-gaping",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "sliced my finger cooking, the cut is deep and gaping open",
+      "why": "A deep, gaping cut may need stitches today.",
+      "boundary": "Pair of ro-small-knife-cut: a small cut that stopped bleeding.",
+      "pairs": [
+        "ro-small-knife-cut"
+      ]
+    },
+    {
+      "id": "ur-vomit-no-fluids-answer",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "vomiting since last night",
+      "answers": {
+        "keep-fluids": "no"
+      },
+      "why": "Not keeping any fluids down risks dehydration.",
+      "boundary": "Pair of so-vomit-fluids-answer: the same words, keeping fluids down.",
+      "pairs": [
+        "so-vomit-fluids-answer"
+      ]
+    },
+    {
+      "id": "ur-fever-high-answer",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "fever and aches",
+      "answers": {
+        "fever-temperature": "39.5-plus"
+      },
+      "why": "A measured temperature of 39.5°C or more is the app's high-fever line.",
+      "boundary": "Pair of so-fever-mid-answer.",
+      "pairs": [
+        "so-fever-mid-answer"
+      ]
+    },
+    {
+      "id": "ur-asthma-inhaler-2h",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-asthma-attack",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "my asthma is getting worse and im using my blue inhaler every 2 hours",
+      "why": "A reliever needed more than every 4 hours means an asthma attack is starting: same-day appointment."
+    },
+    {
+      "id": "ur-older-chest-infection",
+      "expected": "urgent",
+      "maxAcceptable": "emergency",
+      "kind": "red-flag",
+      "source": "nhs-ae",
+      "tags": [
+        "caregiver",
+        "older-adult",
+        "everyday-wording"
+      ],
+      "says": "my 78 year old mum has a cough with green phlegm, a fever and is more breathless than usual",
+      "why": "A chest infection with fever and new breathlessness in an older person can be pneumonia: assessment today."
+    },
+    {
+      "id": "ur-stomach-severe-answer",
+      "expected": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "my stomach hurts",
+      "answers": {
+        "abdominal-severe": "yes"
+      },
+      "why": "Severe constant abdominal pain or a hard, swollen belly should be checked today.",
+      "boundary": "Pair of ro-stomach-mild-answer.",
+      "pairs": [
+        "ro-stomach-mild-answer"
+      ]
+    },
+    {
+      "id": "so-infant-fever-4mo",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child"
+      ],
+      "says": "my baby is 4 months old and her temperature is 38.2",
+      "why": "Over 3 months, a temperature under 39°C without other warning signs is not a red flag, but a baby with a fever should see a doctor.",
+      "boundary": "Pair of ur-infant-fever-10wk: older than 3 months.",
+      "pairs": [
+        "ur-infant-fever-10wk"
+      ]
+    },
+    {
+      "id": "so-fever-39-4",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "temperature is 39.4 and i have a headache and aches",
+      "why": "Just under the app's 39.5°C high-fever line, with no other warning signs.",
+      "boundary": "Pair of ur-fever-39-6.",
+      "pairs": [
+        "ur-fever-39-6"
+      ]
+    },
+    {
+      "id": "so-fever-mid-answer",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "fever and aches",
+      "answers": {
+        "fever-temperature": "38-39"
+      },
+      "why": "A measured temperature of 38-39°C without warning signs: see a doctor if it lasts.",
+      "boundary": "Pair of ur-fever-high-answer.",
+      "pairs": [
+        "ur-fever-high-answer"
+      ]
+    },
+    {
+      "id": "so-breathless-exertion-answer",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "i feel short of breath",
+      "answers": {
+        "breath-at-rest": "no"
+      },
+      "why": "Breathlessness only on exertion, not at rest, should be seen by a doctor soon.",
+      "boundary": "Pair of em-breathless-at-rest-answer.",
+      "pairs": [
+        "em-breathless-at-rest-answer"
+      ]
+    },
+    {
+      "id": "so-vomit-fluids-answer",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "vomiting since last night",
+      "answers": {
+        "keep-fluids": "yes"
+      },
+      "why": "Vomiting while still keeping fluids down: see a doctor if it continues.",
+      "boundary": "Pair of ur-vomit-no-fluids-answer.",
+      "pairs": [
+        "ur-vomit-no-fluids-answer"
+      ]
+    },
+    {
+      "id": "so-uti-negations",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "negation",
+        "everyday-wording"
+      ],
+      "says": "it stings when i pee and i keep needing to go, no fever and no back pain",
+      "why": "A simple urine infection without fever or back pain: see a doctor in a day or two.",
+      "boundary": "Pair of ur-kidney-infection: no fever or back pain.",
+      "pairs": [
+        "ur-kidney-infection"
+      ]
+    },
+    {
+      "id": "so-child-ear",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my 5 year old says his ear hurts and he had a temperature of 38 last night",
+      "why": "Ear pain with a mild fever in a child who is otherwise well: GP in a day or two."
+    },
+    {
+      "id": "so-cough-3-weeks",
+      "expected": "soon",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "ive had a cough for 3 weeks now",
+      "why": "A cough lasting 3 weeks or more should be checked by a GP.",
+      "boundary": "Pair of ro-cough-few-days.",
+      "pairs": [
+        "ro-cough-few-days"
+      ]
+    },
+    {
+      "id": "so-tonsils-white",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "really sore throat with white spots on my tonsils and a fever of 38.4, i can still swallow",
+      "why": "Tonsillitis with a fever, still able to swallow: see a doctor soon."
+    },
+    {
+      "id": "so-stitches-pus",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "the stitches on my knee are red, warm and leaking a bit of pus",
+      "why": "An infected wound should be seen by a doctor in a day or two."
+    },
+    {
+      "id": "so-back-pain-weeks",
+      "expected": "soon",
+      "kind": "borderline",
+      "source": "cauda-equina-royal-free",
+      "tags": [
+        "negation"
+      ],
+      "says": "lower back pain for weeks, no numbness and i can pee normally",
+      "why": "Back pain lasting weeks without nerve or bladder symptoms: see a GP.",
+      "boundary": "Pair of em-cauda-equina: the warning signs are denied.",
+      "pairs": [
+        "em-cauda-equina"
+      ]
+    },
+    {
+      "id": "so-diarrhoea-week",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "negation"
+      ],
+      "says": "diarrhoea for a week now, no blood",
+      "why": "Diarrhoea lasting a week should be checked by a doctor."
+    },
+    {
+      "id": "so-toe-pus",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "my big toe is swollen and red around the nail and theres pus",
+      "why": "An infected toe should be seen by a doctor in a day or two."
+    },
+    {
+      "id": "so-shingles-like-rash",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "painful blistery rash on one side of my back",
+      "why": "A painful one-sided blistering rash may be shingles, best treated within days."
+    },
+    {
+      "id": "so-testicle-ache-weeks",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nhs-ae",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "a dull ache in my left testicle on and off for a few weeks",
+      "why": "A mild, long-standing testicle ache should be checked by a GP; it is not sudden or severe.",
+      "boundary": "Pair of ur-testicle-swollen-day and em-teen-testicle-vomit.",
+      "pairs": [
+        "ur-testicle-swollen-day",
+        "em-teen-testicle-vomit"
+      ]
+    },
+    {
+      "id": "so-blood-pee-older",
+      "expected": "soon",
+      "maxAcceptable": "urgent",
+      "kind": "borderline",
+      "source": "nabad-levels",
+      "tags": [
+        "caregiver",
+        "older-adult"
+      ],
+      "says": "my dad is 65 and noticed blood in his pee, no pain",
+      "why": "Painless blood in the urine needs a GP appointment soon."
+    },
+    {
+      "id": "ro-cold-playing",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nice-ng143",
+      "tags": [
+        "caregiver",
+        "child"
+      ],
+      "says": "my 4 year old has a runny nose and a little cough but is playing normally",
+      "why": "A mild cold in a child who is playing normally can be managed at home."
+    },
+    {
+      "id": "ro-headache-gradual-answer",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "i have a headache",
+      "answers": {
+        "headache-sudden": "no"
+      },
+      "why": "A headache that did not start suddenly and is not the worst ever, with no other signs, can be managed at home.",
+      "boundary": "Pair of em-thunderclap-back-head.",
+      "pairs": [
+        "em-thunderclap-back-head"
+      ]
+    },
+    {
+      "id": "ro-gym-legs",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "my legs are sore after the gym yesterday",
+      "why": "Muscle soreness after exercise is expected."
+    },
+    {
+      "id": "ro-sticky-eye",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "my eye is red and sticky with some yellow gunk this morning",
+      "why": "Conjunctivitis usually clears by itself; a pharmacist can advise."
+    },
+    {
+      "id": "ro-mouth-ulcer",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "small mouth ulcer on my lip for 2 days",
+      "why": "A small mouth ulcer usually heals on its own."
+    },
+    {
+      "id": "ro-mosquito-bites",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "itchy mosquito bites on my legs",
+      "why": "Itchy insect bites can be managed at home."
+    },
+    {
+      "id": "ro-negated-list",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "negation"
+      ],
+      "says": "no fever, no rash, no vomiting, just feeling a bit tired",
+      "why": "Denied symptoms must not count; mild tiredness alone is routine."
+    },
+    {
+      "id": "ro-past-meningitis-neck",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "history"
+      ],
+      "says": "i had meningitis as a kid, now i just have a stiff neck from sleeping wrong",
+      "why": "Past meningitis is history; a stiff neck from sleeping badly without fever is routine."
+    },
+    {
+      "id": "ro-grandma-stroke-history",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "history",
+        "caregiver"
+      ],
+      "says": "my grandma had a stroke last year, i just have a mild headache",
+      "why": "A relative's past stroke is not happening now."
+    },
+    {
+      "id": "ro-dry-hands",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "dry itchy skin on my hands from washing them a lot",
+      "why": "Dry skin from handwashing can be managed at home."
+    },
+    {
+      "id": "ro-constipation",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "havent pooed for 2 days, a bit bloated, otherwise fine",
+      "why": "Short-lived constipation without warning signs can be managed at home."
+    },
+    {
+      "id": "ro-period-cramps",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "normal period cramps, same as every month",
+      "why": "Usual period pain can be managed at home."
+    },
+    {
+      "id": "ro-oven-tray-burn",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "negation"
+      ],
+      "says": "touched the hot oven tray, small red mark on my finger, no blisters",
+      "why": "A small superficial burn without blisters can be managed at home.",
+      "boundary": "Pair of em-boiling-water-burn.",
+      "pairs": [
+        "em-boiling-water-burn"
+      ]
+    },
+    {
+      "id": "ro-teething",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "caregiver",
+        "child",
+        "negation"
+      ],
+      "says": "my baby is teething and drooling a lot, no temperature",
+      "why": "Teething without a temperature is routine."
+    },
+    {
+      "id": "ro-dad-mild-cold",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "caregiver"
+      ],
+      "says": "my dad has a cold and a bit of a cough, hes eating and walking around fine",
+      "why": "A mild cold in an adult who is eating and active is routine."
+    },
+    {
+      "id": "ro-mild-sunburn",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "mild sunburn on my shoulders from the beach",
+      "why": "Mild sunburn can be managed at home."
+    },
+    {
+      "id": "ro-no-chest-blocked-nose",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "negation"
+      ],
+      "says": "no chest pain, no breathing problems, just a blocked nose",
+      "why": "Denied red flags must not count."
+    },
+    {
+      "id": "ro-cough-few-days",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "dry cough for a few days, otherwise fine",
+      "why": "A short-lived cough without warning signs is routine.",
+      "boundary": "Pair of so-cough-3-weeks.",
+      "pairs": [
+        "so-cough-3-weeks"
+      ]
+    },
+    {
+      "id": "ro-head-bump-playing",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nhs-head-injury",
+      "tags": [
+        "caregiver",
+        "child",
+        "everyday-wording"
+      ],
+      "says": "my 3 year old bumped her head on the table, she cried straight away and now shes playing normally",
+      "why": "A minor head bump in a child who cried at once and is acting normally can be watched at home.",
+      "boundary": "Pair of ur-head-warfarin and em-head-not-waking.",
+      "pairs": [
+        "ur-head-warfarin",
+        "em-head-not-waking"
+      ],
+      "knownOverTriage": "The rules treat every knock to the head as urgent (everydayWording.js 'hit my head'), because they cannot tell a minor bump from a concussion without asking. Kept on purpose until a clinician decides whether a follow-up question should be added; it is over-triage, never under-triage."
+    },
+    {
+      "id": "ro-small-knife-cut",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [],
+      "says": "small cut on my thumb from a knife, it stopped bleeding with pressure",
+      "why": "A small cut that stops bleeding with pressure can be managed at home.",
+      "boundary": "Pair of ur-finger-gaping.",
+      "pairs": [
+        "ur-finger-gaping"
+      ]
+    },
+    {
+      "id": "ro-ankle-walking",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "rolled my ankle a bit, its a little sore but i can walk on it fine",
+      "why": "A mild sprain that takes weight can be managed at home.",
+      "boundary": "Pair of ur-ankle-no-weight.",
+      "pairs": [
+        "ur-ankle-no-weight"
+      ]
+    },
+    {
+      "id": "ro-stomach-mild-answer",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "follow-up"
+      ],
+      "says": "my stomach hurts",
+      "answers": {
+        "abdominal-severe": "no",
+        "risk-group": "no",
+        "severity": "mild",
+        "duration": "under-1-day",
+        "trend": "better"
+      },
+      "why": "Mild stomach ache without severe constant pain or a hard belly, short and improving, can be managed at home.",
+      "boundary": "Pair of ur-stomach-severe-answer.",
+      "pairs": [
+        "ur-stomach-severe-answer"
+      ]
+    },
+    {
+      "id": "ro-medication-confused",
+      "expected": "routine",
+      "kind": "must-not-escalate",
+      "source": "nabad-levels",
+      "tags": [
+        "everyday-wording"
+      ],
+      "says": "im a bit confused about when to take my vitamins",
+      "why": "Being unsure about a schedule is not a symptom of confusion."
+    },
+    {
+      "id": "ro-pregnant-back-ache",
+      "expected": "routine",
+      "maxAcceptable": "soon",
+      "kind": "must-not-escalate",
+      "source": "nhs-pregnancy-help",
+      "tags": [
+        "pregnancy"
+      ],
+      "says": "im 20 weeks pregnant with a bit of back ache after standing all day",
+      "why": "Mild back ache after standing is common in pregnancy; no warning signs."
+    }
+  ]
+}

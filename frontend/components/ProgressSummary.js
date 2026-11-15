@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Card from "./ui/Card";
 import Button from "./ui/Button";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { getHealthProfile } from "../lib/healthProfileApi";
 import { basicsFilled } from "../lib/healthProfile";
-import { getToday } from "../lib/wellbeingApi";
 import { formatDate, todayString } from "../lib/dates";
-import { getMedicationAdherence, setMedicationTaken } from "../lib/medicationApi";
-import { getAppointments } from "../lib/appointmentApi";
+import { setMedicationTaken } from "../lib/medicationApi";
+import useDashboardData from "./useDashboardData";
+import { SkeletonRegion, ProgressSkeleton } from "./ui/Skeleton";
 import { hoursText, litresText, sleptText } from "../lib/wellbeing";
 
 function ProgressRing({ label, value, progress, status, detail, href, linkLabel, complete = false, onAction, actionLabel, actionDisabled = false }) {
@@ -45,43 +44,23 @@ function ProgressRing({ label, value, progress, status, detail, href, linkLabel,
   );
 }
 
-export default function ProgressSummary() {
+// data: the dashboard's shared data (useDashboardData). Without it, the summary loads its own.
+export default function ProgressSummary({ data }) {
   const { activeProfile } = useActiveProfile();
-  const profileId = activeProfile?.id;
+  const own = useDashboardData(data ? null : activeProfile?.id);
+  const { profileId, profileRef, health, wellbeing, medications, setMedications, appointments, healthFailed, wellbeingFailed, medicationsFailed, appointmentsFailed, loaded } = data || own;
   const who = activeProfile && !activeProfile.isSelf ? activeProfile.fullName : null;
-  const [health, setHealth] = useState(null);
-  const [wellbeing, setWellbeing] = useState(null);
-  const [medications, setMedications] = useState(null);
-  const [appointments, setAppointments] = useState(null);
-  const [healthFailed, setHealthFailed] = useState(false);
-  const [wellbeingFailed, setWellbeingFailed] = useState(false);
-  const [medicationsFailed, setMedicationsFailed] = useState(false);
-  const [appointmentsFailed, setAppointmentsFailed] = useState(false);
   const [savingMedication, setSavingMedication] = useState(null);
   const [medicationError, setMedicationError] = useState("");
-  const profileRef = useRef(profileId);
   const pendingMedication = useRef(null);
-  profileRef.current = profileId;
-
-  useEffect(() => {
-    if (!profileId) return;
-    const requested = profileId;
-    setHealth(null); setWellbeing(null); setMedications(null); setAppointments(null);
-    pendingMedication.current = null; setSavingMedication(null); setMedicationError("");
-    setHealthFailed(false); setWellbeingFailed(false); setMedicationsFailed(false); setAppointmentsFailed(false);
-    getHealthProfile(requested)
-      .then((data) => { if (profileRef.current === requested) setHealth(data); })
-      .catch(() => { if (profileRef.current === requested) setHealthFailed(true); });
-    getToday(requested, todayString())
-      .then((data) => { if (profileRef.current === requested) setWellbeing(data); })
-      .catch(() => { if (profileRef.current === requested) setWellbeingFailed(true); });
-    getMedicationAdherence(requested, todayString())
-      .then((data) => { if (profileRef.current === requested) setMedications(data); })
-      .catch(() => { if (profileRef.current === requested) setMedicationsFailed(true); });
-    getAppointments(requested)
-      .then((data) => { if (profileRef.current === requested) setAppointments(data); })
-      .catch(() => { if (profileRef.current === requested) setAppointmentsFailed(true); });
-  }, [profileId]);
+  // A profile switch drops a pending check-in and its message.
+  const shownProfile = useRef(profileId);
+  if (shownProfile.current !== profileId) {
+    shownProfile.current = profileId;
+    pendingMedication.current = null;
+    if (savingMedication !== null) setSavingMedication(null);
+    if (medicationError) setMedicationError("");
+  }
 
   async function toggleMedication(medication) {
     if (pendingMedication.current || !medication) return;
@@ -124,6 +103,9 @@ export default function ProgressSummary() {
       : goal.type === "atMost"
         ? `${litresText(water.totalMl)} of your ${litresText(goal.ml)} daily limit.`
         : `${litresText(water.totalMl)} of your ${litresText(goal.ml)} daily goal.`;
+
+  // Until every source has answered: the same card as grey shapes, so the rings don't jump in one by one.
+  if (!loaded) return <SkeletonRegion label="Loading your progress..."><ProgressSkeleton /></SkeletonRegion>;
 
   return (
     <Card aria-labelledby="progress-summary-heading" className="section progress-summary">

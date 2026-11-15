@@ -135,7 +135,7 @@ test("formats hours, quality, dates and times", () => {
   expect(sleptText(1)).toBe("Slept very poorly");
   expect(sleptText(5)).toBe("Slept very well");
   expect(shortDay("2026-10-12")).toBe("Mon");
-  expect(shortDate("2026-10-12")).toBe("Mon 12 Oct");
-  expect(timeText(new Date(2026, 9, 12, 8, 5).toISOString())).toBe("08:05");
-  expect(timeText(new Date(2026, 9, 12, 23, 40).toISOString())).toBe("23:40");
+  expect(shortDate("2026-10-12")).toBe("Mon 12 October 2026");
+  expect(timeText("2026-10-12T05:05:00Z")).toBe("08:05");
+  expect(timeText("2026-10-12T20:40:00Z")).toBe("23:40");
 });

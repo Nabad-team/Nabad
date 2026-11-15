@@ -1,4 +1,4 @@
-// Published hospital listings; verifiedAt is a source-review date, not live availability.
+// Published facility listings; verifiedAt is a source-review date, not live availability.
 // Unknown locations/capabilities remain null/empty. See docs/provider-data-import.md.
 module.exports = [
   {
@@ -6338,5 +6338,47 @@ module.exports = [
       "https://victoire.com.lb/hospital/"
     ],
     "insuranceVerifiedAt": "2026-10-31T10:00:00Z"
+  },
+  {
+    "slug": "hajj-medical-laboratories",
+    "name": "Hajj Medical Laboratories",
+    "type": "laboratory",
+    "city": "Beirut",
+    "district": "Beirut",
+    "governorate": "Beirut",
+    "address": "Sourate Street, Lions Building, 2nd floor, Ras Beirut",
+    "phone": "+9611347107",
+    "specialties": [],
+    "services": ["laboratory"],
+    "sources": ["https://www.moph.gov.lb/en/HealthFacilities/view/0/42273/71390/hajj-medical-laboratories"],
+    "verifiedAt": "2026-11-13"
+  },
+  {
+    "slug": "wakim-laboratory-antelias",
+    "name": "Wakim Laboratory – Antelias",
+    "type": "laboratory",
+    "city": "Antelias",
+    "district": "Metn",
+    "governorate": "Mount Lebanon",
+    "address": "Aramta Center, Armenian Patriarchate Street",
+    "phone": "+9614522448",
+    "specialties": [],
+    "services": ["laboratory"],
+    "sources": ["https://www.moph.gov.lb/en/HealthFacilities/view/0/42273/71599/wakim-laboratory", "https://centremedicalwakim.com/"],
+    "verifiedAt": "2026-11-13"
+  },
+  {
+    "slug": "wakim-medical-center-jounieh",
+    "name": "Wakim Medical Center – Jounieh",
+    "type": "imaging-center",
+    "city": "Jounieh",
+    "district": "Keserwan",
+    "governorate": "Keserwan-Jbeil",
+    "address": "Zone Verte, Haret Sakhr",
+    "phone": "+9619916806",
+    "specialties": ["radiology"],
+    "services": ["laboratory", "ct", "mri", "mammography"],
+    "sources": ["https://www.moph.gov.lb/ar/HealthFacilities/view/0/42273/71478/laboratory-wakim", "https://centremedicalwakim.com/"],
+    "verifiedAt": "2026-11-13"
   }
 ];

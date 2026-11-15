@@ -254,3 +254,6 @@ router.delete("/:id", writeLimiter, asyncRoute(async (req, res) => {
 }));
 
 module.exports = router;
+// SCRUM-146: the prescription photo route saves medicines with exactly the same checks as this form.
+module.exports.readMedication = readMedication;
+module.exports.MAX_MEDICATIONS = MAX_MEDICATIONS;

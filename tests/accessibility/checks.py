@@ -14,10 +14,11 @@ TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
 def audit(testcase, driver, state):
     if not AXE_SCRIPT.is_file():
         raise RuntimeError('Install the pinned audit engine: npm ci --prefix tests/accessibility --ignore-scripts')
-    # Audit the loaded UI, not a mixture of loading/disabled and enabled states.
+    # Audit the loaded UI, not a mixture of loading/disabled and enabled states (no heartbeat loader and no
+    # loading placeholder region, which is aria-busy, still on screen).
     # A loader React removes between finding it and checking it raises StaleElementReferenceException; the wait
     # then polls again, so it still only continues once no loader is displayed.
-    WebDriverWait(driver, 20, ignored_exceptions=[StaleElementReferenceException]).until(lambda browser: not any(element.is_displayed() for element in browser.find_elements(By.CSS_SELECTOR, '.loader')))
+    WebDriverWait(driver, 20, ignored_exceptions=[StaleElementReferenceException]).until(lambda browser: not any(element.is_displayed() for element in browser.find_elements(By.CSS_SELECTOR, '.loader, [aria-busy="true"]')))
     driver.execute_async_script("""
       const done=arguments[0]; document.fonts.ready.then(()=>Promise.all(
         document.getAnimations().filter(a=>a.effect && a.effect.getComputedTiming().endTime !== Infinity)

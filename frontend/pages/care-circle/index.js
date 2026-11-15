@@ -4,6 +4,7 @@ import PageLayout from "../../components/ui/PageLayout";
 import PageTitle from "../../components/ui/PageTitle";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import { TwoHearts } from "../../components/illustrations";
 import Alert from "../../components/ui/Alert";
 import EmptyState from "../../components/ui/EmptyState";
 import Dialog from "../../components/Dialog";
@@ -130,7 +131,7 @@ export default function CareCirclePage() {
           <section className="section" aria-labelledby="members-heading">
             <h2 id="members-heading">People in your care circle</h2>
             {data.members.length === 0 ? (
-              <EmptyState title="No one is in your care circle yet.">Invite someone you trust, like a family member or a close friend.</EmptyState>
+              <EmptyState illustration={<TwoHearts size="4rem" />} title="No one is in your care circle yet: invite someone you trust, like a family member or a close friend." />
             ) : (
               <ul className="plain-list">
                 {data.members.map((member) => (
@@ -161,7 +162,7 @@ export default function CareCirclePage() {
             <h2 id="circles-heading">Circles I'm in</h2>
             <p>You get an alert in Nabad and by email when one of these people's symptom checks needs attention. You never see their symptoms.</p>
             {data.circles.length === 0 ? (
-              <EmptyState title="You're not in anyone's care circle.">When someone invites you, open the link in their email to join.</EmptyState>
+              <EmptyState illustration={<TwoHearts size="4rem" />} title="You're not in anyone's care circle. When someone invites you, open the link in their email to join." />
             ) : (
               <ul className="plain-list">
                 {data.circles.map((circle) => (

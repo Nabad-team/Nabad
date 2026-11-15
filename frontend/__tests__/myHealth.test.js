@@ -262,7 +262,7 @@ describe("My health page", () => {
     const text = (await summary()).textContent.split("\n");
     expect(text.at(-1)).toBe("Water and sleep log: fluids today 1.3 L (daily goal set: stay under 1.5 L); average sleep over the last 7 days 6.8 hours (5 nights logged)");
     const section = await region("What Nabad's guidance takes into account");
-    expect(within(section).getByText(/appears only when something was logged in the last 7 days/)).toBeInTheDocument();
+    expect(within(section).getByText(/If water or sleep was logged in the past week, the last line also shows/)).toBeInTheDocument();
     expect(within(section).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("href", "/water-and-sleep");
     expect(fake.calls).toContainEqual(["getHealthProfile", "self", todayString()]);
   });

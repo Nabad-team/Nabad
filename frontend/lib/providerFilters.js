@@ -11,9 +11,11 @@ export function readProviderFilters(query = {}) {
     filters[key] = typeof query[key] === "string" && query[key].length <= 100 ? query[key].trim().toLowerCase() : "";
   }
   for (const key of ["openNow", "emergency24h", "favorites"]) filters[key] = query[key] === "true" || query[key] === true;
+  filters.type = ["hospital", "clinic", "laboratory", "imaging-center"].includes(query.type) ? query.type : "";
   filters.emergencyNeeds = query.emergencyNeeds === undefined || query.emergencyNeeds === "" ? ""
     : validNeeds(query.emergencyNeeds) ? [...new Set(query.emergencyNeeds.split(","))].sort().join(",") : "invalid";
   if (filters.emergencyNeeds) filters.emergency24h = true;
+  if (filters.emergency24h) filters.type = "";
   filters.radiusKm = "";
   filters.page = /^\d+$/.test(String(query.page)) && Number(query.page) > 0 && Number(query.page) <= 100000 ? Number(query.page) : 1;
   return filters;

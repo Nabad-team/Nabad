@@ -42,6 +42,8 @@ import {
 import {
   useAccessibility,
 } from "../context/AccessibilityContext";
+import { formatDateTime } from "../lib/dates";
+import NabadAssistant, { AssistantLoader } from "../components/NabadAssistant";
 
 
 // Same limits as the API.
@@ -130,8 +132,14 @@ export default function SymptomsPage() {
   const emergencyAlertedRef = useRef(false);
   const assessmentRequestRef = useRef(0);
 
-  function presentAssessment(result) {
+  // updated: true when follow-up answers changed an earlier result (the announcement says so).
+  function presentAssessment(result, { updated = false } = {}) {
     setUrgency(result);
+    // Emergencies open the emergency dialog, which takes focus and announces itself (role="alertdialog").
+    if (result.level !== "emergency") {
+      setAnnouncement(`${updated ? "Urgency updated" : "Result ready"}. Urgency: ${result.label}. ${result.action || ""}`.trim());
+      setResultFocus((value) => value + 1);
+    }
     if (result.level === "emergency") {
       setFollowUps([]);
       setFollowUpState(null);
@@ -143,6 +151,22 @@ export default function SymptomsPage() {
       }
     }
   }
+
+  // While a check is running: the button says "Checking...", can't be pressed again, and the heartbeat loader shows.
+  const [checking, setChecking] = useState(false);
+  const checkingRef = useRef(false);
+  // A short sentence for screen readers when a result arrives (a live region that is always on the page,
+  // so the announcement is reliable), and a counter that moves focus to the result.
+  const [announcement, setAnnouncement] = useState("");
+  const [resultFocus, setResultFocus] = useState(0);
+  useEffect(() => {
+    if (!resultFocus) return;
+    const result = document.getElementById("symptom-result");
+    if (!result) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    result.focus({ preventScroll: true });
+    result.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }, [resultFocus]);
 
   const [savedRecord, setSavedRecord] = useState(null);
   const [history, setHistory] = useState([]);
@@ -378,6 +402,8 @@ export default function SymptomsPage() {
     event
   ) {
     event.preventDefault();
+    // One check at a time: a second press while one is running does nothing.
+    if (checkingRef.current) return;
     const request = ++assessmentRequestRef.current;
     setRefining(false);
 
@@ -390,6 +416,7 @@ export default function SymptomsPage() {
     setEmergencyContact(null);
     setFollowUps([]);
     setFollowUpState(null);
+    setAnnouncement("");
     answersSoFarRef.current = {};
 
 
@@ -427,6 +454,8 @@ export default function SymptomsPage() {
     }
 
 
+    checkingRef.current = true;
+    setChecking(true);
     try {
       // First ask Aref's triage engine
       // to assess the symptoms.
@@ -501,6 +530,9 @@ export default function SymptomsPage() {
           ? err.message
           : "We could not check and save your symptoms right now. If you feel very unwell, call 140."
       );
+    } finally {
+      checkingRef.current = false;
+      setChecking(false);
     }
   }
 
@@ -534,7 +566,7 @@ export default function SymptomsPage() {
       answersSoFarRef.current =
         allAnswers;
 
-      presentAssessment(updatedResult);
+      presentAssessment(updatedResult, { updated: true });
 
       if (savedRecord?.id) {
         const updated = await updateSymptomRecord(
@@ -571,6 +603,9 @@ export default function SymptomsPage() {
   }
 
 
+  // The Nabad assistant only appears on calm screens: never next to an urgent or emergency result or the emergency dialog.
+  const calmScreen = !emergencyAlert && !["urgent", "emergency"].includes(urgency?.level);
+
   const emergencyContactPhone =
     emergencyContact?.phone
       ? String(
@@ -585,7 +620,7 @@ export default function SymptomsPage() {
   if (!activeProfile) {
     return (
       <PageLayout
-        title="Enter symptoms"
+        title="Symptom check"
         header={
           <ProfileHeader
             showPicture={false}
@@ -593,13 +628,13 @@ export default function SymptomsPage() {
         }
       >
         <PageTitle>
-          Symptom entry
+          Symptom check
         </PageTitle>
 
         <EmptyState
           illustration={
             <PersonWithPhone
-              size="5rem"
+              size="4rem"
             />
           }
           title="No active profile selected."
@@ -611,17 +646,15 @@ export default function SymptomsPage() {
 
   return (
     <PageLayout
-      title="Enter symptoms"
+      title="Symptom check"
       header={
         <ProfileHeader
           showPicture={false}
         />
       }
     >
-      <PageTitle>
-        {simplified
-          ? "Tell us how you feel"
-          : "Enter symptoms"}
+      <PageTitle lead={simplified ? "Tell us how you feel." : "Tell us how you feel, and we'll help you understand how urgent it is."}>
+        Symptom check
       </PageTitle>
 
       <p>
@@ -639,6 +672,7 @@ export default function SymptomsPage() {
       <form
         onSubmit={handleSubmit}
         className="form symptoms-form"
+        aria-busy={checking || undefined}
       >
         <div className="field">
           <Input
@@ -716,13 +750,19 @@ export default function SymptomsPage() {
 
 
         <div className="form-actions">
-          <Button type="submit">
-            {simplified
-              ? "Check"
-              : "Submit symptoms"}
+          <Button type="submit" disabled={checking}>
+            {checking
+              ? "Checking..."
+              : simplified
+                ? "Check"
+                : "Submit symptoms"}
           </Button>
         </div>
       </form>
+
+      {checking && <AssistantLoader label="Checking your symptoms" />}
+
+      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
 
 
       {message && (
@@ -809,12 +849,14 @@ export default function SymptomsPage() {
 
       <section className="symptom-history section" aria-labelledby="symptom-history-heading">
         <h2 id="symptom-history-heading">Previous symptom checks</h2>
-        {history.length === 0 ? <p className="text-muted">Your saved conversations will appear here.</p> : (
+        {/* SCRUM-156 */}
+        <p><a href="/my-history">Ask a question about your history</a>, for example when you last had a symptom.</p>
+        {history.length === 0 ? <EmptyState illustration={calmScreen ? <NabadAssistant size="4.5rem" title="Nabad assistant" /> : null} title="No symptom checks yet: your saved conversations will appear here." /> : (
           <ul className="symptom-history__list">
             {history.slice(0, 10).map((record) => (
               <li key={record.id}>
                 <details>
-                  <summary>{record.createdAt ? new Date(record.createdAt).toLocaleString("en-GB") : "Previous check"} · {record.urgencyResult?.label || "Urgency check"}</summary>
+                  <summary>{record.createdAt ? formatDateTime(record.createdAt) : "Previous check"} · {record.urgencyResult?.label || "Urgency check"}</summary>
                   <ol aria-label="Saved conversation">
                     {(record.conversation || [
                       { role: "patient", content: record.description },

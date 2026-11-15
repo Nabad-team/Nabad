@@ -89,6 +89,13 @@ const RULES = [
     any: ["sudden testicle pain", "sudden testicular pain", "sudden pain in my testicle", "sudden severe pain in my testicle", "twisted testicle", "testicle is twisted"] },
   { id: "swallowed-object", level: "emergency", reason: "A swallowed button battery or magnets can cause serious damage inside the body within hours.",
     any: ["swallowed a battery", "swallowed a button battery", "swallowed batteries", "swallowed a magnet", "swallowed magnets"] },
+  // SCRUM-309: red flags found missing by the clinical safety test set (tests/triage-safety).
+  { id: "non-blanching-rash", level: "emergency", reason: "A rash that does not fade when you press a glass on it can be a sign of meningitis or sepsis.",
+    any: ["non blanching rash", "doesn't fade under a glass", "does not fade under a glass"] },
+  { id: "cauda-equina", level: "emergency", reason: "Numbness around the bottom or genitals, or losing control of the bladder or bowels with back pain, can mean the nerves at the base of the spine are pressed (cauda equina syndrome). Go to the emergency department now.",
+    any: ["saddle numbness", "saddle anaesthesia", "saddle anesthesia"] },
+  { id: "ectopic-pregnancy", level: "emergency", reason: "Shoulder tip pain during pregnancy can be a sign of internal bleeding from an ectopic pregnancy.",
+    all: ["pregnant", "shoulder tip pain"] },
   { id: "baby-not-moving", level: "emergency", reason: "A baby who has stopped moving or is moving much less than usual, during pregnancy or after birth, needs to be checked straight away.",
     any: ["baby stopped moving", "baby has stopped moving", "baby isn't moving", "baby is not moving", "baby is moving less", "baby moving less", "reduced fetal movements", "reduced foetal movements"] },
 
@@ -118,6 +125,17 @@ const RULES = [
     any: ["severe eye pain", "severe pain in my eye", "eye injury", "injured my eye", "chemical in my eye", "chemicals in my eye"] },
   { id: "testicle-pain", level: "urgent", reason: "Pain or swelling in a testicle should be checked today.",
     any: ["testicle pain", "testicular pain", "pain in my testicle", "pain in my testicles", "swollen testicle", "swollen testicles"] },
+  // SCRUM-309: urgent warning signs found missing by the clinical safety test set (tests/triage-safety).
+  { id: "pregnancy-pain", level: "urgent", reason: "Sharp or one-sided pain in early pregnancy should be checked today, to rule out an ectopic pregnancy.",
+    all: ["pregnant", "pain on one side"] },
+  { id: "pre-eclampsia", level: "urgent", reason: "A severe headache, blurred vision, sudden swelling or pain below the ribs in pregnancy can be signs of pre-eclampsia and need checking today.",
+    all: ["pregnant", "preeclampsia warning sign"] },
+  { id: "kidney-infection", level: "urgent", reason: "A fever with pain in the side or back can be a kidney infection, which needs treatment today.",
+    all: ["fever", "flank pain"] },
+  { id: "asthma-worsening", level: "urgent", reason: "Asthma that is getting worse, or a reliever inhaler that isn't helping or is needed every few hours, needs a same-day check.",
+    any: ["asthma attack", "asthma is getting worse", "inhaler isn't helping", "inhaler is not helping", "inhaler not helping"] },
+  { id: "breathless-with-fever", level: "urgent", reason: "Feeling breathless with a fever can be a chest infection such as pneumonia and should be checked today.",
+    all: ["fever", "breathless"] },
 
   // ---- Soon ----
   { id: "fever", level: "soon", reason: "A fever should be checked by a doctor if it lasts or gets worse.",

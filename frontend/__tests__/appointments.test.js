@@ -53,36 +53,41 @@ describe("appointment reminder permissions", () => {
     expect(container.querySelector(".calendar-details")).toHaveAttribute("aria-live", "polite");
   });
 
-  test("asks only after the user selects Enable reminders and handles a grant", async () => {
+  test("asks only after the user chooses browser pop-ups and handles a grant", async () => {
     const requestPermission = setPermission("default", jest.fn().mockResolvedValue("granted"));
     render(<AppointmentsPage />);
-    expect(await screen.findByRole("button", { name: "Enable reminders" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Enable reminders" }));
+    fireEvent.click(await screen.findByRole("button", { name: "More" }));
+    expect(screen.getByRole("button", { name: "Get pop-up reminders on this device" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Get pop-up reminders on this device" }));
     expect(requestPermission).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText("Browser reminders are enabled while this page is open.")).toBeInTheDocument();
+    expect(await screen.findByText(/Browser pop-ups are on/)).toBeInTheDocument();
   });
 
   test("explains when permission is denied", async () => {
     const requestPermission = setPermission("default", jest.fn().mockResolvedValue("denied"));
     render(<AppointmentsPage />);
-    fireEvent.click(await screen.findByRole("button", { name: "Enable reminders" }));
+    fireEvent.click(await screen.findByRole("button", { name: "More" }));
+    fireEvent.click(screen.getByRole("button", { name: "Get pop-up reminders on this device" }));
     expect(requestPermission).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText(/Notifications are blocked in your browser settings/)).toBeInTheDocument();
+    expect(await screen.findByText(/Browser pop-ups were not allowed/)).toBeInTheDocument();
   });
 
   test("does not request permission again when the browser already denied it", async () => {
     const requestPermission = setPermission("denied");
     render(<AppointmentsPage />);
-    expect(await screen.findByText(/Notifications are blocked in browser settings/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Enable reminders" })).not.toBeInTheDocument();
+    expect(await screen.findByText(/Browser pop-ups are blocked in your browser settings\. Your reminders still appear in your notifications\./)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Get pop-up reminders on this device" })).not.toBeInTheDocument();
     expect(requestPermission).not.toHaveBeenCalled();
   });
 
   test("does not prompt when permission is already granted", async () => {
     const requestPermission = setPermission("granted");
     render(<AppointmentsPage />);
-    expect(await screen.findByText(/while this page is open/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Enable reminders" })).not.toBeInTheDocument();
+    // Reminders run on the server, so the page no longer says they need it to stay open.
+    expect(await screen.findByText(/a reminder appears in your notifications \(the bell at the top\), even when this page is closed/)).toBeInTheDocument();
+    expect(screen.queryByText(/while this page is open/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Back to medications" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Get pop-up reminders on this device" })).not.toBeInTheDocument();
     expect(requestPermission).not.toHaveBeenCalled();
   });
 

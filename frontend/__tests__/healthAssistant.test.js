@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import TestResultsPage from "../pages/test-results";
+import HealthAssistantPage from "../pages/health-assistant";
 import { getReportConversations } from "../lib/reportConversationApi";
 import { request } from "../lib/api";
 
@@ -43,7 +43,7 @@ beforeEach(() => {
 test("loads saved chats for review and prints the report explanation as PDF", async () => {
   const print = jest.fn();
   window.print = print;
-  render(<TestResultsPage />);
+  render(<HealthAssistantPage />);
   fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
 
   expect(await screen.findByText("The report includes one finding.")).toBeInTheDocument();
@@ -66,7 +66,7 @@ test("shows page-level coverage when PDF extraction is incomplete", async () => 
       extractionCoverage: { pageCount: 3, readablePages: 1, sparsePages: [3], unreadablePages: [2], status: "uncertain" },
     },
   }] });
-  render(<TestResultsPage />);
+  render(<HealthAssistantPage />);
   fireEvent.click(await screen.findByRole("button", { name: "Partial report" }));
   expect(await screen.findByRole("status")).toHaveTextContent("1 readable of 3 PDF pages");
   expect(screen.getByRole("status")).toHaveTextContent("unreadable pages: 2");
@@ -88,9 +88,9 @@ test("shows server-validated RAG source version and review date", async () => {
       }],
     }],
   }] });
-  render(<TestResultsPage />);
+  render(<HealthAssistantPage />);
   fireEvent.click(await screen.findByRole("button", { name: "Sourced answer" }));
-  expect(await screen.findByText(/version 1\.2\.0/)).toHaveTextContent("reviewed 20/10/2026");
+  expect(await screen.findByText(/version 1\.2\.0/)).toHaveTextContent("reviewed 20 October 2026");
   expect(screen.getByRole("link", { name: "Hemoglobin overview" })).toHaveAttribute("href", "https://example.test/hemoglobin");
 });
 
@@ -101,7 +101,7 @@ test("sends a follow-up in the selected saved conversation and displays its answ
     disclaimer: "AI information is not a diagnosis.",
     conversationId: savedConversation.id,
   });
-  render(<TestResultsPage />);
+  render(<HealthAssistantPage />);
   fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
   fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Can you explain that further?" } });
   fireEvent.click(screen.getByRole("checkbox"));
@@ -117,7 +117,7 @@ test("sends a follow-up in the selected saved conversation and displays its answ
 test("a new chat omits the conversation ID and uses the saved ID only for its follow-up", async () => {
   request.mockResolvedValueOnce({ answer: "A new answer.", evidence: [], conversationId: "new-conversation" })
     .mockResolvedValueOnce({ answer: "A follow-up answer.", evidence: [], conversationId: "new-conversation" });
-  render(<TestResultsPage />);
+  render(<HealthAssistantPage />);
   await screen.findByRole("button", { name: savedConversation.title });
   fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "What could dizziness mean?" } });
   fireEvent.click(screen.getByRole("checkbox"));
@@ -135,7 +135,7 @@ test("a new chat omits the conversation ID and uses the saved ID only for its fo
 test("a missing saved conversation preserves the unsent question and lets the user retry as a new chat", async () => {
   request.mockRejectedValueOnce(Object.assign(new Error("Conversation not found."), { status: 404 }))
     .mockResolvedValueOnce({ answer: "Fresh chat answer.", evidence: [], conversationId: "replacement" });
-  render(<TestResultsPage />);
+  render(<HealthAssistantPage />);
   fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
   fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Keep this unsent question." } });
   fireEvent.click(screen.getByRole("checkbox"));
@@ -162,13 +162,13 @@ function draftAndSend(question) {
 }
 
 test("switching profiles clears the private draft, selected report and consent", async () => {
-  const view = render(<TestResultsPage />);
+  const view = render(<HealthAssistantPage />);
   fireEvent.click(await screen.findByRole("button", { name: savedConversation.title }));
   fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Private question for Maya." } });
   fireEvent.click(screen.getByRole("checkbox"));
   getReportConversations.mockResolvedValueOnce({ conversations: [] });
   mockActiveProfile = { id: "child", fullName: "Child profile" };
-  view.rerender(<TestResultsPage />);
+  view.rerender(<HealthAssistantPage />);
   expect(screen.getByLabelText("Your message")).toHaveValue("");
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   expect(screen.queryByText(savedConversation.reportResult.summary)).not.toBeInTheDocument();
@@ -179,15 +179,15 @@ test("switching profiles clears the private draft, selected report and consent",
 test("an old request cannot change a new request even after switching back to the original profile", async () => {
   const old = deferred(); const current = deferred();
   request.mockImplementationOnce(() => old.promise).mockImplementationOnce(() => current.promise);
-  const view = render(<TestResultsPage />);
+  const view = render(<HealthAssistantPage />);
   await screen.findByRole("button", { name: savedConversation.title });
   draftAndSend("First private question.");
   const oldSignal = request.mock.calls[0][1].signal;
   mockActiveProfile = { id: "child", fullName: "Child profile" };
-  view.rerender(<TestResultsPage />);
+  view.rerender(<HealthAssistantPage />);
   expect(oldSignal.aborted).toBe(true);
   mockActiveProfile = { id: "self", fullName: "Maya" };
-  view.rerender(<TestResultsPage />);
+  view.rerender(<HealthAssistantPage />);
   draftAndSend("Current question.");
   await act(async () => old.resolve({ answer: "STALE_PRIVATE_ANSWER", evidence: [], conversationId: "stale-conversation" }));
   expect(screen.queryByText("STALE_PRIVATE_ANSWER")).not.toBeInTheDocument();
@@ -200,14 +200,14 @@ test("an old request cannot change a new request even after switching back to th
 
 test("switching profiles while a file is being read prevents the old upload from being submitted", async () => {
   const reading = deferred();
-  const view = render(<TestResultsPage />);
+  const view = render(<HealthAssistantPage />);
   await screen.findByRole("button", { name: savedConversation.title });
   const file = { name: "private-report.pdf", type: "application/pdf", size: 100, arrayBuffer: () => reading.promise };
   fireEvent.change(document.getElementById("test-report-file"), { target: { files: [file] } });
   draftAndSend("Explain my private report.");
   expect(request).not.toHaveBeenCalled();
   mockActiveProfile = { id: "child", fullName: "Child profile" };
-  view.rerender(<TestResultsPage />);
+  view.rerender(<HealthAssistantPage />);
   await act(async () => reading.resolve(new Uint8Array([1, 2, 3]).buffer));
   expect(request).not.toHaveBeenCalled();
   expect(screen.getByLabelText("Your message")).toHaveValue("");
@@ -219,12 +219,12 @@ test("a late history refresh failure never displays the previous profile's error
   getReportConversations.mockResolvedValueOnce({ conversations: [savedConversation] })
     .mockImplementationOnce(() => refresh.promise).mockResolvedValueOnce({ conversations: [] });
   request.mockResolvedValueOnce({ answer: "Saved answer.", evidence: [], conversationId: "saved-answer" });
-  const view = render(<TestResultsPage />);
+  const view = render(<HealthAssistantPage />);
   await screen.findByRole("button", { name: savedConversation.title });
   draftAndSend("A question for Maya.");
   await screen.findByText("Saved answer.");
   mockActiveProfile = { id: "child", fullName: "Child profile" };
-  view.rerender(<TestResultsPage />);
+  view.rerender(<HealthAssistantPage />);
   fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "New profile draft." } });
   await act(async () => refresh.reject(new Error("Old refresh failed")));
   expect(screen.queryByText(/history list could not be refreshed/)).not.toBeInTheDocument();
@@ -233,7 +233,7 @@ test("a late history refresh failure never displays the previous profile's error
 
 test("repeated submit events create one request and unmount cancels it", async () => {
   const pending = deferred(); request.mockImplementationOnce(() => pending.promise);
-  const view = render(<TestResultsPage />);
+  const view = render(<HealthAssistantPage />);
   await screen.findByRole("button", { name: savedConversation.title });
   fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "One question." } });
   fireEvent.click(screen.getByRole("checkbox"));
@@ -248,4 +248,24 @@ test("repeated submit events create one request and unmount cancels it", async (
   expect(signal.aborted).toBe(true);
   await act(async () => pending.resolve({ answer: "Late answer.", evidence: [], conversationId: "late" }));
   expect(getReportConversations).toHaveBeenCalledTimes(1);
+});
+
+test("the greeting shows the Nabad assistant with its name and the guidance-not-diagnosis note", async () => {
+  getReportConversations.mockResolvedValue({ conversations: [] });
+  render(<HealthAssistantPage />);
+  const greeting = (await screen.findByRole("heading", { name: "What can I help you understand?" })).closest("section");
+  expect(greeting.querySelector('svg[role="img"][aria-label="Nabad assistant"]')).not.toBeNull();
+  expect(greeting).toHaveTextContent("Nabad assistant");
+  expect(greeting).toHaveTextContent("Nabad gives guidance, not a diagnosis.");
+});
+
+test("shows its title once, says nothing about other languages, and keeps the data note to one line with a link", async () => {
+  getReportConversations.mockResolvedValue({ conversations: [] });
+  render(<HealthAssistantPage />);
+  await screen.findByRole("heading", { name: "What can I help you understand?" });
+  expect(screen.getAllByText("Health assistant", { exact: true })).toHaveLength(1);
+  expect(document.body).not.toHaveTextContent(/Arabic/);
+  const note = screen.getByText(/Chats are saved to this profile; attached files are not kept\./);
+  expect(note).toHaveTextContent("Chats are saved to this profile; attached files are not kept. How your data is used");
+  expect(screen.getByRole("link", { name: "How your data is used" })).toHaveAttribute("href", "/privacy#ai-health-assistant");
 });

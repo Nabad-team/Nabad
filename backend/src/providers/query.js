@@ -14,6 +14,8 @@ function parseQuery(query) {
     if (typeof query[key] !== "string" || !/^-?\d+(\.\d+)?$/.test(query[key]) || !Number.isFinite(Number(query[key])) || Number(query[key]) < min || Number(query[key]) > max) throw new Error("Invalid distance or pagination filters.");
     return Number(query[key]);
   };
+  if (query.type !== undefined && !["hospital", "clinic", "laboratory", "imaging-center"].includes(query.type)) throw new Error("Invalid facility type.");
+  parsed.type = query.type;
   parsed.lat = number("lat", -90, 90);
   parsed.lng = number("lng", -180, 180);
   parsed.radiusKm = number("radiusKm", 0.1, 500);

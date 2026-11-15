@@ -103,3 +103,14 @@ test("age: whole years from 2, months for babies, and not before the birthday", 
   assert.equal(ageFrom(null, now), null);
   assert.deepEqual(ageFrom(new Date("1992-10-12"), now), { years: 34, months: 408 });
 });
+
+// Checked for UI polish part 4: "average 0 hours (1 night logged)" on staging came from one night saved as 0 hours,
+// which was allowed then. New nights must be at least half an hour (routes/wellbeing.js), but older 0-hour nights
+// still count as they are. The average itself is right; these pin how it works.
+test("the sleep average is the mean of the nights logged, and a 0-hour night counts as 0", () => {
+  assert.equal(trackingText({ sleepHours: [0] }), "Water and sleep log: average sleep over the last 7 days 0 hours (1 night logged)");
+  assert.equal(trackingText({ sleepHours: [7.5, 0, 6] }), "Water and sleep log: average sleep over the last 7 days 4.5 hours (3 nights logged)");
+  assert.equal(trackingText({ sleepHours: [7, 8] }), "Water and sleep log: average sleep over the last 7 days 7.5 hours (2 nights logged)");
+  // Nights not logged are left out, not counted as 0.
+  assert.equal(trackingText({ sleepHours: [] }), "");
+});

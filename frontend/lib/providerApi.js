@@ -7,6 +7,9 @@ export function getProviders(filters = {}, signal) {
   return request(`/providers?${query}`, { signal });
 }
 export const getProvider = (id, signal) => request(`/providers/${encodeURIComponent(id)}`, { signal }).then(data => data.provider);
+export const getProviderDrivingMinutes = (location, ids, signal) => request("/providers/travel-time", {
+  method: "POST", body: JSON.stringify({ ...location, ids }), signal, timeoutMs: 8000,
+}).then(data => data.minutes);
 export const getMyProviderFeedback = (id, signal) => request(`/providers/${encodeURIComponent(id)}/feedback/me`, { signal }).then(data => data.feedback);
 export const saveProviderFeedback = (id, body) => request(`/providers/${encodeURIComponent(id)}/feedback`, { method: "PUT", body: JSON.stringify(body) });
 export const removeProviderFeedback = id => request(`/providers/${encodeURIComponent(id)}/feedback`, { method: "DELETE" });

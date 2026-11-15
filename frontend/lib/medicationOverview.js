@@ -1,5 +1,5 @@
 import { request } from "./api";
-import { formatDate } from "./dates";
+import { formatDate, formatDateTime } from "./dates";
 
 // The medication overview (SCRUM-150): every medication of the signed-in user and of all their linked
 // profiles, e.g. a nurse checking her residents during a shift (backend: GET /api/medications/overview).
@@ -114,11 +114,5 @@ export function totalsSentence({ people, active, discontinued, needsCheck }, sho
   return `Showing ${parts.join(", ")}.`;
 }
 
-// "8 November 2026, 14:05" in the viewer's time zone, for "Last updated" and the printed handover header.
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-export function formatDateTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
+// "8 November 2026, 14:05" in Beirut time, for "Last updated" and the printed handover header (the shared helper).
+export { formatDateTime };

@@ -9,6 +9,7 @@ Nabad has two deployable parts: a **Next.js web app** and a **Node.js/Express AP
 - Database backups and restore: [backups.md](./backups.md)
 - Staging and production, releasing: [environments.md](./environments.md); release log: [releases.md](./releases.md)
 - Rolling back a bad release: [rollback.md](./rollback.md)
+- Operations (services, access, secrets, what to do when something breaks): [operations.md](./operations.md)
 
 ## Production
 
@@ -206,8 +207,17 @@ The first urgent or emergency result of a check alerts, even if follow-up questi
 | `prompt.js` | The fixed instructions (levels, never diagnose, no medicines or doses, no phone numbers or links, never below the minimum level) and the user message with the user's text inside `<symptoms>` tags, treated as data. |
 | `guardrails.js` | Before the model: removes `<symptoms>` tags and control characters, and skips the model when the text tries to give it orders. After: the reply must be JSON with a known level and a reason; sentences with a dose, a phone number, a link, a certain diagnosis or false reassurance are dropped; the final level is the more serious of the rules and the model. |
 | `aiTriage.js` | Runs the rules first. An emergency answers at once without the model. If the model is off, slow, unreachable or its reply is rejected, the rules answer alone and `ai.reason` says why. |
+| `modelAccess.js` | Where every route gets its model client (SCRUM-310). Symptom checks try the main model, then an optional backup model (`LLM_FALLBACK_*`); usage limits stop calls before the provider's free quota runs out, and a model that just answered 429/401/403 or failed three times in a row is paused briefly. See [AI fallback and usage limits](./ai-fallback.md). |
 
 The model can raise the urgency but never lower it. Self-care steps are only shown for routine results. Only the outcome code and duration are logged, never the symptoms or the model's words. Each account can run 30 AI assessments per 15 minutes. The unit tests use a fake model, so they need no API key.
+
+### Questions about your history
+
+`POST /api/history/ask` answers questions such as "When did I last have a headache?" from the profile's own symptom checks, appointments, medications and documents, with an optional AI-written answer. See [Asking questions about your own history](./history-questions.md).
+
+### Prescription photos
+
+`POST /api/prescriptions/read` reads the medicines on a prescription photo or PDF with the configured model, and `POST /api/prescriptions/apply` adds the ones the person confirms to the medication list. See [Adding medicines from a prescription photo](./prescription-photos.md).
 
 ### AI report explanations
 

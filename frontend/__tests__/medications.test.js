@@ -79,9 +79,9 @@ describe("Medications page", () => {
 
   test("shows the empty state when there are no medications yet", async () => {
     renderPage();
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
-    expect(screen.getByText("Add the ones you take so they're ready for your doctor.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add medication" })).toBeInTheDocument();
+    expect(await screen.findByText("No medications yet: add the ones you take so they're ready for your doctor.")).toBeInTheDocument();
+    // The header row has the one Add medication; the empty state doesn't repeat it.
+    expect(screen.getAllByRole("button", { name: "Add medication" })).toHaveLength(1);
   });
 
   test("custom daily times persist per medication and can be edited and removed", async () => {
@@ -111,7 +111,7 @@ describe("Medications page", () => {
 
   test("new medications accept multiple times and reject empty or duplicate reminders", async () => {
     const user = userEvent.setup({ delay: null }); renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
     await user.type(screen.getByLabelText("Medication name"), "Test medicine");
     await user.click(screen.getByRole("button", { name: "Add reminder time" }));
     await user.click(screen.getByRole("button", { name: "Save medication" }));
@@ -168,7 +168,7 @@ describe("Medications page", () => {
   test("adds a medication", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
 
     const form = screen.getByRole("form", { name: "Add a medication" });
     expect(within(form).getByLabelText("Medication name")).toHaveFocus();
@@ -192,7 +192,7 @@ describe("Medications page", () => {
   test("explains what's wrong instead of saving an invalid medication", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
     const form = screen.getByRole("form", { name: "Add a medication" });
 
     await user.click(within(form).getByRole("button", { name: "Save medication" }));
@@ -212,7 +212,7 @@ describe("Medications page", () => {
     const user = userEvent.setup({ delay: null });
     mockApi.addMedication.mockRejectedValueOnce(new Error("Too many changes in a short time. Please wait a few minutes and try again."));
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add medication" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication" }))[0]);
     await user.type(screen.getByLabelText("Medication name"), "Aspirin");
     await user.click(screen.getByRole("button", { name: "Save medication" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Too many changes in a short time.");
@@ -283,13 +283,19 @@ describe("Medications page", () => {
     seed({ name: "Paracetamol" });
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Delete Paracetamol" }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Yes, delete" }));
+    // Quiet red outline on the card; solid red only on the final confirm step.
+    const deleteButton = await screen.findByRole("button", { name: "Delete Paracetamol" });
+    expect(deleteButton).toHaveClass("button--danger-quiet");
+    expect(deleteButton).not.toHaveClass("button--danger");
+    await user.click(deleteButton);
+    const confirm = within(screen.getByRole("dialog")).getByRole("button", { name: "Yes, delete" });
+    expect(confirm).toHaveClass("button--danger");
+    await user.click(confirm);
 
     expect(await screen.findByRole("status")).toHaveTextContent("Paracetamol was deleted.");
     expect(mockApi.deleteMedication).toHaveBeenCalledWith("self", "1");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/^No medications yet:/)).toBeInTheDocument();
   });
 
   test("offers to try again when the list can't be loaded", async () => {
@@ -298,7 +304,7 @@ describe("Medications page", () => {
     renderPage();
     expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load your medications.");
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/^No medications yet:/)).toBeInTheDocument();
   });
 
   test("has the page title and a dashboard logo link in the header", async () => {
@@ -345,7 +351,7 @@ describe("Medications for a family member", () => {
     actAsChild();
     renderPage();
 
-    await user.click(await screen.findByRole("button", { name: "Add medication for Sami Haddad" }));
+    await user.click((await screen.findAllByRole("button", { name: "Add medication for Sami Haddad" }))[0]);
     await user.type(screen.getByLabelText("Medication name"), "Ventolin");
     await user.click(screen.getByRole("button", { name: "Save medication" }));
     expect(await screen.findByText("Ventolin was added to Sami Haddad's list.")).toBeInTheDocument();
@@ -393,8 +399,7 @@ describe("Medications for a family member", () => {
     mockMedications = mockMedications.filter((m) => m.profileId !== childId);
     actAsChild();
     renderPage();
-    expect(await screen.findByText("No medications yet.")).toBeInTheDocument();
-    expect(screen.getByText("Add the ones Sami Haddad takes so they're ready for their doctor.")).toBeInTheDocument();
+    expect(await screen.findByText("No medications yet: add the ones Sami Haddad takes so they're ready for their doctor.")).toBeInTheDocument();
   });
 
   test("after a family member is removed, the page goes back to the caregiver's own list", async () => {
@@ -404,5 +409,49 @@ describe("Medications for a family member", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "My medications" })).toBeInTheDocument();
     expect(within(await list()).getByRole("heading", { name: "My own pill" })).toBeInTheDocument();
     expect(mockApi.getMedications).not.toHaveBeenCalledWith(childId);
+  });
+});
+
+// SCRUM-146: adding medicines from a prescription photo, from the Medications page.
+jest.mock("../lib/prescriptionApi", () => ({
+  ...jest.requireActual("../lib/prescriptionApi"),
+  readPrescription: (...args) => mockPrescriptionApi.readPrescription(...args),
+  applyPrescription: (...args) => mockPrescriptionApi.applyPrescription(...args),
+}));
+const mockPrescriptionApi = {
+  readPrescription: jest.fn(async () => ({ unreadable: "", medications: [
+    { name: "Ventolin", dose: "100", unit: "mcg", form: "inhaler", frequency: "when needed", durationDays: null, notes: "", needsCheck: false, match: { status: "new" } },
+  ] })),
+  applyPrescription: jest.fn(async (profileId, items) => {
+    for (const fields of items) await mockApi.addMedication(profileId, fields);
+    return { added: items.map((item) => ({ name: item.name })), replaced: [] };
+  }),
+};
+
+describe("Medications page: add from a prescription", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockMedications = [];
+    mockNextId = 1;
+    jest.clearAllMocks();
+  });
+
+  test("reads the prescription, adds what the person confirms, and shows it on the list", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "More" }));
+    await user.click(screen.getByRole("button", { name: "Add from a prescription" }));
+    const panel = screen.getByRole("region", { name: "Add from a prescription" });
+    expect(screen.queryByText(/^No medications yet:/)).not.toBeInTheDocument();
+    await user.upload(within(panel).getByLabelText("Prescription photo or PDF"), new File([new Uint8Array([137, 80, 78, 71])], "rx.png", { type: "image/png" }));
+    await user.click(within(panel).getByRole("checkbox", { name: /I agree/ }));
+    await user.click(within(panel).getByRole("button", { name: "Read prescription" }));
+    await user.click(await within(panel).findByRole("button", { name: "Add 1 medicine to your list" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("1 medicine was added to your list from the prescription.");
+    expect(mockPrescriptionApi.readPrescription).toHaveBeenCalledWith("self", expect.any(File), expect.any(AbortSignal));
+    expect(within(await item("Ventolin")).getByText("100 mcg inhaler · when needed")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Add from a prescription" })).not.toBeInTheDocument();
   });
 });

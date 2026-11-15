@@ -62,3 +62,18 @@ describe("PageLayout", () => {
     expect(within(screen.getByRole("contentinfo")).queryByText("A page note")).not.toBeInTheDocument();
   });
 });
+
+describe("Signed-in page template", () => {
+  test("pages with a header use the header's wide column; pages without one keep the content column", () => {
+    const { unmount } = render(<PageLayout title="My vitals" header={<header>bar</header>}>content</PageLayout>);
+    expect(screen.getByRole("main")).toHaveClass("container", "container--wide");
+    unmount();
+    render(<PageLayout title="Log in">content</PageLayout>);
+    expect(screen.getByRole("main")).not.toHaveClass("container--wide");
+  });
+
+  test("an explicit width still wins", () => {
+    render(<PageLayout title="Test" width="content" header={<header>bar</header>}>content</PageLayout>);
+    expect(screen.getByRole("main")).not.toHaveClass("container--wide");
+  });
+});

@@ -7,9 +7,9 @@ import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Alert from "../../components/ui/Alert";
 import { HeartbeatLoader } from "../../components/ui/Heartbeat";
+import { formatDateTime as dateTime } from "../../lib/dates";
 import { confirmSharedVisitPrep, getSharedVisitPrep, sharedDocumentDownloadUrl } from "../../lib/visitPrepApi";
 
-const dateTime = (value) => new Date(value).toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short" });
 
 export default function SharedVisitPrepPage() {
   const router = useRouter();

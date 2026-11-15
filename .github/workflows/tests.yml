@@ -104,6 +104,31 @@ jobs:
       - name: Run the triage quality test set
         run: npm run test:triage-quality
 
+  # SCRUM-309: the triage clinical safety set (backend/tests/triage-safety): red flags, borderline cases and
+  # mild cases that must not be escalated. Fails on any under-triage. Its scorecard and the clinical review
+  # progress are on the run's summary page. No database or AI provider is needed.
+  triage-safety:
+    name: Triage clinical safety set
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      MONGOMS_DISABLE_POSTINSTALL: "1"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run the triage clinical safety set
+        run: npm run test:triage-safety
+
   # The backup tooling in ops/backup (docs/backups.md): naming, retention, manifest and sanity-check
   # logic, plus shellcheck for its scripts. No database or network needed.
   backup-tooling:

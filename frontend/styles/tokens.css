@@ -98,6 +98,8 @@
 
   /* Controls. 2.75rem = 44px: the minimum tap target. */
   --tap-target: 2.75rem;
+  /* The phone bottom tab bar (components/BottomTabBar.js): one row of icon-above-label tabs. */
+  --tab-bar-height: 3.75rem;
 }
 
 @media (min-width: 40rem) {

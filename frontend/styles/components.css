@@ -40,7 +40,6 @@
 .vitals-table { width: 100%; border-collapse: collapse; }
 .vitals-table caption { text-align: left; font-weight: 700; margin-bottom: var(--space-2); }
 .vitals-table th, .vitals-table td { padding: var(--space-3); border-bottom: 1px solid var(--color-border); text-align: left; white-space: nowrap; }
-.vitals-empty { padding: var(--space-6); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); }
 .calendar__event--medication { background: #e8f4ef; color: #185b48; border-left: 3px solid #27866b; }
 
 .text-muted {
@@ -92,10 +91,9 @@
 .medical-documents__list p { margin: 0; }
 .medical-documents__header { align-items: flex-start; flex-wrap: wrap; }
 .medical-documents__header > div { max-width: 38rem; }
-.medical-documents__metadata { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 1.3fr); align-items: center; gap: var(--space-2) var(--space-3); flex: 1 1 28rem; }
-.medical-documents__metadata p { grid-column: 1 / -1; }
 .medical-documents__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; gap: var(--space-2) var(--space-3); margin-top: var(--space-5); }
 .medical-documents__plus { font-size: 1.5em; line-height: 0.8; }
+.medical-documents__pending { margin: 0 0 var(--space-4); padding-left: var(--space-5); overflow-wrap: anywhere; }
 .medical-documents__list { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
 .medical-documents__list li { flex-wrap: wrap; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); margin-top: var(--space-3); background: var(--color-surface); }
 .medical-documents__list li > div { min-width: 0; overflow-wrap: anywhere; }
@@ -107,13 +105,9 @@
 .medical-documents__edit-field .input { width: 100%; min-width: 0; }
 .medical-documents__edit-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .medical-documents__edit .form > [role="alert"] { grid-column: 1 / -1; }
-.medical-documents__empty { margin: var(--space-5) 0 0; padding: var(--space-5); border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); }
 
 @media (max-width: 38rem) {
   .medical-documents__header { flex-direction: column; }
-  .medical-documents__metadata { width: 100%; grid-template-columns: 1fr; flex: none; }
-  .medical-documents__metadata p { grid-column: auto; }
-  .medical-documents__header .button { width: 100%; }
   .medical-documents__filters, .medical-documents__edit .form { grid-template-columns: 1fr; }
   .medical-documents__list li { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
   .medical-documents__list li > div, .medical-documents__list li > p { grid-column: 1 / -1; }
@@ -143,11 +137,13 @@
   top: var(--space-4);
 }
 
+/* The page gutter, or more in iPhone landscape so nothing sits under the notch (viewport-fit=cover in _app.js). */
 .container {
   width: 100%;
   max-width: calc(var(--width-content) + 2 * var(--page-gutter));
   margin-inline: auto;
-  padding-inline: var(--page-gutter);
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right));
 }
 
 .container--wide {
@@ -294,6 +290,19 @@
 
 /* ---------- Heartbeat loader ---------- */
 
+/* The Nabad assistant (components/NabadAssistant.js). Calm places only; see docs/design-system.md. */
+.nabad-assistant { color: var(--color-primary); flex: none; }
+.nabad-assistant__face { stroke: var(--color-primary-strong); }
+.nabad-assistant--tracing .nabad-assistant__line { stroke-dasharray: 100; animation: assistant-trace 1.6s ease-in-out infinite; }
+@keyframes assistant-trace { 0% { stroke-dashoffset: 100; } 55%, 100% { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .nabad-assistant--tracing .nabad-assistant__line { animation: none; stroke-dasharray: none; }
+}
+.assistant-loader { color: var(--color-text); }
+.assistant-greeting { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.assistant-greeting__name { display: block; font-weight: var(--weight-semibold); color: var(--color-primary-strong); }
+.assistant-greeting__note { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }
+
 .loader {
   display: flex;
   align-items: center;
@@ -398,6 +407,19 @@
   color: #fff;
 }
 
+/* Delete on a list row: red text and outline, quiet until needed. The solid red button is kept for the
+   final confirm step ("Yes, delete"), so solid red always means "this happens now". */
+.button--danger-quiet {
+  background: var(--color-surface);
+  border-color: var(--color-danger);
+  color: var(--color-danger-strong);
+}
+
+.button--danger-quiet:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+}
+
 /* Smaller text and padding, but still a 44px tap target. */
 .button--small {
   padding-inline: var(--space-4);
@@ -464,6 +486,22 @@ html[data-simplified-mode="true"] .urgency__summary {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
+}
+
+/* Keep the whole checkbox label easy to tap, and ensure the checkbox itself meets
+   the WCAG 2.2 minimum target size even when browser-native controls render small. */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  flex: 0 0 auto;
 }
 
 .field {
@@ -581,6 +619,27 @@ select.input {
   margin-bottom: 0;
 }
 
+/* Signed-in page template: page content sits in cards (see docs/design-system.md). */
+/* A form opened in place by the page's primary button (InlinePanel), above the page's data. */
+.inline-panel { margin-bottom: var(--space-5); border-color: var(--color-primary); }
+.inline-panel > h2:focus { outline: none; }
+.page-card + .page-card { margin-top: var(--space-5); }
+.card > h2:first-child { margin-top: 0; }
+.card .medication { box-shadow: none; }
+.card .appointment-list { border-top: 0; }
+.card .appointment:first-child:not(.appointment--reminder) { padding-top: 0; }
+.card .appointment:last-child { border-bottom: 0; }
+.card .appointment:last-child:not(.appointment--reminder) { padding-bottom: 0; }
+
+/* Sections as cards, two columns from 64rem so short forms don't leave half of the wide column empty.
+   DOM order is reading order: cards fill left to right, top to bottom. */
+.card-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.card-grid > .card { margin: 0; }
+.card-grid > .card--full, .card-grid > :not(.card) { grid-column: 1 / -1; }
+@media (min-width: 64rem) {
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+}
+
 .card--danger {
   border-color: var(--color-danger);
 }
@@ -591,8 +650,14 @@ select.input {
 
 /* ---------- Staging banner (StagingBanner.js; never on production) ---------- */
 
+/* The offline warning spans the screen above the header: clear of the notch in iPhone landscape. */
+.offline-banner {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 .staging-banner {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) max(var(--space-4), env(safe-area-inset-right)) var(--space-2) max(var(--space-4), env(safe-area-inset-left));
   border-bottom: 0.1875rem solid var(--color-warning);
   background: var(--color-warning-soft);
   color: var(--color-warning-strong);
@@ -665,26 +730,26 @@ select.input {
 .empty-state {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-4) var(--space-5);
   padding-block: var(--space-4);
 }
 
-.empty-state > div > :last-child {
-  margin-bottom: 0;
+.empty-state__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
 }
 
 .empty-state__title {
-  margin: 0 0 var(--space-1);
+  margin: 0;
+  max-width: var(--width-prose);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }
 
-.empty-state__text {
-  color: var(--color-text-muted);
-}
-
 @media (max-width: 30rem) {
-  .empty-state {
+  .empty-state, .empty-state__body {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -796,6 +861,29 @@ select.input {
 .wellbeing-support-number__meta a { display: inline-flex; align-items: center; gap: .25rem; font-weight: 600; }
 .wellbeing-support-number__meta a svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .wellbeing-support__note { margin: var(--space-4) 0 0; }
+
+/* The dashboard's compact Wellbeing Corner: message and numbers in a tight card, everything else under "More". */
+.wellbeing-corner--compact { display: grid; gap: var(--space-4); }
+.wellbeing-corner--compact > h2 { margin: 0; }
+.wellbeing-corner--compact .wellbeing-message { display: block; padding: var(--space-3) var(--space-4); }
+.wellbeing-corner--compact .wellbeing-message__label { margin: 0 0 var(--space-1); font-size: var(--text-sm); color: var(--color-text-muted); }
+.wellbeing-corner--compact .wellbeing-message p { font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support { margin: 0; padding: 0; border: 0; }
+.wellbeing-corner--compact .wellbeing-support__title { margin: 0 0 var(--space-2); font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support__grid { gap: var(--space-3); }
+.wellbeing-corner--compact .wellbeing-support-number { padding: var(--space-3) var(--space-4); }
+.wellbeing-corner--compact .wellbeing-support-number__icon { width: 2.25rem; height: 2.25rem; }
+.wellbeing-corner--compact .wellbeing-support-number h4 { font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support-number__call { width: auto; padding-block: var(--space-2); }
+.wellbeing-corner--compact .wellbeing-support-number__call span { font-size: var(--text-base); }
+.wellbeing-corner--compact .wellbeing-support-number__meta { margin-top: var(--space-2); }
+.wellbeing-corner__more > summary { cursor: pointer; font-weight: var(--weight-semibold); color: var(--color-primary-strong); min-height: var(--tap-target); display: inline-flex; align-items: center; gap: var(--space-2); list-style: none; }
+.wellbeing-corner__more > summary::-webkit-details-marker { display: none; }
+.wellbeing-corner__chevron { width: 0.8rem; height: 0.8rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duration-fast) ease; }
+.wellbeing-corner__more[open] .wellbeing-corner__chevron { transform: rotate(180deg); }
+.wellbeing-corner__more[open] > summary { margin-bottom: var(--space-3); }
+.wellbeing-corner__more .wellbeing-tips { margin-top: 0; }
+.wellbeing-corner__about { margin: var(--space-3) 0 0; }
 @media (max-width: 46rem) {
   .wellbeing-tips ul, .wellbeing-support__grid { grid-template-columns: 1fr; }
   .wellbeing-support__heading { align-items: start; flex-direction: column; }
@@ -854,7 +942,7 @@ select.input {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-5);
-  padding-block: var(--space-4);
+  padding-block: var(--space-3);
 }
 
 /* Wrapping navigation also fits enlarged text; phones use the disclosure. */
@@ -882,13 +970,15 @@ select.input {
 .workspace-nav__list {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-1);
   list-style: none;
-  padding: 0;
+  padding: 0 0 var(--space-2);
   margin: 0;
 }
 .workspace-nav__list > li { margin: 0; }
-.workspace-nav__list a {
+.workspace-nav__list a,
+.nav-group__button {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -903,8 +993,10 @@ select.input {
   transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 .workspace-nav__list .app-nav__icon { width: 1.125rem; height: 1.125rem; flex-basis: 1.125rem; }
-.workspace-nav__list a:hover { background: var(--color-primary-soft); color: var(--color-primary-strong); }
-.workspace-nav__list a[aria-current="page"] {
+.workspace-nav__list a:hover,
+.nav-group__button:hover { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+.workspace-nav__list a[aria-current="page"],
+.nav-group__button--current {
   background: var(--color-surface);
   border-color: var(--color-primary-line);
   color: var(--color-primary-strong);
@@ -914,8 +1006,94 @@ select.input {
   .workspace-nav { display: none; }
 }
 @media (min-width: 40rem) and (max-width: 70rem) {
-  .workspace-nav__list a { padding-inline: var(--space-2); }
+  .workspace-nav__list a, .nav-group__button { padding-inline: var(--space-2); }
 }
+
+/* A "More" button with a small panel of secondary actions (visit preparation). Same look as the header dropdowns. */
+.more-menu { position: relative; display: inline-block; }
+.more-menu__chevron { width: 0.75rem; height: 0.75rem; margin-left: var(--space-2); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.more-menu .button[aria-expanded="true"] .more-menu__chevron { transform: rotate(180deg); }
+.more-menu__panel {
+  position: absolute; top: calc(100% + var(--space-1)); left: 0; z-index: 70; min-width: 16rem; margin: 0; padding: var(--space-2);
+  list-style: none; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay);
+}
+.more-menu__panel > li { margin: 0; }
+.more-menu__panel button {
+  display: flex; align-items: center; width: 100%; min-height: var(--tap-target); padding: var(--space-2) var(--space-3);
+  border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-primary-strong);
+  font: inherit; font-weight: var(--weight-medium); text-align: left; cursor: pointer;
+}
+.more-menu__panel button:hover:not(:disabled) { background: var(--color-primary-soft); }
+.more-menu__panel button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
+.more-menu__panel a {
+  display: flex; align-items: center; min-height: var(--tap-target); padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm); color: var(--color-primary-strong); font-weight: var(--weight-medium); text-decoration: none;
+}
+.more-menu__panel a:hover { background: var(--color-primary-soft); }
+
+/* ---------- Signed-in page header row (PageTitle with action / more) ---------- */
+/* Title and one-line lead on the left, the primary button and More on the right; stacked on phones. */
+.page-title--with-actions { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4) var(--space-5); }
+.page-title__text { flex: 1 1 24rem; min-width: 0; }
+.page-title__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.page-title__actions .more-menu__panel { left: auto; right: 0; }
+@media (max-width: 39.99rem) {
+  .page-title--with-actions { flex-direction: column; align-items: stretch; }
+  .page-title__text { flex: none; }
+  .page-title__actions { flex-direction: column; align-items: stretch; }
+  .page-title__actions .button, .page-title__actions .more-menu { width: 100%; }
+  .page-title__placeholder .skeleton__bone { width: 100% !important; }
+  .page-title__actions .more-menu__panel { left: 0; right: 0; }
+}
+
+/* A sentence under the page header that adds detail to the lead. */
+.page-intro { max-width: var(--width-prose); color: var(--color-text-muted); }
+
+/* A button that reads as an inline link (e.g. "Resend email" in the verification bar). */
+.link-button {
+  display: inline; padding: 0; border: 0; background: none; font: inherit; font-weight: var(--weight-semibold);
+  color: var(--color-primary-strong); text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer;
+}
+.link-button:hover:not(:disabled) { text-decoration-thickness: 0.125rem; }
+.link-button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
+
+/* "Please verify your email": one slim line above the page header. */
+.verify-bar {
+  margin-bottom: var(--space-5); padding: var(--space-2) var(--space-4);
+  background: var(--color-warning-soft); border: 1px solid var(--color-warning); border-radius: var(--radius-md);
+  color: var(--color-warning-strong);
+}
+.verify-bar p { margin: 0; }
+.verify-bar__email { overflow-wrap: anywhere; }
+.verify-bar__message { margin-top: var(--space-1); font-size: var(--text-sm); }
+
+/* Find care: "Estimate driving times" and "Show map" side by side from 40rem, stacked on phones. */
+.provider-tools { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); margin-block: var(--space-3); }
+@media (min-width: 40rem) { .provider-tools { flex-direction: row; flex-wrap: wrap; align-items: center; } }
+
+/* "My care" and "My records": a button that opens a small panel of links under it. */
+.nav-group { position: relative; margin: 0; }
+.nav-group__button { background: transparent; cursor: pointer; font-family: inherit; line-height: inherit; }
+.nav-group__chevron { width: 0.75rem; height: 0.75rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duration-fast) ease; }
+.nav-group__button[aria-expanded="true"] { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+.nav-group__button[aria-expanded="true"] .nav-group__chevron { transform: rotate(180deg); }
+.nav-group__panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 70;
+  min-width: 15rem;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+.nav-group__panel > li { margin: 0; }
+.nav-group__panel a { width: 100%; white-space: nowrap; }
+.nav-group__panel .app-nav__icon { width: 1.125rem; height: 1.125rem; flex: none; }
 
 .workspace-groups--mobile { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
 .workspace-groups--mobile .workspace-group { display: block; margin-left: 0; padding: 0; border: 0; background: transparent; }
@@ -1010,7 +1188,7 @@ select.input {
 
 .profile-select {
   width: auto;
-  max-width: 14rem;
+  max-width: 20rem;
   min-height: var(--tap-target);
   font-size: var(--text-sm);
   text-overflow: ellipsis;
@@ -1113,11 +1291,6 @@ select.input {
 .account-menu__list a:hover,
 .mobile-menu__list a:hover {
   background: var(--color-sunken);
-}
-
-.app-header__menu-button {
-  display: none;
-  margin-left: auto;
 }
 
 /* ---------- Notifications bell (components/NotificationBell.js) ---------- */
@@ -1445,15 +1618,127 @@ select.input {
   .app-header__desktop {
     display: none;
   }
-
-  .app-header__menu-button {
-    display: inline-flex;
-  }
 }
 
 @media (min-width: 40rem) {
   .mobile-menu {
     display: none;
+  }
+}
+
+/* ---------- Bottom tab bar on phones (components/BottomTabBar.js) ----------
+   Under 40rem: fixed to the bottom, four equal tabs (icon above label, at least 44px), clear of the iPhone
+   home indicator and notch. Pages get the same space at the bottom so the bar never covers the footer
+   or its 140 link. The phone menu opens as a sheet just above the bar. Hidden from 40rem and on paper. */
+.tab-bar {
+  display: none;
+}
+
+@media (max-width: 39.99rem) {
+  .tab-bar {
+    position: fixed;
+    z-index: 15;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    border-top: 0.0625rem solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: 0 -0.25rem 1rem rgb(22 55 42 / 6%);
+  }
+
+  .tab-bar__list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tab-bar__list > li {
+    margin: 0;
+  }
+
+  .tab-bar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    width: 100%;
+    min-height: var(--tab-bar-height);
+    padding: var(--space-2) var(--space-1);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .tab-bar__item .app-nav__icon {
+    flex: none;
+  }
+
+  .tab-bar__item:hover {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+  }
+
+  .tab-bar__item:focus-visible {
+    outline-offset: -0.1875rem;
+  }
+
+  /* Current page: teal text and a teal bar on top (never color alone). */
+  .tab-bar__item[aria-current="page"],
+  .tab-bar__item--current,
+  .tab-bar__item[aria-expanded="true"] {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+    box-shadow: inset 0 0.1875rem 0 var(--color-primary);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* --tab-bar-space is the bar's measured height (BottomTabBar.js); the fallback is its usual height. */
+  body:has(.tab-bar) {
+    --tab-bar-offset: var(--tab-bar-space, calc(var(--tab-bar-height) + env(safe-area-inset-bottom)));
+    padding-bottom: var(--tab-bar-offset);
+  }
+
+  /* Toasts that stick to the bottom of the screen stay above the bar. */
+  body:has(.tab-bar) .action-toast {
+    bottom: calc(var(--tab-bar-offset) + var(--space-4));
+  }
+
+  .mobile-menu {
+    position: fixed;
+    z-index: 14;
+    left: 0;
+    right: 0;
+    bottom: var(--tab-bar-offset);
+    max-height: calc(100dvh - var(--tab-bar-offset) - 4rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-top: 0.0625rem solid var(--color-border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-overlay);
+  }
+}
+
+@media print {
+  .tab-bar,
+  .mobile-menu {
+    display: none !important;
+  }
+
+  body:has(.tab-bar) {
+    padding-bottom: 0 !important;
   }
 }
 
@@ -1559,6 +1844,82 @@ select.input {
 
 .urgency h2 {
   color: inherit;
+  margin: 0;
+}
+
+/* The result receives focus when it arrives; show where focus went without a heavy ring on the whole card. */
+.urgency:focus { outline: none; }
+.urgency:focus-visible { outline: 3px solid var(--color-focus, var(--color-primary)); outline-offset: 3px; }
+
+/* Top of the result: icon, level and one short line, before any detail. */
+.urgency__indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.urgency__icon {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-top: 0.1rem;
+}
+.urgency__summary {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-lg);
+}
+
+/* The 4-step scale. Each step has a coloured bar on top; the current one also gets its soft colour,
+   a border, bold text, its icon and "This result". Two columns on phones, four in a row from 40rem. */
+.urgency-scale { margin-bottom: var(--space-5); }
+.urgency-scale__label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.urgency-scale__steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 40rem) {
+  .urgency-scale__steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.urgency-scale__step {
+  --step-color: var(--color-primary);
+  --step-strong: var(--color-primary-strong);
+  --step-soft: var(--color-primary-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-top: 0.375rem solid var(--step-color);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+.urgency-scale__step--soon { --step-color: var(--color-warning); --step-strong: var(--color-warning-strong); --step-soft: var(--color-warning-soft); }
+.urgency-scale__step--urgent { --step-color: var(--color-urgent); --step-strong: var(--color-urgent-strong); --step-soft: var(--color-urgent-soft); }
+.urgency-scale__step--emergency { --step-color: var(--color-danger); --step-strong: var(--color-danger-strong); --step-soft: var(--color-danger-soft); }
+.urgency-scale__step--current {
+  border-color: var(--step-color);
+  background: var(--step-soft);
+  color: var(--step-strong);
+  font-weight: var(--weight-semibold, 600);
+}
+.urgency-scale__icon { width: 1.25rem; height: 1.25rem; }
+.urgency-scale__you {
+  font-size: 0.8125rem;
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .urgency__why {
@@ -1658,7 +2019,7 @@ select.input {
 
 @media (min-width: 52rem) {
   .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
     gap: var(--space-8);
   }
 
@@ -1667,6 +2028,50 @@ select.input {
     justify-self: end;
   }
 }
+
+/* Home: a slim emergency bar near the top (red means emergency here). The larger call box stays further down. */
+.emergency-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  margin-bottom: var(--space-5);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+  text-decoration: none;
+}
+.emergency-bar:hover { text-decoration: underline; }
+.emergency-bar__icon { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+
+/* Home hero: a sample symptom-check result, built from the real result styles and clearly labelled "Sample". */
+.sample-result { margin: 0; width: 100%; max-width: 24rem; justify-self: center; }
+.sample-result__caption { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
+.sample-result__card { margin-top: 0; padding: var(--space-4); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.sample-result__card > * { margin: 0; }
+.sample-result__card .urgency__indicator { margin: var(--space-3) 0; }
+.sample-result__quote { font-style: italic; color: var(--color-text-muted); }
+.sample-result__level { margin: 0; font-weight: var(--weight-semibold); font-size: var(--text-lg); color: inherit; }
+.sample-result__line { margin: var(--space-1) 0 0; color: var(--color-text); }
+.sample-result__scale { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: var(--space-3); }
+@media (min-width: 40rem) { .sample-result .sample-result__scale { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sample-result__next { font-size: var(--text-sm); color: var(--color-text); }
+@media (min-width: 52rem) { .sample-result { justify-self: end; } }
+
+/* Home: the other things in an account, as a quiet two-column list. */
+.more-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-3) var(--space-6);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.more-features > li { margin: 0; padding-left: var(--space-4); border-left: 3px solid var(--color-primary-line); }
+.more-features strong { display: block; color: var(--color-primary-strong); }
+.more-features span { color: var(--color-text-muted); }
 
 .feature-list {
   display: grid;
@@ -1818,25 +2223,40 @@ select.input {
 
 /* ---------- Dashboard and onboarding ---------- */
 
-/* The section navigation belongs to the dashboard content, below the welcome message. */
-.dashboard-navigation {
-  margin-bottom: var(--space-6);
-}
-
+/* Quick actions (four at most): equal tiles, icon above a one-line label. At most 4 columns, never narrower than
+   13rem, so the labels stay on one line and no tile sits alone: 1 column on small phones, 2 x 2, then 4 in a row.
+   Labels are short on purpose ("Log vitals"); "for Rana" sits in the line above and in each link's name. */
 .quick-actions__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(min(100%, 13rem), calc((100% - 3 * var(--space-3)) / 4)), 1fr));
+  grid-auto-rows: 1fr;
   gap: var(--space-3);
   margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }
-
-.quick-actions__list .button {
-  width: 100%;
-  min-height: 3.5rem;
-  justify-content: flex-start;
+.quick-actions__list > li { margin: 0; display: flex; }
+.quick-action {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 5.5rem;
+  padding: var(--space-3) var(--space-4);
+  white-space: nowrap;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+  text-decoration: none;
+  transition: background-color var(--duration-fast) ease;
 }
+.quick-action:hover { background: var(--color-primary-soft); }
+.quick-action__icon { width: 1.5rem; height: 1.5rem; color: var(--color-primary); flex: none; }
 
 .vitals-chart__point {
   fill: var(--color-surface);
@@ -1908,6 +2328,37 @@ select.input {
   .dashboard-navigation .app-nav__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+/* Dashboard "Next step" (components/NextStepCard.js): one line and one button, above Symptom check.
+   A white card with a teal edge, so it reads as a reminder and doesn't compete with the teal Symptom check panel. */
+.next-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5);
+  border-left: 0.25rem solid var(--color-primary);
+}
+
+.next-step__copy {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.next-step__label {
+  margin: 0 0 var(--space-1);
+  color: var(--color-primary-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.next-step__text {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
 }
 
 /* The one main thing to do on the dashboard: a light teal panel with its actions. */
@@ -2481,10 +2932,6 @@ select.input {
   font-size: var(--text-sm);
 }
 
-.banner {
-  margin-bottom: var(--space-6);
-}
-
 .eyebrow {
   margin: var(--space-5) 0 var(--space-2);
   color: var(--color-text-muted);
@@ -2558,13 +3005,6 @@ select.input {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   gap: var(--space-5) var(--space-4);
-}
-
-.medications-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
 }
 
 .medication-form {
@@ -2731,10 +3171,6 @@ select.input {
   font-weight: var(--weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.appointments-actions {
-  margin-bottom: var(--space-5);
 }
 
 .appointment-form {
@@ -3316,9 +3752,42 @@ select.input {
 .provider-filters__advanced > summary { cursor: pointer; font-weight: 600; }
 .provider-filters__advanced-content { display: grid; gap: var(--space-4); padding-block: var(--space-4); }
 .provider-list { list-style: none; padding: 0; }
+.provider-comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
+.provider-comparison > section { min-width: 0; overflow-wrap: anywhere; }
 .provider-item { padding-block: var(--space-5); border-bottom: 1px solid var(--color-border); }
 .provider-item h2 { font-size: var(--text-lg); }
 .provider-sources { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); }
+
+/* Find care layout: one column on phones; from 60rem the filters sit in a side panel beside the results. */
+.providers-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.providers-layout__results { min-width: 0; }
+@media (min-width: 60rem) {
+  .providers-layout { grid-template-columns: 17rem minmax(0, 1fr); gap: var(--space-6); }
+  .providers-layout .provider-filters {
+    position: sticky;
+    top: var(--space-4);
+    margin-block: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .providers-layout .provider-filters .button[type="submit"] { width: 100%; }
+}
+.provider-directory-note { margin-top: 0; }
+
+/* Compact result cards: the facts people compare first, the main actions, then "More details". */
+.provider-list { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+.provider-card { display: grid; gap: var(--space-2); padding-block: var(--space-4); border-bottom: 0; }
+.provider-card > * { margin: 0; }
+.provider-card h2 { font-size: var(--text-lg); }
+.provider-card__meta { color: var(--color-text-muted); }
+.provider-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.provider-badges > li { margin: 0; }
+.provider-card__actions { margin-top: var(--space-1); }
+.provider-card__more > summary { cursor: pointer; font-weight: var(--weight-semibold); color: var(--color-primary-strong); min-height: var(--tap-target); display: flex; align-items: center; }
+.provider-card__details { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
+.provider-card__details > p { margin: 0; }
 
 .progress-summary__list {
   display: grid;
@@ -3950,7 +4419,7 @@ select.input {
 }
 
 /* Header search uses normal links and the existing keyboard focus styles. */
-.header-search { position: relative; flex: 1 1 20rem; min-width: 0; max-width: 38rem; }
+.header-search { position: relative; flex: 1 1 14rem; min-width: 0; max-width: 32rem; }
 .header-search__form { display: flex; gap: var(--space-2); }
 .header-search__form .input { min-width: 0; flex: 1; }
 .header-search__results { position: absolute; top: calc(100% + var(--space-2)); inset-inline: 0; z-index: 60; max-height: min(65vh, 34rem); overflow-y: auto; padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay); overflow-wrap: anywhere; }
@@ -3981,3 +4450,301 @@ select.input {
     box-shadow: none !important;
   }
 }
+
+/* ---------- Team dashboard (SCRUM-311) ---------- */
+
+.usage-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+}
+
+.usage-range legend {
+  margin-bottom: var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
+/* Each option is a 44px tap target. */
+.usage-range__option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}
+
+.usage-period,
+.usage-note {
+  color: var(--color-text-muted);
+}
+
+.usage-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-4);
+  margin: var(--space-4) 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.usage-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  height: 100%;
+}
+
+.usage-total__value {
+  color: var(--color-primary-strong);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.1;
+}
+
+.usage-total__label {
+  font-weight: var(--weight-semibold);
+}
+
+.usage-total__help {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.usage-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-6);
+}
+
+.usage-chart {
+  margin: 0;
+}
+
+.usage-chart__title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+}
+
+.usage-chart__summary {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.usage-chart__max {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* The number of columns is set inline: 7, 30 or 90 days. */
+.usage-chart__area {
+  display: grid;
+  gap: 0.0625rem;
+  height: 9rem;
+  border-top: 0.0625rem solid var(--color-border);
+  border-bottom: 0.0625rem solid var(--color-border-strong);
+}
+
+.usage-chart__column {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.usage-chart__column:hover {
+  background: var(--color-sunken);
+}
+
+.usage-chart__bar {
+  width: 100%;
+  max-width: 1.5rem;
+  min-height: 0.125rem;
+  background: var(--color-primary);
+  border-radius: 0.125rem 0.125rem 0 0;
+}
+
+.usage-chart__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.usage-table {
+  margin-top: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.usage-table summary {
+  padding-block: var(--space-3);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.usage-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.usage-table th,
+.usage-table td {
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  border-bottom: 0.0625rem solid var(--color-border);
+  text-align: left;
+  font-weight: var(--weight-regular);
+}
+
+.usage-table thead th {
+  color: var(--color-text-muted);
+}
+
+/* ---------- Add medicines from a prescription (SCRUM-146) ---------- */
+
+.prescription-scan {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.prescription-scan > h2 {
+  margin-top: 0;
+  font-size: var(--text-xl);
+}
+
+.prescription-items {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prescription-item fieldset {
+  margin: 0;
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.prescription-item__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.prescription-item__change {
+  margin: var(--space-2) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Ask about my history (SCRUM-156) ---------- */
+
+.history-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.history-answer {
+  margin-top: var(--space-6);
+}
+
+.history-answer__question {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.history-answer__text {
+  font-size: var(--text-lg);
+}
+
+.history-records {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.history-record {
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.history-record p {
+  margin: var(--space-1) 0;
+}
+
+.history-record__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.history-record__date {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.history-record__title {
+  font-weight: var(--weight-semibold);
+}
+
+/* ---------- Loading placeholders (components/ui/Skeleton.js) ----------
+   Grey shapes in the page's final layout while its data loads. The region is aria-busy with one hidden
+   "Loading" status; the shapes are aria-hidden. A slow shimmer, still with reduced motion. */
+.skeleton__shapes { display: block; }
+.skeleton__stack { display: grid; gap: var(--space-2); align-content: start; min-width: 0; }
+.skeleton__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.skeleton__row--between { justify-content: space-between; }
+.skeleton__page-title { margin-bottom: var(--space-5); }
+.skeleton__filters { margin-bottom: var(--space-4); }
+.skeleton__calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); margin-top: var(--space-4); }
+.skeleton__table { display: grid; gap: var(--space-3); }
+.skeleton__table-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto; gap: var(--space-3); align-items: center; padding-block: var(--space-2); border-bottom: 0.0625rem solid var(--color-border); }
+
+.skeleton__bone {
+  display: block;
+  max-width: 100%;
+  height: 0.875rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-sunken) 0%, var(--color-sunken) 40%, var(--color-surface) 50%, var(--color-sunken) 60%, var(--color-sunken) 100%);
+  background-size: 250% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+.skeleton__bone--title { height: 1.25rem; }
+.skeleton__bone--heading { height: 2.25rem; }
+.skeleton__bone--button { height: var(--tap-target); border-radius: var(--radius-md); }
+.skeleton__bone--field { height: var(--tap-target); border-radius: var(--radius-md); }
+.skeleton__bone--chart { height: 10rem; border-radius: var(--radius-md); }
+.skeleton__bone--cell { height: 2.5rem; border-radius: var(--radius-sm); }
+.skeleton__bone--ring { width: 5rem !important; height: 5rem; }
+.skeleton__bone--round { border-radius: 50%; }
+
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton__bone { animation: none; background: var(--color-sunken); }
+}
+
+@media (max-width: 39.99rem) {
+  .skeleton__table-row { grid-template-columns: 1fr 1fr; }
+  .skeleton__table-row > :nth-child(n + 3) { display: none; }
+}
+
+@media print { .skeleton { display: none; } }

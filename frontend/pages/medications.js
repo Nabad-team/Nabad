@@ -9,7 +9,9 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import MoreMenu from "../components/ui/MoreMenu";
+import Card from "../components/ui/Card";
+import { MedicationsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
 import {
@@ -22,6 +24,7 @@ import {
 } from "../lib/medicationApi";
 import { formatDate, todayString } from "../lib/dates";
 import useSearchTarget from "../lib/useSearchTarget";
+import PrescriptionScan from "../components/PrescriptionScan";
 
 // Same limits as the backend (models/Medication.js), so the browser stops overlong text before sending it.
 const LIMITS = { name: 100, dose: 40, unit: 20, frequency: 100, notes: 1000 };
@@ -142,7 +145,7 @@ export default function MedicationsPage() {
   const [medications, setMedications] = useState(null);
   useSearchTarget(medications, "medication");
   const [loadError, setLoadError] = useState("");
-  // null, "add", or the id of the medication being edited. Only one form is open at a time.
+  // null, "add", "prescription" (SCRUM-146), or the id of the medication being edited. Only one form is open at a time.
   const [editing, setEditing] = useState(null);
   const [toDelete, setToDelete] = useState(null);
   const [busyId, setBusyId] = useState(null);
@@ -180,6 +183,8 @@ export default function MedicationsPage() {
 
   function open(target) {
     setNotice(""); setError(""); setEditing(target);
+    // The form focuses its first field when it opens; if it is already open, focus it again.
+    if (target === "add" && editing === "add") document.getElementById("new-name")?.focus();
   }
 
   const listName = forSelf ? "your list" : `${name}'s list`;
@@ -188,6 +193,13 @@ export default function MedicationsPage() {
     await addMedication(profileId, fields);
     setEditing(null);
     setNotice(`${fields.name} was added to ${listName}.`);
+    await load();
+  }
+
+  // SCRUM-146: the medicines read from a prescription were saved.
+  async function handlePrescriptionDone(message) {
+    setEditing(null);
+    setNotice(message);
     await load();
   }
 
@@ -270,23 +282,26 @@ export default function MedicationsPage() {
       <div className="button-row">
         <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>
         <Button variant="secondary" size="small" onClick={() => handleStatus(medication)} disabled={busyId === medication.id} aria-label={`${statusAction(medication)}: ${medication.name}`}>{statusAction(medication)}</Button>
-        <Button variant="danger" size="small" onClick={() => { setNotice(""); setError(""); setToDelete(medication); }} aria-label={`Delete ${medication.name}`}>Delete</Button>
+        <Button variant="danger-quiet" size="small" onClick={() => { setNotice(""); setError(""); setToDelete(medication); }} aria-label={`Delete ${medication.name}`}>Delete</Button>
       </div>
     </>}
   </li>;
 
   return (
-    <PageLayout title="Medications" header={<ProfileHeader showPicture={false} />}>
+    <PageLayout title={forSelf ? "My medications" : `Medications for ${name}`} header={<ProfileHeader showPicture={false} />}>
       {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
-      {forSelf ? (
-        <PageTitle lead={simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor."}>
-          {simplified ? "Medicines" : "My medications"}
-        </PageTitle>
-      ) : (
-        <PageTitle lead={simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`}>
-          {simplified ? `Medicines for ${name}` : `Medications for ${name}`}
-        </PageTitle>
-      )}
+      <PageTitle
+        lead={forSelf
+          ? (simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor.")
+          : (simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`)}
+        action={medications !== null && <Button onClick={() => open("add")} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-medication" : undefined}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>}
+        loadingActions={medications === null && !loadError ? 2 : 0}
+        more={medications !== null && <MoreMenu id="medications-more" items={[
+          { label: simplified ? "Add from a prescription photo" : "Add from a prescription", onClick: () => open("prescription") },
+          { label: "Medication overview", href: "/medication-overview" },
+        ]} />}>
+        {forSelf ? "My medications" : `Medications for ${name}`}
+      </PageTitle>
 
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <div className="action-toast" role="status"><span>{notice}</span>{undoStatus && <Button variant="secondary" size="small" onClick={handleUndoStatus} disabled={busyId === undoStatus.medication.id}>Undo</Button>}</div>}
@@ -299,30 +314,22 @@ export default function MedicationsPage() {
         </div>
       )}
 
-      {!loadError && !profilesError && medications === null && <HeartbeatLoader label="Loading medications..." />}
+      {!loadError && !profilesError && medications === null && <MedicationsSkeleton label="Loading medications..." />}
 
       {medications !== null && (
-        <>
-          {editing === "add" ? (
-            <MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} />
-          ) : (
-            <div className="medications-actions">
-              <Button onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>
-              <Button variant="secondary" href="/appointments">View medication calendar</Button>
-              <Button variant="secondary" href="/medication-overview">Medication overview</Button>
-            </div>
-          )}
+        <Card as="div" className="page-card">
+          {editing === "add" && <div id="new-medication"><MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} /></div>}
+          {editing === "prescription" && <PrescriptionScan profileId={profileId} listName={listName} onDone={handlePrescriptionDone} onCancel={() => setEditing(null)} />}
 
-          {medications.length === 0 && editing !== "add" && (
-            <EmptyState illustration={<MedicineBox size="5rem" />} title="No medications yet.">
-              {forSelf ? "Add the ones you take so they're ready for your doctor." : `Add the ones ${name} takes so they're ready for their doctor.`}
-            </EmptyState>
+          {medications.length === 0 && editing !== "add" && editing !== "prescription" && (
+            <EmptyState illustration={<MedicineBox size="4rem" />}
+              title={forSelf ? "No medications yet: add the ones you take so they're ready for your doctor." : `No medications yet: add the ones ${name} takes so they're ready for their doctor.`} />
           )}
 
           {medications.length > 0 && (
             <div className="medication-browser">
               <Input id="medication-search" type="search" label="Search medications" placeholder="Name, dose or notes" value={query} onChange={(event) => setQuery(event.target.value)} />
-              {matching.length === 0 ? <EmptyState title="No medications match your search.">Try a different name, dose or note.</EmptyState> : <>
+              {matching.length === 0 ? <EmptyState title="No medications match your search. Try a different name, dose or note." /> : <>
                 {activeMedications.length > 0 && <ul className="medication-list" aria-label={forSelf ? "Active medications" : `Active medications for ${name}`}>{activeMedications.map(medicationRow)}</ul>}
                 {discontinuedMedications.length > 0 && <details className="medication-archive">
                   <summary>Discontinued medications ({discontinuedMedications.length})</summary>
@@ -331,7 +338,7 @@ export default function MedicationsPage() {
               </>}
             </div>
           )}
-        </>
+        </Card>
       )}
 
       {toDelete && (

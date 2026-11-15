@@ -9,10 +9,11 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import OfflineEmergencyCard from "../components/OfflineEmergencyCard";
+import { formatDate, formatDateTime } from "../lib/dates";
 
 const allergyTypes = { medication: "Medication", food: "Food", other: "Other" };
 const medicationForms = { tablet: "Tablet", syrup: "Syrup", injection: "Injection", inhaler: "Inhaler", drops: "Drops", other: "Other" };
-const birthDate = value => value ? new Date(`${value}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }) : "Not recorded";
+const birthDate = value => value ? formatDate(value) : "Not recorded";
 
 export default function EmergencyCardPage() {
   const { activeProfile, selfProfile } = useActiveProfile();
@@ -70,7 +71,7 @@ export default function EmergencyCardPage() {
       <section aria-labelledby="card-contact"><h3 id="card-contact">Emergency contact</h3>
         {card.emergencyContact ? <p><strong>{card.emergencyContact.name}</strong><br /><a href={`tel:${card.emergencyContact.phone}`}>{card.emergencyContact.phone}</a></p> : <p>No emergency contact recorded for this profile.</p>}
       </section>
-      <footer><p>Prepared {new Date(card.preparedAt).toLocaleString("en-GB", { timeZone: "Asia/Beirut" })} (Beirut time).</p>
+      <footer><p>Prepared {formatDateTime(card.preparedAt)} (Beirut time).</p>
         <p>Based on saved health information. It may be incomplete or out of date. Confirm details with the patient or caregiver.</p>
       </footer>
     </article>}

@@ -102,9 +102,13 @@ function createApp() {
   // Medical documents are sent as base64 JSON and need the same route-local body parsing
   // so the ordinary 100 KB API limit below does not reject uploads before their route runs.
   app.use("/api/medical-documents", require("./routes/medicalDocuments"));
+  // Identity and coverage files are private profile data, separate from medical records and visit sharing.
+  app.use("/api/profile-coverage", require("./routes/profileCoverage"));
   app.use("/api/emergency-card", require("./routes/emergencyCard"));
   app.use("/api/visit-prep", require("./routes/visitPrep"));
   app.use("/api/visit-prep-shares", require("./routes/visitPrepShares"));
+  // SCRUM-146: a prescription photo, read into the medication list.
+  app.use("/api/prescriptions", require("./routes/prescriptions"));
 
   app.use(
     express.json({
@@ -113,6 +117,12 @@ function createApp() {
   );
 
   app.use("/api/search", require("./routes/search"));
+
+  // SCRUM-156: questions about the profile's own history.
+  app.use("/api/history", require("./routes/history"));
+
+  // SCRUM-311: the team's usage dashboard (anonymous daily totals, team members only).
+  app.use("/api/usage", require("./routes/usage"));
 
   app.use(
     "/api/health",

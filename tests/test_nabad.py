@@ -511,6 +511,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/emergency-card",
             "/medications",
             "/medication-overview",
+            "/health-assistant",
             "/my-health",
             "/water-and-sleep",
             "/profile",
@@ -531,7 +532,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.ensure_signed_in()
 
     def test_accessibility_core_pages_and_keyboard(self):
-        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/test-results")
+        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/health-assistant")
         for path in pages:
             with self.subTest(path=path):
                 self.open(path)
@@ -544,6 +545,17 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/appointments")
         self.click(self.button("Add appointment"))
         audit_accessibility(self, self.driver, "appointment-add-form")
+        # The workspace dropdowns: open with the keyboard, audit while open, Escape closes and returns focus.
+        self.open("/medications")
+        care = self.visible((By.CSS_SELECTOR, "nav[aria-label='Workspace'] button[aria-controls='nav-group-my-care']"))
+        self.assertEqual(care.get_attribute("aria-label"), "My care, current section")
+        care.send_keys(Keys.ENTER)
+        self.wait.until(lambda _: care.get_attribute("aria-expanded") == "true")
+        self.assertEqual(self.driver.switch_to.active_element.get_attribute("href").split("/")[-1], "appointments")
+        audit_accessibility(self, self.driver, "header-dropdown-open")
+        self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+        self.wait.until(lambda _: care.get_attribute("aria-expanded") == "false")
+        self.assertEqual(self.driver.switch_to.active_element, care)
 
         self.open("/dashboard")
         self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
@@ -762,14 +774,18 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.wait.until(lambda d: d.title.strip() and "Dashboard" in d.title)
         self.assertIn("Dashboard", self.driver.title)
         self.wait_for_text(f"Welcome, {RunAccount.name.split()[0]}", (By.TAG_NAME, "h1"))
-        for locator, path in (
-            ((By.CSS_SELECTOR, "a[aria-label='Type your symptoms']"), "/symptoms"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Main'] a[href='/my-health']"), "/my-health"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Main'] a[href='/medications']"), "/medications"),
-            ((By.CSS_SELECTOR, "nav[aria-label='Main'] a[href='/water-and-sleep']"), "/water-and-sleep"),
+        # Single links in the workspace row, and links inside the "My care" / "My records" dropdowns.
+        for group, locator, path in (
+            (None, (By.CSS_SELECTOR, "a[aria-label='Type your symptoms']"), "/symptoms"),
+            (None, (By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/symptoms']"), "/symptoms"),
+            ("my-records", (By.CSS_SELECTOR, "#nav-group-my-records a[href='/my-health']"), "/my-health"),
+            ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/medications']"), "/medications"),
+            ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/water-and-sleep']"), "/water-and-sleep"),
         ):
             with self.subTest(path=path):
                 self.open("/dashboard")
+                if group:
+                    self.click((By.CSS_SELECTOR, f"nav[aria-label='Workspace'] button[aria-controls='nav-group-{group}']"))
                 self.click(locator)
                 self.wait.until(EC.url_contains(path))
         with self.subTest(path="/profile"):
@@ -777,6 +793,12 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             self.open_account_menu()
             self.click((By.CSS_SELECTOR, "#account-menu a[href='/profile']"))
             self.wait.until(EC.url_contains("/profile"))
+
+    def test_old_health_assistant_address_redirects(self):
+        # /test-results moved to /health-assistant; old links and bookmarks keep working (308 in next.config.js).
+        self.open("/test-results")
+        self.wait.until(EC.url_contains("/health-assistant"))
+        self.wait_for_text("Health assistant", (By.TAG_NAME, "h1"))
 
     def test_wellbeing_support_numbers_show_individual_verification_dates(self):
         self.open("/dashboard")
@@ -987,6 +1009,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
 
         # Reached from the medications page, while acting as the user themself.
         self.open("/medications")
+        self.click(self.button("More"))
         self.click((By.LINK_TEXT, "Medication overview"))
         self.wait.until(lambda d: "/medication-overview" in d.current_url)
         self.wait_for_text("Medication overview", (By.TAG_NAME, "h1"))
@@ -1061,6 +1084,8 @@ class SignedInWorkflowTests(NabadWebsiteTests):
 
     def test_authenticated_vitals_history_and_trends(self):
         self.open("/vitals")
+        # Data first: the history shows; "Log reading" (the header's primary action) opens the form.
+        self.click(self.button("Log reading"))
         self.type_into("vital-systolic", "120")
         self.type_into("vital-diastolic", "80")
         self.type_into("vital-heart-rate", "72")
@@ -1099,13 +1124,18 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         download = self.visible((By.CSS_SELECTOR, f"section[aria-labelledby='visit-prep-attached-heading'] a[href*='{uploaded['id']}']"))
         self.assertIn("/api/medical-documents/", download.get_attribute("href"))
 
+        # Edit, Print/PDF and Export sit under "More"; "Share with a doctor" is the one primary button.
+        self.visible(self.button("Share with a doctor"))
+        self.click(self.button("More"))
         self.click(self.button("Edit visit sheet"))
         note = "Ask the clinician to review this X-ray."
         self.type_into("visit-prep-notes", note)
         self.click(self.button("Save changes"))
         notes = (By.CSS_SELECTOR, "section[aria-labelledby='visit-prep-notes-heading']")
         self.wait_for_text(note, notes)
+        self.click(self.button("More"))
         self.visible(self.button("Print or save as PDF"))
+        self.driver.switch_to.active_element.send_keys(Keys.ESCAPE)
 
         # Emulate the browser's print stylesheet and verify it leaves the actual summary visible.
         self.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {"media": "print"})
@@ -1133,9 +1163,10 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.set_date("feedback-date", time.strftime("%Y-%m-%d"))
         self.type_into("feedback-note", "SELENIUM-PROVIDER-NOTE")
         self.click(self.button("Save visit feedback"))
-        self.wait_for_message("Your visit feedback was saved.")
+        self.wait_for_message("Your visit feedback was saved for review.")
         self.open("/providers/aubmc")
         self.clickable(self.button("Remove my feedback"))
+        self.wait_for_text("Feedback status: Pending review")
         self.assertEqual(self.visible((By.ID, "feedback-note")).get_attribute("value"), "SELENIUM-PROVIDER-NOTE")
         self.click(self.button("Remove my feedback"))
         self.wait_for_message("Your feedback and its waiting report were removed.")

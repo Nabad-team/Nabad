@@ -137,6 +137,9 @@ function hoursBetween(bed, wake) {
 
 // Checks a sleep entry from the body. Returns { sleep } or { error } in plain words.
 // Hours are entered directly, or worked out from bedtime and wakeTime ("HH:MM"), which then take precedence.
+// A night is at least half an hour (MIN_SLEEP_HOURS) and at most 24: 0 hours is not a night's sleep, and it made
+// "average 0 hours" in My health. Entries saved before this rule are left as they are (the model still allows 0).
+const MIN_SLEEP_HOURS = 0.5;
 function readSleep(body) {
   const { hours: enteredHours, bedtime, wakeTime, quality, note } = body || {};
   let hours = enteredHours;
@@ -148,9 +151,10 @@ function readSleep(body) {
     if (bed === null || wake === null) return { error: "Enter times as HH:MM, for example 23:30." };
     if (bed === wake) return { error: "Bedtime and wake-up time can't be the same. Enter the hours slept instead." };
     hours = hoursBetween(bed, wake);
+    if (hours < MIN_SLEEP_HOURS) return { error: "That's less than half an hour of sleep. Check the times, or enter the hours slept." };
     times = { bedtime, wakeTime };
-  } else if (typeof hours !== "number" || !Number.isFinite(hours) || hours < 0 || hours > LIMITS.hours || !Number.isInteger(hours * 2)) {
-    return { error: "Enter the hours slept, from 0 to 24, in half hours (for example 7.5)." };
+  } else if (typeof hours !== "number" || !Number.isFinite(hours) || hours < MIN_SLEEP_HOURS || hours > LIMITS.hours || !Number.isInteger(hours * 2)) {
+    return { error: "Enter the hours slept, from 0.5 to 24, in half hours (for example 7.5)." };
   }
   if (!Number.isInteger(quality) || quality < 1 || quality > 5) {
     return { error: `Choose how well you slept, from 1 (${QUALITY_WORDS[0]}) to 5 (${QUALITY_WORDS[4]}).` };

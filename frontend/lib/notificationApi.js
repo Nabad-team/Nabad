@@ -1,4 +1,5 @@
 import { request } from "./api";
+import { formatDate } from "./dates";
 
 // In-app notifications (backend routes/notifications.js). They are created by the server, never here.
 export const NOTIFICATION_TYPES = [
@@ -37,5 +38,5 @@ export function timeAgo(isoDate, now = new Date()) {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
   if (hours < 48) return "Yesterday";
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return formatDate(date);
 }
