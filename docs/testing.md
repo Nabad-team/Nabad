@@ -169,7 +169,7 @@ Custom medication reminder schedules are documented in [medication-reminders.md]
 - **Profile and security pages** open for the signed-in user.
 - **Notifications:** an appointment due in 5 minutes with a 15-minute reminder is saved; with the E2E scheduler interval, the API's reminder job notifies it within 30 seconds, the header bell shows it as unread, `/notifications` lists it (without the appointment's title), the bell's panel marks everything read, and the profile page shows emergency and urgent caregiver alerts as always on.
 - **Visit preparation:** an uploaded imaging document can be selected and downloaded from the visit sheet, and added clinician notes appear on the sheet before printing.
-- **Care circle:** user A invites user B by email; B opens the link from the email in Mailpit, signs in and accepts; A runs an emergency symptom check; B's bell shows the care circle alert (with A's name and the level, not the symptoms) and a Call button for A's phone.
+- **Care circle:** user A invites user B by email; B opens the link from the email in Mailpit, signs in and accepts; A runs an emergency symptom check; B's bell shows the care circle alert (with A's name and the level, not the symptoms) and a Call button for A's phone. The email's subject is "Please contact A now", it starts with "Open Nabad to see why." and holds no level or medical words.
 - **Download my data:** on the profile page, confirm with the password; the browser saves `nabad-data-YYYY-MM-DD.json`, which must be valid JSON for this account (and not contain a password hash), and the account gets the "A copy of your Nabad data was downloaded" email.
 
 ### Emergency guidance with AI disabled

@@ -11,7 +11,7 @@ const User = require("../src/models/User");
 const LinkedProfile = require("../src/models/LinkedProfile");
 const Notification = require("../src/models/Notification");
 const CareCircle = require("../src/models/CareCircle");
-const { alertCareCircle } = require("../src/careCircle");
+const { alertCareCircle, alertEmail } = require("../src/careCircle");
 
 let mongod, server, base, passwordHash;
 const password = "Care circle test password 123!";
@@ -266,7 +266,12 @@ test("an emergency check alerts every active member in the app and by email, wit
     assert.equal(String(alert.profileId), String(alert.owner));
   }
   assert.deepEqual(sent.map((m) => m.to).sort(), [karim.user.email, layla.user.email].sort());
-  assert.match(sent[0].text, /Rana's symptom check needs attention \(emergency\)/);
+  // The email holds no medical words or level: those are only in Nabad after signing in.
+  for (const message of sent) {
+    assert.equal(message.subject, "Please contact Rana now");
+    assert.equal(message.text.split("\n\n")[0], "Open Nabad to see why.");
+    assert.doesNotMatch(`${message.subject} ${message.text}`, /emergency|urgent|symptom check|needs attention/i);
+  }
   assert.match(sent[0].text, /call Rana on \+96170123456/);
   assert.match(sent[0].text, /http:\/\/localhost:3000\/notifications/);
   // Karim's bell shows it, with the number to call.
@@ -286,6 +291,10 @@ test("urgent checks alert too, and a linked profile's check names that person", 
   assert.equal(alert.phone, "", "no phone saved, so no Call button");
   await eventually(async () => sent.length === 1);
   assert.doesNotMatch(sent[0].text, /call Rana on/);
+  // Urgent: "check in", and still nothing about Sami's check or its level in the email.
+  assert.equal(sent[0].subject, "Please check in with Rana");
+  assert.equal(sent[0].text.split("\n\n")[0], "Open Nabad to see why.");
+  assert.doesNotMatch(`${sent[0].subject} ${sent[0].text}`, /emergency|urgent|symptom check|needs attention|Sami/i);
 });
 
 test("routine and soon results alert nobody, and only active members are alerted", async () => {
@@ -370,4 +379,23 @@ test("caregiver alerts stay on whatever the member's preferences say", async () 
   await User.updateOne({ _id: karim.user._id }, { $set: { mutedNotificationTypes: ["system", "appointment_reminder", "document_ready"] } });
   await check(rana, { symptoms: EMERGENCY, checkId: "check-prefs" });
   await eventually(async () => (await Notification.countDocuments({ owner: karim.user._id, type: "caregiver_urgent" })) === 1);
+});
+
+test("the alert email: subject and first line say only who to contact, by level", () => {
+  const emergency = alertEmail({ to: "karim@example.test", inviterName: "Rana", level: "emergency", phone: "+96170123456" });
+  assert.equal(emergency.subject, "Please contact Rana now");
+  const urgent = alertEmail({ to: "karim@example.test", inviterName: "Rana", level: "urgent", phone: "" });
+  assert.equal(urgent.subject, "Please check in with Rana");
+  for (const email of [emergency, urgent]) {
+    const [first, link] = email.text.split("\n\n");
+    assert.equal(first, "Open Nabad to see why.");
+    assert.match(link, /^Open Nabad: http:\/\/localhost:3000\/notifications$/);
+    // Subject and first line: no medical words at all. The whole email: no level and no alert wording.
+    assert.doesNotMatch(`${email.subject} ${first}`, /emergency|urgent|symptom|medical|health|needs attention/i);
+    assert.doesNotMatch(`${email.subject} ${email.text}`, /emergency|urgent|symptom check|needs attention/i);
+    // 140 stays in the email.
+    assert.match(email.text, /If you think someone is in danger, call 140 now\./);
+  }
+  assert.match(emergency.text, /You can call Rana on \+96170123456\./);
+  assert.doesNotMatch(urgent.text, /You can call/);
 });
