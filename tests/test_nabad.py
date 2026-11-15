@@ -1009,6 +1009,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
 
         # Reached from the medications page, while acting as the user themself.
         self.open("/medications")
+        self.click(self.button("More"))
         self.click((By.LINK_TEXT, "Medication overview"))
         self.wait.until(lambda d: "/medication-overview" in d.current_url)
         self.wait_for_text("Medication overview", (By.TAG_NAME, "h1"))

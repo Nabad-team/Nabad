@@ -6,7 +6,7 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
-import useDisclosure from "../components/useDisclosure";
+import MoreMenu from "../components/ui/MoreMenu";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getHealthProfile } from "../lib/healthProfileApi";
 import { factText } from "../lib/healthProfile";
@@ -68,7 +68,6 @@ export default function VisitPrepPage() {
   useEffect(() => {
     if (focusSharing) document.getElementById("visit-prep-share-expiry")?.focus();
   }, [focusSharing]);
-  const more = useDisclosure();
   const [newShareUrl, setNewShareUrl] = useState("");
   const [sharing, setSharing] = useState(false);
   const [refreshingShares, setRefreshingShares] = useState(false);
@@ -267,16 +266,11 @@ export default function VisitPrepPage() {
         <div className="visit-prep__actions">
           <Button aria-expanded={showSharing} aria-controls="visit-prep-sharing" disabled={editing}
             onClick={() => { setSharingOpen(true); setFocusSharing((count) => count + 1); }}>Share with a doctor</Button>
-          <div className="more-menu">
-            <Button ref={more.buttonRef} variant="secondary" aria-expanded={more.open} aria-controls="visit-prep-more" onClick={more.toggle}>
-              More<svg className="more-menu__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
-            </Button>
-            {more.open && <ul id="visit-prep-more" ref={more.panelRef} className="more-menu__panel">
-              {!editing && <li><button type="button" disabled={exporting || saving} onClick={() => { more.close(); startEditing(); }}>Edit visit sheet</button></li>}
-              <li><button type="button" disabled={editing || exporting || saving} onClick={() => { more.close(); printSheet(); }}>Print or save as PDF</button></li>
-              <li><button type="button" disabled={editing || exporting || saving} onClick={() => { more.close(); exportSheet(); }}>{exporting ? "Exporting..." : "Export sheet with attachments"}</button></li>
-            </ul>}
-          </div>
+          <MoreMenu id="visit-prep-more" items={[
+            !editing && { label: "Edit visit sheet", disabled: exporting || saving, onClick: startEditing },
+            { label: "Print or save as PDF", disabled: editing || exporting || saving, onClick: printSheet },
+            { label: exporting ? "Exporting..." : "Export sheet with attachments", disabled: editing || exporting || saving, onClick: exportSheet },
+          ]} />
         </div>
         {notice && <p className="visit-prep__notice" role="status">{notice}</p>}
         {showSharing && <Card id="visit-prep-sharing" className="section visit-prep__sharing" aria-labelledby="visit-prep-sharing-heading">

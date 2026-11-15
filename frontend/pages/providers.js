@@ -134,7 +134,7 @@ export default function ProvidersPage() {
     else locate(false, start);
   }
   const field = key => ({ value: draft[key], onChange: e => setDraft(old => ({ ...old, [key]: e.target.value })) });
-  return <PageLayout title={t("title")} width="wide" header={<ProfileHeader showPicture={false} />}>
+  return <PageLayout title={t("title")} header={<ProfileHeader showPicture={false} />}>
     <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
     {filters?.emergency24h && <Alert tone="danger">
       <p><a href="tel:140">{t("emergencyCall")}</a> {t("emergencyHelp")}</p>
@@ -234,13 +234,14 @@ export default function ProvidersPage() {
       <p role="status">{t("count", { count: data.total })}</p>
       {/* One short directory note for every result, instead of the same notes on each card. */}
       <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
-      {!filters.emergency24h && travelIds.length > 0 && <div>
-        <p id="provider-travel-hint">{t("travelHint")}</p>
-        <Button variant="secondary" disabled={locating || estimating}
-          aria-describedby="provider-travel-hint" onClick={estimateTravel}>{t(estimating ? "travelLoading" : "travelButton")}</Button>
-        {travelResults && <p role="status">{t(travelResults.error ? "travelError" : "travelReady")}</p>}
-      </div>}
-      <Button variant="secondary" aria-pressed={showMap} onClick={() => setShowMap(value => !value)}>{t(showMap ? "hideMap" : "showMap")}</Button>
+      {!filters.emergency24h && travelIds.length > 0 && <p id="provider-travel-hint">{t("travelHint")}</p>}
+      {/* Side by side from 40rem, stacked on phones. */}
+      <div className="provider-tools">
+        {!filters.emergency24h && travelIds.length > 0 && <Button variant="secondary" disabled={locating || estimating}
+          aria-describedby="provider-travel-hint" onClick={estimateTravel}>{t(estimating ? "travelLoading" : "travelButton")}</Button>}
+        <Button variant="secondary" aria-pressed={showMap} onClick={() => setShowMap(value => !value)}>{t(showMap ? "hideMap" : "showMap")}</Button>
+      </div>
+      {!filters.emergency24h && travelIds.length > 0 && travelResults && <p role="status">{t(travelResults.error ? "travelError" : "travelReady")}</p>}
       {showMap && <ProviderMap providers={data.providers} />}
       {!data.providers.length && <p>{t(filters.emergencyNeeds ? "emergencyNoMatch" : "empty")}</p>}
       {comparison.length > 0 && <Card as="section" aria-labelledby="provider-comparison">

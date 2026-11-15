@@ -435,7 +435,8 @@ describe("Medications page: add from a prescription", () => {
   test("reads the prescription, adds what the person confirms, and shows it on the list", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
-    await user.click(await screen.findByRole("button", { name: "Add from a prescription" }));
+    await user.click(await screen.findByRole("button", { name: "More" }));
+    await user.click(screen.getByRole("button", { name: "Add from a prescription" }));
     const panel = screen.getByRole("region", { name: "Add from a prescription" });
     expect(screen.queryByText("No medications yet.")).not.toBeInTheDocument();
     await user.upload(within(panel).getByLabelText("Prescription photo or PDF"), new File([new Uint8Array([137, 80, 78, 71])], "rx.png", { type: "image/png" }));

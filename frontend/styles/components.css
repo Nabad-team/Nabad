@@ -973,6 +973,50 @@ select.input {
 }
 .more-menu__panel button:hover:not(:disabled) { background: var(--color-primary-soft); }
 .more-menu__panel button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
+.more-menu__panel a {
+  display: flex; align-items: center; min-height: var(--tap-target); padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm); color: var(--color-primary-strong); font-weight: var(--weight-medium); text-decoration: none;
+}
+.more-menu__panel a:hover { background: var(--color-primary-soft); }
+
+/* ---------- Signed-in page header row (PageTitle with action / more) ---------- */
+/* Title and one-line lead on the left, the primary button and More on the right; stacked on phones. */
+.page-title--with-actions { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4) var(--space-5); }
+.page-title__text { flex: 1 1 24rem; min-width: 0; }
+.page-title__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.page-title__actions .more-menu__panel { left: auto; right: 0; }
+@media (max-width: 39.99rem) {
+  .page-title--with-actions { flex-direction: column; align-items: stretch; }
+  .page-title__text { flex: none; }
+  .page-title__actions { flex-direction: column; align-items: stretch; }
+  .page-title__actions .button, .page-title__actions .more-menu { width: 100%; }
+  .page-title__actions .more-menu__panel { left: 0; right: 0; }
+}
+
+/* A sentence under the page header that adds detail to the lead. */
+.page-intro { max-width: var(--width-prose); color: var(--color-text-muted); }
+
+/* A button that reads as an inline link (e.g. "Resend email" in the verification bar). */
+.link-button {
+  display: inline; padding: 0; border: 0; background: none; font: inherit; font-weight: var(--weight-semibold);
+  color: var(--color-primary-strong); text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer;
+}
+.link-button:hover:not(:disabled) { text-decoration-thickness: 0.125rem; }
+.link-button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
+
+/* "Please verify your email": one slim line above the page header. */
+.verify-bar {
+  margin-bottom: var(--space-5); padding: var(--space-2) var(--space-4);
+  background: var(--color-warning-soft); border: 1px solid var(--color-warning); border-radius: var(--radius-md);
+  color: var(--color-warning-strong);
+}
+.verify-bar p { margin: 0; }
+.verify-bar__email { overflow-wrap: anywhere; }
+.verify-bar__message { margin-top: var(--space-1); font-size: var(--text-sm); }
+
+/* Find care: "Estimate driving times" and "Show map" side by side from 40rem, stacked on phones. */
+.provider-tools { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); margin-block: var(--space-3); }
+@media (min-width: 40rem) { .provider-tools { flex-direction: row; flex-wrap: wrap; align-items: center; } }
 
 /* "My care" and "My records": a button that opens a small panel of links under it. */
 .nav-group { position: relative; margin: 0; }
@@ -2697,10 +2741,6 @@ select.input {
   font-size: var(--text-sm);
 }
 
-.banner {
-  margin-bottom: var(--space-6);
-}
-
 .eyebrow {
   margin: var(--space-5) 0 var(--space-2);
   color: var(--color-text-muted);
@@ -2774,13 +2814,6 @@ select.input {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   gap: var(--space-5) var(--space-4);
-}
-
-.medications-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
 }
 
 .medication-form {
@@ -2947,10 +2980,6 @@ select.input {
   font-weight: var(--weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.appointments-actions {
-  margin-bottom: var(--space-5);
 }
 
 .appointment-form {

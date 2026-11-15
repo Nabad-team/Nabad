@@ -7,6 +7,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
+import MoreMenu from "../components/ui/MoreMenu";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { formatDate, todayString } from "../lib/dates";
@@ -271,6 +272,8 @@ export default function AppointmentsPage() {
     setNotice("");
     setNewAppointmentFields({ ...emptyFields(), appointmentDate: date });
     setEditing("add");
+    // The form focuses its first field when it opens; if it is already open, focus it again.
+    if (editing === "add") document.getElementById("new-title")?.focus();
   }
 
   async function remove(appointment) {
@@ -290,9 +293,12 @@ export default function AppointmentsPage() {
   const selectedMedications = selectedDate ? medicationEventsForDate(medications, selectedDate) : [];
   return (
     <PageLayout title={listName} header={<ProfileHeader showPicture={false} />}>
-      <PageTitle>{listName}</PageTitle>
-      <p className="page-intro">Keep your doctor's appointments together. Before each visit, at the time you choose, a reminder appears in your notifications (the bell at the top), even when this page is closed.</p>
-      {notificationPermission === "default" && <Button variant="secondary" onClick={enableReminders}>Also show browser pop-ups</Button>}
+      <PageTitle lead="Keep your doctor's appointments together."
+        action={appointments !== null && <Button onClick={() => openNewAppointment()} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-appointment" : undefined}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button>}
+        more={<MoreMenu id="appointments-more" items={[notificationPermission === "default" && { label: "Get pop-up reminders on this device", onClick: enableReminders }]} />}>
+        {listName}
+      </PageTitle>
+      <p className="page-intro">Before each visit, at the time you choose, a reminder appears in your notifications (the bell at the top), even when this page is closed.</p>
       {notificationPermission === "denied" && <p className="text-muted text-sm">Browser pop-ups are blocked in your browser settings. Your reminders still appear in your notifications.</p>}
       {notificationPermission === "unsupported" && <p className="text-muted text-sm">Browser pop-ups are not available here. Your reminders still appear in your notifications.</p>}
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
@@ -318,11 +324,7 @@ export default function AppointmentsPage() {
             {selectedMedications.map((medication) => <div key={medication.id} className="calendar-details__item"><strong>{medication.time} · {medication.name}</strong><span>Medication</span></div>)}
             <Button size="small" onClick={() => openNewAppointment(selectedDate)}>Add appointment for this day</Button>
           </section>}
-          {editing === "add" ? (
-            <AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} />
-          ) : (
-            <div className="appointments-actions"><Button onClick={() => openNewAppointment()}>{forSelf ? "Add appointment" : `Add appointment for ${name}`}</Button></div>
-          )}
+          {editing === "add" && <div id="new-appointment"><AppointmentForm idPrefix="new" initial={newAppointmentFields} title="Add an appointment" submitLabel="Save appointment" onSave={save} onCancel={() => setEditing(null)} /></div>}
           {appointments.length === 0 && editing !== "add" && <EmptyState title="No appointments yet.">Add your next doctor's visit so Nabad can remind you.</EmptyState>}
           {appointments.length > 0 && (
             <ul className="appointment-list" aria-label={listName}>

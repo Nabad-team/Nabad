@@ -106,7 +106,7 @@ export default function ProfileHeader({ showPicture = true }) {
       <AppHeader />
 
       {activeProfile && (showPicture || !activeProfile.isSelf) && (
-        <div className="container profile-strip">
+        <div className="container container--wide profile-strip">
           {showPicture && (
             <div className="profile-strip__picture">
               <Avatar name={activeProfile.fullName} src={displayedPicture} size={72} borderColor={TEAL} />
