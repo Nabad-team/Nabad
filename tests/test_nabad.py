@@ -1084,6 +1084,8 @@ class SignedInWorkflowTests(NabadWebsiteTests):
 
     def test_authenticated_vitals_history_and_trends(self):
         self.open("/vitals")
+        # Data first: the history shows; "Log reading" (the header's primary action) opens the form.
+        self.click(self.button("Log reading"))
         self.type_into("vital-systolic", "120")
         self.type_into("vital-diastolic", "80")
         self.type_into("vital-heart-rate", "72")

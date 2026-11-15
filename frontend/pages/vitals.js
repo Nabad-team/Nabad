@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -7,6 +7,8 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import Card from "../components/ui/Card";
+import MoreMenu from "../components/ui/MoreMenu";
+import InlinePanel from "../components/ui/InlinePanel";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { addVital, deleteVital, listVitals } from "../lib/vitalsApi";
@@ -31,7 +33,7 @@ function TrendChart({ title, readings, lines, unit }) {
   const change = comparable.length > 1 ? comparable[0][primary.key] - comparable[1][primary.key] : null;
   return <section className="vitals-chart" aria-label={`${title} trend`}>
     <div className="vitals-chart__heading"><h3>{title}</h3><span>{min}–{max} {unit}</span></div>
-    {change !== null && <p className="text-muted text-sm">Latest {primary.label.toLowerCase()} is {change === 0 ? "unchanged" : `${Math.abs(change)} ${unit} ${change > 0 ? "higher" : "lower"}`} than the previous reading.</p>}
+    {change !== null && <p className="text-muted text-sm">Latest {primary.label.toLowerCase()} is {change === 0 ? "unchanged" : `${Math.round(Math.abs(change) * 10) / 10} ${unit} ${change > 0 ? "higher" : "lower"}`} than the previous reading.</p>}
     <svg viewBox="0 0 100 100" role="group" aria-label={`${title} values from ${min} to ${max} ${unit}. Tab through the points for exact readings.`} preserveAspectRatio="none">
       {[16, 51, 86].map(y => <line key={y} x1="5" x2="95" y1={y} y2={y} className="vitals-chart__grid" />)}
       {lines.map(line => <path key={line.key} d={path(line.key)} className={`vitals-chart__line vitals-chart__line--${line.key}`} />)}
@@ -54,6 +56,8 @@ export default function VitalsPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ systolic: "", diastolic: "", heartRate: "", temperature: "", recordedAt: "" });
+  const [logging, setLogging] = useState(false);
+  const logButtonRef = useRef(null);
 
   const load = useCallback(async () => {
     if (!profileId) return;
@@ -61,7 +65,12 @@ export default function VitalsPage() {
     try { setReadings((await listVitals(profileId, range)).readings); }
     catch (err) { setError(err.message); }
   }, [profileId, range]);
-  useEffect(() => { setForm(current => ({ ...current, recordedAt: nowLocal() })); }, [profileId]);
+  useEffect(() => { setForm(current => ({ ...current, recordedAt: nowLocal() })); setLogging(false); }, [profileId]);
+  function openLog() {
+    setMessage(""); setError("");
+    if (!logging) setForm(current => ({ ...current, recordedAt: nowLocal() }));
+    setLogging(true);
+  }
   useEffect(() => { load(); }, [load]);
 
   async function submit(event) {
@@ -69,7 +78,7 @@ export default function VitalsPage() {
     try {
       await addVital(profileId, { systolic: numberOrUndefined(form.systolic), diastolic: numberOrUndefined(form.diastolic), heartRate: numberOrUndefined(form.heartRate), temperature: numberOrUndefined(form.temperature), recordedAt: new Date(form.recordedAt).toISOString() });
       setForm({ systolic: "", diastolic: "", heartRate: "", temperature: "", recordedAt: nowLocal() });
-      setMessage("Vital reading saved."); await load();
+      setLogging(false); setMessage("Vital reading saved."); await load();
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
   }
@@ -84,13 +93,15 @@ export default function VitalsPage() {
   const who = activeProfile?.isSelf === false ? activeProfile.fullName : null;
 
   return <PageLayout title={who ? `Vitals for ${who}` : "My vitals"} header={<ProfileHeader showPicture={false} />}>
-    <PageTitle lead={`Log measurements and see how they change over time${who ? ` for ${who}` : ""}.`}>{who ? `Vitals for ${who}` : "My vitals"}</PageTitle>
+    <PageTitle lead={`Log measurements and see how they change over time${who ? ` for ${who}` : ""}.`}
+      action={profileId && <Button ref={logButtonRef} onClick={openLog} aria-expanded={logging} aria-controls={logging ? "log-vitals" : undefined}>Log reading</Button>}
+      more={sorted.length > 0 && <MoreMenu id="vitals-more" items={[{ label: "Review vitals before a visit", href: "/visit-prep" }]} />}>{who ? `Vitals for ${who}` : "My vitals"}</PageTitle>
     {profilesError && <Alert tone="danger" as="p">{profilesError}</Alert>}
     {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
     {message && <Alert tone="success" as="p" role="status">{message}</Alert>}
 
-    {profileId && <Card className="section vitals-log" aria-labelledby="log-vitals-heading">
-      <h2 id="log-vitals-heading">Log a reading</h2>
+    {/* Data first: the history is the page; "Log reading" opens the form here, above it. */}
+    {profileId && logging && <InlinePanel id="log-vitals" title="Log a reading" onClose={() => setLogging(false)} returnFocusTo={logButtonRef}>
       <p className="text-muted">Enter one or more measurements. These readings do not replace medical advice.</p>
       <form onSubmit={submit} className="form vitals-form">
         <div className="vitals-form__grid">
@@ -100,22 +111,24 @@ export default function VitalsPage() {
           <Input id="vital-temperature" label="Temperature (°C)" type="number" min="30" max="45" step="0.1" value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value })} />
           <Input id="vital-recorded-at" label="Date and time" type="datetime-local" required value={form.recordedAt} onChange={e => setForm({ ...form, recordedAt: e.target.value })} />
         </div>
-        <Button type="submit" disabled={busy}>{busy ? "Saving…" : `Save reading${who ? ` for ${who}` : ""}`}</Button>
+        <div className="form-actions">
+          <Button type="submit" disabled={busy}>{busy ? "Saving…" : `Save reading${who ? ` for ${who}` : ""}`}</Button>
+          <Button variant="secondary" disabled={busy} onClick={() => setLogging(false)}>Cancel</Button>
+        </div>
       </form>
-    </Card>}
+    </InlinePanel>}
 
-    <Card className="section" aria-labelledby="vitals-history-heading">
+    <Card aria-labelledby="vitals-history-heading">
       <div className="vitals-history__heading"><div><h2 id="vitals-history-heading">History and trends</h2><p className="text-muted">Up to 1,000 readings are shown.</p></div>
         <label className="field__label" htmlFor="vitals-range">Time range<select id="vitals-range" className="input" value={range} onChange={e => setRange(e.target.value)}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select></label>
       </div>
-      {readings === null && profileId && !error ? <HeartbeatLoader label="Loading vital readings..." /> : sorted.length === 0 ? <EmptyState title="No vital readings in this range yet: log a reading above, or choose a wider time range." /> : <>
+      {readings === null && profileId && !error ? <HeartbeatLoader label="Loading vital readings..." /> : sorted.length === 0 ? <EmptyState title="No vital readings in this range yet: log a reading, or choose a wider time range." action={profileId && <Button variant="secondary" onClick={openLog}>Log reading</Button>} /> : <>
         <div className="vitals-charts">
           <TrendChart title="Blood pressure" readings={sorted.filter(r => r.systolic !== null)} lines={[{ key: "systolic", label: "Systolic" }, { key: "diastolic", label: "Diastolic" }]} unit="mmHg" />
           <TrendChart title="Heart rate" readings={sorted.filter(r => r.heartRate !== null)} lines={[{ key: "heartRate", label: "Heart rate" }]} unit="bpm" />
           <TrendChart title="Temperature" readings={sorted.filter(r => r.temperature !== null)} lines={[{ key: "temperature", label: "Temperature" }]} unit="°C" />
         </div>
         <div className="vitals-table-wrap"><table className="vitals-table"><caption>Vital readings, newest first</caption><thead><tr><th>Date</th><th>Blood pressure</th><th>Heart rate</th><th>Temperature</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{sorted.map(reading => <tr key={reading.id}><td>{dateText(reading.recordedAt)}</td><td>{reading.systolic === null ? "—" : `${reading.systolic}/${reading.diastolic} mmHg`}</td><td>{reading.heartRate === null ? "—" : `${reading.heartRate} bpm`}</td><td>{reading.temperature === null ? "—" : `${reading.temperature}°C`}</td><td><Button variant="danger" size="small" disabled={busy} onClick={() => remove(reading)} aria-label={`Delete reading from ${dateText(reading.recordedAt)}`}>Delete</Button></td></tr>)}</tbody></table></div>
-        <p className="section"><Button href="/visit-prep" variant="secondary">Review vitals before a visit</Button></p>
       </>}
     </Card>
   </PageLayout>;
