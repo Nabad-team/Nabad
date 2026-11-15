@@ -266,9 +266,10 @@ class NabadWebsiteTests(unittest.TestCase):
         start = time.perf_counter()
         self.open(path)
         elapsed = time.perf_counter() - start
-        # Pages that need sign-in render nothing, not even their <title>, until the session check answers.
+        # Pages that need sign-in show the loading placeholder, titled "Loading · Nabad", until the session check
+        # answers (components/RequireSignIn.js). Wait for the page's own title before comparing.
         try:
-            self.wait.until(lambda d: d.title.strip())
+            self.wait.until(lambda d: d.title.strip() and d.title.strip().lower() != "loading · nabad")
         except TimeoutException:
             pass
         title = self.driver.title
