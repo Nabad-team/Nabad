@@ -14,15 +14,26 @@ import {
   minutesText,
 } from "../lib/session";
 
+// Waits before asking again when the session check fails for a reason other than "not signed in" (401).
+// Covers a server waking up or a phone getting its connection back after the page was left open.
+export const SESSION_RETRY_DELAYS_MS = [1000, 3000, 8000];
+
 // Things that count as "the user is still here".
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
 // Lets any component ask about the sign-in state:
 // "checking" until the server answers, then "signedIn" or "signedOut".
 // "ended" means this tab just signed out (timeout or Sign out) and is on its way to /login.
+// "unavailable" means the server could not be asked (no connection, a timeout, a sleeping or failing server),
+// even after a few tries: we don't know, so nobody is sent to /login for it.
 const SessionStatusContext = createContext("signedOut");
 export function useSessionStatus() {
   return useContext(SessionStatusContext);
+}
+// Asks the server again after an "unavailable" answer (the "Try again" button in RequireSignIn).
+const SessionRetryContext = createContext(() => {});
+export function useRetrySessionCheck() {
+  return useContext(SessionRetryContext);
 }
 // For example to show the Sign out button.
 export function useSignedIn() {
@@ -44,31 +55,47 @@ export default function SessionTimeout({ children }) {
   const pathRef = useRef(router.asPath);
   pathRef.current = router.asPath;
   const staySignedInRef = useRef(() => {});
+  // "Try again" after an unavailable check (RequireSignIn) asks the server once more.
+  const [checkCount, setCheckCount] = useState(0);
 
   // An answer given for another page counts as "checking". Otherwise, right after logging in,
   // the new page would briefly see the login page's "signedOut" and send the user back to /login.
   const status = settings ? "signedIn" : answer.path === router.asPath ? answer.status : "checking";
 
   // Checks whether the user is signed in: on first load and after each page change
-  // (for example right after logging in). A 401 means signed out, so the timer stays off.
+  // (for example right after logging in). Only a 401 means signed out, so the timer stays off. Any other failure
+  // (no connection, a timeout, a 5xx while the server wakes up, a 429) says nothing about the session: the page
+  // keeps its loading placeholder and asks again, and only after the last try says the check is unavailable.
+  // (It used to count every failure as signed out, which sent signed-in users to /login.)
   useEffect(() => {
     if (settingsRef.current) return;
     let cancelled = false;
+    let retryTimer = null;
     const path = router.asPath;
-    getSession()
-      .then((result) => {
-        if (cancelled) return;
-        recordActivity();
-        settingsRef.current = result;
-        setSettings(result);
-      })
-      .catch(() => {
-        if (!cancelled) setAnswer({ path, status: "signedOut" });
-      });
+    function check(attempt) {
+      getSession()
+        .then((result) => {
+          if (cancelled) return;
+          recordActivity();
+          settingsRef.current = result;
+          setSettings(result);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err?.status === 401) return setAnswer({ path, status: "signedOut" });
+          if (attempt < SESSION_RETRY_DELAYS_MS.length) {
+            retryTimer = setTimeout(() => check(attempt + 1), SESSION_RETRY_DELAYS_MS[attempt]);
+            return;
+          }
+          setAnswer({ path, status: "unavailable" });
+        });
+    }
+    check(0);
     return () => {
       cancelled = true;
+      clearTimeout(retryTimer);
     };
-  }, [router.asPath]);
+  }, [router.asPath, checkCount]);
 
   useEffect(() => {
     if (!settings) return;
@@ -153,6 +180,7 @@ export default function SessionTimeout({ children }) {
 
   return (
     <SessionStatusContext.Provider value={status}>
+      <SessionRetryContext.Provider value={() => { setAnswer({ path: null, status: "checking" }); setCheckCount((count) => count + 1); }}>
       {children}
       {settings && showWarning && (
         <Dialog title="Are you still there?">
@@ -160,6 +188,7 @@ export default function SessionTimeout({ children }) {
           <Button onClick={() => staySignedInRef.current()}>Stay signed in</Button>
         </Dialog>
       )}
+      </SessionRetryContext.Provider>
     </SessionStatusContext.Provider>
   );
 }

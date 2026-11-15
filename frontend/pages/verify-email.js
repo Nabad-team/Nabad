@@ -4,7 +4,7 @@ import { verifyEmail } from "../lib/api";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Alert from "../components/ui/Alert";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { LinesSkeleton } from "../components/ui/Skeleton";
 
 // Opened from the link in the verification email: /verify-email?token=...
 // Public page (no sign-in needed), because people often open the email on a different device.
@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
   return (
     <PageLayout title="Verify your email" variant="auth">
       <PageTitle>Verify your email</PageTitle>
-      {state === "checking" && <HeartbeatLoader label="Checking your link..." />}
+      {state === "checking" && <LinesSkeleton label="Checking your link..." lines={2} />}
       {state === "verified" && (
         <Alert tone="success" as="p" role="status" className="prose">Your email is verified. Thank you! <a href="/dashboard">Go to your dashboard</a></Alert>
       )}

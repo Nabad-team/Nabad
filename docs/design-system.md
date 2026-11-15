@@ -152,17 +152,13 @@ Signed-in pages use the header's 74rem column while forms keep their 28rem maxim
 
 ## The signature: the heartbeat line
 
-The pulse from the logo, used in **two places only**, plus the Nabad assistant drawn from it (below). Don't add it elsewhere, and don't change the logo.
+The pulse from the logo, used **under page titles only**, plus the Nabad assistant drawn from it (below). Don't add it elsewhere, and don't change the logo. `PageTitle` draws it for you:
 
-1. **Under page titles**: `PageTitle` draws it for you.
-   ```jsx
-   <PageTitle lead="Optional short sentence under the title.">Your medicines</PageTitle>
-   ```
-2. **As the loading indicator for actions in progress** (uploading, saving, checking symptoms): a pulse travels along the line. It has `role="status"`, so screen readers announce the label. A page's first load uses grey placeholders instead (see [Loading placeholders](#loading-placeholders-skeletons)).
-   ```jsx
-   import { HeartbeatLoader } from "../components/ui/Heartbeat";
-   {loading && <HeartbeatLoader label="Loading your medicines..." />}
-   ```
+```jsx
+<PageTitle lead="Optional short sentence under the title.">Your medicines</PageTitle>
+```
+
+It is no longer a loader: the old `HeartbeatLoader` is gone (see [Loading placeholders](#loading-placeholders-skeletons)). The only animated loading indicator is the Symptom check's `AssistantLoader`, while it is checking.
 
 ### The Nabad assistant
 
@@ -353,17 +349,30 @@ The white surface the dashboard uses. On signed-in pages, **page content sits in
 
 ### Loading placeholders (skeletons)
 
-`components/ui/Skeleton.js`. While a page's data loads, it shows grey shapes in the page's final layout instead of blank space or "Loading...", so nothing jumps when the data arrives. They're used on the dashboard (Next step and Your progress), My vitals, My medications, My documents, My appointments, My health and Find care.
+`components/ui/Skeleton.js`. While a page's data loads, it shows grey shapes in the page's final layout instead of blank space or "Loading...", so nothing jumps when the data arrives.
+
+**The rule:** every page that loads data uses these placeholders. The only animated loader is the Symptom check's (`AssistantLoader`, the assistant tracing its pulse) while a check runs. Actions in progress (uploading documents, reading a prescription, searching the history) show one plain status line (`<p className="text-muted progress-note" role="status">Uploading documents...</p>`) next to their disabled button, without animation. Dialogs about an emergency keep their plain "Loading emergency contact..." line.
+
+| Placeholder | Used on |
+| --- | --- |
+| `DashboardSkeleton`, `NextStepSkeleton`, `ProgressSkeleton` | Dashboard (and the appointment row of Your progress uses `LinesSkeleton`) |
+| `MedicationsSkeleton`, `AppointmentsSkeleton`, `DocumentsSkeleton`, `VitalsSkeleton`, `HealthSkeleton`, `ProvidersSkeleton` | My medications, My appointments, My documents, My vitals, My health, Find care |
+| `MedicationOverviewSkeleton` | Medication overview |
+| `CardsSkeleton` (`grid` for a card grid, `title` to hold the page title too) | My profile, Care circle, Water and sleep, Visit preparation, Emergency card, the shared visit sheet, joining a care circle, provider details, the team dashboard, and the sign-in check (below) |
+| `RowsSkeleton` | Notifications (inside its card) |
+| `LinesSkeleton` | Content loading inside a card that is already shown: Account security, Emergency contact, Identification and coverage, Notification settings, the Health assistant's saved chats, the bell's list, Visit preparation's documents, the water and sleep summary, provider contributions, the email link check |
 
 ```jsx
 {medications === null && <MedicationsSkeleton label="Loading medications..." />}
 ```
 
+**While sign-in is checked:** a page that needs sign-in (`RequireSignIn`) shows `CardsSkeleton` until the server answers, never a blank page or the login page. Only a 401 ("not signed in") sends the visitor to `/login?next=...`. Any other failure (no connection, a timeout, a server waking up, a 5xx or 429) is tried again after 1, 3 and 8 seconds while the placeholder stays; if it still fails, the page says "We couldn't check that you're signed in..." with **Try again**, and never sends a signed-in user to log in again.
+
 - **One announcement:** the region has `aria-busy="true"` and one visually hidden `role="status"` line with the page's loading text. The shapes are `aria-hidden` and contain nothing focusable, so a screen reader hears "Loading" once, not once per shape. A placeholder that only holds a place for another region's loading (the dashboard's Next step) is `aria-hidden` with no status of its own.
 - **Same layout:** a page skeleton reuses the real list and card classes (`.medication`, `.appointment`, `.medical-documents__list li`, `.provider-card`, `.card-grid`, `.vitals-charts`, `.progress-summary__item`) and puts `<Bone />` shapes inside. A new list page adds its own skeleton the same way.
 - **Header actions:** a page that shows its primary action or More only after loading passes `loadingActions={2}` (or 1) to `PageTitle` while it loads. Button-shaped placeholders (`aria-hidden`) then hold the row, so the list doesn't move down when the buttons appear (My medications, My appointments).
 - **Motion:** a slow shimmer, and no animation with `prefers-reduced-motion`. Skeletons never print.
-- **Heartbeat or skeleton:** the heartbeat loader (`HeartbeatLoader`) stays for actions in progress (uploading, saving, checking symptoms). Skeletons are for a page's first load.
+- **Kept in check:** `__tests__/loadingPlaceholders.test.js` fails if a page brings back the heartbeat loader or uses the assistant loader outside the Symptom check.
 - The Selenium accessibility audit waits until no `.loader` and no `[aria-busy="true"]` region is on screen before it scans.
 
 ### EmptyState

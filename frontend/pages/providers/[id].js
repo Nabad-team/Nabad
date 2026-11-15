@@ -8,7 +8,7 @@ import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Alert from "../../components/ui/Alert";
-import { HeartbeatLoader } from "../../components/ui/Heartbeat";
+import { CardsSkeleton, LinesSkeleton } from "../../components/ui/Skeleton";
 import ProviderFacts from "../../components/ProviderFacts";
 import { getProvider, getMyProviderFeedback, saveProviderFeedback, removeProviderFeedback,
   getMyProviderCorrections, reportProviderCorrection, removeProviderCorrection } from "../../lib/providerApi";
@@ -116,7 +116,7 @@ export default function ProviderDetailPage() {
   const control = key => ({ value: form[key], onChange: e => setForm(old => ({ ...old, [key]: e.target.value })) });
   return <PageLayout title={provider?.name || "Provider details"} header={<ProfileHeader />}>
     <Button href="/providers" variant="secondary">Back to providers</Button>
-    {loading ? <HeartbeatLoader label="Loading provider details" /> : error ? <Alert tone="danger" role="alert">
+    {loading ? <CardsSkeleton label="Loading provider details" count={2} title /> : error ? <Alert tone="danger" role="alert">
       <p>{error}</p><Button variant="secondary" onClick={() => setRetry(n => n + 1)}>Try again</Button>
     </Alert> : provider && <>
       <PageTitle lead="Published facility information and community visit reports.">{provider.name}</PageTitle>
@@ -131,7 +131,7 @@ export default function ProviderDetailPage() {
       </Card>
       {!signedIn ? <p><Button href="/login" variant="secondary">Sign in to leave feedback or report an error</Button></p> : <>
         {mineError && <Alert tone="danger" role="alert"><p>{mineError}</p><Button variant="secondary" onClick={() => setMineRetry(n => n + 1)}>Retry my contributions</Button></Alert>}
-        {!mineReady && !mineError && <p role="status">Loading your contributions...</p>}
+        {!mineReady && !mineError && <LinesSkeleton label="Loading your contributions..." lines={2} />}
         <Card><h2>Your visit feedback</h2>
           <p>One current review per account and facility; saving again replaces your review. Ratings are self-reported experiences, not verified measures of clinical quality.</p>
           {feedbackStatus && <p>Feedback status: {reviewStatus[feedbackStatus]}</p>}

@@ -5,7 +5,7 @@ import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { CardsSkeleton, LinesSkeleton } from "../components/ui/Skeleton";
 import MoreMenu from "../components/ui/MoreMenu";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getHealthProfile } from "../lib/healthProfileApi";
@@ -273,7 +273,7 @@ export default function VisitPrepPage() {
         Visit preparation
       </PageTitle>
       {error && <Alert tone="danger" role="alert">{error}</Alert>}
-      {!data && !error && <HeartbeatLoader label="Preparing your summary..." />}
+      {!data && !error && <CardsSkeleton label="Preparing your summary..." count={3} />}
       {data && (
         <>
         {notice && <p className="visit-prep__notice" role="status">{notice}</p>}
@@ -351,7 +351,7 @@ export default function VisitPrepPage() {
             <p className="text-muted">Select relevant uploaded records to include with this sheet. Selections are saved automatically.</p>
             {!documentsRequested ? <Button variant="secondary" onClick={loadDocuments}>Choose uploaded documents</Button> : <>
               {documentsError && <Alert tone="danger" role="alert">{documentsError} <a href="/medical-documents">Open medical documents</a></Alert>}
-              {documents === null ? <HeartbeatLoader label="Loading uploaded documents..." /> : documentsError ? <Button variant="secondary" onClick={loadDocuments}>Retry loading documents</Button> : documents.length ? <ul className="visit-prep__document-options">
+              {documents === null ? <LinesSkeleton label="Loading uploaded documents..." lines={3} /> : documentsError ? <Button variant="secondary" onClick={loadDocuments}>Retry loading documents</Button> : documents.length ? <ul className="visit-prep__document-options">
               {documents.map((document) => (
                 <li key={document.id}>
                   <label>

@@ -4,7 +4,7 @@ import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
 import Alert from "../components/ui/Alert";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
+import { CardsSkeleton } from "../components/ui/Skeleton";
 import { getUsageSummary } from "../lib/usageApi";
 import { formatDateTime } from "../lib/dates";
 
@@ -92,7 +92,7 @@ export default function TeamDashboardPage() {
           </fieldset>
 
           {error && <Alert tone="danger" role="alert">{error}</Alert>}
-          {loading && <HeartbeatLoader label="Loading usage numbers..." />}
+          {loading && <CardsSkeleton label="Loading usage numbers..." count={2} grid />}
 
           {summary && (
             <>

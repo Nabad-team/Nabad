@@ -10,7 +10,6 @@ import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
 import InlinePanel from "../components/ui/InlinePanel";
-import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { DocumentsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
@@ -213,7 +212,7 @@ export default function MedicalDocumentsPage() {
         </div>
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         {notice && <p role="status" className="text-muted">{notice}</p>}
-        {busy && <HeartbeatLoader label={uploadProgress ? `${uploadProgress}...` : "Uploading documents..."} />}
+        {busy && <p className="text-muted progress-note" role="status">{uploadProgress ? `${uploadProgress}...` : "Uploading documents..."}</p>}
         {documents === null ? <DocumentsSkeleton label="Loading documents..." /> : documents.length ? <>
           <div className="medical-documents__filters" aria-label="Filter documents">
             <label className="field__label" htmlFor="filter-document-search">Search by file name</label>

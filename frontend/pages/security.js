@@ -7,6 +7,7 @@ import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
+import { LinesSkeleton } from "../components/ui/Skeleton";
 
 export default function SecurityPage() {
   const [enabled, setEnabled] = useState(false);
@@ -44,6 +45,8 @@ export default function SecurityPage() {
       <PageTitle>Account security</PageTitle>
       {error && <Alert tone="danger" as="p" role="alert" className="auth-message">{error}</Alert>}
       <Card as="div" className="security-card">
+      {/* Until the account has loaded, the card holds its place instead of standing empty. */}
+      {!authProvider && !error && <LinesSkeleton label="Loading your security settings..." lines={2} button />}
       {authProvider === "google" && (
         <p className="prose">You sign in with Google, so Google protects your sign-in and Nabad does not send email codes. To add a second step, turn on 2-Step Verification in your Google account.</p>
       )}
