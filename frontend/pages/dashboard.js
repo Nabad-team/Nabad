@@ -2,7 +2,7 @@ import ProfileHeader from "../components/ProfileHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCorner from "../components/WellbeingCorner";
 import ProgressSummary from "../components/ProgressSummary";
-import NextStepCard from "../components/NextStepCard";
+import DashboardFirstSteps from "../components/GettingStartedCard";
 import useDashboardData from "../components/useDashboardData";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
@@ -110,7 +110,8 @@ export default function DashboardPage() {
         </SkeletonRegion>
       )}
 
-      {activeProfile && <NextStepCard data={data} forName={forName} />}
+      {/* Getting started for new or mostly empty profiles, otherwise Next step: never both. */}
+      {activeProfile && <DashboardFirstSteps data={data} forName={forName} isSelf={activeProfile.isSelf !== false} />}
 
       <section
         className="check-in"

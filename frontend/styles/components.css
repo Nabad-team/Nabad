@@ -4813,3 +4813,28 @@ select.input {
 .wellbeing-help h4 { margin: var(--space-5) 0 var(--space-2); }
 .wellbeing-help__urgent { font-weight: var(--weight-semibold); max-width: var(--width-prose); }
 .wellbeing-help__list { margin: 0 0 var(--space-4); padding-left: var(--space-5); }
+
+/* ---------- Getting started (components/GettingStartedCard.js) ---------- */
+/* In the Next step card's place on the dashboard. Calm: a plain list, a written count, one quiet bar. */
+.getting-started { margin-bottom: var(--space-5); }
+.getting-started__header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.getting-started__header h2 { margin: 0 0 var(--space-1); }
+.getting-started__header p { margin: 0; }
+.getting-started__progress { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin: var(--space-4) 0; }
+.getting-started__bar { flex: 1 1 8rem; max-width: 16rem; height: 0.5rem; border-radius: 999px; background: var(--color-sunken); overflow: hidden; }
+.getting-started__bar > span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }
+.getting-started__steps { display: grid; margin: 0; padding: 0; list-style: none; border-top: 0.0625rem solid var(--color-border); }
+.getting-started__step { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding-block: var(--space-3); border-bottom: 0.0625rem solid var(--color-border); }
+.getting-started__step:last-child { border-bottom: 0; padding-bottom: 0; }
+.getting-started__mark { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 0.125rem solid var(--color-border-strong); color: var(--color-surface); font-weight: var(--weight-semibold); }
+.getting-started__step--done .getting-started__mark { border-color: var(--color-success); background: var(--color-success); }
+.getting-started__text p { margin: 0; }
+.getting-started__title { font-weight: var(--weight-semibold); }
+.getting-started__step--done .getting-started__title { font-weight: normal; color: var(--color-text-muted); }
+.getting-started__done { color: var(--color-success); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+@media (max-width: 30rem) {
+  .getting-started__step { grid-template-columns: 2rem minmax(0, 1fr); }
+  .getting-started__step > .button, .getting-started__done { grid-column: 2; justify-self: start; }
+}
+.getting-started-setting { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 0.0625rem solid var(--color-border); }
+.getting-started-setting p { margin: 0 0 var(--space-2); }
