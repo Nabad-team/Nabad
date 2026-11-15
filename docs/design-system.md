@@ -12,12 +12,44 @@ Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`
 | `frontend/styles/tokens.css` | Colors, font, type scale, spacing, radius, shadows (CSS variables) |
 | `frontend/styles/base.css` | Defaults for `body`, headings, links, form controls, focus ring |
 | `frontend/styles/components.css` | Classes used by the components below |
-| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `Heartbeat` |
+| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `MoreMenu`, `Heartbeat` |
 | `frontend/components/illustrations.js` | The four line drawings |
 
 **Rule of thumb:** a new page should need no `style={{...}}` and no hex colors. If you need a color or a size, use a token (`var(--color-primary)`, `var(--space-4)`). If you need something new, add it to the system rather than to your page.
 
 ---
+
+## Signed-in page template
+
+Every signed-in page follows the same frame, so the app reads as one product:
+
+```
+┌ header (74rem) ─────────────────────────────────────────────────────────────┐
+│ My vitals                                              [Log reading] [More ▾] │  ← PageTitle: title + one-line lead left,
+│ ~~~~~                                                                         │    one primary action and More right
+│ Log measurements and see how they change over time.                           │    (stacked on phones)
+│ ───────────────────────────────────────────────────────────────────────────── │
+│ ┌ card ─────────────────────────────────────────────────────────────────────┐ │  ← data first: the list, history or
+│ │ History and trends ...                                                    │ │    empty state, in the dashboard's card
+│ └───────────────────────────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **One width.** `PageLayout` gives every page with a header the 74rem column (`container--wide`), so content lines up with the header's left and right edges. Don't pass `width` on a signed-in page.
+2. **Header row.** `PageTitle` takes the title, a one-line `lead`, the page's single primary `action` and an optional `more` (`<MoreMenu />`) for the secondary actions. Longer explanations go in a `.page-intro` paragraph under it.
+   ```jsx
+   <PageTitle lead="Keep your doctor's appointments together."
+     action={<Button onClick={openForm}>Add appointment</Button>}
+     more={<MoreMenu id="appointments-more" items={[canAsk && { label: "Get pop-up reminders on this device", onClick: ask }]} />}>
+     My appointments
+   </PageTitle>
+   ```
+   Show the primary action once the page's data has loaded (an add form opened before then would be reset). Pages whose sections each have their own Add (My health) or that are tools (Find care, Symptom check) have no header action.
+3. **Cards.** Page content sits in the same `Card` the dashboard uses.
+4. **Data first.** The list or history (or its empty state) comes first; the primary action opens the form inline and moves focus into it.
+5. **Empty states** use the one `EmptyState` component.
+
+A short form inside the wide column keeps its 28rem width and starts at the left edge, like the text above it.
 
 ## A new page in 30 seconds
 
@@ -95,7 +127,7 @@ Line height is 1.6 for text and 1.25 for headings. Headings are semibold (600), 
 - Spacing: `--space-1` (4px) `-2` (8) `-3` (12) `-4` (16) `-5` (24) `-6` (32) `-7` (48) `-8` (64) `-9` (96).
 - Radius: `--radius-sm` (8px), `--radius-md` (12px, buttons and inputs), `--radius-lg` (18px, cards and dialogs).
 - Shadows: `--shadow-sm` gives grouped surfaces a light lift; `--shadow-overlay` is for menus and dialogs. Pair these with a thin border.
-- Widths: workspace `--width-content` (62rem), forms `--width-form` (28rem), paragraphs `--width-prose` (38rem), header and landing `--width-wide` (74rem). Legal pages use a 46rem reading column.
+- Widths: header, every signed-in page and the landing page `--width-wide` (74rem); sign-in and info pages `--width-content` (62rem); forms `--width-form` (28rem); paragraphs `--width-prose` (38rem). Legal pages use a 46rem reading column.
 - Side margins: `--page-gutter` is 16px on phones and 32px from 640px up. `PageLayout` applies it, so content never touches the screen edge.
 
 ## Accessibility built in
@@ -106,7 +138,7 @@ Line height is 1.6 for text and 1.25 for headings. Headings are semibold (600), 
 - Colors meet AA; color is never the only signal (errors and urgency levels are always written out).
 - Animations stop when the user turns on "reduce motion".
 
-Workspace pages use a wider column while forms keep their 28rem maximum. Progress cards use two columns on larger screens and one on phones; water and sleep sit side by side from 56rem. Document rows and their metadata editors wrap into compact grids. Avoid fixed flex bases when changing a row into a column: the basis becomes a height and can create large empty gaps. Preserve visible labels, consent text, keyboard focus, and the existing print-specific layouts when refining a screen.
+Signed-in pages use the header's 74rem column while forms keep their 28rem maximum (see [Signed-in page template](#signed-in-page-template)). Progress cards use two columns on larger screens and one on phones; water and sleep sit side by side from 56rem. Document rows and their metadata editors wrap into compact grids. Avoid fixed flex bases when changing a row into a column: the basis becomes a height and can create large empty gaps. Preserve visible labels, consent text, keyboard focus, and the existing print-specific layouts when refining a screen.
 
 ---
 
@@ -181,7 +213,7 @@ Phone     [Nabad]                                                              [
 - **Dropdowns** are disclosure buttons (`aria-expanded`, `aria-controls`), not ARIA menus: links stay links. Enter or Space opens one and focuses its first link; Down/Up move between links (on the closed button they open it at the first/last link), Home/End jump, Escape closes it and returns focus to the button; a click outside or tabbing out closes it. When one of its pages is open, the group button gets the current-page style and the name "My care, current section", and the link inside has `aria-current="page"`.
 - **One name per page.** A link's label is exactly the page's `<title>` and `<h1>` (for example "My medications", "Symptom check"), also in simplified mode. Personal records use "My …" (My health, My vitals, My medications, My appointments, My documents, My profile); tools keep plain names (Symptom check, Visit preparation, Health assistant, Find care, Water and sleep). For a linked profile the title names them instead ("Vitals for Rania"). The dashboard doesn't repeat the menu as tiles; its quick actions are equal icon tiles with one-line labels.
 - **Say it once.** A page doesn't repeat what the header or another page already offers. The dashboard keeps the symptom check, Your progress (with the upcoming appointment), at most four quick actions and a compact Wellbeing Corner (today's message and the two support numbers; tips and notes under "More"). Apart from the footer line, 140 appears once per page.
-- **Badges state known facts only.** Find care cards show distance, driving time, open/closed per published hours and the 24/7 ER status only when known; nothing says "not verified" on the card. One note above the list explains this, and "Information may be outdated" sits under More details.
+- **Badges state known facts only.** Find care cards show distance, driving time, open/closed per published hours and the 24/7 ER status only when known; nothing says "not verified" on the card. One note above the list explains this, and "Information may be outdated" sits under More details. "Estimate driving times" and "Show map" sit side by side from 40rem (`.provider-tools`) and stack on phones.
 - **Right side:** the profile switcher, then the **account menu**: a round button with the user's initials that opens My profile, Security and Sign out (`ACCOUNT_LINKS`). New controls such as a notifications bell go on the right, before the account menu. At 1280px there is plenty of room.
 - **Phones (under 40rem / 640px):** the logo and a **Menu** button. The menu is a full-width panel under the bar, in the page flow (not an overlay), with every link, the profile switcher ("Acting for") and Sign out.
 - **From 40rem** the workspace row sits under the logo and account bar. It is one line on laptops and wide tablets; on narrow tablets or with very large text it wraps rather than scrolling.
@@ -240,10 +272,12 @@ Show a form-level error with `<Alert tone="danger" as="p" role="alert">` just ab
 ```jsx
 <Alert tone="success" as="p" role="status">Your profile is saved.</Alert>
 <Alert tone="danger" as="p" role="alert">Could not save. Please try again.</Alert>
-<Alert tone="warning" title="Please verify your email.">...</Alert>
+<Alert tone="warning" title="Check this.">...</Alert>
 <Alert tone="info">...</Alert>
 <Alert tone="note" title="Nabad is not a doctor.">...</Alert>   // terracotta accent, rare
 ```
+
+The "Please verify your email" reminder is not an Alert: it is one slim `.verify-bar` line on the dashboard with a "Resend email" link (`components/EmailVerificationBanner.js`); the longer reason is the link's screen-reader description.
 
 Use `role="alert"` for errors that need attention now and `role="status"` for calm confirmations. Leave `role` off for static text.
 
@@ -255,7 +289,7 @@ The card starts with the level's icon, "Urgency: <label>" and one short line, th
 
 ### One primary action, and "More"
 
-When a page has several actions, show the main one as the primary button and put the rest in a **More** button (`useDisclosure`: `aria-expanded`, Escape and outside click close it, focus goes to its first item). Visit preparation: **Share with a doctor** (opens the sharing panel and focuses its first control) and **More** with Edit visit sheet, Print or save as PDF, and Export sheet with attachments. Styles: `.more-menu`, `.more-menu__panel`.
+When a page has several actions, show the main one as the primary button and put the rest in a **More** button: `<MoreMenu id="..." items={[{ label, onClick } | { label, href }]} />` (`components/ui/MoreMenu.js`, built on `useDisclosure`: `aria-expanded`, Escape and outside click close it, focus goes to its first item). Falsy items are skipped, and with no items it renders nothing. Visit preparation: **Share with a doctor** (opens the sharing panel and focuses its first control) and **More** with Edit visit sheet, Print or save as PDF, and Export sheet with attachments. My medications: **Add medication**, and More with Add from a prescription and Medication overview. My appointments: **Add appointment**, and More with Get pop-up reminders on this device (only while the browser can still ask). Styles: `.more-menu`, `.more-menu__panel`.
 
 ### Badge
 

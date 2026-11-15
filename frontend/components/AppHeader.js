@@ -303,7 +303,7 @@ export default function AppHeader() {
 
       {signedIn && mobile.open && (
         <div id="mobile-menu" ref={mobile.panelRef} className="mobile-menu">
-          <div className="container">
+          <div className="container container--wide">
             <nav aria-label="Main">
               <WorkspaceLinks path={path} mobile />
             </nav>

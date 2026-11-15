@@ -42,7 +42,10 @@ describe("Email verification banner", () => {
     const user = userEvent.setup({ delay: null });
     render(<EmailVerificationBanner />);
     expect(await screen.findByText(/Please verify your email/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Resend verification email" }));
+    // One slim line; the reason is still there for screen readers.
+    expect(screen.getByRole("region", { name: "Email verification" })).toHaveClass("verify-bar");
+    expect(screen.getByRole("button", { name: "Resend email" })).toHaveAccessibleDescription(/keeps your account secure/);
+    await user.click(screen.getByRole("button", { name: "Resend email" }));
     expect(resendVerificationEmail).toHaveBeenCalledTimes(1);
     expect(await screen.findByRole("status")).toHaveTextContent("A new verification link was sent");
   });
@@ -52,7 +55,7 @@ describe("Email verification banner", () => {
     resendVerificationEmail.mockRejectedValue(Object.assign(new Error("Please wait"), { status: 429 }));
     const user = userEvent.setup({ delay: null });
     render(<EmailVerificationBanner />);
-    await user.click(await screen.findByRole("button", { name: "Resend verification email" }));
+    await user.click(await screen.findByRole("button", { name: "Resend email" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("wait a minute");
   });
 

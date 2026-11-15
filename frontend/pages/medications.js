@@ -9,6 +9,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
+import MoreMenu from "../components/ui/MoreMenu";
 import { HeartbeatLoader } from "../components/ui/Heartbeat";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
@@ -181,6 +182,8 @@ export default function MedicationsPage() {
 
   function open(target) {
     setNotice(""); setError(""); setEditing(target);
+    // The form focuses its first field when it opens; if it is already open, focus it again.
+    if (target === "add" && editing === "add") document.getElementById("new-name")?.focus();
   }
 
   const listName = forSelf ? "your list" : `${name}'s list`;
@@ -286,15 +289,17 @@ export default function MedicationsPage() {
   return (
     <PageLayout title={forSelf ? "My medications" : `Medications for ${name}`} header={<ProfileHeader showPicture={false} />}>
       {/* For a dependent, the "Acting as" banner in the header also shows whose list this is. */}
-      {forSelf ? (
-        <PageTitle lead={simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor."}>
-          My medications
-        </PageTitle>
-      ) : (
-        <PageTitle lead={simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`}>
-          {`Medications for ${name}`}
-        </PageTitle>
-      )}
+      <PageTitle
+        lead={forSelf
+          ? (simplified ? "Your medicines." : "Keep a list of the medicines you take, so it's ready when you see a doctor.")
+          : (simplified ? `Medicines for ${name}.` : `Keep a list of the medicines ${name} takes, so it's ready when they see a doctor.`)}
+        action={medications !== null && <Button onClick={() => open("add")} aria-expanded={editing === "add"} aria-controls={editing === "add" ? "new-medication" : undefined}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>}
+        more={medications !== null && <MoreMenu id="medications-more" items={[
+          { label: simplified ? "Add from a prescription photo" : "Add from a prescription", onClick: () => open("prescription") },
+          { label: "Medication overview", href: "/medication-overview" },
+        ]} />}>
+        {forSelf ? "My medications" : `Medications for ${name}`}
+      </PageTitle>
 
       {profilesError && <Alert tone="danger" as="p" role="alert">{profilesError}</Alert>}
       {notice && <div className="action-toast" role="status"><span>{notice}</span>{undoStatus && <Button variant="secondary" size="small" onClick={handleUndoStatus} disabled={busyId === undoStatus.medication.id}>Undo</Button>}</div>}
@@ -311,17 +316,8 @@ export default function MedicationsPage() {
 
       {medications !== null && (
         <>
-          {editing === "add" ? (
-            <MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} />
-          ) : editing === "prescription" ? (
-            <PrescriptionScan profileId={profileId} listName={listName} onDone={handlePrescriptionDone} onCancel={() => setEditing(null)} />
-          ) : (
-            <div className="medications-actions">
-              <Button onClick={() => open("add")}>{simplified ? `Add medicine${forSelf ? "" : ` for ${name}`}` : `Add medication${forSelf ? "" : ` for ${name}`}`}</Button>
-              <Button variant="secondary" onClick={() => open("prescription")}>{simplified ? "Add from a prescription photo" : "Add from a prescription"}</Button>
-              <Button variant="secondary" href="/medication-overview">Medication overview</Button>
-            </div>
-          )}
+          {editing === "add" && <div id="new-medication"><MedicationForm idPrefix="new" initial={emptyFields()} title="Add a medication" submitLabel="Save medication" onSave={handleAdd} onCancel={() => setEditing(null)} /></div>}
+          {editing === "prescription" && <PrescriptionScan profileId={profileId} listName={listName} onDone={handlePrescriptionDone} onCancel={() => setEditing(null)} />}
 
           {medications.length === 0 && editing !== "add" && editing !== "prescription" && (
             <EmptyState illustration={<MedicineBox size="5rem" />} title="No medications yet.">

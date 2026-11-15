@@ -56,8 +56,9 @@ describe("appointment reminder permissions", () => {
   test("asks only after the user chooses browser pop-ups and handles a grant", async () => {
     const requestPermission = setPermission("default", jest.fn().mockResolvedValue("granted"));
     render(<AppointmentsPage />);
-    expect(await screen.findByRole("button", { name: "Also show browser pop-ups" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Also show browser pop-ups" }));
+    fireEvent.click(await screen.findByRole("button", { name: "More" }));
+    expect(screen.getByRole("button", { name: "Get pop-up reminders on this device" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Get pop-up reminders on this device" }));
     expect(requestPermission).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(/Browser pop-ups are on/)).toBeInTheDocument();
   });
@@ -65,7 +66,8 @@ describe("appointment reminder permissions", () => {
   test("explains when permission is denied", async () => {
     const requestPermission = setPermission("default", jest.fn().mockResolvedValue("denied"));
     render(<AppointmentsPage />);
-    fireEvent.click(await screen.findByRole("button", { name: "Also show browser pop-ups" }));
+    fireEvent.click(await screen.findByRole("button", { name: "More" }));
+    fireEvent.click(screen.getByRole("button", { name: "Get pop-up reminders on this device" }));
     expect(requestPermission).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(/Browser pop-ups were not allowed/)).toBeInTheDocument();
   });
@@ -74,7 +76,7 @@ describe("appointment reminder permissions", () => {
     const requestPermission = setPermission("denied");
     render(<AppointmentsPage />);
     expect(await screen.findByText(/Browser pop-ups are blocked in your browser settings\. Your reminders still appear in your notifications\./)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Also show browser pop-ups" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Get pop-up reminders on this device" })).not.toBeInTheDocument();
     expect(requestPermission).not.toHaveBeenCalled();
   });
 
@@ -85,7 +87,7 @@ describe("appointment reminder permissions", () => {
     expect(await screen.findByText(/a reminder appears in your notifications \(the bell at the top\), even when this page is closed/)).toBeInTheDocument();
     expect(screen.queryByText(/while this page is open/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Back to medications" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Also show browser pop-ups" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Get pop-up reminders on this device" })).not.toBeInTheDocument();
     expect(requestPermission).not.toHaveBeenCalled();
   });
 
