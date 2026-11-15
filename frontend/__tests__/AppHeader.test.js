@@ -65,6 +65,7 @@ describe("Header navigation", () => {
     const care = document.getElementById(within(navigation).getByRole("button", { name: "My care" }).getAttribute("aria-controls"));
     expect(within(care).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
       ["My appointments", "/appointments"], ["My medications", "/medications"], ["Medication overview", "/medication-overview"], ["Water and sleep", "/water-and-sleep"],
+      ["Wellbeing", "/wellbeing"],
     ]);
     expect(within(care).getByRole("link", { name: "My appointments" })).toHaveFocus();
     await user.click(within(navigation).getByRole("button", { name: "My records" }));
@@ -114,6 +115,28 @@ describe("Header navigation", () => {
     await user.click(button);
     act(() => screen.getByRole("link", { name: "A link on the page" }).focus());
     expect(button).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("on Wellbeing, My care is the current section and Wellbeing the current page, also in the phone menu", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderHeader("/wellbeing");
+    await screen.findByRole("option", { name: "Demo User (you)" });
+    const navigation = screen.getByRole("navigation", { name: "Workspace" });
+    const care = await within(navigation).findByRole("button", { name: "My care, current section" });
+    expect(within(navigation).getByRole("button", { name: "My records" })).not.toHaveClass("nav-group__button--current");
+    await user.click(care);
+    const group = document.getElementById(care.getAttribute("aria-controls"));
+    expect(within(group).getByRole("link", { name: "Wellbeing" })).toHaveAttribute("href", "/wellbeing");
+    expect(within(group).getByRole("link", { name: "Wellbeing" })).toHaveAttribute("aria-current", "page");
+    expect(within(group).getByRole("link", { name: "Water and sleep" })).not.toHaveAttribute("aria-current");
+    await user.keyboard("{Escape}");
+
+    expect(menuButton()).toHaveAccessibleName("Menu, current section");
+    await user.click(menuButton());
+    const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
+    const [main] = within(panel).getAllByRole("navigation");
+    const careGroup = within(main).getAllByRole("region").find((region) => region.querySelector(".workspace-group__label").textContent === "My care");
+    expect(within(careGroup).getByRole("link", { name: "Wellbeing" })).toHaveAttribute("aria-current", "page");
   });
 
   test("marks the current page inside its group and on the group button", async () => {
@@ -267,7 +290,7 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Symptom check", "Dashboard", "My appointments", "My medications", "Medication overview", "Water and sleep", "My health", "My vitals", "My documents", "Visit preparation", "Health assistant", "Find care"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Symptom check", "Dashboard", "My appointments", "My medications", "Medication overview", "Water and sleep", "Wellbeing", "My health", "My vitals", "My documents", "Visit preparation", "Health assistant", "Find care"]);
     // The same groups as the desktop dropdowns.
     expect(within(main).getAllByRole("region").map((group) => group.querySelector(".workspace-group__label").textContent)).toEqual(["My care", "My records"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");

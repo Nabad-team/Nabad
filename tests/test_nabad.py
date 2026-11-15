@@ -266,9 +266,10 @@ class NabadWebsiteTests(unittest.TestCase):
         start = time.perf_counter()
         self.open(path)
         elapsed = time.perf_counter() - start
-        # Pages that need sign-in render nothing, not even their <title>, until the session check answers.
+        # Pages that need sign-in show the loading placeholder, titled "Loading · Nabad", until the session check
+        # answers (components/RequireSignIn.js). Wait for the page's own title before comparing.
         try:
-            self.wait.until(lambda d: d.title.strip())
+            self.wait.until(lambda d: d.title.strip() and d.title.strip().lower() != "loading · nabad")
         except TimeoutException:
             pass
         title = self.driver.title
@@ -514,6 +515,7 @@ class PublicPageTests(NabadWebsiteTests):
             "/health-assistant",
             "/my-health",
             "/water-and-sleep",
+            "/wellbeing",
             "/profile",
             "/security",
         ):
@@ -532,7 +534,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.ensure_signed_in()
 
     def test_accessibility_core_pages_and_keyboard(self):
-        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/health-assistant")
+        pages = ("/dashboard", "/symptoms", "/medications", "/appointments", "/medical-documents", "/profile", "/emergency-card", "/my-health", "/vitals", "/visit-prep", "/water-and-sleep", "/security", "/notifications", "/medication-overview", "/care-circle", "/health-assistant", "/wellbeing")
         for path in pages:
             with self.subTest(path=path):
                 self.open(path)
@@ -545,6 +547,14 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/appointments")
         self.click(self.button("Add appointment"))
         audit_accessibility(self, self.driver, "appointment-add-form")
+        # A wellbeing exercise while it runs: the circle, the step line, Pause and Stop, and the support block.
+        self.open("/wellbeing?start=breathing")
+        self.click(self.button("Start"))
+        self.visible(self.button("Pause"))
+        self.visible((By.CSS_SELECTOR, "#exercise-breathing a[href='tel:140']"))
+        self.visible((By.CSS_SELECTOR, "#exercise-breathing a[href='tel:1564']"))
+        audit_accessibility(self, self.driver, "wellbeing-breathing-running")
+        self.click(self.button("Stop"))
         # The workspace dropdowns: open with the keyboard, audit while open, Escape closes and returns focus.
         self.open("/medications")
         care = self.visible((By.CSS_SELECTOR, "nav[aria-label='Workspace'] button[aria-controls='nav-group-my-care']"))
@@ -781,6 +791,7 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             ("my-records", (By.CSS_SELECTOR, "#nav-group-my-records a[href='/my-health']"), "/my-health"),
             ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/medications']"), "/medications"),
             ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/water-and-sleep']"), "/water-and-sleep"),
+            ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/wellbeing']"), "/wellbeing"),
         ):
             with self.subTest(path=path):
                 self.open("/dashboard")

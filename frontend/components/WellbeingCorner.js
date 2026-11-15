@@ -2,6 +2,7 @@ import Card from "./ui/Card";
 import Button from "./ui/Button";
 import { formatDate } from "../lib/dates";
 import { wellbeingSupport } from "../data/wellbeingSupport";
+import { EXERCISES, beirutDayNumber, reflectionQuestionFor } from "../lib/wellbeingExercises";
 
 // compact: the dashboard card. The number is in the heading only (the button says "Call", its accessible name
 // keeps the number), and the longer description moves to the card's "More" section.
@@ -59,9 +60,9 @@ const dailyMessages = [
   "Staying connected with people you trust can help during stressful times.",
 ];
 
-function getDailyMessage() {
-  const day = new Date().getDate();
-  return dailyMessages[day % dailyMessages.length];
+// Changes at midnight in Beirut (like the question of the day), whatever the device's time zone.
+function getDailyMessage(now = new Date()) {
+  return dailyMessages[beirutDayNumber(now) % dailyMessages.length];
 }
 
 // The dashboard's compact Wellbeing Corner: today's message and the two support numbers stay visible (the
@@ -69,6 +70,7 @@ function getDailyMessage() {
 // 140 appears once in the card (the page footer also has it).
 export default function WellbeingCorner() {
   const dailyMessage = getDailyMessage();
+  const question = reflectionQuestionFor();
   const lifeline = wellbeingSupport.find((contact) => contact.id !== "lebanese-red-cross");
 
   return (
@@ -78,10 +80,26 @@ export default function WellbeingCorner() {
         <h3 id="wellbeing-message-heading" className="wellbeing-message__label">Today&apos;s message</h3>
         <p>{dailyMessage}</p>
       </section>
+      {/* Shown only: there is nowhere to answer, and nothing is saved. */}
+      <section className="wellbeing-message wellbeing-reflection" aria-labelledby="wellbeing-reflection-heading">
+        <h3 id="wellbeing-reflection-heading" className="wellbeing-message__label">Question of the day</h3>
+        <p>{question}</p>
+      </section>
 
       <section className="wellbeing-support" aria-labelledby="wellbeing-support-heading">
         <h3 id="wellbeing-support-heading" className="wellbeing-support__title">Support in Lebanon</h3>
         <div className="wellbeing-support__grid">{wellbeingSupport.map(contact => <WellbeingSupportNumber key={contact.id} contact={contact} compact />)}</div>
+      </section>
+
+      {/* After the support numbers, so someone sent here for support (the self-harm result) sees those first. */}
+      <section className="wellbeing-exercises" aria-labelledby="wellbeing-exercises-heading">
+        <h3 id="wellbeing-exercises-heading">Calm exercises</h3>
+        <p className="text-muted">Short exercises that can help you slow down. Nothing is saved.</p>
+        <div className="wellbeing-exercises__actions">
+          {EXERCISES.map((exercise) => (
+            <Button key={exercise.key} variant="secondary" href={`/wellbeing?start=${exercise.key}`}>{exercise.title}</Button>
+          ))}
+        </div>
       </section>
 
       <details className="wellbeing-corner__more">
