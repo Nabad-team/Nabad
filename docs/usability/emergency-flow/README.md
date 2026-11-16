@@ -2,6 +2,13 @@
 
 **Status: READY TO FACILITATE — human sessions NOT RUN (0/5).** This is a protocol and blank evidence pack, not a completed usability study. Automated readiness checks are separate evidence and never count as participants.
 
+## Automated verification (current requested scope)
+
+The user requested automation instead of participant sessions on 16 November 2026.
+See [automated-results.md](automated-results.md) for the completed five-scenario
+browser run and repeatable command. The instructions below preserve the original
+human-study protocol; they are not required to run the automated checks.
+
 ## Start here
 
 1. Choose a moderator and an observer/timekeeper; recruit five distinct adult volunteers resembling intended users. Prefer people who did not build the emergency flow, with a mix of digital confidence and accessibility needs. Participation is voluntary; do not collect medical histories or identifying recruitment details in this repository.

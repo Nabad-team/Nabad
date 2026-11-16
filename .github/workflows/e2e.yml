@@ -94,6 +94,12 @@ jobs:
       - name: Verify usability study call and SMS guard
         run: python tests/usability/emergency_study.py --check
 
+      - name: Verify automated emergency report accounting
+        run: python -m unittest discover -s tests/usability -p 'test_automated_emergency.py' -v
+
+      - name: Run five automated emergency scenarios
+        run: python tests/usability/automated_emergency.py
+
       # The runner's preinstalled Google Chrome; Selenium Manager downloads the matching ChromeDriver.
       - name: Run Selenium suite
         run: python tests/test_nabad.py

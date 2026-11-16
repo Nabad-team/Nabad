@@ -1,0 +1,48 @@
+{
+  "kind": "automated_browser_checks",
+  "human_participants": 0,
+  "recorded_at_utc": "2026-11-16T12:13:05.551661+00:00",
+  "revision": "092f761d8908f41685ceb5414af35d5ced9d28ae",
+  "working_tree_dirty": true,
+  "expected_scenarios": 5,
+  "passed": true,
+  "fixture_or_test_errors": 0,
+  "scenarios": [
+    {
+      "id": "A01",
+      "scenario": "Emergency alert and dismissal",
+      "status": "PASS",
+      "script_duration_seconds": 2.992
+    },
+    {
+      "id": "A02",
+      "scenario": "Contact location draft and denied permission",
+      "status": "PASS",
+      "script_duration_seconds": 1.772
+    },
+    {
+      "id": "A03",
+      "scenario": "Rules-only alert and saved contact",
+      "status": "PASS",
+      "script_duration_seconds": 3.965
+    },
+    {
+      "id": "A04",
+      "scenario": "Emergency card and print layout",
+      "status": "PASS",
+      "script_duration_seconds": 0.834
+    },
+    {
+      "id": "A05",
+      "scenario": "Saved offline card, numbers, reload and removal",
+      "status": "PASS",
+      "script_duration_seconds": 2.524
+    }
+  ],
+  "limits": [
+    "AI must be disabled in the disposable backend configuration.",
+    "Durations include scripted setup and assertions; they are not human time-to-help.",
+    "Offline case uses browser network emulation and the cached offline page.",
+    "Call/SMS activation is blocked; delivery and emergency response are not tested."
+  ]
+}
