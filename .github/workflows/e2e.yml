@@ -91,8 +91,12 @@ jobs:
       - name: Install pinned accessibility audit engine
         run: npm ci --prefix tests/accessibility --ignore-scripts --no-audit --no-fund
 
-      - name: Verify usability study call and SMS guard
-        run: python tests/usability/emergency_study.py --check
+      - name: Verify automated emergency report accounting
+        run: python -m unittest discover -s tests/usability -p 'test_automated_emergency.py' -v
+
+      # This runner verifies the shared call/SMS guard in its browser before the scenarios.
+      - name: Run five automated emergency scenarios
+        run: python tests/usability/automated_emergency.py
 
       # The runner's preinstalled Google Chrome; Selenium Manager downloads the matching ChromeDriver.
       - name: Run Selenium suite
