@@ -12,6 +12,7 @@ import { exportVisitPrepPdf } from "../lib/visitPrepPdf";
 jest.mock("../lib/visitPrepApi", () => ({
   getVisitPrep: jest.fn(), saveVisitPrep: jest.fn(), getVisitPrepShares: jest.fn(),
   createVisitPrepShare: jest.fn(), revokeVisitPrepShare: jest.fn(),
+  addDoctorQuestion: jest.fn(), editDoctorQuestion: jest.fn(), removeDoctorQuestion: jest.fn(),
 }));
 jest.mock("../lib/visitPrepPdf", () => ({ exportVisitPrepPdf: jest.fn() }));
 
@@ -363,6 +364,49 @@ describe("Visit preparation page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Revoke" }));
     await waitFor(() => expect(revokeVisitPrepShare).toHaveBeenCalledWith("self", "share-1"));
     expect(await screen.findByText("Revoked")).toBeInTheDocument();
+  });
+
+  // SCRUM-333: questions saved at any time are on the sheet, the shared doctor link, the export and the printout.
+  test("shows saved questions for the doctor and puts them in the doctor link, the export and the PDF, after the medications and before the notes", async () => {
+    const questions = [{ id: "q1", text: "Should I keep taking ibuprofen?" }, { id: "q2", text: "Do I need a blood test?" }];
+    getVisitPrep.mockResolvedValue({ overrides: {}, notes: "Bring the inhaler", documentIds: [], questions });
+    createVisitPrepShare.mockResolvedValue({ token: "secure-token", share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 0, confirmedAt: null, revokedAt: null } });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: jest.fn().mockResolvedValue(undefined) } });
+    renderPage();
+
+    const list = await screen.findByRole("list", { name: "Questions for my doctor" });
+    expect(within(list).getAllByRole("listitem").map((item) => item.querySelector(".doctor-questions__text").textContent)).toEqual(questions.map((question) => question.text));
+
+    const expected = ["Patient and health background", "Current medications", "Recent symptom checks", "Questions for my doctor", "Notes for your clinician"];
+    const numbered = "1. Should I keep taking ibuprofen?\n2. Do I need a blood test?";
+
+    await openSharing();
+    fireEvent.click(await screen.findByRole("button", { name: "Create secure link" }));
+    await waitFor(() => expect(createVisitPrepShare).toHaveBeenCalledTimes(1));
+    const shared = createVisitPrepShare.mock.calls[0][1].sections;
+    expect(shared.map((section) => section.title)).toEqual(expected);
+    expect(shared[3].text).toBe(numbered);
+
+    fireEvent.click(await moreAction("Print or save as PDF"));
+    await waitFor(() => expect(exportVisitPrepPdf).toHaveBeenCalledTimes(1));
+    const printed = exportVisitPrepPdf.mock.calls[0][0].sections;
+    expect(printed.map(([title]) => title)).toEqual(expected);
+    expect(printed[3][1]).toBe(numbered);
+
+    fireEvent.click(await moreAction("Export sheet with attachments"));
+    await waitFor(() => expect(visitPrepExport.exportVisitPrep).toHaveBeenCalledTimes(1));
+    expect(visitPrepExport.exportVisitPrep.mock.calls[0][0].sections.map(([title]) => title)).toEqual(expected);
+  });
+
+  test("without questions, the shared link has no questions section", async () => {
+    createVisitPrepShare.mockResolvedValue({ token: "secure-token", share: { id: "share-1", createdAt: "2026-11-03T10:00:00.000Z", expiresAt: inAWeek, viewCount: 0, confirmedAt: null, revokedAt: null } });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: jest.fn().mockResolvedValue(undefined) } });
+    renderPage();
+    expect(await screen.findByText("No questions yet.")).toBeInTheDocument();
+    await openSharing();
+    fireEvent.click(await screen.findByRole("button", { name: "Create secure link" }));
+    await waitFor(() => expect(createVisitPrepShare).toHaveBeenCalledTimes(1));
+    expect(createVisitPrepShare.mock.calls[0][1].sections.map((section) => section.title)).not.toContain("Questions for my doctor");
   });
 
   test("refreshes the patient's list to show clinician confirmation", async () => {

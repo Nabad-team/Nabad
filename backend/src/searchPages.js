@@ -9,7 +9,7 @@ module.exports = [
   ["Appointments", "/appointments", "calendar visits schedule"],
   ["Hospitals and clinics", "/providers", "healthcare providers directory hospital"],
   ["Health assistant", "/health-assistant", "test results reports chat"],
-  ["Visit preparation", "/visit-prep", "doctor summary print"],
+  ["Visit preparation", "/visit-prep", "doctor summary print questions for my doctor ask"],
   ["Water and sleep", "/water-and-sleep", "fluids hydration rest"],
   ["Wellbeing", "/wellbeing", "wellbeing breathing sleep routine bedtime wind-down grounding calm exercises reset"],
   ["Notifications", "/notifications", "alerts bell"],
@@ -17,7 +17,7 @@ module.exports = [
   ["Security", "/security", "password two factor authentication"],
   ["Care circle", "/care-circle", "caregiver family invitations"],
   ["Safety check", "/symptoms", "symptoms emergency triage"],
-  ["Ask about my history", "/my-history", "past symptoms visits recall questions when last time"],
+  ["My history", "/my-history", "health story timeline month past symptoms visits recall questions when last time"],
   ["Emergency information card", "/emergency-card", "print medical card"],
   ["Privacy Policy", "/privacy", "personal data"],
 ];

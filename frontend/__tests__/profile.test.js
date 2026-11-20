@@ -443,6 +443,18 @@ describe("Profile Page", () => {
       expect(fakeProfileApi.accountDeleted).toBe(true);
     });
   });
+  // SCRUM-343
+  test("Privacy at a glance sits just before Download my data, and its links reach that card and the danger zone", async () => {
+    renderProfilePage();
+    await screen.findByText("Demo User");
+    const privacy = screen.getByRole("heading", { level: 2, name: "Privacy at a glance" });
+    const exportHeading = screen.getByRole("heading", { name: "Download my data" });
+    expect(privacy.compareDocumentPosition(exportHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const card = privacy.closest("section");
+    expect(document.getElementById(within(card).getByRole("link", { name: "Download my data" }).getAttribute("href").slice(1))).toBe(exportHeading);
+    expect(document.getElementById(within(card).getByRole("link", { name: "Delete my account" }).getAttribute("href").slice(1))).toHaveTextContent("Danger zone");
+  });
+
   describe("Download my data", () => {
     test("sits just before the danger zone", async () => {
       renderProfilePage();
