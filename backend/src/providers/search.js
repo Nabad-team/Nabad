@@ -38,12 +38,15 @@ async function searchProviders(query, favorites, now = new Date()) {
   if (query.openNow) pipeline.push({ $match: openNowMatch(now) });
   pipeline.push({ $sort: geo ? { distanceKm: 1, name: 1, slug: 1 } : { name: 1, slug: 1 } },
     { $facet: { providers: [{ $skip: (query.page - 1) * query.limit }, { $limit: query.limit }], count: [{ $count: "total" }] } });
-  const [result, specialties, cities, services, governorates, districts, insurances] = await Promise.all([
+  const [result, specialties, cities, services, governorates, districts, insurances, typeCounts] = await Promise.all([
     Provider.aggregate(pipeline), Provider.distinct("specialties"), Provider.distinct("city"), Provider.distinct("services"), Provider.distinct("governorate"),
     Provider.distinct("district"), Provider.distinct("insurances"),
+    Provider.aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }]),
   ]);
   return { providers: result[0].providers.map(p => ({ ...p, openingStatus: openingStatus(p, now) })), total: result[0].count[0]?.total || 0,
-    page: query.page, limit: query.limit, specialties: choices(specialties), cities: choices(cities), services: choices(services), governorates: choices(governorates), districts: choices(districts), insurances: choices(insurances) };
+    page: query.page, limit: query.limit, specialties: choices(specialties), cities: choices(cities), services: choices(services), governorates: choices(governorates), districts: choices(districts), insurances: choices(insurances),
+    typeCounts: Object.fromEntries(["hospital", "clinic", "laboratory", "imaging-center"].map(type =>
+      [type, typeCounts.find(row => row._id === type)?.count || 0])) };
 }
 const choices = values => values.filter(value => typeof value === "string" && value.length > 0).sort();
 

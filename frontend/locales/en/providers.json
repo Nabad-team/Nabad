@@ -39,6 +39,7 @@
   "travelReady": "Driving estimates are shown for facilities with an available road route.",
   "drivingMinutes": "About {minutes} min by car",
   "allFacilityTypes": "All facility types",
+  "limitedCoverage": "{category} coverage is limited to {count} {listings} across Lebanon. We add facilities after checking a published source. More facilities may be available outside this directory.",
   "specialty": "Specialty",
   "allSpecialties": "All specialties",
   "openNow": "Open per schedule or 24/7 ER",

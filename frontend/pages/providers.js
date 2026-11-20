@@ -134,6 +134,8 @@ export default function ProvidersPage() {
     else locate(false, start);
   }
   const field = key => ({ value: draft[key], onChange: e => setDraft(old => ({ ...old, [key]: e.target.value })) });
+  const categoryCount = data.typeCounts?.[filters?.type];
+  const limitedCategory = Number.isInteger(categoryCount) && categoryCount < 10;
   return <PageLayout title={t("title")} header={<ProfileHeader />}>
     <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
     {filters?.emergency24h && <Alert tone="danger">
@@ -235,6 +237,9 @@ export default function ProvidersPage() {
           how saving works. */}
       <div className="provider-notes">
         <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
+        {limitedCategory && <p className="text-muted">{t("limitedCoverage", {
+          category: t(filters.type), count: categoryCount, listings: categoryCount === 1 ? "listing" : "listings",
+        })}</p>}
         <p className="text-muted provider-saved-note">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
       </div>
       {!filters.emergency24h && travelIds.length > 0 && <p id="provider-travel-hint">{t("travelHint")}</p>}
