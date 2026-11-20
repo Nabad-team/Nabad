@@ -68,7 +68,11 @@ const PROFILE_COLLECTIONS = [
   },
   {
     key: "visitPreparation", model: require("./models/VisitPrep"), single: true,
-    fields: { _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => values.map(String)], ...TIMESTAMPS },
+    fields: {
+      _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => (values || []).map(String)],
+      questions: ["questionsForMyDoctor", (values) => (values || []).map((question) => ({ id: id(question._id), text: question.text, createdAt: question.createdAt, updatedAt: question.updatedAt }))],
+      ...TIMESTAMPS,
+    },
   },
   {
     key: "medications",

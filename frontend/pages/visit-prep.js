@@ -7,6 +7,7 @@ import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import { CardsSkeleton, LinesSkeleton } from "../components/ui/Skeleton";
 import MoreMenu from "../components/ui/MoreMenu";
+import DoctorQuestions, { QUESTIONS_TITLE, questionsSectionText } from "../components/DoctorQuestions";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getHealthProfile } from "../lib/healthProfileApi";
 import { factText } from "../lib/healthProfile";
@@ -56,6 +57,8 @@ export default function VisitPrepPage() {
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState("");
   const [overrides, setOverrides] = useState({});
+  // SCRUM-333: questions for the doctor, saved at any time; they go into the link, the export and the PDF.
+  const [questions, setQuestions] = useState([]);
   const [sectionDrafts, setSectionDrafts] = useState({});
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,6 +93,7 @@ export default function VisitPrepPage() {
     setEditing(false);
     setNotice("");
     setOverrides({});
+    setQuestions([]);
     setSectionDrafts({});
     setShares([]); setNewShareUrl(""); setSharingOpen(false); setShowAllSymptoms(false);
     Promise.all([getHealthProfile(profileId), getSymptomsForProfile(profileId), getVisitPrep(profileId), getVisitPrepShares(profileId)])
@@ -98,6 +102,7 @@ export default function VisitPrepPage() {
         if (sheet.documentIds.length) savedDocuments = await getMedicalDocuments(profileId);
         if (current) {
           setOverrides(sheet.overrides || {});
+          setQuestions(sheet.questions || []);
           setVisitNotes(sheet.notes || "");
           setSelectedDocumentIds(sheet.documentIds || []);
           setShares(shared.shares || []);
@@ -136,6 +141,16 @@ export default function VisitPrepPage() {
     ["symptoms", "Recent symptom checks"],
   ];
 
+  // Every section of the sheet as [title, text], in the order a clinician reads it: the same for the shared link,
+  // the export and the PDF.
+  function sheetSections() {
+    return [
+      ...editableSections.map(([key, title]) => [title, sectionText(key)]),
+      ...(questions.length ? [[QUESTIONS_TITLE, questionsSectionText(questions)]] : []),
+      ...(visitNotes ? [["Notes for your clinician", visitNotes]] : []),
+    ];
+  }
+
   function sectionText(key) {
     const section = sheetRef.current?.querySelector(`[data-summary-section="${key}"]`)?.cloneNode(true);
     if (!section) return "";
@@ -147,7 +162,7 @@ export default function VisitPrepPage() {
     setExporting(true);
     setError("");
     try {
-      await exportVisitPrep({ name, sections: [...editableSections.map(([key, title]) => [title, sectionText(key)]), ...(visitNotes ? [["Notes for your clinician", visitNotes]] : [])], documents: selectedDocuments, downloadUrl: (id) => medicalDocumentDownloadUrl(profileId, id) });
+      await exportVisitPrep({ name, sections: sheetSections(), documents: selectedDocuments, downloadUrl: (id) => medicalDocumentDownloadUrl(profileId, id) });
     } catch (exportError) {
       setError(exportError.message || "We couldn't export this visit sheet. Please try again.");
     } finally { setExporting(false); }
@@ -156,7 +171,7 @@ export default function VisitPrepPage() {
   async function printSheet() {
     setExporting(true); setError("");
     try {
-      await exportVisitPrepPdf({ name, sections: [...editableSections.map(([key, title]) => [title, sectionText(key)]), ...(visitNotes ? [["Notes for your clinician", visitNotes]] : [])], documents: selectedDocuments, downloadUrl: (id) => medicalDocumentDownloadUrl(profileId, id) });
+      await exportVisitPrepPdf({ name, sections: sheetSections(), documents: selectedDocuments, downloadUrl: (id) => medicalDocumentDownloadUrl(profileId, id) });
       if (profileRef.current === profileId) setNotice("PDF downloaded with the selected documents. Open it to print or share.");
     } catch (failure) { if (profileRef.current === profileId) setError(failure.message || "Could not create the PDF."); }
     finally { setExporting(false); }
@@ -213,8 +228,7 @@ export default function VisitPrepPage() {
 
   async function createShare() {
     setSharing(true); setError(""); setNotice(""); setNewShareUrl("");
-    const sections = editableSections.map(([key, title]) => ({ title, text: sectionText(key) || "No information recorded." }));
-    if (visitNotes) sections.push({ title: "Notes for your clinician", text: visitNotes });
+    const sections = sheetSections().map(([title, text]) => ({ title, text: text || "No information recorded." }));
     try {
       const result = await createVisitPrepShare(profileId, { patientName: name, sections, documentIds: selectedDocumentIds, expiresInDays: Number(shareExpiry) });
       if (profileRef.current !== profileId) return;
@@ -345,6 +359,8 @@ export default function VisitPrepPage() {
             </>}
             </div>
           </Card>
+
+          <DoctorQuestions profileId={profileId} questions={questions} onChange={setQuestions} disabled={editing} />
 
           <Card className="section visit-prep__document-picker" aria-labelledby="visit-prep-documents-heading">
             <h2 id="visit-prep-documents-heading">Documents for this visit</h2>
