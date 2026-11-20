@@ -4720,9 +4720,21 @@ select.input {
   display: flex;
   flex-wrap: wrap;
   gap: 0 var(--space-4);
+  /* A fieldset is as wide as its content by default; this lets it shrink and wrap on a narrow screen. */
+  min-width: 0;
   margin: 0 0 var(--space-2);
   padding: 0;
   border: 0;
+}
+
+.health-story__filter {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.health-story__event {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .health-story__filters legend {
@@ -4778,13 +4790,19 @@ select.input {
 
 .privacy-glance__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  /* Columns of at least 16rem side by side, one column when the screen is narrower than that (enlarged text included). */
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
   gap: var(--space-5);
   margin-top: var(--space-4);
 }
 
 .privacy-glance__grid h3 {
   margin-bottom: var(--space-2);
+}
+
+.privacy-glance__grid section {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .privacy-glance__grid ul {
