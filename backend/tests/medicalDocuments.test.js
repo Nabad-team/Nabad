@@ -55,7 +55,7 @@ test("visit sheets persist edits and selections, isolate profiles and clean up d
   assert.equal((await request("GET", "/visit-prep")).status, 401);
   assert.equal((await request("PUT", "/visit-prep", { cookie, body: sheet, origin: "https://evil.test" })).status, 403);
   assert.equal((await request("PUT", "/visit-prep?profileId=self", { cookie, body: sheet })).status, 200);
-  assert.deepEqual((await request("GET", "/visit-prep?profileId=self", { cookie })).body, sheet);
+  assert.deepEqual((await request("GET", "/visit-prep?profileId=self", { cookie })).body, { ...sheet, questions: [] });
   for (const [auth, profile] of [[other, "self"], [cookie, childId]]) {
     assert.deepEqual((await request("GET", `/visit-prep?profileId=${profile}`, { cookie: auth })).body.documentIds, []);
     assert.equal((await request("PUT", `/visit-prep?profileId=${profile}`, { cookie: auth, body: sheet })).status, 400);
