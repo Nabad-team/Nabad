@@ -84,11 +84,14 @@ describe("next.config.js", () => {
       expect(directives["frame-ancestors"]).toEqual(["'none'"]);
       expect(directives["object-src"]).toEqual(["'none'"]);
       expect(directives["script-src"]).not.toContain("'unsafe-eval'");
+      expect(directives["script-src"]).not.toContain("'unsafe-inline'");
+      expect(directives["script-src-attr"]).toEqual(["'none'"]);
     });
 
     test("next dev may evaluate scripts (fast refresh), production may not", async () => {
       const csp = (await headersFor("/", { NODE_ENV: "development" }))["Content-Security-Policy"];
-      expect(csp).toMatch(/script-src 'self' 'unsafe-inline' 'unsafe-eval'/);
+      expect(csp).toMatch(/script-src 'self' 'unsafe-eval'/);
+      expect(csp).not.toMatch(/script-src [^;]*'unsafe-inline'/);
     });
 
     describe("with error tracking (NEXT_PUBLIC_SENTRY_DSN)", () => {
