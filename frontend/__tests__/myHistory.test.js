@@ -2,10 +2,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MyHistoryPage, { EXAMPLES } from "../pages/my-history";
-import { askHistory } from "../lib/historyApi";
+import { askHistory, getHealthStory } from "../lib/historyApi";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 
-jest.mock("../lib/historyApi", () => ({ askHistory: jest.fn() }));
+// The health story (SCRUM-332) has its own tests in healthStoryCard.test.js; here it is just loaded, empty.
+jest.mock("../lib/historyApi", () => ({ askHistory: jest.fn(), getHealthStory: jest.fn() }));
+jest.mock("../lib/visitPrepApi", () => ({ addDoctorQuestion: jest.fn() }));
 jest.mock("../components/ProfileHeader", () => () => <header>Navigation</header>);
 jest.mock("../context/ActiveProfileContext", () => ({ useActiveProfile: jest.fn() }));
 
@@ -22,6 +24,7 @@ beforeEach(() => {
   jest.resetAllMocks();
   useActiveProfile.mockReturnValue({ activeProfile: { id: "self", fullName: "Rana", isSelf: true }, error: "" });
   askHistory.mockResolvedValue(SEARCH);
+  getHealthStory.mockResolvedValue({ from: "2026-06", until: "2026-11", months: [], counts: {}, hasEarlier: false, earlierUntil: null, truncated: false });
 });
 
 test("needs sign-in; asks the question for the active profile, without AI unless the box is ticked", async () => {
@@ -101,8 +104,20 @@ test("nothing found, too short, and errors", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("asked a lot of questions");
 });
 
-test("for a family member, it says whose history it is", () => {
+test("for a family member, it says whose history it is", async () => {
   useActiveProfile.mockReturnValue({ activeProfile: { id: "child-1", fullName: "Sami", isSelf: false }, error: "" });
   render(<MyHistoryPage />);
-  expect(screen.getByRole("heading", { level: 1, name: "Ask about Sami's history" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Sami's history" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "Ask about Sami's history" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 2, name: "Sami's health story" })).toBeInTheDocument();
+  expect(getHealthStory).toHaveBeenCalledWith("child-1", { until: undefined }, expect.any(AbortSignal));
+});
+
+test("the page has the health story, the questions and a place to save a question for the doctor", async () => {
+  render(<MyHistoryPage />);
+  expect(screen.getByRole("heading", { level: 1, name: "My history" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 2, name: "My health story" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "Ask about my history" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "Questions for my doctor" })).toBeInTheDocument();
+  expect(screen.getByLabelText("Question for the doctor")).toBeInTheDocument();
 });

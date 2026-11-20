@@ -4714,6 +4714,35 @@ select.input {
   font-weight: var(--weight-semibold);
 }
 
+/* ---------- My health story (SCRUM-332) ---------- */
+
+.health-story__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+}
+
+.health-story__filters legend {
+  width: 100%;
+  margin-bottom: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.health-story__month {
+  margin-top: var(--space-5);
+}
+
+.health-story__month h3 {
+  margin-bottom: 0;
+}
+
+.health-story__events {
+  margin-top: var(--space-2);
+}
+
 /* ---------- Questions for my doctor (SCRUM-333) ---------- */
 
 .doctor-questions__list {

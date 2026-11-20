@@ -23,6 +23,7 @@ export const MAIN_LINKS = [
   link("/symptoms", "Symptom check", "symptom"),
   link("/dashboard", "Dashboard", "dashboard"),
   link("/my-health", "My health", "health"),
+  link("/my-history", "My history", "history"),
   link("/vitals", "My vitals", "vitals"),
   link("/visit-prep", "Visit preparation", "summary"),
   link("/health-assistant", "Health assistant", "results"),
@@ -53,7 +54,7 @@ export const NAV_ITEMS = [
   { href: "/symptoms" },
   { href: "/dashboard" },
   { id: "my-care", label: "My care", links: ["/appointments", "/medications", "/medication-overview", "/water-and-sleep", "/wellbeing"] },
-  { id: "my-records", label: "My records", links: ["/my-health", "/vitals", "/medical-documents", "/visit-prep"] },
+  { id: "my-records", label: "My records", links: ["/my-health", "/my-history", "/vitals", "/medical-documents", "/visit-prep"] },
   { href: "/health-assistant" },
   { href: "/providers" },
 ].map((item) => item.href ? WORKSPACE_BY_HREF.get(item.href) : { ...item, links: item.links.map((href) => WORKSPACE_BY_HREF.get(href)) });
