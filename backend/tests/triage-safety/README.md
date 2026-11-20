@@ -10,6 +10,8 @@ npm run test:triage-safety
 
 No database, network or AI provider is needed; it takes under a second.
 
+Before each release, the same cases are run on the release candidate with `node scripts/triage-safety-run.cjs`, with or without the live model, and the result is recorded in [docs/triage-safety-runs](../../../docs/triage-safety-runs/README.md) (SCRUM-348).
+
 ## The two sets
 
 | | Quality set (SCRUM-282) | Clinical safety set (SCRUM-309) |
