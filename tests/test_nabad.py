@@ -446,6 +446,33 @@ class AccountSetup(NabadWebsiteTests):
 class PublicPageTests(NabadWebsiteTests):
     """Signed-out visitors. Read-only, so these may also be pointed at production."""
 
+    def test_strict_script_policy_preserves_hydration_and_map_loading(self):
+        with urlopen(BASE_URL + "/login", timeout=30) as response:
+            policy = response.headers.get("Content-Security-Policy", "")
+        directives = {
+            parts[0]: parts[1:]
+            for clause in policy.split(";")
+            if (parts := clause.strip().split())
+        }
+        self.assertEqual(directives.get("script-src"), ["'self'"])
+        self.assertEqual(directives.get("script-src-attr"), ["'none'"])
+
+        self.open("/signup")
+        self.type_into("password", "synthetic-password")
+        self.click(self.button("Show password"))
+        self.assertEqual(self.driver.find_element(By.ID, "password").get_attribute("type"), "text")
+        self.driver.execute_script("""
+            const script = document.createElement('script');
+            script.textContent = 'window.nabadInlineScriptRan = true';
+            document.body.append(script);
+            script.remove();
+        """)
+        self.assertFalse(self.driver.execute_script("return window.nabadInlineScriptRan === true"))
+
+        self.open("/providers")
+        self.click(self.button("Show map"))
+        self.visible((By.CSS_SELECTOR, ".leaflet-container"))
+
     def setUp(self):
         self.sign_out_of_browser()
 

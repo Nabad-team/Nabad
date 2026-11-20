@@ -17,6 +17,21 @@ export default function HeaderSearch({ profileId, profileName }) {
   const current = response?.query === q && response.profileId === profileId ? response.data : null;
 
   useEffect(() => {
+    const shortcut = event => {
+      if (!profileId || event.defaultPrevented || event.isComposing || event.repeat || event.altKey) return;
+      const command = (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "k";
+      const slash = event.key === "/" && !event.ctrlKey && !event.metaKey &&
+        !event.target.closest?.("input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox']");
+      if (!command && !slash) return;
+      event.preventDefault();
+      input.current?.focus();
+      setOpen(true);
+    };
+    document.addEventListener("keydown", shortcut);
+    return () => document.removeEventListener("keydown", shortcut);
+  }, [profileId]);
+
+  useEffect(() => {
     if (q.length < 2 || !profileId) { setResponse(null); setError(false); return undefined; }
     const controller = new AbortController();
     setError(false);
@@ -53,7 +68,7 @@ export default function HeaderSearch({ profileId, profileName }) {
     }}>
       <label htmlFor={id} className="visually-hidden">Search Nabad</label>
       <input id={id} ref={input} className="input" type="search" value={query} maxLength={80} autoComplete="off" disabled={!profileId}
-        placeholder="Search pages and records" aria-describedby={`${id}-hint`} aria-controls={open ? `${id}-results` : undefined}
+        placeholder="Search pages and records" aria-keyshortcuts="Control+k Meta+k /" aria-describedby={`${id}-hint`} aria-controls={open ? `${id}-results` : undefined}
         onClick={() => setOpen(true)} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setError(false); setOpen(true); }} />
       <Button type="submit" variant="secondary" disabled={!profileId}>Search</Button>
     </form>
@@ -64,7 +79,7 @@ export default function HeaderSearch({ profileId, profileName }) {
         : error ? <><p role="alert">Search is unavailable. Please try again.</p><Button variant="secondary" onClick={() => setAttempt(value => value + 1)}>Retry search</Button></>
           : !current ? <p role="status">Searching...</p>
             : <>
-              <p role="status">{count ? `${count} results shown.` : "No results found. Try a different name or page."}</p>
+              <p role="status">{count ? `${count} ${count === 1 ? "result" : "results"} shown.` : "No results found. Try a different name or page."}</p>
               {GROUPS.map(([key, label]) => current[key]?.items.length > 0 && <section key={key} aria-labelledby={`${id}-${key}`}>
                 <h3 id={`${id}-${key}`}>{label}</h3>
                 <ul>{current[key].items.map(result => <li key={result.href}>

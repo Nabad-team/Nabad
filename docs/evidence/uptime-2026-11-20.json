@@ -1,0 +1,136 @@
+{
+  "source": "https://stats.uptimerobot.com/api/getMonitorList/GFwdUOKlhv",
+  "statusPage": "https://stats.uptimerobot.com/GFwdUOKlhv",
+  "recordedAt": "2026-11-20T08:47:25.9541434+00:00",
+  "monitorId": 804325509,
+  "name": "Nabad backend",
+  "statusClass": "success",
+  "rolling30DayRatio": "99.588",
+  "lastReportedDowntime": {
+    "date": "2026-11-01 14:15:59",
+    "duration": 10672,
+    "reason": "Incident detected"
+  },
+  "recentDailyRatios": [
+    {
+      "date": "2026-11-01",
+      "ratio": "87.648",
+      "label": "poor",
+      "color": "red"
+    },
+    {
+      "date": "2026-11-02",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-03",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-04",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-05",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-06",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-07",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-08",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-09",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-10",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-11",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-12",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-13",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-14",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-15",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-16",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-17",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-18",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-19",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    },
+    {
+      "date": "2026-11-20",
+      "ratio": "100.000",
+      "label": "excellent",
+      "color": "green"
+    }
+  ]
+}
