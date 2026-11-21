@@ -88,6 +88,7 @@ router.patch("/me", asyncRoute(async (req, res) => {
   }
   const user = await User.findByIdAndUpdate(req.userId, { $set: update }, { new: true, runValidators: true });
   if (!user) return res.status(401).json({ error: "Not authenticated." });
+  await require("../organizationalMilestones").healthBasicsIfComplete(req.userId, user._id);
   return res.json({ profile: selfView(user) });
 }));
 
@@ -105,6 +106,7 @@ router.post("/linked", asyncRoute(async (req, res) => {
     return res.status(400).json({ error: `You can link up to ${MAX_LINKED_PROFILES} dependents.` });
   }
   const profile = await LinkedProfile.create({ owner: req.userId, fullName: fullName.trim(), dateOfBirth: new Date(dateOfBirth), relationship });
+  await require("../organizationalMilestones").healthBasicsIfComplete(req.userId, profile._id);
   return res.status(201).json({ profile: linkedView(profile) });
 }));
 

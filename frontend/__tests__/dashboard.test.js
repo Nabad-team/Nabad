@@ -238,27 +238,28 @@ describe("Dashboard Page", () => {
     expect(within(accountMenu).getByRole("link", { name: "Account security" })).toHaveTextContent("Account security");
   });
 
-  test("shows health, water and sleep progress as rings", async () => {
+  test("shows health, water and sleep progress as plain sentences", async () => {
     fakeWellbeing.seedWater("self", todayString(), [250, 500, 500]);
     fakeWellbeing.seedSleep("self", todayString(), 7.5, 4);
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByRole("img", { name: /Water today: No daily goal set\. 1\.25 L logged today/ })).toBeInTheDocument();
-    expect(within(card).getByRole("img", { name: /Last night’s sleep: Logged\. Slept well/ })).toBeInTheDocument();
+    expect(await within(card).findByText("1.25 L logged today.")).toBeInTheDocument();
+    expect(within(card).getByText("7.5 hours logged for last night.")).toBeInTheDocument();
+    expect(within(card).queryByRole("img", { name: /Water today/ })).not.toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Track water" })).toHaveAttribute("href", "/water-and-sleep");
     expect(within(card).getByRole("link", { name: "Log sleep" })).toHaveAttribute("href", "/water-and-sleep");
     expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
   });
 
-  test("the water ring shows progress against a limit and the sleep ring says when sleep isn't logged", async () => {
+  test("the water card shows progress against a limit and keeps not logged apart from zero", async () => {
     fakeWellbeing.seedWater("self", todayString(), 900);
     fakeWellbeing.seedGoal("self", { type: "atMost", ml: 1500 });
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByRole("img", { name: "Water today: Within your limit. 0.9 L of your 1.5 L daily limit." })).toBeInTheDocument();
-    expect(within(card).getByRole("img", { name: /Last night’s sleep: Not logged yet/ })).toBeInTheDocument();
+    expect(await within(card).findByText("0.9 L logged today.")).toBeInTheDocument();
+    expect(within(card).getByText("Sleep is not logged yet for last night.")).toBeInTheDocument();
   });
 
   test("the My health card counts the basics gently and links to My health", async () => {
@@ -267,7 +268,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByRole("img", { name: "My health: In progress. 2 of 5 health basics filled in." })).toBeInTheDocument();
+    expect(await within(card).findByText("2 of 5 health basics are filled in.")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
   });
 
@@ -278,7 +279,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByRole("img", { name: "My health: In progress. 1 of 5 health basics filled in for Sami Haddad." })).toBeInTheDocument();
+    expect(await within(card).findByText("1 of 5 health basics are filled in for Sami Haddad.")).toBeInTheDocument();
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 
@@ -293,7 +294,7 @@ describe("Dashboard Page", () => {
     expect(title.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(card.compareDocumentPosition(symptomCheck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The card and Your progress share one set of requests.
-    await screen.findByRole("img", { name: /My health: In progress/ });
+    await screen.findByText("0 of 5 health basics are filled in.");
     expect(fakeHealth.calls.filter(([name]) => name === "getHealthProfile")).toHaveLength(1);
   });
 

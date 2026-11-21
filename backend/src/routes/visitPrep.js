@@ -25,7 +25,9 @@ router.put("/", writeLimiter, run(async (req, res) => {
   }
   const ids = [...new Set(documentIds)];
   if (await MedicalDocument.countDocuments({ ...scope(req), _id: { $in: ids } }) !== ids.length) return res.status(400).json({ error: "A selected document is no longer available for this profile. Reload the documents and try again." });
+  const firstSummary = !(await VisitPrep.exists(scope(req)));
   const sheet = await VisitPrep.findOneAndUpdate(scope(req), { $set: { overrides, notes, documentIds: ids } }, { new: true, upsert: true, runValidators: true });
+  if (firstSummary) await require("../organizationalMilestones").milestone(req.userId, req.profileId, "first_visit_summary");
   return res.json(view(sheet));
 }));
 

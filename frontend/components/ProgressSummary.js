@@ -9,35 +9,15 @@ import useDashboardData from "./useDashboardData";
 import { SkeletonRegion, ProgressSkeleton, LinesSkeleton } from "./ui/Skeleton";
 import { hoursText, litresText, sleptText } from "../lib/wellbeing";
 
-function ProgressRing({ label, value, progress, status, detail, href, linkLabel, complete = false, onAction, actionLabel, actionDisabled = false }) {
-  const circumference = 2 * Math.PI * 34;
-  const boundedProgress = Math.max(0, Math.min(100, progress ?? 0));
-  const dashOffset = circumference * (1 - boundedProgress / 100);
-
+function ProgressItem({ label, summary, status, detail, href, linkLabel, onAction, actionLabel, actionDisabled = false }) {
   return (
-    <li className={`progress-summary__item${complete ? " progress-summary__item--complete" : ""}`}>
-      <div className="progress-summary__visual" role={onAction ? undefined : "img"} aria-label={onAction ? undefined : `${label}: ${status}. ${detail}`}>
-        <svg className="progress-summary__ring" viewBox="0 0 80 80" aria-hidden="true" focusable="false">
-          <circle className="progress-summary__ring-track" cx="40" cy="40" r="34" />
-          {progress !== null && (
-            <circle
-              className="progress-summary__ring-value"
-              cx="40" cy="40" r="34"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-            />
-          )}
-        </svg>
-        {onAction ? (
-          <button type="button" className="progress-summary__ring-action" onClick={onAction} disabled={actionDisabled} aria-label={actionLabel} title={actionLabel}>
-            <span className="progress-summary__ring-label" aria-hidden="true">{value}</span>
-          </button>
-        ) : <span className="progress-summary__ring-label" aria-hidden="true">{value}</span>}
-      </div>
+    <li className="progress-summary__item">
       <div className="progress-summary__copy">
         <h3>{label}</h3>
+        <p>{summary}</p>
         <p className="progress-summary__status">{status}</p>
         <p className="text-muted">{detail}</p>
+        {onAction && <Button type="button" variant="secondary" onClick={onAction} disabled={actionDisabled}>{actionLabel}</Button>}
         <Button variant="secondary" href={href}>{linkLabel}</Button>
       </div>
     </li>
@@ -92,7 +72,6 @@ export default function ProgressSummary({ data }) {
     dateTime: new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}:00`),
   })).filter((appointment) => appointment.dateTime >= new Date()).sort((a, b) => a.dateTime - b.dateTime)[0];
   const goal = water?.goal;
-  const waterProgress = goal ? Math.min(100, Math.round((water.totalMl / goal.ml) * 100)) : null;
   const waterStatus = !water ? (wellbeingFailed ? "Unavailable" : "Loading")
     : !goal ? "No daily goal set"
       : goal.type === "atMost"
@@ -111,45 +90,37 @@ export default function ProgressSummary({ data }) {
     <Card aria-labelledby="progress-summary-heading" className="section progress-summary">
       <h2 id="progress-summary-heading">Your progress</h2>
       <ul className="progress-summary__list">
-        <ProgressRing
+        <ProgressItem
           label="My health"
-          value={filled === null ? "—" : `${filled}/5`}
-          progress={filled === null ? null : (filled / 5) * 100}
+          summary={healthFailed ? "Your health basics could not be loaded." : filled === 5 ? "Your five health basics are complete." : `${filled ?? 0} of 5 health basics are filled in${who ? ` for ${who}` : ""}.`}
           status={healthFailed ? "Unavailable" : filled === null ? "Loading" : filled === 5 ? "Complete" : "In progress"}
           detail={healthFailed ? "Health profile progress is unavailable." : filled === null ? "Loading health profile." : `${filled} of 5 health basics filled in${who ? ` for ${who}` : ""}.`}
           href="/my-health"
           linkLabel="Open my health"
-          complete={filled === 5}
         />
-        <ProgressRing
+        <ProgressItem
           label="Water today"
-          value={waterProgress === null ? "—" : `${waterProgress}%`}
-          progress={waterProgress}
+          summary={!water ? "Today's water log could not be loaded." : water.totalMl > 0 ? `${litresText(water.totalMl)} logged today.` : "Water is not logged yet today."}
           status={waterStatus}
           detail={waterDetail}
           href="/water-and-sleep"
           linkLabel="Track water"
-          complete={!!goal && goal.type === "atLeast" && water?.totalMl >= goal.ml}
         />
-        <ProgressRing
+        <ProgressItem
           label="Last night’s sleep"
-          value={sleep ? hoursText(sleep.hours).replace(" hours", "h").replace(" hour", "h") : "—"}
-          progress={sleep ? 100 : wellbeing ? 0 : null}
+          summary={!wellbeing ? "Last night's sleep could not be loaded." : sleep ? `${hoursText(sleep.hours)} logged for last night.` : "Sleep is not logged yet for last night."}
           status={!wellbeing ? (wellbeingFailed ? "Unavailable" : "Loading") : sleep ? "Logged" : "Not logged yet"}
           detail={!wellbeing ? (wellbeingFailed ? "Sleep progress is unavailable." : "Loading sleep progress.") : sleep ? sleptText(sleep.quality) : "Log last night's sleep to complete this check-in."}
           href="/water-and-sleep"
           linkLabel="Log sleep"
-          complete={!!sleep}
         />
-        <ProgressRing
+        <ProgressItem
           label="Medications today"
-          value={medications?.length ? `${takenCount}/${medications.length}` : "—"}
-          progress={medications?.length ? (takenCount / medications.length) * 100 : medications ? 0 : null}
+          summary={medicationsFailed ? "Today's medication check-in could not be loaded." : !medications?.length ? "There are no active medications to check." : `${takenCount} of ${medications.length} active medications checked off today.`}
           status={medicationsFailed ? "Unavailable" : !medications ? "Loading" : !medications.length ? "No active medications" : takenCount === medications.length ? "All checked off" : `${medications.length - takenCount} left to check`}
           detail={medicationsFailed ? "Today's medication check-in is unavailable." : !medications ? "Loading today's medication check-in." : !medications.length ? "No active medications on your list." : `${takenCount} of ${medications.length} active medications checked off today.`}
           href="/medications"
           linkLabel="Open medications"
-          complete={!!medications?.length && takenCount === medications.length}
           onAction={medications?.length ? () => toggleMedication(nextMedicationAction) : undefined}
           actionLabel={nextMedicationAction ? `${nextMedicationAction.taken ? "Undo taken" : "Mark taken"}: ${nextMedicationAction.name}` : undefined}
           actionDisabled={!medications?.length || !!savingMedication}

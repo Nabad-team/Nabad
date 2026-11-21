@@ -16,4 +16,5 @@ export const updateMedicalDocumentMetadata = (profileId, id, metadata) => reques
 }).then((data) => data.document);
 export const deleteMedicalDocument = (profileId, id) => request(`/${encodeURIComponent(id)}?profileId=${encodeURIComponent(profileId || "self")}`, { method: "DELETE" });
 export const medicalDocumentDownloadUrl = (profileId, id) => `${API_BASE}/${encodeURIComponent(id)}/download?profileId=${encodeURIComponent(profileId || "self")}`;
+export const medicalDocumentPreviewUrl = (profileId, id) => `${API_BASE}/${encodeURIComponent(id)}/preview?profileId=${encodeURIComponent(profileId || "self")}`;
 
