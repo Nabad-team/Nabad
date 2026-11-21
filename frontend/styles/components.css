@@ -3805,11 +3805,8 @@ select.input {
 }
 
 .progress-summary__item {
-  display: grid;
+  display: block;
   margin: 0;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-4);
   min-width: 0;
   padding: var(--space-4);
   border: 1px solid var(--color-border);
@@ -3878,10 +3875,6 @@ select.input {
 .progress-summary__status { margin-top: var(--space-1) !important; font-weight: var(--weight-semibold); }
 .progress-summary__copy .text-muted { margin-top: var(--space-1); }
 .progress-summary__copy .button { margin-top: var(--space-3); }
-
-@media (max-width: 760px) {
-  .progress-summary__item { grid-template-columns: 5.5rem minmax(0, 1fr); }
-}
 
 .progress-summary__appointments {
   border-top: 1px solid var(--color-border);

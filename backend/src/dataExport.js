@@ -181,6 +181,7 @@ const ACCOUNT = {
     emailVerifyLastSent: "Security internals: email verification link.",
     resetPasswordTokenHash: "Secret: hash of the password reset link.",
     resetPasswordExpires: "Security internals: password reset link.",
+    organizationalMilestones: "Internal first-action markers used only to prevent repeat organizational notifications.",
     twoFactorEnabled: "Two-step verification data.",
     twoFactorCodeHash: "Secret: hash of a sign-in code.",
     twoFactorCodeExpires: "Two-step verification data.",

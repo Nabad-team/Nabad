@@ -13,6 +13,7 @@ jest.mock("../lib/medicalDocumentApi", () => ({
   uploadMedicalDocument: jest.fn(),
   updateMedicalDocumentMetadata: jest.fn(),
   medicalDocumentDownloadUrl: (profileId, id) => `/api/medical-documents/${id}/download?profileId=${profileId}`,
+  medicalDocumentPreviewUrl: (profileId, id) => `/api/medical-documents/${id}/preview?profileId=${profileId}`,
 }));
 let mockStatus = "signedIn";
 jest.mock("../components/SessionTimeout", () => ({
@@ -49,7 +50,7 @@ describe("Medical documents page", () => {
   test("uploads a selected PDF and displays the returned document", async () => {
     const notificationChanged = jest.fn();
     window.addEventListener(NOTIFICATIONS_CHANGED, notificationChanged);
-    uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-1", filename: "blood-test.pdf", documentType: "lab", documentDate: "2026-10-10", size: 2048, uploadedAt: "2026-10-12T10:00:00.000Z" } });
+    uploadMedicalDocument.mockResolvedValue({ document: { id: "doc-1", filename: "blood-test.pdf", mimeType: "application/pdf", documentType: "lab", documentDate: "2026-10-10", size: 2048, uploadedAt: "2026-10-12T10:00:00.000Z" } });
     renderPage();
     await screen.findByText(/No documents added yet/);
     const file = new File(["%PDF-1.4 test"], "blood-test.pdf", { type: "application/pdf" });
@@ -66,6 +67,8 @@ describe("Medical documents page", () => {
     expect(screen.queryByRole("region", { name: "Details for 1 file" })).not.toBeInTheDocument();
     expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "blood-test.pdf", mimeType: "application/pdf", data: expect.any(String) }), { documentType: "lab", documentDate: "2026-10-10" });
     expect(screen.getByRole("link", { name: "Download" })).toHaveAttribute("href", "/api/medical-documents/doc-1/download?profileId=self");
+    expect(screen.getByRole("link", { name: "Preview" })).toHaveAttribute("href", "/api/medical-documents/doc-1/preview?profileId=self");
+    expect(screen.getByRole("link", { name: "Preview" })).toHaveAttribute("target", "_blank");
     expect(await screen.findByRole("status")).toHaveTextContent("Document uploaded.");
     expect(notificationChanged).toHaveBeenCalledTimes(1);
     window.removeEventListener(NOTIFICATIONS_CHANGED, notificationChanged);
@@ -79,6 +82,7 @@ describe("Medical documents page", () => {
     fireEvent.change(screen.getByLabelText("Choose medical documents"), { target: { files: [file] } });
     fireEvent.click(await screen.findByRole("button", { name: "Upload 1 file" }));
     expect(await screen.findByRole("link", { name: "Download" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Preview" })).not.toBeInTheDocument();
     expect(uploadMedicalDocument).toHaveBeenCalledWith("self", expect.objectContaining({ filename: "scan.dcm", mimeType: "application/octet-stream" }), { documentType: "other", documentDate: "" });
   });
 

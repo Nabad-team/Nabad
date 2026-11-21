@@ -94,13 +94,16 @@ test("uploads and stores a valid medical document with profile metadata", async 
   assert.equal(String(stored.owner), String(account._id));
   assert.equal(String(stored.profileId), String(account._id));
   assert.deepEqual(Buffer.from(stored.data), Buffer.from(PDF, "base64"));
-  const notification = await Notification.findOne({ owner: account._id });
+  const notification = await Notification.findOne({ owner: account._id, type: "document_ready" });
   assert.equal(notification.type, "document_ready");
   assert.equal(String(notification.profileId), String(account._id));
   assert.equal(notification.title, "Document ready");
   assert.equal(notification.message, "An uploaded document has finished processing and is ready to view.");
   assert.equal(notification.link, "/medical-documents");
   assert.equal(notification.dedupeKey, `document-ready:${stored._id}`);
+  const milestone = await Notification.findOne({ owner: account._id, type: "system" });
+  assert.equal(milestone.title, "Your documents have a home");
+  assert.equal(milestone.message.includes("lab-result.pdf"), false);
 });
 
 test("notifies for the selected linked profile without exposing document details", async () => {
@@ -108,7 +111,7 @@ test("notifies for the selected linked profile without exposing document details
   const childId = await dependent(cookie, "Sami Haddad");
   const response = await upload(cookie, undefined, childId);
   assert.equal(response.status, 201);
-  const notification = await Notification.findOne({ owner: account._id });
+  const notification = await Notification.findOne({ owner: account._id, type: "document_ready" });
   assert.equal(String(notification.profileId), childId);
   assert.equal(notification.message.includes("lab-result.pdf"), false);
 });
@@ -184,9 +187,23 @@ test("lists and downloads documents only for the selected profile and owner", as
   assert.equal(download.status, 200);
   assert.equal(download.headers.get("content-type"), "application/pdf");
   assert.deepEqual(Buffer.from(await download.arrayBuffer()), Buffer.from(PDF, "base64"));
+  const preview = await fetch(`${base}/medical-documents/${selfDoc.body.document.id}/preview?profileId=self`, { headers: { Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${ownerCookie}` } });
+  assert.equal(preview.status, 200);
+  assert.equal(preview.headers.get("content-disposition"), 'inline; filename="lab-result.pdf"');
+  assert.equal(preview.headers.get("content-security-policy"), "default-src 'none'; sandbox");
+  assert.deepEqual(Buffer.from(await preview.arrayBuffer()), Buffer.from(PDF, "base64"));
   for (const [cookie, profileId] of [[ownerCookie, childId], [otherCookie, "self"]]) {
     const response = await fetch(`${base}/medical-documents/${selfDoc.body.document.id}/download?profileId=${profileId}`, { headers: { Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${cookie}` } });
     assert.equal(response.status, 404);
   }
   assert.equal((await request("GET", `/medical-documents?profileId=${other._id}`, { cookie: ownerCookie })).status, 404);
+});
+
+test("previews only passive formats and shows the first-document milestone once", async () => {
+  const account = await user(); const cookie = token(account);
+  const unsafe = await upload(cookie, { filename: "page.html", mimeType: "text/html", data: Buffer.from("<script>alert(1)</script>").toString("base64") });
+  const response = await fetch(`${base}/medical-documents/${unsafe.body.document.id}/preview?profileId=self`, { headers: { Origin: process.env.CLIENT_ORIGIN, Cookie: `accessToken=${cookie}` } });
+  assert.equal(response.status, 415);
+  await upload(cookie);
+  assert.equal(await Notification.countDocuments({ owner: account._id, type: "system", dedupeKey: /^organizational-milestone:first_document:/ }), 1);
 });
