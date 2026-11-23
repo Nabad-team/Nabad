@@ -10,6 +10,8 @@ import { useActiveProfile } from "../context/ActiveProfileContext";
 import { getReportConversations, deleteReportConversation } from "../lib/reportConversationApi";
 import { formatDate } from "../lib/dates";
 import NabadAssistant from "../components/NabadAssistant";
+import { AiUsageLine, DailyLimitNotice } from "../components/AiUsage";
+import { getAiUsage, dailyLimitOf } from "../lib/aiUsageApi";
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = new Set(["pdf", "docx", "txt", "csv", "jpg", "jpeg", "png", "webp"]);
@@ -37,10 +39,24 @@ export default function HealthAssistantPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState(false);
+  // Today's AI use for the account (all profiles together): { assistantMessages, reportAnalyses }.
+  const [usage, setUsage] = useState({});
+  // Set when today's limit is reached: the server's message and when it starts again.
+  const [limitReached, setLimitReached] = useState(null);
   const profileId = activeProfile?.id || "self";
   const profileRef = useRef(profileId);
   const pendingRequest = useRef(null);
   profileRef.current = profileId;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.resolve().then(() => getAiUsage(controller.signal))
+      .then((data) => { if (data?.assistantMessages) setUsage({ assistantMessages: data.assistantMessages, reportAnalyses: data.reportAnalyses }); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
+  const noteUsage = (aiUsage) => { if (aiUsage?.feature) setUsage((current) => ({ ...current, [aiUsage.feature]: aiUsage })); };
 
   useEffect(() => {
     let current = true;
@@ -112,6 +128,7 @@ export default function HealthAssistantPage() {
     const requestedProfileId = profileId;
     const previousMessages = messages.slice(-8);
     setError("");
+    setLimitReached(null);
     setBusy(true);
     try {
       let upload = null;
@@ -134,6 +151,7 @@ export default function HealthAssistantPage() {
         });
         if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
         setResult(analysis);
+        noteUsage(analysis.aiUsage);
         setConversationId(analysis.conversationId);
         // The structured review below is the authoritative first response.
         // Follow-up chat messages are displayed separately instead of duplicating it.
@@ -147,6 +165,7 @@ export default function HealthAssistantPage() {
         });
         if (profileRef.current !== requestedProfileId || pendingRequest.current !== operation || operation.controller.signal.aborted) return;
         setConversationId(answer.conversationId);
+        noteUsage(answer.aiUsage);
         setMessages([
           ...messages,
           { role: "user", content: currentQuestion },
@@ -164,6 +183,13 @@ export default function HealthAssistantPage() {
         setResult(null);
         setFile(null);
         setError("That saved conversation is no longer available. Your message is still here. Send it again to start a new chat.");
+        return;
+      }
+      const limit = dailyLimitOf(err);
+      if (limit) {
+        // Not an error: today's limit is reached. Their question stays in the box for tomorrow.
+        noteUsage(limit);
+        setLimitReached({ limit, message: err.message });
         return;
       }
       const message = err.message || "The report could not be safely analyzed. Please try again or ask your clinician.";
@@ -291,6 +317,9 @@ export default function HealthAssistantPage() {
         {result && !file && <p className="report-privacy-note" role="note">Follow-up questions use the saved AI explanation. Attach the original report again to verify its wording, values, or completeness.</p>}
         {file && <div className="assistant-composer__attachment" role="status"><span aria-hidden="true">File</span><span>Report attached ({file.name.split(".").pop()?.toLowerCase() || "file"})</span><Button type="button" variant="secondary" size="small" onClick={clearFile} disabled={busy}>Remove</Button></div>}
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
+        <DailyLimitNotice limit={limitReached?.limit} message={limitReached?.message}>
+          <p>If this is an emergency, call 140 now.</p>
+        </DailyLimitNotice>
         <label className="sr-only" htmlFor="report-question">Your message</label>
         <textarea
           id="report-question"
@@ -316,6 +345,8 @@ export default function HealthAssistantPage() {
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={busy} />
           I agree to send my question and any attached report to Google's Gemini AI service over an encrypted connection. It may contain sensitive health information.
         </label>
+        <AiUsageLine usage={usage.assistantMessages} noun="messages" />
+        {file && !result && <AiUsageLine usage={usage.reportAnalyses} noun="report reviews" />}
         <p className="report-privacy-note">Chats are saved to this profile; attached files are not kept. <a href="/privacy#ai-health-assistant">How your data is used</a></p>
       </form>
 

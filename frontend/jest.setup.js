@@ -14,3 +14,10 @@ if (typeof HTMLDialogElement !== "undefined" && !HTMLDialogElement.prototype.sho
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   HTMLDialogElement.prototype.close = function () { this.open = false; };
 }
+
+// Pages load the account's daily AI usage (lib/aiUsageApi.js) when they open. By default tests get none, so that
+// request never takes a response a test set up for another call. Tests about the usage line override getAiUsage.
+jest.mock("./lib/aiUsageApi", () => ({
+  ...jest.requireActual("./lib/aiUsageApi"),
+  getAiUsage: jest.fn(() => Promise.resolve(null)),
+}));

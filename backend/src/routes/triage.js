@@ -82,6 +82,12 @@ const {
 
 const router = express.Router();
 const { countTriageUsage } = require("../usageAnalytics");
+// Per-account daily AI limit. Emergencies never reach it: the red-flag rules run first (prepareRuleEmergency).
+const { useOne, giveBack } = require("../dailyAiLimits");
+
+// Shown with a rules-only result once today's AI symptom checks are used up.
+const DAILY_LIMIT_NOTE =
+  "You've used today's AI checks; this result uses Nabad's safety rules only. The AI part comes back tomorrow.";
 
 router.use(requireAuth);
 
@@ -312,11 +318,27 @@ router.post(
     const started =
       performance.now();
 
+    // Set when this check used one of today's AI symptom checks (dailyAiLimits.js).
+    let counted = null;
     try {
       let health = null;
       let client = null;
+      let dailyLimitReached = false;
+      let aiUsage = null;
       let result = req.ruleEmergency;
       if (!result) {
+        client = getTriageLlmClient();
+        if (client) {
+          const { allowed, usage, day } = await useOne(req.userId, "symptomChecks");
+          aiUsage = usage;
+          if (!allowed) {
+            // At the limit: the rules answer alone. The page still gets the level, emergency help and 140.
+            client = null;
+            dailyLimitReached = true;
+          } else if (usage) {
+            counted = { day };
+          }
+        }
         const [previousChecks, profileHealth] = await Promise.all([
           SymptomRecord.find({ owner: req.userId, profileId: req.profileId })
             .sort({ createdAt: -1 }).limit(3).lean(),
@@ -327,11 +349,17 @@ router.post(
           symptoms: record.description,
           messages: (record.conversation || []).slice(-6).map(({ role, content }) => ({ role, content })),
         }));
-        client = getTriageLlmClient();
         result = await assessWithAi(symptoms, {
           client, answers: req.body?.answers, location: req.body?.location,
           priorConversations, health, followUpState: req.body?.followUpState,
         });
+        if (dailyLimitReached) result.ai = { ...result.ai, reason: "daily_limit" };
+        // The model wasn't used after all (down, slow, guardrails): this check doesn't count.
+        if (counted && !result.ai.used) {
+          await giveBack(req.userId, "symptomChecks", counted.day);
+          counted = null;
+          aiUsage = { ...aiUsage, used: aiUsage.used - 1, remaining: aiUsage.remaining + 1 };
+        }
       }
 
 
@@ -409,6 +437,11 @@ router.post(
 
         disclaimer:
           DISCLAIMER,
+
+        // Today's AI symptom checks for the account, when this check was one of them or was over the limit.
+        ...(aiUsage ? { aiUsage } : {}),
+
+        ...(dailyLimitReached ? { dailyLimit: { reached: true, message: DAILY_LIMIT_NOTE } } : {}),
       });
 
 
@@ -433,6 +466,7 @@ router.post(
           req.body?.checkId,
       });
     } catch (err) {
+      if (counted) giveBack(req.userId, "symptomChecks", counted.day);
       if (
         err instanceof
         AnswerError

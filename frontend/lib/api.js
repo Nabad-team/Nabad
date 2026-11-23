@@ -26,6 +26,8 @@ export async function request(path, options = {}) {
         ? "Nabad is temporarily unavailable. Please try again. In an emergency in Lebanon, call 140."
         : "Request failed."));
       error.status = res.status; error.requestId = data.requestId;
+      // A daily AI limit (backend dailyAiLimits.js): { feature, used, limit, remaining, resetsAt }, shown as a calm notice.
+      if (data.code === "daily_ai_limit" && data.dailyLimit) { error.code = data.code; error.dailyLimit = data.dailyLimit; }
       throw error;
     }
     return data;

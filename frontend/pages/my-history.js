@@ -11,6 +11,8 @@ import HealthStory from "../components/HealthStory";
 import { QuickDoctorQuestion } from "../components/DoctorQuestions";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { askHistory } from "../lib/historyApi";
+import { AiUsageLine, DailyLimitNotice } from "../components/AiUsage";
+import { getAiUsage, dailyLimitOf } from "../lib/aiUsageApi";
 import { formatDate } from "../lib/dates";
 
 // SCRUM-156: "As a user, I want to ask natural-language questions about my own history so that I can recall
@@ -39,7 +41,15 @@ export default function MyHistoryPage() {
   const [question, setQuestion] = useState("");
   const [useAi, setUseAi] = useState(false);
   const [state, setState] = useState({});
+  // Today's AI questions about history for the account (backend dailyAiLimits.js). Only AI answers count.
+  const [aiUsage, setAiUsage] = useState(null);
   const controller = useRef(null);
+
+  useEffect(() => {
+    const usageRequest = new AbortController();
+    Promise.resolve().then(() => getAiUsage(usageRequest.signal)).then((data) => { if (data?.historyQuestions) setAiUsage(data.historyQuestions); }).catch(() => {});
+    return () => usageRequest.abort();
+  }, []);
 
   // A different profile: start again, so one person's history is never shown under another's name.
   useEffect(() => {
@@ -58,8 +68,14 @@ export default function MyHistoryPage() {
     try {
       const result = await askHistory(profileId, trimmed, useAi, controller.current.signal);
       setState({ result, asked: trimmed });
+      if (result?.aiUsage) setAiUsage(result.aiUsage);
     } catch (error) {
       if (error.name === "AbortError") return;
+      const limit = dailyLimitOf(error);
+      if (limit) {
+        setAiUsage(limit);
+        return setState({ limit, limitMessage: error.message });
+      }
       setState({ error: error.message || "We couldn't search the history. Please try again." });
     }
   }
@@ -69,7 +85,7 @@ export default function MyHistoryPage() {
     ask(null, example);
   }
 
-  const { result, error, loading, asked } = state;
+  const { result, error, loading, asked, limit, limitMessage } = state;
   const cited = new Set(result?.sources || []);
   return (
     <PageLayout title="My history" header={<ProfileHeader />}>
@@ -93,6 +109,7 @@ export default function MyHistoryPage() {
               <input type="checkbox" checked={useAi} onChange={(event) => setUseAi(event.target.checked)} />
               <span>Let AI write the answer. Your question and the matching records are sent to Nabad's AI provider. Without this, Nabad answers by searching the records.</span>
             </label>
+            {useAi && <AiUsageLine usage={aiUsage} noun="AI questions" />}
             <div className="form-actions">
               <Button type="submit" disabled={loading || !profileId}>{loading ? "Searching..." : "Ask"}</Button>
             </div>
@@ -104,6 +121,9 @@ export default function MyHistoryPage() {
           </form>
 
           {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+          <DailyLimitNotice limit={limit} message={limitMessage}>
+            <p>You can still ask now without AI: untick &quot;Let AI write the answer&quot; and Nabad answers by searching the records.</p>
+          </DailyLimitNotice>
           {loading && <p className="text-muted progress-note" role="status">Searching the history...</p>}
 
           {result && (
