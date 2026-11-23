@@ -83,7 +83,8 @@ const {
 const router = express.Router();
 const { countTriageUsage } = require("../usageAnalytics");
 // Per-account daily AI limit. Emergencies never reach it: the red-flag rules run first (prepareRuleEmergency).
-const { useOne, giveBack } = require("../dailyAiLimits");
+// A check and all its follow-up rounds count as one (useSymptomCheck); the 15-minute limit above counts each call.
+const { useSymptomCheck, giveBackSymptomCheck } = require("../dailyAiLimits");
 
 // Shown with a rules-only result once today's AI symptom checks are used up.
 const DAILY_LIMIT_NOTE =
@@ -329,14 +330,16 @@ router.post(
       if (!result) {
         client = getTriageLlmClient();
         if (client) {
-          const { allowed, usage, day } = await useOne(req.userId, "symptomChecks");
+          const answers = req.body?.answers;
+          const followUp = Boolean(req.body?.followUpState || (answers && typeof answers === "object" && Object.keys(answers).length));
+          const { allowed, usage, day, kind } = await useSymptomCheck(req.userId, { followUp });
           aiUsage = usage;
           if (!allowed) {
             // At the limit: the rules answer alone. The page still gets the level, emergency help and 140.
             client = null;
             dailyLimitReached = true;
           } else if (usage) {
-            counted = { day };
+            counted = { day, kind };
           }
         }
         const [previousChecks, profileHealth] = await Promise.all([
@@ -356,9 +359,9 @@ router.post(
         if (dailyLimitReached) result.ai = { ...result.ai, reason: "daily_limit" };
         // The model wasn't used after all (down, slow, guardrails): this check doesn't count.
         if (counted && !result.ai.used) {
-          await giveBack(req.userId, "symptomChecks", counted.day);
+          await giveBackSymptomCheck(req.userId, counted.day, counted.kind);
+          if (counted.kind === "check") aiUsage = { ...aiUsage, used: aiUsage.used - 1, remaining: aiUsage.remaining + 1 };
           counted = null;
-          aiUsage = { ...aiUsage, used: aiUsage.used - 1, remaining: aiUsage.remaining + 1 };
         }
       }
 
@@ -466,7 +469,7 @@ router.post(
           req.body?.checkId,
       });
     } catch (err) {
-      if (counted) giveBack(req.userId, "symptomChecks", counted.day);
+      if (counted) giveBackSymptomCheck(req.userId, counted.day, counted.kind);
       if (
         err instanceof
         AnswerError

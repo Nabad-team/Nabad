@@ -12,6 +12,8 @@ const mongoose = require("mongoose");
 const AiUsageDaily = require("./models/AiUsageDaily");
 const { relaxedForScan, SCAN_FACTOR } = require("./rateLimit");
 const { logEvent } = require("./logger");
+// A symptom check has at most this many follow-up rounds (adaptiveFollowUps.js).
+const { MAX_ROUNDS: FOLLOW_UP_ROUNDS } = require("./triage/adaptiveFollowUps");
 
 const TIME_ZONE = "Asia/Beirut";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -77,13 +79,15 @@ const view = (feature, used, limit, resetsAt) => ({ feature, used, limit, remain
 // Uses one of today's `feature` for the account, if any are left. Atomic: two requests at once can't both take the
 // last one. Returns { allowed, usage, day }. If the database can't be reached, it lets the request through
 // (allowed, usage null): a limit must never stop someone getting help because of a database problem.
-async function useOne(account, feature, { now = new Date(), env = process.env } = {}) {
+// alsoAdd: other counts to add with the use, e.g. { freeFollowUps: 3 } for a symptom check.
+async function useOne(account, feature, { now = new Date(), env = process.env, alsoAdd = {} } = {}) {
   const limit = readDailyLimits(env)[feature];
   const day = beirutDay(now);
   const resetsAt = nextReset(now);
   if (!dbReady()) return { allowed: true, usage: null, day };
   const underLimit = { owner: account, day, [feature]: { $lt: limit } };
-  const takeOne = { $inc: { [feature]: 1 }, $setOnInsert: { expiresAt: new Date(resetsAt.getTime() + DAY_MS) } };
+  const inc = { [feature]: 1, ...alsoAdd };
+  const takeOne = { $inc: inc, $setOnInsert: { expiresAt: new Date(resetsAt.getTime() + DAY_MS) } };
   try {
     let row;
     try {
@@ -92,7 +96,7 @@ async function useOne(account, feature, { now = new Date(), env = process.env } 
       if (error.code !== 11000) throw error;
       // The upsert hit the unique index: the day's row exists, because it is at the limit (the filter missed) or
       // because another request created it a moment ago. Now that it exists, try once more without creating it.
-      row = await AiUsageDaily.findOneAndUpdate(underLimit, { $inc: { [feature]: 1 } }, { new: true, maxTimeMS: 2000 }).lean();
+      row = await AiUsageDaily.findOneAndUpdate(underLimit, { $inc: inc }, { new: true, maxTimeMS: 2000 }).lean();
     }
     if (row) return { allowed: true, usage: view(feature, row[feature], limit, resetsAt), day };
     const current = await AiUsageDaily.findOne({ owner: account, day }).maxTimeMS(2000).lean().catch(() => null);
@@ -110,6 +114,51 @@ async function giveBack(account, feature, day) {
     await AiUsageDaily.updateOne({ owner: account, day, [feature]: { $gt: 0 } }, { $inc: { [feature]: -1 } }, { maxTimeMS: 2000 });
   } catch {
     logEvent("ai_daily_limit_unavailable", { feature });
+  }
+}
+
+// A symptom check and all its follow-up rounds count as one AI symptom check. The follow-up state comes from the
+// browser and is not signed, so it can't be trusted to skip counting. Instead, each counted check adds
+// FOLLOW_UP_ROUNDS free follow-up rounds to the day's row (a number, nothing about the check), and a follow-up
+// round uses one of those. A follow-up with none left counts as a new check. Honest use: 1 per check. The most
+// anyone can get is the same as 20 full checks.
+//   followUp: true when the request answers follow-up questions (answers or followUpState sent).
+// Returns { allowed, usage, day, kind: "check" | "followUp" }.
+async function useSymptomCheck(account, { followUp = false, now = new Date(), env = process.env } = {}) {
+  const day = beirutDay(now);
+  if (followUp && dbReady()) {
+    try {
+      const row = await AiUsageDaily.findOneAndUpdate(
+        { owner: account, day, freeFollowUps: { $gt: 0 } }, { $inc: { freeFollowUps: -1 } }, { new: true, maxTimeMS: 2000 },
+      ).lean();
+      if (row) {
+        const usage = view("symptomChecks", row.symptomChecks, readDailyLimits(env).symptomChecks, nextReset(now));
+        return { allowed: true, usage, day, kind: "followUp" };
+      }
+    } catch {
+      logEvent("ai_daily_limit_unavailable", { feature: "symptomChecks" });
+      return { allowed: true, usage: null, day, kind: "followUp" };
+    }
+  }
+  const result = await useOne(account, "symptomChecks", { now, env, alsoAdd: { freeFollowUps: FOLLOW_UP_ROUNDS } });
+  return { ...result, kind: "check" };
+}
+
+// Gives back what useSymptomCheck took, when the model didn't answer after all.
+async function giveBackSymptomCheck(account, day, kind) {
+  if (!dbReady()) return;
+  try {
+    if (kind === "followUp") {
+      await AiUsageDaily.updateOne({ owner: account, day }, { $inc: { freeFollowUps: 1 } }, { maxTimeMS: 2000 });
+      return;
+    }
+    // The check and the free rounds it added; never below 0 (some rounds may already be used).
+    await AiUsageDaily.updateOne({ owner: account, day, symptomChecks: { $gt: 0 } }, [{ $set: {
+      symptomChecks: { $subtract: ["$symptomChecks", 1] },
+      freeFollowUps: { $max: [0, { $subtract: [{ $ifNull: ["$freeFollowUps", 0] }, FOLLOW_UP_ROUNDS] }] },
+    } }], { maxTimeMS: 2000 });
+  } catch {
+    logEvent("ai_daily_limit_unavailable", { feature: "symptomChecks" });
   }
 }
 
@@ -161,5 +210,6 @@ function dailyAiLimit(feature, { skip = () => false } = {}) {
 }
 
 module.exports = {
-  FEATURES, TIME_ZONE, readDailyLimits, beirutDay, nextReset, useOne, giveBack, usageToday, limitReachedBody, dailyAiLimit,
+  FEATURES, TIME_ZONE, FOLLOW_UP_ROUNDS, readDailyLimits, beirutDay, nextReset, useOne, giveBack, useSymptomCheck, giveBackSymptomCheck,
+  usageToday, limitReachedBody, dailyAiLimit,
 };

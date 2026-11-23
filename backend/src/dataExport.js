@@ -231,7 +231,8 @@ const AI_USAGE = {
   key: "aiUsageCounts", model: require("./models/AiUsageDaily"), sort: { day: 1 },
   fields: {
     day: "day", symptomChecks: "aiSymptomChecks", assistantMessages: "healthAssistantMessages", historyQuestions: "aiHistoryQuestions",
-    prescriptionReads: "prescriptionPhotoReadings", reportAnalyses: "labReportReviews", expiresAt: "deletedAutomaticallyAt",
+    prescriptionReads: "prescriptionPhotoReadings", reportAnalyses: "labReportReviews",
+    freeFollowUps: "symptomCheckFollowUpRoundsLeft", expiresAt: "deletedAutomaticallyAt",
   },
   omit: { _id: "Internal database id of the day's counts." },
 };
