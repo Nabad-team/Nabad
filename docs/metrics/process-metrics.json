@@ -1,0 +1,418 @@
+{
+ "snapshot": "2026-11-24T12:00:00+00:00",
+ "sprints": [
+  {
+   "name": "Sprint 1",
+   "from": "2026-09-22",
+   "to": "2026-10-06"
+  },
+  {
+   "name": "Sprint 2",
+   "from": "2026-10-07",
+   "to": "2026-10-20"
+  },
+  {
+   "name": "Sprint 3",
+   "from": "2026-10-21",
+   "to": "2026-11-03"
+  },
+  {
+   "name": "Sprint 4",
+   "from": "2026-11-04",
+   "to": "2026-11-17"
+  },
+  {
+   "name": "Sprint 5",
+   "from": "2026-11-18",
+   "to": "2026-12-01"
+  }
+ ],
+ "merged_prs": {
+  "project": {
+   "main": 242,
+   "release": 10
+  },
+  "Sprint 1": {
+   "main": 37,
+   "release": 0
+  },
+  "Sprint 2": {
+   "main": 68,
+   "release": 0
+  },
+  "Sprint 3": {
+   "main": 61,
+   "release": 0
+  },
+  "Sprint 4": {
+   "main": 68,
+   "release": 9
+  },
+  "Sprint 5": {
+   "main": 8,
+   "release": 1
+  }
+ },
+ "pr_cycle_minutes": {
+  "project": {
+   "median": 3.8,
+   "p75": 12.1,
+   "p90": 28.1,
+   "under_2_min": 65,
+   "n": 242
+  },
+  "Sprint 1": {
+   "median": 2.8,
+   "p75": 6.3,
+   "under_2_min": 17,
+   "n": 37
+  },
+  "Sprint 2": {
+   "median": 1.4,
+   "p75": 2.3,
+   "under_2_min": 43,
+   "n": 68
+  },
+  "Sprint 3": {
+   "median": 3.8,
+   "p75": 7.5,
+   "under_2_min": 5,
+   "n": 61
+  },
+  "Sprint 4": {
+   "median": 9.7,
+   "p75": 18.3,
+   "under_2_min": 0,
+   "n": 68
+  },
+  "Sprint 5": {
+   "median": 13.5,
+   "p75": 35.4,
+   "under_2_min": 0,
+   "n": 8
+  }
+ },
+ "deploy_frequency": {
+  "project": {
+   "releases": 10,
+   "releases_per_week_since_first": 4.4,
+   "frontend_prod_deploys": 140,
+   "frontend_prod_deploys_per_week": 16.1,
+   "first_frontend_prod_deploy": "2026-10-12T09:44:58Z",
+   "backend_deploy_records": 124,
+   "other_production_records_excluded": 32
+  },
+  "Sprint 1": {
+   "weeks": 2.1,
+   "releases": 0,
+   "releases_per_week": 0.0,
+   "frontend_prod_deploys": 0,
+   "frontend_prod_deploys_per_week": 0.0
+  },
+  "Sprint 2": {
+   "weeks": 2.0,
+   "releases": 0,
+   "releases_per_week": 0.0,
+   "frontend_prod_deploys": 52,
+   "frontend_prod_deploys_per_week": 26.0
+  },
+  "Sprint 3": {
+   "weeks": 2.0,
+   "releases": 0,
+   "releases_per_week": 0.0,
+   "frontend_prod_deploys": 59,
+   "frontend_prod_deploys_per_week": 29.5
+  },
+  "Sprint 4": {
+   "weeks": 2.0,
+   "releases": 9,
+   "releases_per_week": 4.5,
+   "frontend_prod_deploys": 28,
+   "frontend_prod_deploys_per_week": 14.0
+  },
+  "Sprint 5": {
+   "weeks": 1.0,
+   "releases": 1,
+   "releases_per_week": 1.0,
+   "frontend_prod_deploys": 1,
+   "frontend_prod_deploys_per_week": 1.0
+  }
+ },
+ "lead_time_hours": {
+  "project": {
+   "median": 0.0,
+   "n": 186,
+   "median_release_era": 8.4,
+   "n_release_era": 56,
+   "median_auto_era": 0.0,
+   "median_auto_era_minutes": 0.3,
+   "p90_release_era": 99.91527777777777,
+   "n_auto_era": 130,
+   "not_measured": 56
+  },
+  "Sprint 1": {
+   "median": null,
+   "median_release_era": null,
+   "n": 0,
+   "not_measured": 37
+  },
+  "Sprint 2": {
+   "median": 0.0,
+   "median_release_era": null,
+   "n": 50,
+   "not_measured": 18
+  },
+  "Sprint 3": {
+   "median": 0.0,
+   "median_release_era": null,
+   "n": 61,
+   "not_measured": 0
+  },
+  "Sprint 4": {
+   "median": 0.9,
+   "median_release_era": 10.7,
+   "n": 68,
+   "not_measured": 0
+  },
+  "Sprint 5": {
+   "median": 1.1,
+   "median_release_era": 1.1,
+   "n": 7,
+   "not_measured": 1
+  }
+ },
+ "change_failure": {
+  "project": {
+   "judged": 9,
+   "literal": 3,
+   "attributed": 0,
+   "rollbacks": 0,
+   "reverts": 0,
+   "too_recent": [
+    261
+   ]
+  },
+  "releases": {
+   "197": {
+    "literal": true,
+    "attributed": false,
+    "note": "#202 (47.9 h later, in #203): CI fixes and an undefined colour token from before"
+   },
+   "203": {
+    "literal": true,
+    "attributed": false,
+    "note": "#208, #209 (13 h later, in #210): rate limits used a proxy IP since before this release"
+   },
+   "210": {
+    "literal": false,
+    "attributed": false,
+    "note": "next release 101 h later"
+   },
+   "236": {
+    "literal": false,
+    "attributed": false,
+    "note": "#238 is a feature"
+   },
+   "239": {
+    "literal": false,
+    "attributed": false,
+    "note": "#241 is a feature"
+   },
+   "242": {
+    "literal": false,
+    "attributed": false,
+    "note": "#244 is a feature"
+   },
+   "245": {
+    "literal": false,
+    "attributed": false,
+    "note": "#247 is a feature"
+   },
+   "248": {
+    "literal": true,
+    "attributed": false,
+    "note": "#250 (25 min later, in #251): notification texts from the notifications feature, Sprint 3"
+   },
+   "251": {
+    "literal": false,
+    "attributed": false,
+    "note": "next release 8 days later"
+   }
+  },
+  "Sprint 1": {
+   "judged": 0,
+   "literal": 0,
+   "attributed": 0
+  },
+  "Sprint 2": {
+   "judged": 0,
+   "literal": 0,
+   "attributed": 0
+  },
+  "Sprint 3": {
+   "judged": 0,
+   "literal": 0,
+   "attributed": 0
+  },
+  "Sprint 4": {
+   "judged": 9,
+   "literal": 3,
+   "attributed": 0
+  },
+  "Sprint 5": {
+   "judged": 0,
+   "literal": 0,
+   "attributed": 0
+  }
+ },
+ "ci_pass_rate": {
+  "project": {
+   "runs": 1228,
+   "passed": 1165,
+   "rate": 94.9,
+   "by_check": {
+    "Backup tooling": {
+     "runs": 91,
+     "passed": 91,
+     "rate": 100.0
+    },
+    "Medical report safety gate": {
+     "runs": 111,
+     "passed": 111,
+     "rate": 100.0
+    },
+    "backend-tests": {
+     "runs": 286,
+     "passed": 269,
+     "rate": 94.1
+    },
+    "docker-build": {
+     "runs": 226,
+     "passed": 225,
+     "rate": 99.6
+    },
+    "frontend-tests": {
+     "runs": 305,
+     "passed": 290,
+     "rate": 95.1
+    },
+    "selenium": {
+     "runs": 209,
+     "passed": 179,
+     "rate": 85.6
+    }
+   },
+   "vercel_final_commit": {
+    "prs": 188,
+    "passed": 187
+   }
+  },
+  "Sprint 1": {
+   "runs": 79,
+   "passed": 71,
+   "rate": 89.9
+  },
+  "Sprint 2": {
+   "runs": 258,
+   "passed": 247,
+   "rate": 95.7
+  },
+  "Sprint 3": {
+   "runs": 308,
+   "passed": 289,
+   "rate": 93.8
+  },
+  "Sprint 4": {
+   "runs": 517,
+   "passed": 496,
+   "rate": 95.9
+  },
+  "Sprint 5": {
+   "runs": 66,
+   "passed": 62,
+   "rate": 93.9
+  }
+ },
+ "ci_first_time_green": {
+  "project": {
+   "prs": 240,
+   "green": 227
+  },
+  "Sprint 1": {
+   "prs": 36,
+   "green": 34
+  },
+  "Sprint 2": {
+   "prs": 68,
+   "green": 65
+  },
+  "Sprint 3": {
+   "prs": 61,
+   "green": 55
+  },
+  "Sprint 4": {
+   "prs": 68,
+   "green": 66
+  },
+  "Sprint 5": {
+   "prs": 7,
+   "green": 7
+  }
+ },
+ "test_counts": {
+  "first": {
+   "commit": "5a102f1",
+   "date": "2026-09-26",
+   "counts": [
+    0,
+    3,
+    0
+   ]
+  },
+  "Sprint 1": {
+   "commit": "f5e0c87",
+   "counts": [
+    110,
+    163,
+    0
+   ]
+  },
+  "Sprint 2": {
+   "commit": "4a66192",
+   "counts": [
+    425,
+    379,
+    14
+   ]
+  },
+  "Sprint 3": {
+   "commit": "78588a1",
+   "counts": [
+    736,
+    565,
+    25
+   ]
+  },
+  "Sprint 4": {
+   "commit": "33bc8e9",
+   "counts": [
+    891,
+    806,
+    37
+   ]
+  },
+  "Sprint 5": {
+   "commit": "8f237d6",
+   "counts": [
+    951,
+    840,
+    38
+   ]
+  },
+  "runtime_now": {
+   "backend": 1404,
+   "frontend": 946,
+   "note": "npm test on main after #260 (backend), jest --runInBand (frontend)"
+  }
+ }
+}
