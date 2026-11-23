@@ -6,6 +6,8 @@ import Badge from "./ui/Badge";
 import { MEDICATION_FORMS } from "../lib/medicationApi";
 import { PRESCRIPTION_TYPES, readPrescription, applyPrescription, endDateFor } from "../lib/prescriptionApi";
 import { formatDate, todayString } from "../lib/dates";
+import { AiUsageLine, DailyLimitNotice } from "./AiUsage";
+import { getAiUsage, dailyLimitOf } from "../lib/aiUsageApi";
 
 // SCRUM-146: "As a user, I want to upload a photo of a prescription so that my medication list updates
 // automatically."
@@ -27,6 +29,15 @@ export default function PrescriptionScan({ profileId, listName, onDone, onCancel
   const [consent, setConsent] = useState(false);
   const [step, setStep] = useState("choose"); // "choose" | "reading" | "review" | "saving"
   const [error, setError] = useState("");
+  // Today's prescription readings for the account (backend dailyAiLimits.js), and the notice at the limit.
+  const [aiUsage, setAiUsage] = useState(null);
+  const [limitReached, setLimitReached] = useState(null);
+
+  useEffect(() => {
+    const usageRequest = new AbortController();
+    Promise.resolve().then(() => getAiUsage(usageRequest.signal)).then((data) => { if (data?.prescriptionReads) setAiUsage(data.prescriptionReads); }).catch(() => {});
+    return () => usageRequest.abort();
+  }, []);
   const [items, setItems] = useState([]);
   const [unreadable, setUnreadable] = useState("");
   const [startDate, setStartDate] = useState(todayString());
@@ -49,6 +60,7 @@ export default function PrescriptionScan({ profileId, listName, onDone, onCancel
     if (!file) return setError("Choose a photo of the prescription first.");
     if (!consent) return setError("Tick the box to agree to send the photo to the AI provider.");
     setError("");
+    setLimitReached(null);
     setStep("reading");
     controller.current = new AbortController();
     try {
@@ -60,9 +72,17 @@ export default function PrescriptionScan({ profileId, listName, onDone, onCancel
         add: m.match.status !== "already-listed" && !m.needsCheck,
       })));
       setUnreadable(result.unreadable || "");
+      if (result.aiUsage) setAiUsage(result.aiUsage);
       setStep("review");
     } catch (err) {
       if (err.name === "AbortError") return;
+      const limit = dailyLimitOf(err);
+      if (limit) {
+        setAiUsage(limit);
+        setLimitReached({ limit, message: err.message });
+        setStep("choose");
+        return;
+      }
       setError(err.message || "The prescription couldn't be read. Please try again.");
       setStep("choose");
     }
@@ -113,6 +133,10 @@ export default function PrescriptionScan({ profileId, listName, onDone, onCancel
             <span>I agree to send this prescription to Nabad's AI provider to read it. Nabad doesn't keep the photo.</span>
           </label>
           {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
+          <DailyLimitNotice limit={limitReached?.limit} message={limitReached?.message}>
+            <p>You can still add your medicines by hand.</p>
+          </DailyLimitNotice>
+          <AiUsageLine usage={aiUsage} noun="prescription readings" />
           {step === "reading" ? <p className="text-muted progress-note" role="status">Reading the prescription...</p> : (
             <div className="form-actions">
               <Button type="submit">Read prescription</Button>

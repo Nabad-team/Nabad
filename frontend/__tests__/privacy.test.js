@@ -52,7 +52,7 @@ describe("Privacy Policy Page", () => {
     render(<PrivacyPolicy />);
 
     expect(
-      screen.getByText(/November 16, 2026/)
+      screen.getByText(/November 23, 2026/)
     ).toBeInTheDocument();
   });
 

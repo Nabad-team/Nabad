@@ -163,6 +163,7 @@ router.delete("/me", deleteLimiter, asyncRoute(async (req, res) => {
   await Promise.all([
     require("../models/ProviderFeedback").deleteMany({ owner: user._id }),
     require("../models/ProviderCorrection").deleteMany({ owner: user._id }),
+    require("../models/AiUsageDaily").deleteMany({ owner: user._id }),
   ]);
   // Both directions: the people this account invited, and its places in other people's care circles.
   await deleteCareCircles(user._id);

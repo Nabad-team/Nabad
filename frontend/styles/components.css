@@ -494,6 +494,17 @@ html[data-simplified-mode="true"] .urgency__summary {
   font-size: var(--text-sm);
 }
 
+/* Daily AI limits (components/AiUsage.js): a quiet usage line, and the notice at the limit. */
+.ai-usage-line {
+  margin: var(--space-2, 0.5rem) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.daily-limit-notice p {
+  margin: 0.25rem 0 0;
+}
+
 .field__error {
   color: var(--color-danger);
   font-size: var(--text-sm);

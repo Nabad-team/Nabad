@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
       </PageTitle>
 
       <p>
-        <strong>Last updated:</strong> November 16, 2026
+        <strong>Last updated:</strong> November 23, 2026
       </p>
 
       <h2>Information Nabad stores</h2>
@@ -128,6 +128,37 @@ export default function PrivacyPolicy() {
           Nabad does not write your messages, files or the AI&apos;s reply to
           its logs. Logs only record that a request happened and whether it
           succeeded.
+        </li>
+      </ul>
+
+      <h2 id="ai-usage-limits">AI usage limits</h2>
+
+      <p>
+        Each account can use the AI features a set number of times a day. All
+        the profiles in your account, including family members, share the same
+        limits. They start again every night at midnight, Beirut time.
+      </p>
+
+      <ul>
+        <li>AI symptom checks: 20 a day. Each follow-up round counts as one.</li>
+        <li>Health assistant messages: 40 a day.</li>
+        <li>AI answers to &quot;Ask about my history&quot;: 30 a day.</li>
+        <li>Reading a prescription photo: 10 a day.</li>
+        <li>Lab report reviews: 5 a day.</li>
+        <li>
+          Emergencies are never limited. Nabad&apos;s safety rules always check
+          your symptoms, and an emergency is never counted. If you have used
+          today&apos;s AI checks, the symptom check still answers with the
+          safety rules, and emergency guidance and 140 show as usual.
+        </li>
+        <li>
+          If something fails and the AI doesn&apos;t answer, it doesn&apos;t
+          count.
+        </li>
+        <li>
+          To keep count, Nabad stores only how many times your account used
+          each feature that day. It never stores your question or symptoms for
+          this, and the counts are deleted automatically after 2 days.
         </li>
       </ul>
 

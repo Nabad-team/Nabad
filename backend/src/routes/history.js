@@ -24,6 +24,7 @@ const { getLlmClient } = require("../triage/ai/modelAccess");
 const { getChatSafetyReply } = require("../reports/chatSafety");
 const { logEvent } = require("../logger");
 const { buildHealthStory, readStoryQuery } = require("../healthStory");
+const { dailyAiLimit, giveBack } = require("../dailyAiLimits");
 
 const router = express.Router();
 const limiter = rateLimit({
@@ -51,7 +52,13 @@ const SAFETY = {
   phone: "140",
 };
 
-router.post("/ask", requireAuth, limiter, resolveProfile, async (req, res, next) => {
+// Per-account daily limit (dailyAiLimits.js): only questions sent to the AI count. A plain search answer, or a
+// question the safety rules flag as an emergency, is never counted or blocked.
+const dailyHistoryLimit = dailyAiLimit("historyQuestions", {
+  skip: (req) => req.body?.useAi !== true || !getLlmClient() || Boolean(getChatSafetyReply(req.body?.question)),
+});
+
+router.post("/ask", requireAuth, limiter, resolveProfile, dailyHistoryLimit, async (req, res, next) => {
   const { question, timeZone, useAi } = req.body || {};
   if (typeof question !== "string" || question.trim().length < 3 || question.length > 300) {
     return res.status(400).json({ error: "Ask a question between 3 and 300 characters." });
@@ -69,7 +76,13 @@ router.post("/ask", requireAuth, limiter, resolveProfile, async (req, res, next)
       reason: `${result.answeredBy}:${result.total}${result.aiReason ? `:${result.aiReason}` : ""}`,
       durationMs: Math.round(performance.now() - started),
     });
-    return res.json({ ...result, ...(getChatSafetyReply(question) ? { safety: SAFETY } : {}) });
+    // The AI was asked but didn't answer (off, slow, failed the checks): the plain answer doesn't count.
+    let aiUsage = req.aiUsage;
+    if (aiUsage && result.answeredBy !== "ai") {
+      await giveBack(req.userId, "historyQuestions", req.aiUsageDay);
+      aiUsage = { ...aiUsage, used: aiUsage.used - 1, remaining: aiUsage.remaining + 1 };
+    }
+    return res.json({ ...result, ...(getChatSafetyReply(question) ? { safety: SAFETY } : {}), ...(aiUsage ? { aiUsage } : {}) });
   } catch (error) {
     return next(error);
   }

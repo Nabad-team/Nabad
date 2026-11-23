@@ -124,6 +124,9 @@ function createApp() {
   // SCRUM-311: the team's usage dashboard (anonymous daily totals, team members only).
   app.use("/api/usage", require("./routes/usage"));
 
+  // The signed-in account's own AI use today, against its daily limits (dailyAiLimits.js).
+  app.use("/api/ai-usage", require("./routes/aiUsage"));
+
   app.use(
     "/api/health",
     require("./routes/health")
