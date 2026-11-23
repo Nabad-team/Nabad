@@ -83,8 +83,10 @@ const RULES = [
   { id: "sepsis", level: "emergency", reason: "Mottled, blue or very pale skin while feeling very unwell can be a sign of sepsis, a life-threatening reaction to an infection.",
     any: ["sepsis", "septic", "mottled"] },
   // SCRUM-282: notLongAgo: "headaches since my car accident last year" is history, not an injury now.
-  { id: "major-injury", level: "emergency", notLongAgo: true, reason: "A serious injury, such as a fall from a height, a road accident, a stab or gunshot wound, an electric shock or a severe burn, needs emergency care.",
-    any: ["fell from a height", "fall from a height", "fell off a roof", "fell from the roof", "can't feel my legs", "cannot feel my legs", "can't move my legs", "cannot move my legs", "car accident", "car crash", "hit by a car", "motorcycle accident", "stabbed", "stab wound", "gunshot", "been shot", "was shot", "electric shock", "electrocuted", "severe burn", "serious burn", "chemical burn"] },
+  { id: "major-injury", level: "emergency", notLongAgo: true, reason: "A serious injury, such as a fall from a height, a road accident, a stab or gunshot wound, a bone through the skin, an electric shock or a severe burn, needs emergency care.",
+    any: ["fell from a height", "fall from a height", "fell off a roof", "fell from the roof", "can't feel my legs", "cannot feel my legs", "can't move my legs", "cannot move my legs", "car accident", "car crash", "hit by a car", "motorcycle accident", "stabbed", "stab wound", "gunshot", "been shot", "was shot", "electric shock", "electrocuted", "severe burn", "serious burn", "chemical burn",
+      // Triage calibration (approved by Gerges): an open fracture is an emergency, moved here from the urgent "injury" rule.
+      "bone is sticking out", "bone sticking out", "bone through the skin", "bone is through the skin", "bone poking out", "bone poking through", "bone coming through"] },
   { id: "testicle-sudden", level: "emergency", reason: "Sudden, severe pain in a testicle can mean it has twisted, which needs treatment within hours.",
     any: ["sudden testicle pain", "sudden testicular pain", "sudden pain in my testicle", "sudden severe pain in my testicle", "twisted testicle", "testicle is twisted"] },
   { id: "swallowed-object", level: "emergency", reason: "A swallowed button battery or magnets can cause serious damage inside the body within hours.",
@@ -105,9 +107,10 @@ const RULES = [
   { id: "severe-abdominal", level: "urgent", reason: "Severe abdominal pain should be checked today.",
     any: ["severe stomach pain", "severe abdominal pain", "severe belly pain", "sharp pain in my lower right"] },
   { id: "dehydration", level: "urgent", reason: "Not being able to keep fluids down can lead to dehydration.",
-    any: ["can't keep anything down", "cannot keep fluids down", "can't keep water down", "no urine", "not peeing"] },
+    // Triage calibration: vomiting again and again, or for a day or more (everydayWording.js), risks dehydration too.
+    any: ["can't keep anything down", "cannot keep fluids down", "can't keep water down", "no urine", "not peeing", "vomiting repeatedly"] },
   { id: "injury", level: "urgent", notLongAgo: true, reason: "A possible broken bone, deep cut or head injury should be checked today.",
-    any: ["broken bone", "bone is sticking out", "deep cut", "head injury", "hit my head", "can't move my", "cannot put weight"] },
+    any: ["broken bone", "deep cut", "head injury", "hit my head", "can't move my", "cannot put weight"] },
   { id: "pregnancy", level: "urgent", reason: "Bleeding or pain during pregnancy should be checked today.",
     all: ["pregnant", "bleeding"] },
   // SCRUM-281: urgent warning signs the rules were missing.
