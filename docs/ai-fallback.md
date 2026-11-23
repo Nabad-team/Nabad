@@ -85,7 +85,7 @@ Each account can use the AI features a set number of times per day, in [`backend
 
 | Feature | Variable | Default | What counts |
 | --- | --- | --- | --- |
-| AI symptom check | `AI_DAILY_LIMIT_SYMPTOM_CHECKS` | 20 | Each `/api/triage/ai-assess` call the model answers, so each follow-up round counts, as with the 15-minute limit. |
+| AI symptom check | `AI_DAILY_LIMIT_SYMPTOM_CHECKS` | 20 | Each symptom check the model answers, with all its follow-up rounds, counts as one. (The 15-minute limit still counts each call.) Each counted check adds 3 free follow-up rounds to the day's row (`freeFollowUps`, a number), and a follow-up round uses one. A follow-up with none left counts as a new check, because the follow-up state comes from the browser and can't be trusted on its own. |
 | Health assistant | `AI_DAILY_LIMIT_ASSISTANT_MESSAGES` | 40 | Each `/api/reports/chat` message. |
 | Ask about my history | `AI_DAILY_LIMIT_HISTORY_QUESTIONS` | 30 | Each `/api/history/ask` question with "Let AI write the answer" ticked. Search answers never count. |
 | Prescription photo | `AI_DAILY_LIMIT_PRESCRIPTION_READS` | 10 | Each `/api/prescriptions/read`. |

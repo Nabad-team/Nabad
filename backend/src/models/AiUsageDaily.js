@@ -10,6 +10,8 @@ const schema = new mongoose.Schema({
   historyQuestions: count,
   prescriptionReads: count,
   reportAnalyses: count,
+  // Follow-up rounds left for today's symptom checks: a check and its follow-up questions count as one.
+  freeFollowUps: count,
   expiresAt: { type: Date, required: true },
 }, { strict: "throw", versionKey: false, bufferCommands: false });
 schema.index({ owner: 1, day: 1 }, { unique: true });

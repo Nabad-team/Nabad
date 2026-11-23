@@ -140,7 +140,7 @@ export default function PrivacyPolicy() {
       </p>
 
       <ul>
-        <li>AI symptom checks: 20 a day. Each follow-up round counts as one.</li>
+        <li>AI symptom checks: 20 a day. A check and its follow-up questions count as one.</li>
         <li>Health assistant messages: 40 a day.</li>
         <li>AI answers to &quot;Ask about my history&quot;: 30 a day.</li>
         <li>Reading a prescription photo: 10 a day.</li>

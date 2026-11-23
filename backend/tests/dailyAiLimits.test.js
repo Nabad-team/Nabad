@@ -106,6 +106,8 @@ describe("daily AI limits over HTTP", () => {
     if (mongo) await mongo.stop();
   });
   beforeEach(() => {
+    // A test with the provider down must not leave the model paused (3 failures in a row) for the next one.
+    require("../src/triage/ai/modelAccess").resetModelBudgets();
     for (const key of SETTINGS) delete process.env[key];
     Object.assign(process.env, { LLM_API_URL: `http://127.0.0.1:${fakeProvider.address().port}/v1`, LLM_MODEL: "test-model", LLM_VISION_ENABLED: "true" });
     provider.status = 200;
@@ -156,6 +158,60 @@ describe("daily AI limits over HTTP", () => {
     assert.equal(res.body.aiUsage.used, 2);
     assert.equal(res.body.aiUsage.resetsAt, limits.nextReset().toISOString());
     assert.equal((await stored(who)).symptomChecks, 2);
+  });
+
+  // A follow-up round, as the page sends it: the last result's followUpState with the answers so far.
+  const followUp = (who, round, symptoms = "a mild headache today") =>
+    call(who, "/triage/ai-assess?profileId=self", { symptoms, followUpState: { round, asked: [] } });
+
+  test("one symptom check and all its follow-up rounds count as 1", async () => {
+    const who = await account();
+    assert.equal((await assess(who, "a mild headache today")).body.aiUsage.used, 1);
+    for (const round of [1, 2, 3]) {
+      const res = await followUp(who, round);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.ai.used, true, "follow-up rounds still use the AI");
+      assert.equal(res.body.aiUsage.used, 1, `round ${round} doesn't count again`);
+    }
+    const row = await stored(who);
+    assert.deepEqual([row.symptomChecks, row.freeFollowUps], [1, 0]);
+    assert.equal((await assess(who, "a sore throat")).body.aiUsage.used, 2, "the next check counts");
+  });
+
+  test("a follow-up with no rounds left counts as a new check, so the follow-up state can't be used to skip counting", async () => {
+    const who = await account();
+    const faked = await followUp(who, 1, "a mild cough");
+    assert.equal(faked.body.aiUsage.used, 1, "a follow-up with no counted check before it counts");
+    for (const round of [1, 2, 3]) await followUp(who, round);
+    assert.equal((await stored(who)).symptomChecks, 1);
+    assert.equal((await followUp(who, 1, "something new")).body.aiUsage.used, 2, "the 4th free round doesn't exist");
+  });
+
+  test("a check started before the limit keeps its follow-up rounds with the AI", async () => {
+    process.env.AI_DAILY_LIMIT_SYMPTOM_CHECKS = "1";
+    const who = await account();
+    assert.equal((await assess(who, "a mild headache today")).body.aiUsage.used, 1);
+    const round = await followUp(who, 1);
+    assert.equal(round.body.ai.used, true);
+    assert.equal(round.body.dailyLimit, undefined);
+    assert.equal((await assess(who, "a new problem")).body.ai.reason, "daily_limit", "a new check is over the limit");
+  });
+
+  test("a follow-up round the model didn't answer gives its round back", async () => {
+    const who = await account();
+    await assess(who, "a mild headache today");
+    provider.status = 503;
+    await followUp(who, 1);
+    const row = await stored(who);
+    assert.deepEqual([row.symptomChecks, row.freeFollowUps], [1, 3]);
+  });
+
+  test("a check the model didn't answer gives back the check and its rounds", async () => {
+    provider.status = 503;
+    const who = await account();
+    await assess(who, "a mild headache today");
+    const row = await stored(who);
+    assert.deepEqual([row.symptomChecks, row.freeFollowUps], [0, 0]);
   });
 
   test("emergencies are never counted, and are answered as normal at the limit", async () => {
@@ -341,7 +397,7 @@ describe("daily AI limits over HTTP", () => {
     const who = await account();
     await assess(who, "a mild headache today");
     const row = await stored(who);
-    assert.deepEqual(Object.keys(row).sort(), ["_id", "assistantMessages", "day", "expiresAt", "historyQuestions", "owner", "prescriptionReads", "reportAnalyses", "symptomChecks"]);
+    assert.deepEqual(Object.keys(row).sort(), ["_id", "assistantMessages", "day", "expiresAt", "freeFollowUps", "historyQuestions", "owner", "prescriptionReads", "reportAnalyses", "symptomChecks"]);
     assert.equal(row.expiresAt.getTime(), limits.nextReset().getTime() + 86400000);
     const ttl = (await AiUsageDaily.collection.indexes()).find((index) => index.key.expiresAt);
     assert.equal(ttl.expireAfterSeconds, 0);
