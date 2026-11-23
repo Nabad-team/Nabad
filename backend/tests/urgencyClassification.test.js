@@ -99,6 +99,61 @@ describe("classifier rules", () => {
     assert.equal(levelOf("CHEST   PAIN!!!"), "emergency");
     assert.equal(levelOf("I can’t breathe"), "emergency"); // curly apostrophe from phones
   });
+
+  // Triage calibration (approved by Gerges): repeated or long vomiting, and not keeping fluids down, risk
+  // dehydration and are seen today. One episode, or vomiting with nothing else, stays "see a doctor soon".
+  test("vomiting again and again, for a day, or not keeping fluids down is urgent (dehydration risk)", () => {
+    for (const text of [
+      "I'm vomiting every hour since the morning",
+      "can't keep any fluids down",
+      "vomiting for 24 hours",
+      "I can't keep any fluids down since yesterday",
+      "I have been throwing up every hour",
+      "vomiting for a day now",
+    ]) {
+      assert.equal(levelOf(text), "urgent", text);
+      assert.ok(classifyUrgency(text).matchedRuleIds.includes("dehydration"), text);
+    }
+  });
+
+  test("plain vomiting, or being sick once, stays see a doctor soon", () => {
+    for (const text of ["vomiting", "threw up once", "I threw up once after dinner", "I have been vomiting"]) {
+      assert.equal(levelOf(text), "soon", text);
+    }
+    assert.equal(levelOf("no vomiting for 24 hours"), "routine", "a denied symptom doesn't count");
+  });
+
+  test("a broken or fractured bone is urgent (injury), not an emergency", () => {
+    for (const text of [
+      "I broke my leg",
+      "I broke my arm",
+      "I broke my wrist",
+      "I think it's fractured",
+      "fractured my ankle",
+      "I think my wrist is fractured",
+    ]) {
+      assert.equal(levelOf(text), "urgent", text);
+      assert.ok(classifyUrgency(text).matchedRuleIds.includes("injury"), text);
+    }
+  });
+
+  test("a bone sticking out or through the skin is an emergency (open fracture)", () => {
+    for (const text of [
+      "bone is sticking out",
+      "bone through the skin",
+      "I fell and the bone is sticking out of my leg",
+      "his bone is through the skin",
+    ]) {
+      assert.equal(levelOf(text), "emergency", text);
+      assert.ok(classifyUrgency(text).matchedRuleIds.includes("major-injury"), text);
+      assert.ok(!classifyUrgency(text).matchedRuleIds.includes("injury"), `${text}: no longer the urgent injury rule`);
+    }
+  });
+
+  test("a fracture long ago is history, not an injury now", () => {
+    assert.notEqual(levelOf("I broke my wrist years ago and it aches when it rains"), "urgent");
+    assert.notEqual(levelOf("my arm was fractured last year, it still clicks"), "urgent");
+  });
 });
 
 describe("POST /api/triage/classify", () => {

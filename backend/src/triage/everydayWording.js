@@ -258,11 +258,19 @@ const EVERYDAY_WORDING = [
     // SCRUM-282: "even" added: "I can't keep even water down".
     /\b(?:can't|cannot) (?:keep|hold) (?:any |even )?(?:water|fluids|food|drinks) down\b/,
   ] },
+  // Triage calibration (approved by Gerges): vomiting again and again ("every hour"), or for a day or more,
+  // risks dehydration. One episode ("threw up once") or "since last night" stays the soon "vomiting" rule.
+  { means: "vomiting repeatedly", patterns: [
+    /\b(?:vomiting|throwing up|puking|being sick|vomited|threw up|been sick)(?: (?:again|nonstop|non stop))? every (?:hour|half hour|half an hour|few minutes|(?:\d+|few|couple of) (?:minutes|mins|hours))\b/,
+    /\b(?:vomiting|throwing up|puking|being sick)(?: (?:nonstop|non stop|on and off))? for (?:24 hours|(?:more than |over )?a (?:whole |full )?day|(?:\d+|two|three|four|several) days|a day and a half)\b/,
+  ] },
   { means: "broken bone", patterns: [
     new RegExp(`\\b(?:broke|broken|fractured|cracked) ${PERSON} (?:arm|leg|wrist|ankle|finger|toe|hand|foot|nose|rib|ribs|collarbone|hip|elbow|knee|shoulder)\\b`),
     new RegExp(`\\b${PERSON} (?:arm|leg|wrist|ankle|finger|toe|hand|foot|nose|rib|collarbone|hip) (?:is|looks|might be|may be) (?:broken|fractured|bent the wrong way)\\b`),
     // SCRUM-282: "it's swollen and looks bent". Only "looks": "my toenail is deformed" is not an injury.
     /\b(?:looks|looking) (?:bent|deformed|misshapen|out of shape)\b|\bat (?:a|an) (?:weird|strange|odd|funny) angle\b/,
+    // Triage calibration: "I think it's fractured", "a fracture", "fractured my ankle".
+    /\b(?:fracture|fractured|fractures)\b/,
   ] },
   // SCRUM-282: "cut my hand on broken glass, it's deep", "I can see something white inside".
   // Nothing in between may say "not": "the cut isn't very deep" doesn't count.
