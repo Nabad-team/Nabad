@@ -10,6 +10,7 @@ import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
 import Card from "../components/ui/Card";
 import { AppointmentsSkeleton } from "../components/ui/Skeleton";
+import { QuickDoctorQuestion } from "../components/DoctorQuestions";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { formatDate, todayString } from "../lib/dates";
 import {
@@ -357,6 +358,8 @@ export default function AppointmentsPage() {
             </ul>
           )}
           </Card>
+          {/* SCRUM-333: a question for the next visit, kept with Visit preparation. */}
+          {profileId && <QuickDoctorQuestion profileId={profileId} forSelf={forSelf} name={name} id="appointments-doctor-question" />}
         </>
       )}
     </PageLayout>

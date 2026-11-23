@@ -68,7 +68,11 @@ const PROFILE_COLLECTIONS = [
   },
   {
     key: "visitPreparation", model: require("./models/VisitPrep"), single: true,
-    fields: { _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => values.map(String)], ...TIMESTAMPS },
+    fields: {
+      _id: ["id", id], overrides: "overrides", notes: "notes", documentIds: ["documentIds", (values) => (values || []).map(String)],
+      questions: ["questionsForMyDoctor", (values) => (values || []).map((question) => ({ id: id(question._id), text: question.text, createdAt: question.createdAt, updatedAt: question.updatedAt }))],
+      ...TIMESTAMPS,
+    },
   },
   {
     key: "medications",
@@ -177,6 +181,7 @@ const ACCOUNT = {
     emailVerifyLastSent: "Security internals: email verification link.",
     resetPasswordTokenHash: "Secret: hash of the password reset link.",
     resetPasswordExpires: "Security internals: password reset link.",
+    organizationalMilestones: "Internal first-action markers used only to prevent repeat organizational notifications.",
     twoFactorEnabled: "Two-step verification data.",
     twoFactorCodeHash: "Secret: hash of a sign-in code.",
     twoFactorCodeExpires: "Two-step verification data.",
@@ -221,7 +226,19 @@ const PROVIDER_CONTRIBUTIONS = [
   { key: "providerCorrections", model: require("./models/ProviderCorrection"),
     fields: { _id: ["id", id], providerSlug: "providerId", field: "field", details: "details", status: "status", ...TIMESTAMPS } },
 ];
-const ACCOUNT_COLLECTIONS = [ACCOUNT, LINKED_PROFILES, CARE_CIRCLE, ...PROVIDER_CONTRIBUTIONS];
+// Today's and yesterday's AI use, counts only (dailyAiLimits.js). Deleted automatically after 2 days.
+const AI_USAGE = {
+  key: "aiUsageCounts", model: require("./models/AiUsageDaily"), sort: { day: 1 },
+  fields: {
+    day: "day", symptomChecks: "aiSymptomChecks", assistantMessages: "healthAssistantMessages", historyQuestions: "aiHistoryQuestions",
+    prescriptionReads: "prescriptionPhotoReadings", reportAnalyses: "labReportReviews",
+    freeFollowUps: "symptomCheckFollowUpRoundsLeft", expiresAt: "deletedAutomaticallyAt",
+  },
+  omit: { _id: "Internal database id of the day's counts." },
+};
+// Records kept per account (not per profile), each listed at the top level of the file under its key.
+const ACCOUNT_RECORDS = [...PROVIDER_CONTRIBUTIONS, AI_USAGE];
+const ACCOUNT_COLLECTIONS = [ACCOUNT, LINKED_PROFILES, CARE_CIRCLE, ...ACCOUNT_RECORDS];
 const EXPORTED = [...ACCOUNT_COLLECTIONS, ...PROFILE_COLLECTIONS];
 
 // Models that hold nothing about any account.
@@ -255,7 +272,7 @@ async function buildExport(userId, now = new Date()) {
     CareCircle.find({ inviter: user._id }).sort(SORT).populate("member", "name email").lean(),
     CareCircle.find({ member: user._id, status: "active" }).sort({ acceptedAt: 1, _id: 1 }).populate("inviter", "name").lean(),
     ...PROFILE_COLLECTIONS.map(({ model, sort = SORT, select }) => model.find({ owner: user._id }).sort(sort).select(select || "").lean()),
-    ...PROVIDER_CONTRIBUTIONS.map(({ model }) => model.find({ owner: user._id }).sort(SORT).lean()),
+    ...ACCOUNT_RECORDS.map(({ model, sort = SORT }) => model.find({ owner: user._id }).sort(sort).lean()),
   ]);
 
   const { emergencyContact, favoriteProviders: favorites, notificationPreferences, ...account } = pick(user, ACCOUNT);
@@ -292,7 +309,7 @@ async function buildExport(userId, now = new Date()) {
       circlesIBelongTo: joined.filter((entry) => entry.inviter).map(circleView),
     },
     profiles: [...entries.values()],
-    ...Object.fromEntries(PROVIDER_CONTRIBUTIONS.map((collection, index) =>
+    ...Object.fromEntries(ACCOUNT_RECORDS.map((collection, index) =>
       [collection.key, records[PROFILE_COLLECTIONS.length + index].map(row => pick(row, collection))])),
   };
 }

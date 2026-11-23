@@ -13,6 +13,23 @@ const provider = { id: "clinic", name: "Test Clinic", type: "clinic", city: "Bei
 const result = { providers: [provider], total: 1, specialties: ["pediatrics"], cities: ["Beirut"] };
 beforeEach(() => { jest.resetAllMocks(); mockSignedIn = true; mockRouter = { isReady: true, query: {}, asPath: "/providers", push: jest.fn() }; getProviders.mockResolvedValue(result); getProviderFavorites.mockResolvedValue([]); setProviderFavorite.mockResolvedValue({}); });
 
+test("coverage uses the full category count even when filters return no results", async () => {
+  mockRouter = { ...mockRouter, query: { type: "laboratory", city: "saida" }, asPath: "/providers?type=laboratory&city=saida" };
+  getProviders.mockResolvedValue({ ...result, total: 0, providers: [], typeCounts: { laboratory: 2 } });
+  render(<ProvidersPage />);
+  expect(await screen.findByText(/coverage is limited to 2 listings across Lebanon/)).toHaveTextContent(
+    "We add facilities after checking a published source."
+  );
+});
+
+test("a narrow hospital search does not claim national coverage is limited", async () => {
+  mockRouter = { ...mockRouter, query: { type: "hospital" }, asPath: "/providers?type=hospital" };
+  getProviders.mockResolvedValue({ ...result, typeCounts: { hospital: 173 } });
+  render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  expect(screen.queryByText(/coverage is limited/)).not.toBeInTheDocument();
+});
+
 test("public comparison keeps at most three facilities and lets users replace or clear them", async () => {
   mockSignedIn = false;
   const facilities = ["One", "Two", "Three", "Four"].map((name, index) => ({ ...provider, id: `clinic-${index}`, name }));

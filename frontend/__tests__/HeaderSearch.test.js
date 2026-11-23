@@ -10,6 +10,34 @@ const found = () => ({ ...empty(), pages: { items: [{ label: 'Medications', href
 const box = () => screen.getByRole('searchbox', { name: 'Search Nabad' });
 beforeEach(() => { jest.resetAllMocks(); searchNabad.mockResolvedValue(found()); });
 
+test('search shortcuts focus and open search while slash preserves text entry', () => {
+  const view = render(<><HeaderSearch profileId="self" /><textarea aria-label="Notes" /></>);
+  for (const event of [{ key: 'k', ctrlKey: true }, { key: 'k', metaKey: true }, { key: '/' }]) {
+    act(() => box().blur());
+    fireEvent.keyDown(document.body, event);
+    expect(box()).toHaveFocus();
+    expect(screen.getByRole('region', { name: 'Search results' })).toBeInTheDocument();
+  }
+  const notes = screen.getByRole('textbox', { name: 'Notes' });
+  act(() => notes.focus());
+  fireEvent.keyDown(notes, { key: '/' });
+  expect(notes).toHaveFocus();
+  fireEvent.keyDown(notes, { key: 'k', ctrlKey: true, isComposing: true });
+  expect(notes).toHaveFocus();
+  view.rerender(<HeaderSearch />);
+  act(() => box().blur());
+  fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true });
+  expect(box()).not.toHaveFocus();
+});
+
+test('a single match is announced as one result', async () => {
+  searchNabad.mockResolvedValue({ ...empty(), pages: { items: [{ label: 'Medications', href: '/medications' }] } });
+  render(<HeaderSearch profileId="self" />);
+  fireEvent.focus(box());
+  fireEvent.change(box(), { target: { value: 'medicines' } });
+  expect(await screen.findByText('1 result shown.')).toBeInTheDocument();
+});
+
 test('short text makes no requests; grouped results link to all five destinations after debouncing', async () => {
   const user = userEvent.setup(); render(<HeaderSearch profileId="self" profileName="Demo" />);
   await user.click(box()); expect(screen.getByRole('status')).toHaveTextContent('Enter at least 2');

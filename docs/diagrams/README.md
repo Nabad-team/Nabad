@@ -8,6 +8,7 @@ Sequence and activity diagrams of Nabad's main flows, written in Mermaid (GitHub
 | [Sign-in with password and 2FA](./login-2fa.md) | [login-2fa.png](./png/login-2fa.png) |
 | [Care circle: invite, accept and alert](./care-circle.md) | [care-circle.png](./png/care-circle.png) |
 | [Activity diagram: symptom triage and care navigation](./triage-activity.md) | [triage-activity.png](./png/triage-activity.png) |
+| [Security layers](./security-layers.md) (SCRUM-351) | Mermaid only |
 | [Architecture](../architecture.md): production, local development, AI triage design | [architecture-production.png](./png/architecture-production.png), [architecture-local.png](./png/architecture-local.png), [architecture-ai-triage.png](./png/architecture-ai-triage.png) |
 
 ## The PNGs
@@ -18,4 +19,4 @@ The PNGs are for slides: white background, large text. They were rendered from t
 npx -y @mermaid-js/mermaid-cli@11.4.2 -i diagram.mmd -o png/diagram.png -b white -s 1.5 -w 4000 -c config.json
 ```
 
-with `config.json` setting the `base` theme and font sizes of 24 to 26 px (`themeVariables.fontSize`, `sequence.messageFontSize`, `sequence.actorFontSize`). Re-render a PNG whenever its diagram changes.
+with `config.json` setting the `base` theme and font sizes of 24 to 26 px (`themeVariables.fontSize`, `sequence.messageFontSize`, `sequence.actorFontSize`). Re-render a PNG whenever its diagram changes. `architecture-production.png` was last rendered on 20 November 2026 (SCRUM-352). Without Puppeteer's own browser, point mermaid-cli at an installed Chrome with `-p puppeteer.json` containing `{"executablePath": "/usr/bin/google-chrome"}`.

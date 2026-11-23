@@ -12,6 +12,7 @@ const { answerChat } = require("../reports/chat");
 const { getChatSafetyReply } = require("../reports/chatSafety");
 const { providerFailureDetails } = require("../reports/providerFailure");
 const { logEvent, errorDetails } = require("../logger");
+const { dailyAiLimit } = require("../dailyAiLimits");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -62,7 +63,15 @@ const chatLimiter = rateLimit({
   message: { error: "You have reached the assistant message limit. Please wait a little before asking another question." },
 });
 
-router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
+// Per-account daily limits (dailyAiLimits.js): counted only when a model is configured. An assistant question the
+// safety rules answer (an emergency) is never counted or blocked.
+const dailyReportLimit = dailyAiLimit("reportAnalyses", { skip: () => !getLlmClient() });
+const dailyAssistantLimit = dailyAiLimit("assistantMessages", {
+  skip: (req) => !getLlmClient() || Boolean(getChatSafetyReply(req.body?.question)),
+});
+const withUsage = (req, body) => (req.aiUsage ? { ...body, aiUsage: req.aiUsage } : body);
+
+router.post("/analyze", resolveProfile, analysisLimiter, dailyReportLimit, async (req, res) => {
   const requestId = req.requestId;
   const started = performance.now();
   try {
@@ -84,7 +93,7 @@ router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
       reportResult: result,
     });
     logEvent("report_analysis", { requestId, reason: `success:${result.urgency}`, durationMs: Math.round(performance.now() - started) });
-    return res.json({ ...result, conversationId: String(conversation._id) });
+    return res.json(withUsage(req, { ...result, conversationId: String(conversation._id) }));
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {
@@ -112,7 +121,7 @@ router.post("/analyze", resolveProfile, analysisLimiter, async (req, res) => {
   }
 });
 
-router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
+router.post("/chat", resolveProfile, chatLimiter, dailyAssistantLimit, async (req, res) => {
   const requestId = req.requestId;
   const started = performance.now();
   try {
@@ -148,7 +157,7 @@ router.post("/chat", resolveProfile, chatLimiter, async (req, res) => {
       });
     }
     logEvent("health_assistant_chat", { requestId, reason: result.responseSource === "safety_rules" ? "safety_rules" : "success", durationMs: Math.round(performance.now() - started) });
-    return res.json({ ...result, conversationId: String(savedConversation._id) });
+    return res.json(withUsage(req, { ...result, conversationId: String(savedConversation._id) }));
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof ReportAnalysisError) {

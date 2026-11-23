@@ -1,4 +1,5 @@
 const { relaxedForScan } = require("./rateLimit");
+const { readDailyLimits } = require("./dailyAiLimits");
 
 // Production must not boot half-configured (e.g. password reset email silently broken).
 const PRODUCTION_REQUIRED = ["MONGO_URI", "JWT_SECRET", "MONGO_DB_NAME", "CLIENT_ORIGIN", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "EMAIL_FROM", "GOOGLE_REDIRECT_URI", "TWO_FACTOR_CODE_SECRET"];
@@ -65,6 +66,8 @@ function loadConfig(env = process.env) {
   if (![undefined, "", "on", "off"].includes(env.PWNED_PASSWORDS_CHECK)) throw new Error('PWNED_PASSWORDS_CHECK must be "on" or "off".');
   // The PR security scan loosens every rate limit; never on staging or production (rateLimit.js throws for those).
   relaxedForScan(env);
+  // The per-account daily AI limits (dailyAiLimits.js): each one set must be a whole number from 1 to 10000.
+  readDailyLimits(env);
   // The shared secret our Next.js proxy sends with every /api request (clientIp.js). Optional until
   // API_PROXY_REQUIRED=true, so it can be rolled out without an outage (docs/environments.md, "Client IP").
   // TRUST_PROXY is no longer used: counting proxy hops can't work behind Vercel and Cloudflare.

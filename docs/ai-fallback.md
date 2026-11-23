@@ -77,8 +77,40 @@ During a pause, symptom checks skip that model and go to the backup or the rules
 
 - The counters are in memory, per server process. A restart starts them again, and with more than one instance each one counts on its own. The provider's own limit is still there behind them, and its 429 pauses the model.
 - The health assistant and report review count against the main model's budget but have no backup: a photo of a report needs a vision model, and the backup may not be one.
-- The per-account limit (30 AI assessments per 15 minutes) is unchanged. It stops scripted floods; red flags are never limited by it.
+- The per-account limit (30 AI assessments per 15 minutes) is unchanged. It stops scripted floods; red flags are never limited by it. The daily limits below come on top of it.
+
+## Per-account daily limits
+
+Each account can use the AI features a set number of times per day, in [`backend/src/dailyAiLimits.js`](../backend/src/dailyAiLimits.js). All profiles of the account (the owner's own and linked family profiles) count together. A day is a calendar day in Beirut: the counts start again at midnight `Asia/Beirut`, including the nights the clocks change.
+
+| Feature | Variable | Default | What counts |
+| --- | --- | --- | --- |
+| AI symptom check | `AI_DAILY_LIMIT_SYMPTOM_CHECKS` | 20 | Each symptom check the model answers, with all its follow-up rounds, counts as one. (The 15-minute limit still counts each call.) Each counted check adds 3 free follow-up rounds to the day's row (`freeFollowUps`, a number), and a follow-up round uses one. A follow-up with none left counts as a new check, because the follow-up state comes from the browser and can't be trusted on its own. |
+| Health assistant | `AI_DAILY_LIMIT_ASSISTANT_MESSAGES` | 40 | Each `/api/reports/chat` message. |
+| Ask about my history | `AI_DAILY_LIMIT_HISTORY_QUESTIONS` | 30 | Each `/api/history/ask` question with "Let AI write the answer" ticked. Search answers never count. |
+| Prescription photo | `AI_DAILY_LIMIT_PRESCRIPTION_READS` | 10 | Each `/api/prescriptions/read`. |
+| Lab report analysis | `AI_DAILY_LIMIT_REPORT_ANALYSES` | 5 | Each `/api/reports/analyze`. |
+
+Each variable is optional; a value that is set must be a whole number from 1 to 10000, or the server refuses to start (names only in the error). Set them on Render (staging first); ask Gerges before changing production's environment.
+
+**Never limited, never counted:**
+
+- Emergencies. The symptom check runs the red-flag rules first (`prepareRuleEmergency`); a rules emergency is answered before the daily limit is looked at. An assistant or history question that the safety rules flag as an emergency is answered and not counted.
+- Anything when no model is configured, and any request where the model didn't answer after all (down, slow, guardrails, or the request failed): its use is given back.
+
+**At the limit:**
+
+- Symptom check: still `200`, answered by the safety rules alone (`ai.used: false`, `ai.reason: "daily_limit"`), with `dailyLimit.message`: "You've used today's AI checks; this result uses Nabad's safety rules only. The AI part comes back tomorrow." The page shows it directly above the urgency box, so it is read before the result. Emergency guidance and 140 show as normal.
+- The other four: `429` with `code: "daily_ai_limit"`, a friendly `error` that says it starts again at midnight Beirut time, and `dailyLimit` (`{ feature, used, limit, remaining, resetsAt }`). The pages show it as a calm notice, with how long until it starts again, instead of an error. History says it still works without AI; prescriptions say medicines can be added by hand.
+
+**What the pages show:** every counted reply has `aiUsage` (the same shape as `dailyLimit`), and `GET /api/ai-usage` returns today's use for all five. The health assistant shows "15 of 40 messages used today" under the box (and the report reviews line while a report is attached); the symptom check shows its line only from 15 of 20; history shows it when AI is ticked; the prescription reader shows it above the button.
+
+**Storage:** the `aiusagedailies` collection holds one row per account per Beirut day: the account id, the day and five counts. Never a question, symptom, file or profile id. A TTL index deletes each row 2 days after its day starts. Taking one use is a single atomic `findOneAndUpdate` (two requests at once can't both take the last one), so a restart or a second instance doesn't reset or split the counts. If the database can't be reached, the request is let through (logged as `ai_daily_limit_unavailable`): a limit must never stop someone getting help. The rows are in the account's data export (`aiUsageCounts`) and are deleted with the account.
+
+Only fixed codes are logged: `ai_daily_limit` when a request is refused at the limit.
 
 ## Tests
+
+`backend/tests/dailyAiLimits.test.js`: the Beirut day and its reset (winter, summer, both clock changes), the settings, each limit over HTTP, the rules-only symptom check at the limit, emergencies never counted or blocked, family profiles counting toward the account, uses given back on failure, two requests racing for the last one, what is stored, the export and account deletion. `frontend/__tests__/dailyAiLimits.test.js`: the usage lines (the symptom one only from 15 of 20), the notices at each limit, and the rules-only note.
 
 `backend/tests/modelFallback.test.js`: fake providers for each failure (503, 429, 401, network, unreadable reply, a model that hangs), the backup's key, per-minute and per-day limits, the triage reserve, the daily reset in a time zone, each pause, and the HTTP endpoint with the main model down, both down, both over their limit, and red flags with everything down.

@@ -27,13 +27,14 @@ const sentryIngest = sentryIngestOrigin(sentryDsn);
 
 // Security headers on every response. The Content-Security-Policy only allows what the app really loads:
 // its own scripts, styles, fonts (next/font serves them from this site) and API, profile pictures (data: URLs)
-// and the OpenStreetMap tiles of the provider map. Next.js and styled-jsx add small inline scripts and
-// styles, and Leaflet positions the map with inline styles, hence 'unsafe-inline'. `next dev` also
-// needs 'unsafe-eval'. Google sign-in is a full-page redirect through /api/auth/google, so it needs nothing here.
+// and the OpenStreetMap tiles of the provider map. The webpack production build uses external runtime
+// scripts, so inline script execution is blocked. Styled-jsx and Leaflet still need inline styles
+// (the documented ZAP style exception). `next dev` also needs 'unsafe-eval'.
 const isDev = process.env.NODE_ENV === "development";
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://tile.openstreetmap.org",
   "font-src 'self'",

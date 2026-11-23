@@ -68,6 +68,7 @@ router.post("/facts", writeLimiter, asyncRoute(async (req, res) => {
   }
   try {
     const fact = await HealthFact.create({ ...scope(req), category, value, source: "user", status: "confirmed", slot: slotFor(category, value) });
+    await require("../organizationalMilestones").healthBasicsIfComplete(req.userId, req.profileId);
     return res.status(201).json({ fact: factView(fact) });
   } catch (err) {
     if (isDuplicate(err)) return res.status(409).json(ALREADY_RECORDED);
@@ -120,6 +121,7 @@ router.post("/suggestions/:id/confirm", writeLimiter, asyncRoute(async (req, res
   try {
     const confirmed = await HealthFact.findOneAndUpdate(filter, { $set: slot ? { status: "confirmed", slot } : { status: "confirmed" } }, { new: true });
     if (!confirmed) return res.status(404).json(SUGGESTION_NOT_FOUND);
+    await require("../organizationalMilestones").healthBasicsIfComplete(req.userId, req.profileId);
     return res.json({ fact: factView(confirmed) });
   } catch (err) {
     if (isDuplicate(err)) return res.status(409).json({ error: "This changed in another window. Please reload and try again." });

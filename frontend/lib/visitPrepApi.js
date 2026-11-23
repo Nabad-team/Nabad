@@ -1,3 +1,5 @@
+import { request as apiRequest } from "./api";
+
 async function request(profileId, options = {}) {
   const response = await fetch(`/api/visit-prep?profileId=${encodeURIComponent(profileId)}`, { credentials: "include", ...options });
   const result = await response.json();
@@ -37,3 +39,9 @@ export async function confirmSharedVisitPrep(token, clinicianName) {
 }
 
 export const sharedDocumentDownloadUrl = (token, documentId) => `/api/visit-prep-shares/public/${encodeURIComponent(token)}/documents/${encodeURIComponent(documentId)}`;
+
+// SCRUM-333: questions for my doctor, kept with the profile's visit sheet.
+const questionPath = (profileId, id = "") => `/visit-prep/questions${id ? `/${encodeURIComponent(id)}` : ""}?profileId=${encodeURIComponent(profileId)}`;
+export const addDoctorQuestion = (profileId, text) => apiRequest(questionPath(profileId), { method: "POST", body: JSON.stringify({ text }) });
+export const editDoctorQuestion = (profileId, id, text) => apiRequest(questionPath(profileId, id), { method: "PATCH", body: JSON.stringify({ text }) });
+export const removeDoctorQuestion = (profileId, id) => apiRequest(questionPath(profileId, id), { method: "DELETE" });

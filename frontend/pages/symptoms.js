@@ -44,6 +44,11 @@ import {
 } from "../context/AccessibilityContext";
 import { formatDateTime } from "../lib/dates";
 import NabadAssistant, { AssistantLoader } from "../components/NabadAssistant";
+import { AiUsageLine } from "../components/AiUsage";
+import { getAiUsage } from "../lib/aiUsageApi";
+
+// The usage line shows only near the daily limit: from 15 of 20 AI checks (three quarters of the limit).
+const usageLineFrom = (usage) => (usage ? Math.ceil(usage.limit * 0.75) : Infinity);
 
 
 // Same limits as the API.
@@ -130,11 +135,23 @@ export default function SymptomsPage() {
   const [contactRetry, setContactRetry] = useState(0);
   const [emergencyAlert, setEmergencyAlert] = useState(null);
   const emergencyAlertedRef = useRef(false);
+  // Today's AI symptom checks for the account (backend dailyAiLimits.js), and the calm note shown with a
+  // rules-only result once they are used up. Emergencies are never counted or limited.
+  const [aiUsage, setAiUsage] = useState(null);
+  const [dailyLimitNote, setDailyLimitNote] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.resolve().then(() => getAiUsage(controller.signal)).then((data) => { if (data?.symptomChecks) setAiUsage(data.symptomChecks); }).catch(() => {});
+    return () => controller.abort();
+  }, []);
   const assessmentRequestRef = useRef(0);
 
   // updated: true when follow-up answers changed an earlier result (the announcement says so).
   function presentAssessment(result, { updated = false } = {}) {
     setUrgency(result);
+    if (result.aiUsage) setAiUsage(result.aiUsage);
+    setDailyLimitNote(result.dailyLimit?.message || "");
     // Emergencies open the emergency dialog, which takes focus and announces itself (role="alertdialog").
     if (result.level !== "emergency") {
       setAnnouncement(`${updated ? "Urgency updated" : "Result ready"}. Urgency: ${result.label}. ${result.action || ""}`.trim());
@@ -754,6 +771,7 @@ export default function SymptomsPage() {
                 : "Submit symptoms"}
           </Button>
         </div>
+        <AiUsageLine usage={aiUsage} noun="AI checks" showFrom={usageLineFrom(aiUsage)} />
       </form>
 
       {checking && <AssistantLoader label="Checking your symptoms" />}
@@ -774,12 +792,20 @@ export default function SymptomsPage() {
 
       {emergencyAlert && <EmergencyAlert result={emergencyAlert} onDismiss={() => setEmergencyAlert(null)} profileId={activeProfile?.id} contact={emergencyContact} contactLoading={contactLoading} contactError={contactError} onRetryContact={() => setContactRetry(value => value + 1)} />}
 
+      {/* Before the result, so people know it comes from the safety rules alone before they read it. */}
+      {dailyLimitNote && urgency && (
+        <Alert tone="info" as="p" role="status" className="symptoms-message daily-limit-note">
+          {dailyLimitNote}
+        </Alert>
+      )}
+
       <UrgencyResult
         result={urgency}
         preliminary={
           followUps.length > 0
         }
       />
+
 
 
       {urgency?.level ===
@@ -845,8 +871,8 @@ export default function SymptomsPage() {
 
       <section className="symptom-history section" aria-labelledby="symptom-history-heading">
         <h2 id="symptom-history-heading">Previous symptom checks</h2>
-        {/* SCRUM-156 */}
-        <p><a href="/my-history">Ask a question about your history</a>, for example when you last had a symptom.</p>
+        {/* SCRUM-156, SCRUM-332 */}
+        <p><a href="/my-history">See your history month by month</a>, or ask a question about it, for example when you last had a symptom.</p>
         {history.length === 0 ? <EmptyState illustration={calmScreen ? <NabadAssistant size="4.5rem" title="Nabad assistant" /> : null} title="No symptom checks yet: your saved conversations will appear here." /> : (
           <ul className="symptom-history__list">
             {history.slice(0, 10).map((record) => (

@@ -9,6 +9,11 @@
 // provider; without it, or when the AI is off, slow or its answer fails the checks, the plain answer is used.
 // If the question describes an emergency happening now, `safety` says to call 140 first.
 // Questions and records are health data: only counts and fixed codes are logged.
+//
+// SCRUM-332: GET /api/history/timeline?profileId=&months=&until=YYYY-MM&timeZone=
+//   -> { from, until, timeZone, months: [{ month, label, counts, events }], counts, hasEarlier, earlierUntil, truncated }
+// "My health story": the profile's symptom checks, appointments, medication changes, documents and vitals, month by
+// month (healthStory.js). Read-only, never sent to the AI and never logged beyond the request line.
 
 const express = require("express");
 const rateLimit = require("../rateLimit");
@@ -18,6 +23,8 @@ const { answerHistoryQuestion } = require("../historyQuestions");
 const { getLlmClient } = require("../triage/ai/modelAccess");
 const { getChatSafetyReply } = require("../reports/chatSafety");
 const { logEvent } = require("../logger");
+const { buildHealthStory, readStoryQuery } = require("../healthStory");
+const { dailyAiLimit, giveBack } = require("../dailyAiLimits");
 
 const router = express.Router();
 const limiter = rateLimit({
@@ -25,12 +32,33 @@ const limiter = rateLimit({
   message: { error: "You have asked a lot of questions in a short time. Please wait a few minutes and try again." },
 });
 
+const timelineLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 120, keyGenerator: (req) => req.userId,
+  message: { error: "Too many requests. Please wait a few minutes and try again." },
+});
+
+router.get("/timeline", requireAuth, timelineLimiter, resolveProfile, async (req, res, next) => {
+  const { value, error } = readStoryQuery(req.query);
+  if (error) return res.status(400).json({ error });
+  try {
+    return res.json(await buildHealthStory({ owner: req.userId, profileId: req.profileId, ...value }));
+  } catch (failure) {
+    return next(failure);
+  }
+});
+
 const SAFETY = {
   message: "If this is happening now, call 140 (Lebanese Red Cross) or go to the nearest emergency department. Don't wait for an answer about your history.",
   phone: "140",
 };
 
-router.post("/ask", requireAuth, limiter, resolveProfile, async (req, res, next) => {
+// Per-account daily limit (dailyAiLimits.js): only questions sent to the AI count. A plain search answer, or a
+// question the safety rules flag as an emergency, is never counted or blocked.
+const dailyHistoryLimit = dailyAiLimit("historyQuestions", {
+  skip: (req) => req.body?.useAi !== true || !getLlmClient() || Boolean(getChatSafetyReply(req.body?.question)),
+});
+
+router.post("/ask", requireAuth, limiter, resolveProfile, dailyHistoryLimit, async (req, res, next) => {
   const { question, timeZone, useAi } = req.body || {};
   if (typeof question !== "string" || question.trim().length < 3 || question.length > 300) {
     return res.status(400).json({ error: "Ask a question between 3 and 300 characters." });
@@ -48,7 +76,13 @@ router.post("/ask", requireAuth, limiter, resolveProfile, async (req, res, next)
       reason: `${result.answeredBy}:${result.total}${result.aiReason ? `:${result.aiReason}` : ""}`,
       durationMs: Math.round(performance.now() - started),
     });
-    return res.json({ ...result, ...(getChatSafetyReply(question) ? { safety: SAFETY } : {}) });
+    // The AI was asked but didn't answer (off, slow, failed the checks): the plain answer doesn't count.
+    let aiUsage = req.aiUsage;
+    if (aiUsage && result.answeredBy !== "ai") {
+      await giveBack(req.userId, "historyQuestions", req.aiUsageDay);
+      aiUsage = { ...aiUsage, used: aiUsage.used - 1, remaining: aiUsage.remaining + 1 };
+    }
+    return res.json({ ...result, ...(getChatSafetyReply(question) ? { safety: SAFETY } : {}), ...(aiUsage ? { aiUsage } : {}) });
   } catch (error) {
     return next(error);
   }

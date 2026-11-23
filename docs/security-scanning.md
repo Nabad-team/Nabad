@@ -114,7 +114,8 @@ The ZAP job is **not** a required check yet. Make `zap-pr-scan` required once it
 
 ## Known limits
 
-- **Accepted for now:** the CSP allows inline scripts (`10055-5`) and inline styles (`10055-6`), both `WARN` in `rules.tsv`. The follow-up story removes `'unsafe-inline'` from `script-src`.
+- **SCRUM-345:** production builds use webpack, whose Pages Router runtime is loaded from external same-origin scripts. `script-src` omits `'unsafe-inline'` and `script-src-attr 'none'` blocks inline event handlers. The `10055-5` exception is removed, so a regression fails the scan. This preserves static pages and CDN caching without a nonce or a new rendering layer.
+- **Accepted style exception:** `10055-6` remains `WARN` in `rules.tsv`. Styled-jsx inserts style tags and Leaflet positions map elements through CSS. `style-src` still permits inline styles. The script change does not remove that style exception.
 - `40014-2` (Low, a warning): text a user saves, such as an appointment title, comes back unchanged in the API's JSON. That is expected. The frontend renders it through React, which escapes it, and never as raw HTML (there is no `dangerouslySetInnerHTML`), and the API answers with `application/json` and `nosniff`.
 - The active scan takes the parameters it can see. Endpoints that only accept a precise JSON shape get fewer meaningful attacks than form-style inputs.
 - File uploads (medical documents, report analysis) are seeded only as plain requests, and the AI endpoints answer 503 locally because no AI provider is configured.

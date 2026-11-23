@@ -5,6 +5,7 @@ import GettingStartedSetting from "../components/GettingStartedSetting";
 import Dialog from "../components/Dialog";
 import EmergencyContact from "../components/EmergencyContact";
 import DataExport from "../components/DataExport";
+import PrivacyAtAGlance from "../components/PrivacyAtAGlance";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import {
   getMyProfile,
@@ -430,6 +431,9 @@ export default function ProfilePage() {
       </Card>
 
       <EmergencyContact />
+
+      {/* SCRUM-343 */}
+      <PrivacyAtAGlance />
 
       <DataExport isGoogleAccount={isGoogleAccount} />
 

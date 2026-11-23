@@ -18,16 +18,20 @@ This diagram shows production. Staging is a second copy with its own Vercel URL,
 ```mermaid
 flowchart LR
     user(["User's browser"])
+    uptime["UptimeRobot<br/>(every 5 minutes)"]
 
     subgraph vercel["Vercel"]
-        next["Next.js web app<br/>pages + /api/* rewrite<br/>(BACKEND_URL, fixed at build)"]
+        next["Next.js web app<br/>pages + /api/* proxy<br/>(BACKEND_URL, API_PROXY_SECRET)"]
     end
 
-    subgraph render["Render"]
+    subgraph render["Render (behind Cloudflare)"]
         api["Node/Express API<br/>health check: /api/health/ready"]
     end
 
-    gemini["Google Gemini<br/>(OpenAI-compatible endpoint)"]
+    subgraph ai["AI provider"]
+        gemini["Google Gemini<br/>(OpenAI-compatible endpoint)"]
+        backup["Backup model<br/>(optional, LLM_FALLBACK_*)"]
+    end
 
     subgraph atlas["MongoDB Atlas"]
         db[("nabad_production")]
@@ -36,39 +40,50 @@ flowchart LR
     brevo["Brevo<br/>(SMTP relay, port 2525)"]
     google["Google sign-in<br/>(OAuth 2.0 / OpenID Connect)"]
     hibp["Have I Been Pwned<br/>(password range API)"]
+    ors["HeiGIT OpenRouteService<br/>(driving times)"]
     sentry["Sentry<br/>(error reports, scrubbed)"]
+    osm["OpenStreetMap<br/>(map tiles)"]
 
     subgraph github["GitHub"]
-        repo["Nabad repository<br/>(main branch)"]
-        ci["GitHub Actions<br/>tests, build, Docker images, end-to-end"]
+        repo["Nabad repository<br/>main and production branches"]
+        ci["GitHub Actions<br/>tests, safety sets, Docker,<br/>end-to-end, ZAP scan"]
+        backupjob["Nightly backup workflow"]
     end
+    b2[("Backblaze B2, EU<br/>encrypted backups")]
 
     user -- "HTTPS: pages and /api/*" --> next
-    next -- "HTTPS /api/* (rewrite)" --> api
-    api -- "HTTPS + API key<br/>symptoms, questions, reports" --> gemini
+    uptime -- "GET /api/health/ready" --> next
+    next -- "HTTPS /api/* + visitor IP" --> api
+    api -- "only when the user asks:<br/>symptoms, questions, reports,<br/>prescription photos, history questions" --> gemini
+    api -. "if the main model fails" .-> backup
     api -- "TLS, least-privilege user" --> db
-    api -- "verification, reset and 2FA emails" --> brevo
-    brevo -. "email" .-> user
-    user -. "consent screen" .-> google
-    api -- "code exchange, ID token check" --> google
+    api -- "account and care circle emails" --> brevo
+    api -- "sign-in: code exchange, ID token check" --> google
     api -- "first 5 hash characters only" --> hibp
-    api -. "5xx and crashes: type, stack, route, requestId" .-> sentry
-    user -. "page errors: type, stack, route" .-> sentry
+    api -- "coordinates only, on request" --> ors
+    api -. "5xx and crashes: type, stack, route" .-> sentry
+    next -. "page errors: type, stack, route" .-> sentry
+    next -. "map tiles (browser)" .-> osm
 
     repo -- "pull request" --> ci
-    repo -- "auto-deploy on release<br/>(merge to production)" --> next
-    repo -- "auto-deploy on release<br/>(render.yaml Blueprint)" --> api
+    repo -- "release: merge to production" --> next
+    repo -- "release: render.yaml Blueprint" --> api
+    backupjob -- "dump, test restore, encrypt" --> b2
+    db -. "read nightly" .-> backupjob
 ```
 
 - **Vercel** builds and hosts the web app from `frontend/` (https://nabad-psi.vercel.app). [next.config.js](../frontend/next.config.js) rewrites `/api/*` to `BACKEND_URL`; a production build without it fails on purpose.
 - **Render** runs the API from [render.yaml](../render.yaml) (`npm ci`, `npm start`, Node 24) and only routes traffic to it once `/api/health/ready` answers, which requires a working database connection. Secrets are entered in the Render dashboard, never committed.
-- **Google Gemini** currently provides the AI for the symptom check, the health assistant and report review. The API calls Gemini's OpenAI-compatible endpoint over HTTPS with an API key; `LLM_PROVIDER`, `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` are set on the Render dashboard, so Blueprint deploys never overwrite them. Symptom descriptions, questions and attached reports are sent to Google, but never the user's name, email or profile, and the API does not log them. A self-hosted Ollama server is an optional alternative for the future; see [self-hosted AI](./self-hosted-ai.md).
+- **Google Gemini** currently provides the AI for the symptom check, the health assistant and report review, reading prescription photos, and answers about your own history when the user ticks "Let AI write the answer". Each is used only when the user takes that action; what each one sends is listed in the [Privacy Policy](../frontend/pages/privacy.js) and summarised on My profile (Privacy at a glance). An optional backup model (`LLM_FALLBACK_*`) answers symptom checks when the main model fails; see [AI fallback and usage limits](./ai-fallback.md). The API calls Gemini's OpenAI-compatible endpoint over HTTPS with an API key; `LLM_PROVIDER`, `LLM_API_URL`, `LLM_API_KEY` and `LLM_MODEL` are set on the Render dashboard, so Blueprint deploys never overwrite them. Symptom descriptions, questions and attached reports are sent to Google, but never the user's name, email or profile, and the API does not log them. A self-hosted Ollama server is an optional alternative for the future; see [self-hosted AI](./self-hosted-ai.md).
 - **MongoDB Atlas** holds one database per environment (`nabad_production`, `nabad_staging`); the API refuses to start in a hosted environment if `MONGO_DB_NAME` doesn't match `APP_ENV`. The free cluster has no built-in backups, so a nightly GitHub Actions workflow backs up `nabad_production`, encrypted, to a private Backblaze B2 bucket in the EU; see [backups.md](./backups.md).
 - **Brevo** sends email over SMTP. Render's free tier blocks the usual SMTP ports, so it uses port 2525 with STARTTLS.
 - **Google sign-in** is optional and goes through the frontend's `/api` rewrite, so the OAuth state cookie stays on the same site.
+- **Cloudflare** sits in front of Render (Render's own edge). The API learns each visitor's IP from the Next.js proxy, which vouches for it with `API_PROXY_SECRET`; see [Client IP](./environments.md#client-ip).
+- **HeiGIT OpenRouteService** estimates driving times to facilities in the provider directory, only when the user asks. The API sends coordinates, never an account id or health data (`OPENROUTESERVICE_API_KEY`). The browser loads map tiles from **OpenStreetMap**.
+- **Backblaze B2** keeps the encrypted nightly backups made by GitHub Actions, in the EU; see [backups.md](./backups.md).
 - **Sentry** receives error reports from the API, the web app's server and the browser, when `SENTRY_DSN` (Render) and `NEXT_PUBLIC_SENTRY_DSN` (Vercel) are set. They never contain health or personal data; see [Error tracking](#error-tracking-sentry).
 - **UptimeRobot** checks https://nabad-psi.vercel.app/api/health/ready every 5 minutes, which tests Vercel, the API and the database in one request, emails us when it fails and runs the public [status page](https://stats.uptimerobot.com/GFwdUOKlhv). Our 99% monthly uptime target and what to do on an alert are in [uptime.md](./uptime.md).
-- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` deploys staging; a release pull request from `main` to `production` deploys production ([environments.md](./environments.md)).
+- **GitHub Actions** runs on every pull request to `main`: frontend tests and build, backend tests against a temporary in-memory MongoDB, the triage quality and clinical safety sets, the medical report safety gate, the backup tooling checks, a build of both Docker images, and the Selenium end-to-end suite against a throwaway Docker Compose copy of the app (see [testing.md](./testing.md)). Merging to `main` deploys staging; a release pull request from `main` to `production` deploys production ([environments.md](./environments.md)).
 
 ## Local development (Docker Compose)
 
@@ -113,6 +128,18 @@ The API ([backend/src/app.js](../backend/src/app.js)) mounts one router per area
 | Notifications | `notifications.js`, `routes/notifications.js`, `models/Notification.js`, `appointmentReminders.js` | In-app notifications per profile: history, unread count, mark read, delete, and which types the user gets. Created only through `notify()`; see [Notifications](#notifications). |
 | Care circle | `careCircle.js`, `routes/careCircle.js`, `models/CareCircle.js`, `email.js` | People a user invites by email to be alerted when one of their symptom checks needs attention. Invitations, membership, and the alerts; see [Care circle](#care-circle). |
 | Download my data | `dataExport.js`, `routes/account.js` | One JSON file of everything stored about the account (`GET /api/account/export`), after the user confirms it's them; see [Download my data](#download-my-data). |
+| Appointments | `routes/appointments.js`, `models/Appointment.js`, `appointmentReminders.js` | Each profile's appointments, with a reminder in the bell before each one; see [Notifications](#notifications). |
+| Vitals | `routes/vitals.js`, `models/VitalReading.js` | Blood pressure, heart rate and temperature readings per profile. |
+| Medical documents | `routes/medicalDocuments.js`, `models/MedicalDocument.js` | Lab results, imaging, letters and other files per profile (upload, rename, date, download, delete). |
+| Identification and coverage | `routes/profileCoverage.js`, `models/ProfileCoverage.js` | A profile's ID, insurance and NSSF files and flags, kept apart from medical records and never shared with a doctor link. |
+| Visit preparation | `routes/visitPrep.js`, `models/VisitPrep.js`, `routes/visitPrepShares.js`, `models/VisitPrepShare.js` | The visit sheet's edits, notes, chosen documents and **questions for my doctor** (SCRUM-333), and read-only doctor links: a hashed, expiring, revocable token that the clinician can mark accurate. The link, the export and the PDF are built in the browser from the sheet. |
+| History | `routes/history.js`, `historyQuestions.js`, `healthStory.js` | **My health story** (SCRUM-332), a month-by-month timeline of a profile's symptom checks, appointments, medication changes, documents and vitals (`GET /api/history/timeline`), and [questions about your history](./history-questions.md) (`POST /api/history/ask`). |
+| Emergency card | `routes/emergencyCard.js` | The printable emergency information card of a profile; the browser can keep one offline copy ([offline-emergency-info.md](./offline-emergency-info.md)). |
+| Provider directory | `routes/providers.js`, `providers/`, `models/Provider*.js` | Hospitals, clinics, laboratories and imaging centres: search, filters, opening hours, favourites, visit feedback, corrections and driving times; see [provider-directory.md](./provider-directory.md). |
+| Health assistant and reports | `routes/reports.js`, `reports/`, `models/ReportConversation.js` | Health questions and written report explanations with the AI; see [AI report explanations](#ai-report-explanations). |
+| Prescription photos | `routes/prescriptions.js`, `prescriptionReader.js` | Reads the medicines on a prescription photo for the person to confirm; see [prescription-photos.md](./prescription-photos.md). |
+| Header search | `routes/search.js`, `searchPages.js` | Finds pages and the active profile's own records from the header ([header-search.md](./header-search.md)). |
+| Usage dashboard | `routes/usage.js`, `usageAnalytics.js`, `models/UsageDaily.js` | Anonymous daily totals for the team (SCRUM-311), team members only. |
 | Triage | `routes/triage.js`, `triage/` | One triage engine: urgency classification with follow-up questions, red-flag detection, emergency routing and self-care (`triage/careGuidance.js`). The Sprint 1 safety check (`policy.js`, `/assess`, `/emergency-route`, the `/triage` page) is retired. The rules are the safety floor; `triage/ai/` adds an optional language-model assessment on top (`POST /api/triage/ai-assess`). |
 | Logging | `logger.js` | One JSON line per event with allowlisted fields only. |
 | Error tracking | `errorTracking.js`, `logger.js` (central error handler) | Sends crashes and 5xx errors to Sentry, scrubbed, when `SENTRY_DSN` is set; see [Error tracking](#error-tracking-sentry). |
@@ -212,7 +239,9 @@ The first urgent or emergency result of a check alerts, even if follow-up questi
 
 The model can raise the urgency but never lower it. Self-care steps are only shown for routine results. Only the outcome code and duration are logged, never the symptoms or the model's words. Each account can run 30 AI assessments per 15 minutes. The unit tests use a fake model, so they need no API key.
 
-### Questions about your history
+### My history: health story and questions
+
+`GET /api/history/timeline` (`healthStory.js`, SCRUM-332) returns a profile's symptom checks, appointments, medication changes (started and stopped), documents and vitals month by month, newest first, six months at a time, with a link to each record's page. Vitals are grouped into one entry per day. It is read-only, filtered by `owner` and `profileId` like every health query, and never sent to the AI. See [My health story](./history-questions.md#my-health-story-scrum-332).
 
 `POST /api/history/ask` answers questions such as "When did I last have a headache?" from the profile's own symptom checks, appointments, medications and documents, with an optional AI-written answer. See [Asking questions about your own history](./history-questions.md).
 
@@ -279,7 +308,7 @@ The tests send real events through each SDK and check what would go out ([errorT
 
 ### The health-data deletion helper
 
-[profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (medications, water, sleep, wellbeing settings, health facts, notifications). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind, and to the export registry ([Download my data](#download-my-data)); a test checks both.
+[profileData.js](../backend/src/profileData.js) lists every per-profile model in `PROFILE_MODELS` (visit sheets with their questions for the doctor, doctor links, medications and their check-ins, symptom checks, health assistant conversations, appointments, water, sleep, wellbeing settings, health facts, notifications, medical documents, identification and coverage files, vitals). `deleteProfileData(owner, profileId)` deletes one profile's data when a linked profile is removed, or everything the account owns when the account is deleted. A new kind of health data is added to that list, so it can never be left behind, and to the export registry ([Download my data](#download-my-data)); a test checks both.
 
 ## Security layers
 
@@ -330,4 +359,5 @@ Sequence and activity diagrams of the main flows, accurate to the current code, 
 - [Sign-in with password and 2FA](./diagrams/login-2fa.md): remember this device and both lockouts.
 - [Care circle](./diagrams/care-circle.md): invite by email, accept, and an emergency alert that shares no health details.
 - [Activity diagram: symptom triage and care navigation](./diagrams/triage-activity.md), with swimlanes for the user, Nabad AI, Nabad System, the caregiver and the healthcare provider.
+- [Security layers](./diagrams/security-layers.md): the application's trust boundaries; the quality attributes and decisions behind them are in [quality-attributes.md](./quality-attributes.md).
 - The diagrams on this page: [production](./diagrams/png/architecture-production.png), [local development](./diagrams/png/architecture-local.png) and [AI triage design](./diagrams/png/architecture-ai-triage.png).

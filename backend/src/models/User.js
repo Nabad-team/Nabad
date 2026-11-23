@@ -32,6 +32,9 @@ const userSchema = new mongoose.Schema(
     favoriteProviders: { type: [String], default: [] },
     // Notification types the user turned off in the app (notifications.js). Safety-critical types can't be listed.
     mutedNotificationTypes: { type: [{ type: String, enum: MUTABLE_NOTIFICATION_TYPES }], default: [] },
+    // Organizational firsts already acknowledged for this account/profile. Unlike notifications (90-day
+    // retention), these keys remain so a milestone can never reappear later. They never encode health results.
+    organizationalMilestones: { type: [String], default: [], select: false },
 
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },

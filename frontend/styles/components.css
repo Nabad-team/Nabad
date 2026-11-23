@@ -494,6 +494,17 @@ html[data-simplified-mode="true"] .urgency__summary {
   font-size: var(--text-sm);
 }
 
+/* Daily AI limits (components/AiUsage.js): a quiet usage line, and the notice at the limit. */
+.ai-usage-line {
+  margin: var(--space-2, 0.5rem) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.daily-limit-notice p {
+  margin: 0.25rem 0 0;
+}
+
 .field__error {
   color: var(--color-danger);
   font-size: var(--text-sm);
@@ -3805,11 +3816,8 @@ select.input {
 }
 
 .progress-summary__item {
-  display: grid;
+  display: block;
   margin: 0;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-4);
   min-width: 0;
   padding: var(--space-4);
   border: 1px solid var(--color-border);
@@ -3878,10 +3886,6 @@ select.input {
 .progress-summary__status { margin-top: var(--space-1) !important; font-weight: var(--weight-semibold); }
 .progress-summary__copy .text-muted { margin-top: var(--space-1); }
 .progress-summary__copy .button { margin-top: var(--space-3); }
-
-@media (max-width: 760px) {
-  .progress-summary__item { grid-template-columns: 5.5rem minmax(0, 1fr); }
-}
 
 .progress-summary__appointments {
   border-top: 1px solid var(--color-border);
@@ -4712,6 +4716,104 @@ select.input {
 
 .history-record__title {
   font-weight: var(--weight-semibold);
+}
+
+/* ---------- My health story (SCRUM-332) ---------- */
+
+.health-story__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+  /* A fieldset is as wide as its content by default; this lets it shrink and wrap on a narrow screen. */
+  min-width: 0;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+}
+
+.health-story__filter {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.health-story__event {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.health-story__filters legend {
+  width: 100%;
+  margin-bottom: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.health-story__month {
+  margin-top: var(--space-5);
+}
+
+.health-story__month h3 {
+  margin-bottom: 0;
+}
+
+.health-story__events {
+  margin-top: var(--space-2);
+}
+
+/* ---------- Questions for my doctor (SCRUM-333) ---------- */
+
+.doctor-questions__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
+}
+
+.doctor-questions__item {
+  padding: var(--space-2) 0;
+  border-bottom: 0.0625rem solid var(--color-border);
+}
+
+.doctor-questions__item:last-child {
+  border-bottom: 0;
+}
+
+.doctor-questions__text {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.doctor-questions__actions {
+  margin-top: var(--space-2);
+}
+
+.doctor-questions__edit .button-row {
+  margin-top: var(--space-2);
+}
+
+/* ---------- Privacy at a glance, My profile (SCRUM-343) ---------- */
+
+.privacy-glance__grid {
+  display: grid;
+  /* Columns of at least 16rem side by side, one column when the screen is narrower than that (enlarged text included). */
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.privacy-glance__grid h3 {
+  margin-bottom: var(--space-2);
+}
+
+.privacy-glance__grid section {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.privacy-glance__grid ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
 }
 
 /* ---------- Loading placeholders (components/ui/Skeleton.js) ----------

@@ -1,4 +1,4 @@
-# Asking questions about your own history (SCRUM-156)
+# My history: health story and questions (SCRUM-332, SCRUM-156)
 
 > As a user, I want to ask natural-language questions about my own history so that I can recall past symptoms or visits.
 
@@ -37,3 +37,30 @@ If the question describes an emergency happening now ("I have crushing chest pai
 
 - `backend/tests/historyQuestions.test.js`: periods (including a time-zone boundary), kinds, intents, keywords and synonyms; checking AI answers; finding and answering from a seeded history (headaches, stomach synonyms, visits, upcoming appointments, medications in a month, documents, nothing found, profile isolation); AI answers, failures and fallbacks; and the HTTP route (validation, no AI without consent, logs, the safety message).
 - `frontend/__tests__/myHistory.test.js`.
+
+## My health story (SCRUM-332)
+
+> My health story: a month by month timeline on /my-history of symptom checks, appointments, medication changes, documents and vitals, with filters and links (extends SCRUM-156).
+
+**My history** (`/my-history`, in the header's My records menu) opens with the active profile's health story, above the question box, and ends with a place to save a question for the doctor ([SCRUM-333](./visit-prep-questions.md)).
+
+`GET /api/history/timeline?profileId=&months=&until=YYYY-MM&timeZone=` (`backend/src/healthStory.js`):
+
+- **Window.** Six months by default (1 to 12), ending with `until` (this month by default, in the person's time zone; a future month becomes this month). "Show earlier months" asks again with `until` = the month before the window, and only appears when something older exists (`hasEarlier`).
+- **What is in it**, each with a link to where it lives:
+
+  | Kind | Date used | Shown as | Link |
+  | --- | --- | --- | --- |
+  | Symptom check | when it was done, in the person's time zone | what was described, and the result (Urgent and Emergency marked) | `/symptoms` |
+  | Appointment | its saved date and time | title, hospital, place; "Upcoming" if still to come | `/appointments#appointment-<id>` |
+  | Medication change | start date, and end date if stopped | "Started X", "Stopped X" ("Stops X", marked Planned, for an end date still to come), with dose and frequency | `/medications#medication-<id>` |
+  | Document | the document's date, or the upload day if it has none | file name and type | `/medical-documents#document-<id>` |
+  | Vitals | the reading's day | one entry per day: the day's latest blood pressure, heart rate and temperature | `/vitals` |
+
+- **Months** come newest first, only those with something in them, each with its counts ("2 symptom checks, 1 appointment"); events in a month are newest first.
+- **Filters** (Symptom checks, Appointments, Medication changes, Documents, Vitals, with their counts) hide and show what is loaded, without asking the server again.
+- **Limits.** Up to 500 records of each kind per window (a note says so if reached); 120 requests per account per 15 minutes.
+- Medication changes are what Nabad stores: start and end dates. Editing a dose doesn't keep the old one, so dose changes can't be shown.
+- Only the signed-in account's chosen profile is read (another account's profile answers 404). Nothing is logged except the request line, and nothing is sent to the AI.
+
+Tests: `backend/tests/healthStory.test.js` (the query, months and time zones, every kind of event, grouping, links, profile isolation, earlier months, the HTTP route) and `frontend/__tests__/healthStoryCard.test.js` (months, links, filters, earlier months, family members, switching profile).

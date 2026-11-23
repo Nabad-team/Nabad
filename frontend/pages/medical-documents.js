@@ -12,7 +12,7 @@ import MoreMenu from "../components/ui/MoreMenu";
 import InlinePanel from "../components/ui/InlinePanel";
 import { DocumentsSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
-import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
+import { deleteMedicalDocument, getMedicalDocuments, medicalDocumentDownloadUrl, medicalDocumentPreviewUrl, updateMedicalDocumentMetadata, uploadMedicalDocument } from "../lib/medicalDocumentApi";
 import { announceNotificationsChanged } from "../lib/notificationApi";
 import { formatDate } from "../lib/dates";
 
@@ -21,6 +21,7 @@ const DOCUMENT_TYPES = [["imaging", "Imaging (X-ray or scan)"], ["lab", "Lab res
 const prettySize = (size) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 const prettyDate = formatDate;
 const dateLabel = (value) => value ? prettyDate(`${value}T00:00:00`) : "Date not provided";
+const PREVIEW_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp", "text/plain", "text/csv"]);
 
 function fileToPayload(file) {
   return new Promise((resolve, reject) => {
@@ -231,6 +232,7 @@ export default function MedicalDocumentsPage() {
             <li key={document.id} id={`document-${document.id}`} tabIndex={-1}>
               <div><strong>{document.filename}</strong><p className="text-muted">Uploaded {prettyDate(document.uploadedAt)} · {prettySize(document.size)}</p></div>
               <p>{DOCUMENT_TYPES.find(([value]) => value === (document.documentType || "other"))?.[1] || "Other"} · {dateLabel(document.documentDate)}</p>
+              {PREVIEW_TYPES.has(document.mimeType) && <a href={medicalDocumentPreviewUrl(profileId, document.id)} target="_blank" rel="noopener noreferrer" className="button button--secondary">Preview</a>}
               <a href={medicalDocumentDownloadUrl(profileId, document.id)} className="button button--secondary">Download</a>
               <Button type="button" variant="danger-quiet" disabled={deletingId === document.id} onClick={() => handleDelete(document)}>{deletingId === document.id ? "Deleting..." : "Delete"}</Button>
               <DocumentMetadataEditor profileId={profileId} document={document} onSaved={handleMetadataSaved} />

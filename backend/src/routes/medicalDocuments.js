@@ -33,6 +33,7 @@ router.get("/", resolveProfile, asyncRoute(async (req, res) => {
 }));
 
 router.post("/", uploadLimiter, express.json({ limit: "14mb" }), resolveProfile, asyncRoute(async (req, res) => {
+  const isFirstDocument = await MedicalDocument.countDocuments({ owner: req.userId, profileId: req.profileId }) === 0;
   const file = req.body?.file;
   if (!file || typeof file !== "object" || typeof file.data !== "string" || typeof file.filename !== "string" || typeof file.mimeType !== "string") {
     return res.status(400).json({ error: "Choose a PDF, JPG, PNG or WebP medical document to upload." });
@@ -54,6 +55,7 @@ router.post("/", uploadLimiter, express.json({ limit: "14mb" }), resolveProfile,
   if (!data.length || data.toString("base64") !== file.data) return res.status(400).json({ error: "This file could not be read. Please choose it again." });
   if (await MedicalDocument.countDocuments({ owner: req.userId, profileId: req.profileId }) >= 500) return res.status(400).json({ error: "This profile has reached its 500 document limit." });
   const document = await MedicalDocument.create({ owner: req.userId, profileId: req.profileId, filename, mimeType, documentType, documentDate, size: data.length, data });
+  if (isFirstDocument) await require("../organizationalMilestones").milestone(req.userId, req.profileId, "first_document");
   try {
     await notify(req.userId, req.profileId, "document_ready", {
       title: "Document ready",
@@ -93,6 +95,24 @@ router.get("/:id/download", resolveProfile, asyncRoute(async (req, res) => {
   const document = await MedicalDocument.findOne({ _id: req.params.id, owner: req.userId, profileId: req.profileId }).select("+data");
   if (!document) return res.status(404).json({ error: "Document not found." });
   res.set({ "Content-Type": document.mimeType, "Content-Length": String(document.size), "Content-Disposition": `attachment; filename="${document.filename.replace(/["\\\r\n]/g, "_")}"`, "X-Content-Type-Options": "nosniff" });
+  return res.end(document.data);
+}));
+
+// Browser preview is deliberately limited to passive formats. Never serve HTML, SVG or another active
+// document inline from the application origin: an uploaded file must not be able to run as Nabad.
+const PREVIEW_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp", "text/plain", "text/csv"]);
+router.get("/:id/preview", resolveProfile, asyncRoute(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Document not found." });
+  const document = await MedicalDocument.findOne({ _id: req.params.id, owner: req.userId, profileId: req.profileId }).select("+data");
+  if (!document) return res.status(404).json({ error: "Document not found." });
+  if (!PREVIEW_TYPES.has(document.mimeType)) return res.status(415).json({ error: "This file type cannot be previewed safely. Download it to open it." });
+  res.set({
+    "Content-Type": document.mimeType.startsWith("text/") ? `${document.mimeType}; charset=utf-8` : document.mimeType,
+    "Content-Length": String(document.size),
+    "Content-Disposition": `inline; filename="${document.filename.replace(/["\\\r\n]/g, "_")}"`,
+    "Content-Security-Policy": "default-src 'none'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+  });
   return res.end(document.data);
 }));
 

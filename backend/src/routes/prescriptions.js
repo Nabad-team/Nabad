@@ -31,6 +31,7 @@ const { readPrescription, matchToList, PrescriptionError, MAX_MEDICATIONS: MAX_P
 const { getLlmClient } = require("../triage/ai/modelAccess");
 const { providerFailureDetails } = require("../reports/providerFailure");
 const { logEvent, errorDetails } = require("../logger");
+const { dailyAiLimit } = require("../dailyAiLimits");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -54,7 +55,10 @@ const MESSAGES = {
   provider_unavailable: "The AI service is unavailable right now. Nothing was added. Please try again later.",
 };
 
-router.post("/read", readLimiter, express.json({ limit: "5mb" }), resolveProfile, async (req, res) => {
+// Per-account daily limit (dailyAiLimits.js), counted only when a model is configured.
+const dailyReadLimit = dailyAiLimit("prescriptionReads", { skip: () => !getLlmClient() });
+
+router.post("/read", readLimiter, express.json({ limit: "5mb" }), resolveProfile, dailyReadLimit, async (req, res) => {
   const requestId = req.requestId;
   const started = performance.now();
   try {
@@ -68,7 +72,7 @@ router.post("/read", readLimiter, express.json({ limit: "5mb" }), resolveProfile
       .select("name dose unit form frequency status").lean();
     // Only counts and fixed codes are logged: never a medicine name, a dose or the photo.
     logEvent("prescription_read", { requestId, reason: `success:${medications.length}`, durationMs: Math.round(performance.now() - started) });
-    return res.json({ medications: matchToList(medications, existing), unreadable });
+    return res.json({ medications: matchToList(medications, existing), unreadable, ...(req.aiUsage ? { aiUsage: req.aiUsage } : {}) });
   } catch (error) {
     if (error instanceof ReportInputError) return res.status(error.status).json({ error: error.message });
     if (error instanceof PrescriptionError) {

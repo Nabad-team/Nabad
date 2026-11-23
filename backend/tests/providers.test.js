@@ -44,6 +44,9 @@ test("laboratory and imaging types can be filtered with existing service and loc
   assert.deepEqual(laboratories.body.providers.map(p => p.id).sort(), ["hajj-medical-laboratories", "wakim-laboratory-antelias"]);
   const imaging = await get("?type=imaging-center&city=jounieh&service=mri");
   assert.deepEqual(imaging.body.providers.map(p => p.id), ["wakim-medical-center-jounieh"]);
+  assert.equal(imaging.body.typeCounts.laboratory, 2);
+  assert.equal(imaging.body.typeCounts["imaging-center"], 1);
+  assert.ok(imaging.body.typeCounts.hospital > 100);
   assert.equal(imaging.body.providers[0].latitude, null);
   assert.equal((await get("?type=imaging-center&emergency24h=true")).body.total, 0);
   assert.equal((await get("?type[$ne]=hospital")).status, 400);

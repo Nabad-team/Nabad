@@ -71,7 +71,7 @@ describe("Header navigation", () => {
     await user.click(within(navigation).getByRole("button", { name: "My records" }));
     expect(within(navigation).getByRole("button", { name: "My care" })).toHaveAttribute("aria-expanded", "false");
     const records = document.getElementById(within(navigation).getByRole("button", { name: "My records" }).getAttribute("aria-controls"));
-    expect(within(records).getAllByRole("link").map((link) => link.textContent)).toEqual(["My health", "My vitals", "My documents", "Visit preparation"]);
+    expect(within(records).getAllByRole("link").map((link) => link.textContent)).toEqual(["My health", "My history", "My vitals", "My documents", "Visit preparation"]);
   });
 
   test("dropdowns work from the keyboard: Enter, arrows, Home and End, Escape", async () => {
@@ -84,7 +84,7 @@ describe("Header navigation", () => {
     expect(button).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("link", { name: "My health" })).toHaveFocus();
     await user.keyboard("{ArrowDown}");
-    expect(screen.getByRole("link", { name: "My vitals" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "My history" })).toHaveFocus();
     await user.keyboard("{End}");
     expect(screen.getByRole("link", { name: "Visit preparation" })).toHaveFocus();
     await user.keyboard("{ArrowDown}");
@@ -290,7 +290,7 @@ describe("Phone menu", () => {
     const panel = document.getElementById(menuButton().getAttribute("aria-controls"));
     const [main, account] = within(panel).getAllByRole("navigation");
     expect(main).toHaveAccessibleName("Main");
-    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Symptom check", "Dashboard", "My appointments", "My medications", "Medication overview", "Water and sleep", "Wellbeing", "My health", "My vitals", "My documents", "Visit preparation", "Health assistant", "Find care"]);
+    expect(within(main).getAllByRole("link").map((link) => link.textContent)).toEqual(["Symptom check", "Dashboard", "My appointments", "My medications", "Medication overview", "Water and sleep", "Wellbeing", "My health", "My history", "My vitals", "My documents", "Visit preparation", "Health assistant", "Find care"]);
     // The same groups as the desktop dropdowns.
     expect(within(main).getAllByRole("region").map((group) => group.querySelector(".workspace-group__label").textContent)).toEqual(["My care", "My records"]);
     expect(within(main).getByRole("link", { name: "Water and sleep" })).toHaveAttribute("aria-current", "page");

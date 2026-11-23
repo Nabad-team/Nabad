@@ -13,7 +13,8 @@
     "test:triage-safety": "node --test --test-reporter=spec tests/triageSafety.test.js",
     "test:report-quality": "node evals/report-analysis-gate.cjs",
     "test:report-review": "node evals/reportReview.cjs",
-    "dataset:validate": "node datasets/validate.cjs"
+    "dataset:validate": "node datasets/validate.cjs",
+    "demo:seed": "node scripts/seed-demo-account.cjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
@@ -25,7 +26,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.0",
+    "mongoose": "8.24.8",
     "nodemailer": "^10.0.12",
     "pdfjs-dist": "^6.4.299",
     "validator": "^13.12.0",
@@ -36,5 +37,8 @@
     "franc-min": "^6.2.0",
     "mongodb-memory-server": "^11.3.0",
     "nodemon": "^3.1.4"
+  },
+  "overrides": {
+    "follow-redirects": "1.16.2"
   }
 }

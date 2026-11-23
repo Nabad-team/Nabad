@@ -12,6 +12,8 @@ export default function NavIcon({ name }) {
     wellbeing: <><path d="M6 4v10M4 4v5a2 2 0 0 0 4 0V4M6 14v6" /><path d="M16 4v16M16 4c2.2 0 4 1.8 4 4v2h-4" /></>,
     documents: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h8" /></>,
     summary: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M8 12h8M8 16h5" /></>,
+    // My history: a clock turning back.
+    history: <><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4l3 2" /></>,
     menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
     // Wellbeing: the breathing circle, inside and out.
     calm: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /></>,
