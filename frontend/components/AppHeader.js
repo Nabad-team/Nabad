@@ -14,6 +14,7 @@ import NotificationBell from "./NotificationBell";
 import HeaderSearch from "./HeaderSearch";
 import NavIcon from "./NavIcon";
 import BottomTabBar from "./BottomTabBar";
+import useDesktopLayout from "./useDesktopLayout";
 
 // The main sections, in the order they appear. A new top-level page goes here.
 // Each label is exactly the page's title, so people see the same name in the menu, the tab and the heading.
@@ -53,8 +54,8 @@ const TAB_LINKS = ["/symptoms", "/dashboard", "/providers"].map((href) => WORKSP
 export const NAV_ITEMS = [
   { href: "/symptoms" },
   { href: "/dashboard" },
-  { id: "my-care", label: "My care", links: ["/appointments", "/medications", "/medication-overview", "/water-and-sleep", "/wellbeing"] },
-  { id: "my-records", label: "My records", links: ["/my-health", "/my-history", "/vitals", "/medical-documents", "/visit-prep"] },
+  { id: "my-care", label: "My care", icon: "medications", links: ["/appointments", "/medications", "/medication-overview", "/water-and-sleep", "/wellbeing"] },
+  { id: "my-records", label: "My records", icon: "documents", links: ["/my-health", "/my-history", "/vitals", "/medical-documents", "/visit-prep"] },
   { href: "/health-assistant" },
   { href: "/providers" },
 ].map((item) => item.href ? WORKSPACE_BY_HREF.get(item.href) : { ...item, links: item.links.map((href) => WORKSPACE_BY_HREF.get(href)) });
@@ -92,7 +93,7 @@ function NavLinks({ links, path, className, simplified = false, cards = false, c
 // Enter or Space opens it and focus moves to the first link; Down and Up move between links (Down/Up on the closed
 // button opens it at the first/last link), Home and End jump; Escape closes it and returns to the button;
 // clicking outside or tabbing out closes it. The group shows as current when one of its pages is open.
-function NavGroup({ group, path }) {
+function NavGroup({ group, path, icon = false }) {
   const disclosure = useDisclosure();
   const focusLast = useRef(false);
   const current = group.links.some((item) => item.href === path);
@@ -139,7 +140,8 @@ function NavGroup({ group, path }) {
         onClick={disclosure.toggle}
         onKeyDown={onButtonKeyDown}
       >
-        {group.label}
+        {icon && <NavIcon name={group.icon} />}
+        <span>{group.label}</span>
         <svg className="nav-group__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
       </button>
       {disclosure.open && (
@@ -158,12 +160,18 @@ function NavGroup({ group, path }) {
   );
 }
 
-// Desktop: one row. Phones: the same items as cards, the groups under their labels.
-function WorkspaceLinks({ path, mobile = false }) {
+// Desktop header (40 to 64rem): one row. Sidebar (64rem and up): the same items in a column, with icons.
+// Phones: the same items as cards, the groups under their labels.
+function WorkspaceLinks({ path, mobile = false, sidebar = false }) {
   if (!mobile) {
-    return <ul className="workspace-nav__list">
-      {NAV_ITEMS.map((item) => item.links ? <NavGroup key={item.id} group={item} path={path} /> : (
-        <li key={item.href}><Link href={item.href} aria-current={path === item.href ? "page" : undefined}>{item.label}</Link></li>
+    return <ul className={sidebar ? "workspace-nav__list workspace-nav__list--sidebar" : "workspace-nav__list"}>
+      {NAV_ITEMS.map((item) => item.links ? <NavGroup key={item.id} group={item} path={path} icon={sidebar} /> : (
+        <li key={item.href}>
+          <Link href={item.href} aria-current={path === item.href ? "page" : undefined}>
+            {sidebar && <NavIcon name={item.icon} />}
+            <span>{item.label}</span>
+          </Link>
+        </li>
       ))}
     </ul>;
   }
@@ -208,9 +216,36 @@ function ProfileSwitcher({ id, showLabel }) {
   );
 }
 
+// The desktop sidebar (64rem and up): the logo, the workspace navigation (the same "Workspace" landmark, links and
+// dropdowns as the header row it replaces), then the emergency call and the signed-in person, which links to
+// My profile. The account menu, search, notifications and "Acting for" stay in the header's top row.
+function Sidebar({ path, selfProfile }) {
+  return (
+    <div className="app-sidebar">
+      <Logo href="/dashboard" />
+      <nav aria-label="Workspace" className="workspace-nav workspace-nav--sidebar">
+        <WorkspaceLinks path={path} sidebar />
+      </nav>
+      <div className="app-sidebar__end">
+        <a href="tel:140" className="button button--danger button--block app-sidebar__emergency" aria-label="Emergency: call 140">
+          Emergency · <span className="num">140</span>
+        </a>
+        {selfProfile && (
+          <Link href="/profile" className="app-sidebar__person" aria-current={path === "/profile" ? "page" : undefined}>
+            <Avatar name={selfProfile.fullName} size={36} />
+            <span>{selfProfile.fullName}</span>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // The signed-in header.
 //   Desktop: logo and account controls, with the workspace navigation in one row below
 //            (single links plus the "My care" and "My records" dropdowns).
+//   From 64rem (1024px): the navigation moves into the left sidebar (Sidebar above); the header keeps search,
+//            notifications, "Acting for" and the account menu.
 //   Phones (under 40rem / 640px): logo, search and the notifications bell at the top, and the bottom tab bar
 //            (components/BottomTabBar.js) whose Menu tab opens a panel with everything else, just above the bar.
 // The current page is marked with aria-current="page" (and highlighted) wherever its link appears.
@@ -222,12 +257,15 @@ export default function AppHeader() {
   const account = useDisclosure();
   const mobile = useDisclosure();
   const accountPage = ACCOUNT_LINKS.some((link) => link.href === path);
+  const desktop = useDesktopLayout();
+  const sidebar = signedIn && desktop;
 
   return (
     <>
-      <header className="site-header app-header">
+      {sidebar && <Sidebar path={path} selfProfile={selfProfile} />}
+      <header className={sidebar ? "site-header app-header app-header--with-sidebar" : "site-header app-header"}>
         <div className="container container--wide app-header__bar">
-          <Logo href={signedIn ? "/dashboard" : "/"} />
+          {!sidebar && <Logo href={signedIn ? "/dashboard" : "/"} />}
           {!signedIn && <nav aria-label="Public"><Link href="/providers">{providerText("title")}</Link></nav>}
           {signedIn && <HeaderSearch key={activeProfile?.id || "pending"} profileId={activeProfile?.id} profileName={activeProfile?.fullName} />}
 
@@ -273,7 +311,7 @@ export default function AppHeader() {
           )}
         </div>
 
-        {signedIn && (
+        {signedIn && !sidebar && (
           <nav aria-label="Workspace" className="workspace-nav container container--wide">
             <WorkspaceLinks path={path} />
           </nav>
@@ -294,7 +332,7 @@ export default function AppHeader() {
           </div>
         )}
       </header>
-      {signedIn && <BottomTabBar tabs={TAB_LINKS} path={path} menu={mobile} />}
+      {signedIn && !sidebar && <BottomTabBar tabs={TAB_LINKS} path={path} menu={mobile} />}
     </>
   );
 }

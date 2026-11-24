@@ -21,13 +21,19 @@ export default function NextStepCard({ data, forName = "", now }) {
     now,
   });
   if (!step) return null;
+  // "Take Aspirin 81 mg at 08:00": the time sits in a mono chip; "at" stays in the sentence for screen readers.
+  const timed = TIMED.exec(step.text);
   return (
     <Card className="next-step" aria-labelledby="next-step-heading">
       <div className="next-step__copy">
         <h2 id="next-step-heading" className="next-step__label">Next step</h2>
-        <p className="next-step__text">{step.text}</p>
+        <p className="next-step__text">
+          {timed ? <>{timed[1]}<span className="visually-hidden"> at</span> <span className="next-step__time num">{timed[2]}</span></> : step.text}
+        </p>
       </div>
-      <Button variant="secondary" href={step.href}>{step.action}</Button>
+      <Button href={step.href}>{step.action}</Button>
     </Card>
   );
 }
+
+const TIMED = /^(.*) at (\d{1,2}:\d{2})$/;

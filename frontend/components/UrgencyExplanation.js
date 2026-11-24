@@ -69,17 +69,20 @@ export default function UrgencyExplanation({ explanation, isEmergency = false, s
         </p>
       )}
 
+      {/* Red flags in their own block with a soft danger outline (styles/components.css .urgency__watch). */}
       {watchFor.length > 0 && (
-        isEmergency ? (
-          <p><strong>{watchFor[0]}</strong></p>
-        ) : (
-          <>
-            <p className="urgency__label"><strong>Get help sooner if things change:</strong></p>
-            <ul>
-              {watchFor.map((line) => <li key={line}>{line}</li>)}
-            </ul>
-          </>
-        )
+        <div className="urgency__watch">
+          {isEmergency ? (
+            <p><strong>{watchFor[0]}</strong></p>
+          ) : (
+            <>
+              <p className="urgency__label"><strong>Get help sooner if things change:</strong></p>
+              <ul>
+                {watchFor.map((line) => <li key={line}>{line}</li>)}
+              </ul>
+            </>
+          )}
+        </div>
       )}
 
       {!simplified && basedOn && <p className="text-sm">Based on {basedOn}</p>}

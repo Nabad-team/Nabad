@@ -811,10 +811,12 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/dashboard")
         self.wait.until(lambda d: d.title.strip() and "Dashboard" in d.title)
         self.assertIn("Dashboard", self.driver.title)
-        self.wait_for_text(f"Welcome, {RunAccount.name.split()[0]}", (By.TAG_NAME, "h1"))
+        # The greeting follows the time of day (Held refresh, Phase 2): "Good morning/afternoon/evening, <name>".
+        self.wait_for_text(f", {RunAccount.name.split()[0]}", (By.TAG_NAME, "h1"))
+        self.assertRegex(self.visible((By.TAG_NAME, "h1")).text, rf"^Good (morning|afternoon|evening), {RunAccount.name.split()[0]}$")
         # Single links in the workspace row, and links inside the "My care" / "My records" dropdowns.
         for group, locator, path in (
-            (None, (By.CSS_SELECTOR, "a[aria-label='Type your symptoms']"), "/symptoms"),
+            (None, (By.LINK_TEXT, "Check a symptom"), "/symptoms"),
             (None, (By.CSS_SELECTOR, "nav[aria-label='Workspace'] a[href='/symptoms']"), "/symptoms"),
             ("my-records", (By.CSS_SELECTOR, "#nav-group-my-records a[href='/my-health']"), "/my-health"),
             ("my-care", (By.CSS_SELECTOR, "#nav-group-my-care a[href='/medications']"), "/medications"),

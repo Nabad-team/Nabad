@@ -285,14 +285,9 @@
   font-size: var(--text-base);
 }
 
-.page-title .heartbeat-divider { width: 5rem; height: 0.75rem; }
-
-.heartbeat-divider {
-  display: block;
-  width: 9rem;
-  height: 1rem;
-  color: var(--color-primary);
-}
+/* The title bar (TitleBar in components/ui/PageTitle.js): a 28 by 3px spruce bar ending in a 6px pulse dot. */
+.title-bar { position: relative; display: block; width: 1.75rem; height: 0.1875rem; margin: var(--space-1) 0 0; border-radius: var(--radius-full); background: var(--color-primary); }
+.title-bar__dot { position: absolute; top: 50%; right: -0.5rem; width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--color-pulse); transform: translateY(-50%); }
 
 /* ---------- The Held logo and mark (components/Logo.js, components/ui/HeldMark.js) ---------- */
 
@@ -343,7 +338,8 @@
 .held--phase-out .held__arc { transition: transform 6s ease-in-out; }
 
 .held--urgent .held__arc { stroke: var(--color-danger); }
-.held--urgent .held__dot { fill: var(--color-danger); animation: held-beat 0.6s ease-in-out infinite; }
+/* Urgent is completely still: an emergency never waits for, or competes with, motion. */
+.held--urgent .held__dot { fill: var(--color-danger); }
 
 .held--paused, .held--paused * { animation-play-state: paused !important; transition: none !important; }
 
@@ -353,17 +349,25 @@
 
 .held-loader { color: var(--color-text); }
 
+/* The symptom check while it runs (pages/symptoms.js): the thinking mark, the status, the person's own words, and 140. */
+.checking-panel {
+  display: grid; justify-items: center; gap: var(--space-4); margin-block: var(--space-5);
+  padding: var(--space-6) var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  background: var(--color-surface); text-align: center;
+}
+.checking-panel .held-loader { flex-direction: column; gap: var(--space-4); margin: 0; color: var(--color-text); }
+.checking-panel .held-loader span { font-size: var(--text-xl); font-weight: var(--weight-heavy); }
+.checking-panel__summary { max-width: var(--width-prose); margin: 0; color: var(--color-text-muted); }
+.checking-panel__emergency {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3);
+  margin: var(--space-2) 0 0; padding-top: var(--space-4); border-top: 1px solid var(--color-border); width: 100%;
+  color: var(--color-danger-strong); font-weight: var(--weight-semibold);
+}
+
 /* ---------- The Nabad assistant ---------- */
 
-/* The Nabad assistant (components/NabadAssistant.js). Calm places only; see docs/design-system.md. */
-.nabad-assistant { color: var(--color-primary); flex: none; }
-.nabad-assistant__face { stroke: var(--color-primary-strong); }
-.nabad-assistant--tracing .nabad-assistant__line { stroke-dasharray: 100; animation: assistant-trace 1.6s ease-in-out infinite; }
-@keyframes assistant-trace { 0% { stroke-dashoffset: 100; } 55%, 100% { stroke-dashoffset: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  .nabad-assistant--tracing .nabad-assistant__line { animation: none; stroke-dasharray: none; }
-}
-.assistant-loader { color: var(--color-text); }
+/* The Nabad assistant (components/NabadAssistant.js): the Held mark at rest. Calm places only; see docs/design-system.md. */
+.nabad-assistant { flex: none; }
 .assistant-greeting { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
 .assistant-greeting__name { display: block; font-weight: var(--weight-semibold); color: var(--color-primary-strong); }
 .assistant-greeting__note { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }
@@ -487,10 +491,6 @@ html[data-simplified-mode="true"] .button {
 html[data-simplified-mode="true"] .button svg {
   width: 1.75rem;
   height: 1.75rem;
-}
-
-html[data-simplified-mode="true"] .check-in > p {
-  max-width: 30rem;
 }
 
 html[data-simplified-mode="true"] .simplified-only-text {
@@ -1053,6 +1053,78 @@ select.input {
 @media (min-width: 40rem) and (max-width: 70rem) {
   .workspace-nav__list a, .nav-group__button { padding-inline: var(--space-2); }
 }
+
+/* ---------- Desktop sidebar (64rem and up; components/AppHeader.js Sidebar) ---------- */
+/* The page becomes two columns: a 16rem stone sidebar that stays in view, and everything else beside it. */
+.page-shell:has(> .app-sidebar) {
+  /* The sidebar's stone column runs the full height of the page, also below the sticky sidebar itself. */
+  background: linear-gradient(to right, var(--color-sunken) 16rem, var(--color-border) 16rem, var(--color-border) calc(16rem + 1px), transparent calc(16rem + 1px));
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  grid-auto-rows: auto;
+  align-content: start;
+}
+.page-shell:has(> .app-sidebar) > * { grid-column: 2; }
+/* As specific as the rule above, so the sidebar itself stays in the first column. */
+.page-shell:has(> .app-sidebar) > .app-sidebar { grid-column: 1; }
+.page-shell:has(> .app-sidebar) > .page-main { min-height: 60vh; }
+.app-sidebar {
+  grid-row: 1 / span 12;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-4);
+  background: var(--color-sunken);
+  border-right: 1px solid var(--color-border);
+}
+.app-sidebar .logo { padding-inline: var(--space-2); }
+.workspace-nav--sidebar { display: block; }
+.workspace-nav__list--sidebar { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--space-1); padding: 0; }
+.workspace-nav__list--sidebar a,
+.workspace-nav__list--sidebar .nav-group__button {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  text-align: left;
+  cursor: pointer;
+}
+.workspace-nav__list--sidebar .nav-group__chevron { margin-left: auto; }
+.workspace-nav__list--sidebar a:hover,
+.workspace-nav__list--sidebar .nav-group__button:hover { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+/* The current page: a spruce pill (and aria-current, so it never relies on colour alone). */
+.workspace-nav__list--sidebar a[aria-current="page"] { background: var(--color-primary); color: var(--color-on-primary); box-shadow: none; }
+.workspace-nav__list--sidebar .nav-group__button--current { background: var(--color-primary-soft); color: var(--color-primary-strong); box-shadow: inset 0.1875rem 0 0 var(--color-primary); }
+/* Groups open in place, under their button, instead of as a floating dropdown. */
+.workspace-nav__list--sidebar .nav-group { position: static; }
+.workspace-nav__list--sidebar .nav-group__panel {
+  position: static;
+  min-width: 0;
+  margin: var(--space-1) 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.workspace-nav__list--sidebar .nav-group__panel a { white-space: normal; font-size: var(--text-sm); }
+.app-sidebar__end { display: grid; gap: var(--space-3); margin-top: auto; }
+.app-sidebar__person {
+  display: flex; align-items: center; gap: var(--space-3); min-height: var(--tap-target); padding: var(--space-2);
+  border-radius: var(--radius-full); color: var(--color-text); font-weight: var(--weight-semibold); text-decoration: none;
+}
+.app-sidebar__person:hover, .app-sidebar__person[aria-current="page"] { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+.app-sidebar__person span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-header--with-sidebar .app-header__bar { justify-content: flex-end; }
+.app-header--with-sidebar .header-search { margin-right: auto; }
+@media print { .app-sidebar { display: none !important; } .page-shell:has(> .app-sidebar) { display: block; } }
 
 /* A "More" button with a small panel of secondary actions (visit preparation). Same look as the header dropdowns. */
 .more-menu { position: relative; display: inline-block; }
@@ -1900,11 +1972,10 @@ select.input {
 
 /* ---------- Symptom check: urgency result and follow-up questions ---------- */
 
+/* The result (components/UrgencyResult.js). The header block carries the level's soft colour; the details sit
+   below it on white cards. Each level sets --level, --level-strong and --level-soft (styles/tokens.css). */
 .urgency {
   margin-top: var(--space-6);
-  padding: var(--space-5);
-  border: 0.125rem solid;
-  border-radius: var(--radius-lg);
 }
 
 .urgency > :last-child {
@@ -1918,30 +1989,53 @@ select.input {
 @media (prefers-reduced-motion: reduce) { .urgency--enter { animation: none; } }
 
 .urgency h2 {
-  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
+  color: var(--level-strong);
+  font-size: var(--text-lg);
 }
 
 /* The result receives focus when it arrives; show where focus went without a heavy ring on the whole card. */
 .urgency:focus { outline: none; }
 .urgency:focus-visible { outline: 3px solid var(--color-focus, var(--color-primary)); outline-offset: 3px; }
 
-/* Top of the result: icon, level and one short line, before any detail. */
+/* Top of the result: the Held mark, the level, one short line, how soon, then the engine's action, large. */
 .urgency__indicator {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: var(--space-4);
   margin-bottom: var(--space-4);
+  padding: var(--space-5);
+  border: 0.125rem solid var(--level);
+  border-radius: var(--radius-lg);
+  background: var(--level-soft);
+  color: var(--level-strong);
 }
+.urgency__heading-block { min-width: 0; }
+.urgency__mark { flex: none; }
+.urgency__mark .held__arc, .urgency__mark .held__ring { stroke: var(--level); }
+.urgency__mark .held__dot { fill: var(--level); }
 .urgency__icon {
   flex: none;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-top: 0.1rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 .urgency__summary {
   margin: var(--space-1) 0 0;
-  font-size: var(--text-lg);
+}
+.urgency__timeframe { margin: var(--space-1) 0 0; }
+.urgency__action {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-heavy);
+  line-height: var(--leading-tight);
+}
+.urgency__action-label { display: block; margin-bottom: var(--space-1); font-size: var(--text-base); font-weight: var(--weight-semibold); }
+@media (max-width: 39.99rem) {
+  .urgency__indicator { flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+  .urgency__action { font-size: var(--text-lg); }
 }
 
 /* The 4-step scale. Each step has a coloured bar on top; the current one also gets its soft colour,
@@ -2003,45 +2097,82 @@ select.input {
   margin-bottom: var(--space-1);
 }
 
-/* SCRUM-130: "Why we suggest this". A thin rule separates it from the action above. */
-.urgency__explanation {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 0.0625rem solid currentColor;
+/* SCRUM-130: "Why we suggest this", and the self-care guidance: white cards under the header block. */
+.urgency__explanation, .urgency__card {
+  margin-block: var(--space-4);
+  padding: var(--space-5);
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
 }
+.urgency__explanation > :last-child, .urgency__card > :last-child { margin-bottom: 0; }
 
-.urgency__explanation h3 {
-  color: inherit;
+.urgency__explanation h3, .urgency__card h3 {
   font-size: var(--text-lg);
 }
+
+/* What to watch for (red flags): a soft danger outline, so it stands out from the rest of the guidance. */
+.urgency__watch {
+  margin-block: var(--space-4);
+  padding: var(--space-4);
+  border: 0.0625rem solid var(--color-danger);
+  border-left-width: 0.25rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.urgency__watch > :last-child { margin-bottom: 0; }
+
+.urgency__find-care { margin-top: var(--space-2); }
 
 .urgency__label {
   margin-bottom: var(--space-1);
 }
 
 .urgency--emergency {
-  background: var(--color-danger-soft);
-  border-color: var(--color-danger);
-  color: var(--color-danger-strong);
+  --level: var(--color-danger);
+  --level-strong: var(--color-danger-strong);
+  --level-soft: var(--color-danger-soft);
 }
 
 .urgency--urgent {
-  background: var(--color-urgent-soft);
-  border-color: var(--color-urgent);
-  color: var(--color-urgent-strong);
+  --level: var(--color-urgent);
+  --level-strong: var(--color-urgent-strong);
+  --level-soft: var(--color-urgent-soft);
 }
 
 .urgency--soon {
-  background: var(--color-warning-soft);
-  border-color: var(--color-warning);
-  color: var(--color-warning-strong);
+  --level: var(--color-warning);
+  --level-strong: var(--color-warning-strong);
+  --level-soft: var(--color-warning-soft);
 }
 
 .urgency--routine {
-  background: var(--color-routine-soft);
-  border-color: var(--color-routine);
-  color: var(--color-routine-strong);
+  --level: var(--color-routine);
+  --level-strong: var(--color-routine-strong);
+  --level-soft: var(--color-routine-soft);
 }
+
+/* The compact scale bar: four segments, the current one in full colour, the others faded. The step names, the icon
+   and "This result" stay in the list for screen readers; the written "Level 2 of 4: ..." line shows the same. */
+.urgency-scale--bar .urgency-scale__steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-1); }
+.urgency-scale--bar .urgency-scale__step {
+  position: relative;
+  height: 0.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--step-color);
+  opacity: 0.3;
+}
+.urgency-scale--bar .urgency-scale__step--current { opacity: 1; }
+.urgency-scale--bar .urgency-scale__step > * {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.urgency-scale__level { margin: var(--space-2) 0 0; font-weight: var(--weight-semibold); }
+
+/* The landing page's sample result keeps the whole card in the level's soft colour. */
+.sample-result__card { padding: var(--space-5); border: 0.125rem solid var(--level); border-radius: var(--radius-lg); background: var(--level-soft); color: var(--level-strong); }
+.sample-result__card .urgency__indicator { padding: 0; border: 0; background: none; }
 
 .follow-up {
   display: flex;
@@ -2067,6 +2198,10 @@ select.input {
   border: 1px solid var(--color-primary-line);
   border-radius: calc(var(--radius-lg) + 0.5rem);
 }
+
+/* The large Held mark above the landing headline. */
+.hero__mark { display: block; margin-bottom: var(--space-4); }
+@media (min-width: 64rem) { .hero__mark { width: 9rem; height: 9rem; } }
 
 .hero__text {
   max-width: var(--width-prose);
@@ -2438,33 +2573,97 @@ select.input {
   overflow-wrap: anywhere;
 }
 
-/* The one main thing to do on the dashboard: a light teal panel with its actions. */
-.check-in {
-  padding: clamp(1.25rem, 3vw, 2rem);
-  background: var(--color-primary-soft);
-  border: 0.0625rem solid var(--color-primary-line);
+/* ---------- Today (pages/dashboard.js), the Held layout ---------- */
+.today-greeting { margin-bottom: var(--space-5); }
+.today-greeting__date { margin: 0 0 var(--space-1); color: var(--color-text-muted); }
+.today-greeting h1 { margin: 0; font-size: 2.25rem; font-weight: var(--weight-heavy); letter-spacing: -0.02em; line-height: 1.1; }
+.page-shell:has(> .app-sidebar) .today-greeting h1 { font-size: 3rem; }
+
+/* Phones: one column. Desktop: the symptom card and Recent checks on the left (wider), the rest on the right. */
+.today { display: grid; gap: var(--space-4); margin-bottom: var(--space-6); }
+.today__main, .today__side { display: grid; gap: var(--space-4); align-content: start; min-width: 0; }
+.today .next-step { margin: 0; }
+.recent-checks, .wellbeing-link { display: none; }
+/* The desktop parts follow the sidebar (components/useDesktopLayout.js), not a media query: with enlarged text a
+   wide window keeps the one-column layout, so nothing overflows. */
+.page-shell:has(> .app-sidebar) .today { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--space-5); }
+.page-shell:has(> .app-sidebar) .recent-checks { display: block; }
+.page-shell:has(> .app-sidebar) .wellbeing-link { display: flex; }
+.page-shell:has(> .app-sidebar) .your-day .breathe-button { display: none; }
+
+/* The symptom card: deep spruce, a resting Held mark in paper and mint, one light full-width button. */
+.symptom-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-5);
   border-radius: var(--radius-lg);
+  background: var(--color-primary-strong);
+  color: var(--color-bg);
+}
+.symptom-card h2 { margin: 0 0 var(--space-2); color: var(--color-bg); font-size: var(--text-xl); font-weight: var(--weight-heavy); }
+.symptom-card p { margin: 0; color: var(--color-bg); }
+.symptom-card__mark .held__arc { stroke: var(--color-bg); }
+.symptom-card__mark .held__dot { fill: var(--color-pulse-on-dark); }
+.symptom-card__actions { grid-column: 1 / -1; display: grid; gap: var(--space-2); }
+.symptom-card .symptom-card__button { background: var(--color-bg); color: var(--color-primary-strong); border-color: var(--color-bg); }
+.symptom-card .symptom-card__button:hover:not(:disabled) { background: var(--color-surface); color: var(--color-primary-strong); }
+.symptom-card__speak {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--tap-target);
+  color: var(--color-bg); font-weight: var(--weight-semibold); text-underline-offset: 0.2em;
+}
+.symptom-card :focus-visible { outline: 0.1875rem solid var(--color-bg); outline-offset: 0.1875rem; box-shadow: none; }
+.page-shell:has(> .app-sidebar) .symptom-card { padding: var(--space-6); }
+.page-shell:has(> .app-sidebar) .symptom-card h2 { font-size: var(--text-2xl); }
+.page-shell:has(> .app-sidebar) .symptom-card__mark { width: 11.875rem; height: 11.875rem; }
+.page-shell:has(> .app-sidebar) .symptom-card__actions { grid-column: 1; justify-items: start; }
+.page-shell:has(> .app-sidebar) .symptom-card .symptom-card__button { width: auto; min-width: min(16rem, 100%); }
+
+/* Next step: the time in a soft spruce mono chip. */
+.next-step__time {
+  display: inline-block; padding: 0.0625rem var(--space-2); border-radius: var(--radius-full);
+  background: var(--color-primary-soft); color: var(--color-primary-strong); font-size: var(--text-base);
 }
 
-@media (min-width: 48rem) {
-  .page-shell--dashboard .check-in { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-5); align-items: center; }
-  .page-shell--dashboard .check-in h2 { grid-column: 1; }
-  .page-shell--dashboard .check-in p { grid-column: 1; margin: 0; }
-  .page-shell--dashboard .check-in .button-row { grid-column: 2; grid-row: 1 / 3; }
+/* Your day: water, sleep and medicines as pills, and the round lilac way into breathing. */
+.your-day { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2) var(--space-3); }
+.your-day__heading { grid-column: 1 / -1; margin: 0; font-size: var(--text-base); color: var(--color-text-muted); font-weight: var(--weight-semibold); }
+.your-day__pills { display: flex; flex-wrap: wrap; gap: var(--space-2); min-width: 0; margin: 0; padding: 0; list-style: none; }
+.your-day__pills li { margin: 0; }
+.day-pill {
+  display: inline-flex; align-items: baseline; gap: var(--space-2); min-height: var(--tap-target); padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-surface);
+  color: var(--color-text); text-decoration: none;
 }
+.day-pill:hover { border-color: var(--color-primary-line); background: var(--color-primary-soft); }
+.day-pill__label { color: var(--color-text-muted); font-size: var(--text-sm); }
+@media (max-width: 39.99rem) { .day-pill { gap: var(--space-1); padding-inline: var(--space-3); } }
+.breathe-button {
+  display: grid; place-items: center; flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%;
+  background: var(--color-wellbeing-soft); border: 1px solid var(--color-wellbeing);
+}
+.breathe-button:hover { background: var(--color-surface); }
 
-.check-in h2 {
-  margin-bottom: var(--space-2);
-}
+/* Desktop: Recent checks, each with its level in that level's colours (text on soft: AA, see tokens.css). */
+.recent-checks { padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.recent-checks__header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.recent-checks__header h2 { margin: 0 0 var(--space-3); font-size: var(--text-lg); }
+.recent-checks__list { margin: 0; padding: 0; list-style: none; }
+.recent-checks__list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin: 0; padding-block: var(--space-3); border-top: 1px solid var(--color-border); }
+.recent-checks__summary { flex: 1 1 12rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-checks__date { color: var(--color-text-muted); font-size: var(--text-sm); }
+.level-chip { display: inline-block; padding: 0.125rem var(--space-3); border: 1px solid; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.level-chip--routine { background: var(--color-routine-soft); border-color: var(--color-routine); color: var(--color-routine-strong); }
+.level-chip--soon { background: var(--color-warning-soft); border-color: var(--color-warning); color: var(--color-warning-strong); }
+.level-chip--urgent { background: var(--color-urgent-soft); border-color: var(--color-urgent); color: var(--color-urgent-strong); }
+.level-chip--emergency { background: var(--color-danger-soft); border-color: var(--color-danger); color: var(--color-danger-strong); }
 
-.check-in p {
-  max-width: var(--width-prose);
-  margin-bottom: var(--space-5);
-}
-
-.check-in .button {
-  min-width: 7.5rem;
-}
+/* Desktop: the wellbeing card, in the wellbeing colours. */
+.wellbeing-link { gap: var(--space-4); align-items: flex-start; padding: var(--space-5); border: 1px solid var(--color-wellbeing); border-radius: var(--radius-lg); background: var(--color-wellbeing-soft); color: var(--color-wellbeing-strong); }
+.wellbeing-link h2 { margin: 0 0 var(--space-1); font-size: var(--text-lg); color: var(--color-wellbeing-strong); }
+.wellbeing-link p { margin: 0 0 var(--space-2); }
+.wellbeing-link a { color: var(--color-wellbeing-strong); font-weight: var(--weight-semibold); }
 
 .results-intro {
   padding: var(--space-5);
@@ -4433,7 +4632,7 @@ select.input {
   body:has(.medication-overview) .page-note,
   body:has(.medication-overview) .page-main > :not(.medication-overview),
   .medication-overview .page-title .lead,
-  .medication-overview .heartbeat-divider,
+  .medication-overview .title-bar,
   .medication-overview .page-title__actions,
   .overview-controls,
   .overview-no-linked,

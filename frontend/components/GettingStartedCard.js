@@ -43,15 +43,14 @@ export function GettingStartedCard({ steps, forName, onHide, hiding }) {
   );
 }
 
-// The slot under the page title: the Getting started card while it applies, otherwise the Next step card, never
-// both. Until every source has answered it holds the Next step placeholder, so nothing jumps.
+// Which first-steps card applies: the Getting started card while it applies, otherwise the Next step card, never
+// both. Until every source has answered, `ready` is false (hold a placeholder, so nothing jumps).
 //   data: useDashboardData()   forName: the linked profile's first name, "" for your own   isSelf: your own profile
-export default function DashboardFirstSteps({ data, forName = "", isSelf = true, now }) {
+export function useFirstSteps({ data, forName = "", isSelf = true }) {
   const [hidden, setHidden] = useState(null); // null while asking the server
   const [hiding, setHiding] = useState(false);
   const [error, setError] = useState("");
   const savedDone = useRef(false);
-
   useEffect(() => {
     let active = true;
     getMe()
@@ -60,12 +59,10 @@ export default function DashboardFirstSteps({ data, forName = "", isSelf = true,
       .catch(() => { if (active) setHidden(true); });
     return () => { active = false; };
   }, []);
-
   const ready = Boolean(data?.loaded && data?.startLoaded) && hidden !== null;
   const sourcesOk = data && !data.healthFailed && !data.medicationsFailed && !data.symptomsFailed && !data.emergencyCardFailed;
   const steps = ready && sourcesOk ? gettingStartedSteps(data, forName) : null;
   const finished = Boolean(steps && allDone(steps));
-
   // All four done on your own profile: remember it, so the card stays gone even if something is removed later.
   useEffect(() => {
     if (!finished || !isSelf || hidden || savedDone.current) return;
@@ -89,15 +86,34 @@ export default function DashboardFirstSteps({ data, forName = "", isSelf = true,
     }
   }
 
+  return { ready, steps, showStart: Boolean(ready && !hidden && steps && !finished), error, hide, hiding };
+}
+
+// The Getting started card (with its error line) when it applies; nothing otherwise.
+export function GettingStartedSlot({ firstSteps, forName = "" }) {
+  if (!firstSteps.showStart) return null;
+  return (
+    <>
+      {firstSteps.error && <Alert tone="danger" as="p" role="alert">{firstSteps.error}</Alert>}
+      <GettingStartedCard steps={firstSteps.steps} forName={forName} onHide={firstSteps.hide} hiding={firstSteps.hiding} />
+    </>
+  );
+}
+
+// The Next step card when Getting started doesn't apply; its placeholder until every source has answered.
+export function NextStepSlot({ firstSteps, data, forName = "", now }) {
   if (!data) return null;
-  if (!ready) return <div className="skeleton" aria-hidden="true"><NextStepSkeleton /></div>;
-  if (!hidden && steps && !finished) {
-    return (
-      <>
-        {error && <Alert tone="danger" as="p" role="alert">{error}</Alert>}
-        <GettingStartedCard steps={steps} forName={forName} onHide={hide} hiding={hiding} />
-      </>
-    );
-  }
+  if (!firstSteps.ready) return <div className="skeleton" aria-hidden="true"><NextStepSkeleton /></div>;
+  if (firstSteps.showStart) return null;
   return <NextStepCard data={data} forName={forName} now={now} />;
+}
+
+// Both in one slot (the Getting started card, otherwise Next step), as the dashboard had them before the Held
+// refresh. The dashboard now places the two apart with useFirstSteps.
+export default function DashboardFirstSteps({ data, forName = "", isSelf = true, now }) {
+  const firstSteps = useFirstSteps({ data, forName, isSelf });
+  if (!data) return null;
+  return firstSteps.showStart
+    ? <GettingStartedSlot firstSteps={firstSteps} forName={forName} />
+    : <NextStepSlot firstSteps={firstSteps} data={data} forName={forName} now={now} />;
 }

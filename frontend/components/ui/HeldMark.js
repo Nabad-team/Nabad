@@ -8,14 +8,14 @@
 //   "done"     a full ring draws closed (600ms)
 //   "breathe"  the arcs open and close (10s: open over 4s, close over 6s), in the wellbeing colour. Pass `phase`
 //              ("in", "hold" or "out") to follow a breathing exercise step by step instead of the free 10s cycle.
-//   "urgent"   arcs in the danger colour and a fast beat (0.6s). Only ever on an emergency result.
-// The mark is decorative (aria-hidden): whatever it means must also be written next to it.
+//   "urgent"   arcs and dot in the danger colour, completely still. Only ever on an emergency result.
+// The mark is decorative (aria-hidden) unless it gets a `title`; whatever it means must also be written next to it.
 
 export const HELD_STATES = ["resting", "thinking", "done", "breathe", "urgent"];
 const LEFT_ARC = "M64 24 A56 56 0 0 0 64 136";
 const RIGHT_ARC = "M96 24 A56 56 0 0 1 96 136";
 
-export default function HeldMark({ state = "resting", phase, paused = false, size = "3rem", className = "" }) {
+export default function HeldMark({ state = "resting", phase, paused = false, size = "3rem", className = "", title }) {
   const current = HELD_STATES.includes(state) ? state : "resting";
   const classes = [
     "held",
@@ -26,7 +26,8 @@ export default function HeldMark({ state = "resting", phase, paused = false, siz
   ].filter(Boolean).join(" ");
   return (
     <svg className={classes} width={size} height={size} viewBox="0 0 160 160" fill="none" strokeLinecap="round"
-      aria-hidden="true" focusable="false" data-state={current}>
+      role={title ? "img" : undefined} aria-label={title} aria-hidden={title ? undefined : "true"} focusable="false"
+      data-state={current}>
       <g className="held__arcs" strokeWidth="15">
         <path className="held__arc held__arc--left" d={LEFT_ARC} />
         <path className="held__arc held__arc--right" d={RIGHT_ARC} />
@@ -38,10 +39,10 @@ export default function HeldMark({ state = "resting", phase, paused = false, siz
 }
 
 // The loading state: the thinking mark with a visible status text, announced to screen readers (role="status").
-export function HeldLoader({ label }) {
+export function HeldLoader({ label, size = "2.75rem" }) {
   return (
     <div className="loader held-loader" role="status">
-      <HeldMark state="thinking" size="2.75rem" />
+      <HeldMark state="thinking" size={size} />
       <span>{label}</span>
     </div>
   );

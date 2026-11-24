@@ -1,7 +1,11 @@
-import { HeartbeatDivider } from "./Heartbeat";
+// The accent under a page title: a short spruce bar ending in the pulse dot (28 by 3px, a 6px dot). Static.
+export function TitleBar() {
+  return <span className="title-bar" aria-hidden="true"><span className="title-bar__dot" /></span>;
+}
+
 import { Bone } from "./Skeleton";
 
-// The header row of a page: the h1 with the heartbeat divider and an optional one-line lead on the left,
+// The header row of a page: the h1 with the title bar and an optional one-line lead on the left,
 // and the page's one primary action (plus an optional <MoreMenu />) on the right. On phones they stack.
 //   action: the primary <Button>, usually the thing people come to the page to do.
 //   more:   a <MoreMenu /> with the secondary actions.
@@ -14,7 +18,7 @@ export default function PageTitle({ children, lead, action, more, loadingActions
     <div className={hasActions ? "page-title page-title--with-actions" : "page-title"}>
       <div className="page-title__text">
         <h1>{children}</h1>
-        <HeartbeatDivider />
+        <TitleBar />
         {lead && <p className="lead">{lead}</p>}
       </div>
       {hasActions && <div className="page-title__actions">{action}{more}
