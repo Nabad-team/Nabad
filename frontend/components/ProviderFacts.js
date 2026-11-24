@@ -19,14 +19,14 @@ function verificationDates(value) {
   };
 }
 
-// The badges a result card shows side by side. Only known facts: distance, driving time, open or closed per published
-// hours, and the 24/7 ER status when it is published (yes or no). Unknown hours and an unverified ER status get no
-// badge (one note above the list explains this), and "possibly outdated" is under More details.
-export function ProviderBadges({ provider: p, showLiveStatus = true, drivingMinutes }) {
+// The status chips a result card shows side by side. Only known facts: distance (card: in the meta line instead),
+// driving time, open or closed per published hours, and the 24/7 ER status when it is published (yes or no). Unknown
+// hours and an unverified ER status get no chip (the "About this data" note explains this).
+export function ProviderBadges({ provider: p, showLiveStatus = true, drivingMinutes, card = false }) {
   const opening = showLiveStatus && (p.openingStatus === "open" || p.openingStatus === "closed") ? p.openingStatus : null;
   const er = p.emergency24h === true ? "erYes" : p.emergency24h === false ? "erNo" : null;
   const badges = [
-    p.distanceKm != null && <Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge>,
+    !card && p.distanceKm != null && <Badge tone="neutral">{t("distance", { km: p.distanceKm })}</Badge>,
     Number.isFinite(drivingMinutes) && <Badge tone="neutral">{t("drivingMinutes", { minutes: drivingMinutes })}</Badge>,
     opening && <Badge tone={opening === "open" ? "info" : "neutral"}>{t(opening)}</Badge>,
     er && <Badge tone={er === "erYes" ? "info" : "neutral"}>{t(er)}</Badge>,
@@ -35,6 +35,20 @@ export function ProviderBadges({ provider: p, showLiveStatus = true, drivingMinu
   return <ul className="provider-badges" aria-label={t("keyFacts", { name: p.name })}>
     {badges.map((badge, index) => <li key={index}>{badge}</li>)}
   </ul>;
+}
+
+// What a result card must never hide (everything else is on the facility's own page): information that may be
+// outdated, an approximate map pin, and an address or map location that isn't verified (so no Directions).
+export function ProviderCaveats({ provider: p }) {
+  const verification = verificationDates(p.verifiedAt);
+  const notes = [
+    (!verification || verification.outdated) && <><Badge tone="warning">{t("possiblyOutdated")}</Badge> {t("confirmBeforeVisiting")}</>,
+    p.locationApproximate && t("approximatePin"),
+    !p.address && t("addressUnknown"),
+    !hasMapLocation(p) && t("locationUnknown"),
+  ].filter(Boolean);
+  if (!notes.length) return null;
+  return <div className="provider-card__caveats">{notes.map((note, index) => <p key={index} className="text-sm">{note}</p>)}</div>;
 }
 
 // variant="full": every fact (the provider page and the comparison). variant="details": the "More details" part of a

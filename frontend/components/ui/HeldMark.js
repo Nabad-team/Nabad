@@ -6,21 +6,20 @@
 //   "resting"  the dot beats slowly (2.4s)
 //   "thinking" the arcs turn around the dot (1.4s a turn): the loader, always next to a status text (HeldLoader)
 //   "done"     a full ring draws closed (600ms)
-//   "breathe"  the arcs open and close (10s: open over 4s, close over 6s), in the wellbeing colour. Pass `phase`
-//              ("in", "hold" or "out") to follow a breathing exercise step by step instead of the free 10s cycle.
 //   "urgent"   arcs and dot in the danger colour, completely still. Only ever on an emergency result.
 // The mark is decorative (aria-hidden) unless it gets a `title`; whatever it means must also be written next to it.
+// At most one Held mark per screen besides the logo (docs/design-system.md#one-mark-per-screen). Breathing is not a
+// mark state: it is the dot alone (components/ui/BreathingDot.js).
 
-export const HELD_STATES = ["resting", "thinking", "done", "breathe", "urgent"];
+export const HELD_STATES = ["resting", "thinking", "done", "urgent"];
 const LEFT_ARC = "M64 24 A56 56 0 0 0 64 136";
 const RIGHT_ARC = "M96 24 A56 56 0 0 1 96 136";
 
-export default function HeldMark({ state = "resting", phase, paused = false, size = "3rem", className = "", title }) {
+export default function HeldMark({ state = "resting", paused = false, size = "3rem", className = "", title }) {
   const current = HELD_STATES.includes(state) ? state : "resting";
   const classes = [
     "held",
     `held--${current}`,
-    current === "breathe" && phase && `held--phase held--phase-${phase}`,
     paused && "held--paused",
     className,
   ].filter(Boolean).join(" ");

@@ -36,14 +36,16 @@ test("public comparison keeps at most three facilities and lets users replace or
   getProviders.mockResolvedValue({ ...result, providers: facilities, total: facilities.length });
   const user = userEvent.setup();
   render(<ProvidersPage />);
-  await user.click(await screen.findByRole("button", { name: "Compare One" }));
-  await user.click(screen.getByRole("button", { name: "Compare Two" }));
-  await user.click(screen.getByRole("button", { name: "Compare Three" }));
+  // Compare is a checkbox labelled "Compare" on each card.
+  await user.click(await screen.findByRole("checkbox", { name: "Compare One" }));
+  await user.click(screen.getByRole("checkbox", { name: "Compare Two" }));
+  await user.click(screen.getByRole("checkbox", { name: "Compare Three" }));
   const comparison = screen.getByRole("region", { name: "Compare facilities" });
   expect(within(comparison).getByText("3 of 3 facilities selected")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Compare Four" })).toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "Compare Four" })).toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "Compare One" })).toBeChecked();
   await user.click(within(comparison).getByRole("button", { name: "Remove Two from comparison" }));
-  await user.click(screen.getByRole("button", { name: "Compare Four" }));
+  await user.click(screen.getByRole("checkbox", { name: "Compare Four" }));
   expect(within(comparison).getByRole("heading", { name: "Four" })).toBeInTheDocument();
   expect(within(comparison).queryByRole("heading", { name: "Two" })).not.toBeInTheDocument();
   await user.click(within(comparison).getByRole("button", { name: "Clear comparison" }));
@@ -176,7 +178,7 @@ test("public visitors can browse and get a sign-in link without a favorites requ
   render(<ProvidersPage />);
   await screen.findByText("Test Clinic");
   expect(getProviderFavorites).not.toHaveBeenCalled();
-  expect(screen.getByRole("link", { name: "Sign in to save" })).toHaveAttribute("href", "/login");
+  expect(screen.getByRole("link", { name: "Sign in to save Test Clinic" })).toHaveAttribute("href", "/login");
   expect(screen.queryByLabelText("My saved providers")).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Directions to Test Clinic in Google Maps" })).toHaveAttribute("href", "https://www.google.com/maps/dir/?api=1&destination=33.9%2C35.5");
 });
@@ -219,26 +221,42 @@ test("insurance filters are submitted and retained in shareable URLs", async () 
   expect(screen.getByRole("link", { name: "Test Clinic" })).toHaveAttribute("href", "/providers/clinic");
 });
 
-test("result cards are compact: key facts and actions first, everything else under More details", async () => {
+test("result cards: the name is the link to every detail, then type, city and distance, status chips and ONE primary action", async () => {
   getProviders.mockResolvedValue({ ...result, providers: [{ ...provider, distanceKm: 2.4, openingStatus: "open", emergency24h: true, insurances: ["nssf"], feedback: { count: 0 } }] });
   render(<ProvidersPage />);
   const card = (await screen.findByRole("heading", { name: "Test Clinic" })).closest("li");
-  expect(within(card).getByText("Clinic · Beirut")).toBeInTheDocument();
+  // The header is the link to the facility's page (every fact is there: ProviderFacts, tested in providerDetails.test.js).
+  expect(within(card).getByRole("link", { name: "Test Clinic" })).toHaveAttribute("href", "/providers/clinic");
+  expect(card.querySelector(".provider-card__meta")).toHaveTextContent("Clinic · Beirut · About 2.4 km away (straight line)");
   const badges = within(card).getByRole("list", { name: "Key facts about Test Clinic" });
-  expect(within(badges).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["About 2.4 km away (straight line)", "Open per published hours", "24/7 emergency department (published)"]);
+  expect(within(badges).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Open per published hours", "24/7 emergency department (published)"]);
+  // ONE primary action. Without your location it is Call; Directions is an icon button with its own name.
+  expect(card.querySelectorAll(".button--primary")).toHaveLength(1);
+  expect(within(card).getByRole("link", { name: "Call Test Clinic" })).toHaveClass("button--primary");
   expect(within(card).getByRole("link", { name: "Call Test Clinic" })).toHaveAttribute("href", "tel:+9611000000");
-  expect(within(card).getByRole("link", { name: "Directions to Test Clinic in Google Maps" })).toHaveTextContent("Directions");
-  expect(within(card).getByRole("button", { name: "Save Test Clinic" })).toBeInTheDocument();
-  // Nothing is lost: specialties, services, insurance, sources, notes and the check date are all in More details.
-  const more = card.querySelector("details.provider-card__more");
-  expect(more).not.toHaveAttribute("open");
-  expect(within(more).getByText("More details", { exact: false })).toBeInTheDocument();
-  for (const text of ["Clinic Street", "Pediatrics", /Services and equipment:/, /Insurance and third-party payers:/, "Information checked: 15 October 2026", "Information source 1", /Listed capabilities are published information/]) {
-    expect(within(more).getByText(text)).toBeInTheDocument();
-  }
-  // The directory note appears once, above the results, not on every card.
+  const directions = within(card).getByRole("link", { name: "Directions to Test Clinic in Google Maps" });
+  expect(directions).toHaveClass("icon-button");
+  expect(directions).toHaveTextContent("");
+  expect(within(card).getByRole("button", { name: "Save Test Clinic" })).toHaveClass("icon-button");
+  expect(within(card).getByRole("checkbox", { name: "Compare Test Clinic" })).not.toBeChecked();
+  // No "More details" and no "Open..." links: the name is the way in.
+  expect(card.querySelector("details")).toBeNull();
+  expect(within(card).queryByText(/More details/)).toBeNull();
+  // The directory note appears once, under "About this data", not on every card.
   expect(screen.getAllByText(/Facility information comes from published sources/)).toHaveLength(1);
+  expect(screen.getByText(/Facility information comes from published sources/).closest("details")).toHaveTextContent("About this data");
   expect(card).not.toHaveTextContent(/Facility information comes from published sources/);
+});
+
+test("once your location is known, Directions becomes the primary action and Call an icon button", async () => {
+  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: success => success({ coords: { latitude: 33.9, longitude: 35.5 } }) } });
+  const user = userEvent.setup(); render(<ProvidersPage />);
+  const card = (await screen.findByRole("heading", { name: "Test Clinic" })).closest("li");
+  await user.click(screen.getByRole("button", { name: "Use my location" }));
+  expect(card.querySelectorAll(".button--primary")).toHaveLength(1);
+  expect(within(card).getByRole("link", { name: "Directions to Test Clinic in Google Maps" })).toHaveClass("button--primary");
+  expect(within(card).getByRole("link", { name: "Directions to Test Clinic in Google Maps" })).toHaveTextContent("Directions");
+  expect(within(card).getByRole("link", { name: "Call Test Clinic" })).toHaveClass("icon-button");
 });
 
 test("cards show only known facts as badges; unverified ones get no badge and one note explains it", async () => {
@@ -253,8 +271,8 @@ test("cards show only known facts as badges; unverified ones get no badge and on
   const unknown = screen.getByRole("heading", { name: "Unknown Clinic" }).closest("li");
   expect(within(unknown).queryByRole("list", { name: "Key facts about Unknown Clinic" })).not.toBeInTheDocument();
   expect(unknown).not.toHaveTextContent(/not verified/);
-  // "Possibly outdated" is still there, under More details.
-  const more = unknown.querySelector("details.provider-card__more");
-  expect(within(more).getByText("Information may be outdated")).toBeInTheDocument();
+  // "Possibly outdated" stays visible on the card (it must never be hidden behind a click).
+  expect(within(unknown).getByText("Information may be outdated")).toBeVisible();
+  expect(within(known).queryByText("Information may be outdated")).toBeNull();
   expect(screen.getAllByText(/Cards show opening hours and 24\/7 ER status only when they are published/)).toHaveLength(1);
 });

@@ -1,26 +1,29 @@
 import Card from "./ui/Card";
 import Button from "./ui/Button";
+import BreathingDot from "./ui/BreathingDot";
+import HeldIcon from "./ui/HeldIcon";
 import { formatDate } from "../lib/dates";
 import { wellbeingSupport } from "../data/wellbeingSupport";
-import { EXERCISES, beirutDayNumber, reflectionQuestionFor } from "../lib/wellbeingExercises";
+import { beirutDayNumber } from "../lib/wellbeingExercises";
 
-// compact: the dashboard card. The number is in the heading only (the button says "Call", its accessible name
-// keeps the number), and the longer description moves to the card's "More" section.
+// compact: a call row (the dashboard and Wellbeing cards, and the help under every exercise). The number is in the
+// heading only (the button says "Call", its accessible name keeps the number), and the longer description moves to the
+// card's "More" section.
 export function WellbeingSupportNumber({ contact, compact = false }) {
   const value = contact.verifiedOn;
   const parsed = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : null;
   const date = parsed && Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
   const source = typeof contact.sourceUrl === "string" && /^https:\/\//.test(contact.sourceUrl) ? contact.sourceUrl : null;
   const emergency = contact.id === "lebanese-red-cross";
-  return <section className={`wellbeing-support-number${emergency ? " wellbeing-support-number--emergency" : ""}`} aria-labelledby={`wellbeing-support-${contact.id}`}>
+  return <section className={`wellbeing-support-number${emergency ? " wellbeing-support-number--emergency" : ""}${compact ? " wellbeing-support-number--row" : ""}`} aria-labelledby={`wellbeing-support-${contact.id}`}>
     <div className="wellbeing-support-number__icon" aria-hidden="true">
-      {emergency ? <svg viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z" /></svg> : <svg viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 16 0" /><path d="M4 13v5h4v-5H4Zm12 0v5h4v-5h-4ZM16 20h-4" /></svg>}
+      <HeldIcon name="phone" size="1.25rem" />
     </div>
     <div className="wellbeing-support-number__content">
       <p className="wellbeing-support-number__label">{emergency ? "Emergency medical help" : "Mental health support · Available 24/7"}</p>
       <h4 id={`wellbeing-support-${contact.id}`}>{contact.name}</h4>
       {!compact && <p>{contact.description}</p>}
-      <Button className="wellbeing-support-number__call" variant={emergency ? "danger" : "primary"} href={`tel:${contact.phone}`} aria-label={`Call ${contact.phone}`}>
+      <Button className="wellbeing-support-number__call" variant={emergency ? "danger" : "primary"} size={compact ? "small" : undefined} href={`tel:${contact.phone}`} aria-label={`Call ${contact.phone}`}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 10 8.2 7.8 10c1.3 2.6 3.5 4.8 6.1 6.1l1.9-2.2 4.7 2.8-.8 3.1c-.2.8-1 1.4-1.9 1.3C10 20.3 3.7 14 2.9 6.2c-.1-.9.5-1.7 1.3-1.9l3-.8Z" /></svg>
         {compact ? <span>Call</span> : <span><small>Tap to call</small>{contact.phone}</span>}
       </Button>
@@ -65,12 +68,27 @@ function getDailyMessage(now = new Date()) {
   return dailyMessages[beirutDayNumber(now) % dailyMessages.length];
 }
 
-// The dashboard's compact Wellbeing Corner: today's message and the two support numbers stay visible (the
-// self-harm result links here: /dashboard#wellbeing-corner-heading); the tips and notes are under "More".
-// 140 appears once in the card (the page footer also has it).
+// Two minutes to breathe: the breathing dot and its timing, the whole row a link that starts the exercise.
+export function BreatheRow({ headingLevel = 3 }) {
+  const Heading = `h${headingLevel}`;
+  return (
+    <a href="/wellbeing?start=breathing" className="breathe-row">
+      <BreathingDot size="2.75rem" className="breathe-row__dot" />
+      <span className="breathe-row__text">
+        <Heading className="breathe-row__title">Two minutes to breathe</Heading>
+        <span className="breathe-row__timing">In for <span className="num">4</span>, hold for <span className="num">4</span>, out for <span className="num">6</span></span>
+      </span>
+      <HeldIcon name="chevronRight" size="1.25rem" className="breathe-row__chevron" />
+    </a>
+  );
+}
+
+// The dashboard's Wellbeing Corner, one stone card: today's message, the two helplines as call rows, then two
+// minutes to breathe (the self-harm result links here: /dashboard#wellbeing-corner-heading). The tips and notes are under
+// "More". The calm exercises and the question of the day live on /wellbeing only. 140 appears once in the card
+// (the page footer also has it).
 export default function WellbeingCorner() {
   const dailyMessage = getDailyMessage();
-  const question = reflectionQuestionFor();
   const lifeline = wellbeingSupport.find((contact) => contact.id !== "lebanese-red-cross");
 
   return (
@@ -80,11 +98,6 @@ export default function WellbeingCorner() {
         <h3 id="wellbeing-message-heading" className="wellbeing-message__label">Today&apos;s message</h3>
         <p>{dailyMessage}</p>
       </section>
-      {/* Shown only: there is nowhere to answer, and nothing is saved. */}
-      <section className="wellbeing-message wellbeing-reflection" aria-labelledby="wellbeing-reflection-heading">
-        <h3 id="wellbeing-reflection-heading" className="wellbeing-message__label">Question of the day</h3>
-        <p>{question}</p>
-      </section>
 
       <section className="wellbeing-support" aria-labelledby="wellbeing-support-heading">
         <h3 id="wellbeing-support-heading" className="wellbeing-support__title">Support in Lebanon</h3>
@@ -92,15 +105,7 @@ export default function WellbeingCorner() {
       </section>
 
       {/* After the support numbers, so someone sent here for support (the self-harm result) sees those first. */}
-      <section className="wellbeing-exercises" aria-labelledby="wellbeing-exercises-heading">
-        <h3 id="wellbeing-exercises-heading">Calm exercises</h3>
-        <p className="text-muted">Short exercises that can help you slow down. Nothing is saved.</p>
-        <div className="wellbeing-exercises__actions">
-          {EXERCISES.map((exercise) => (
-            <Button key={exercise.key} variant="secondary" href={`/wellbeing?start=${exercise.key}`}>{exercise.title}</Button>
-          ))}
-        </div>
-      </section>
+      <BreatheRow />
 
       <details className="wellbeing-corner__more">
         <summary>More<span className="visually-hidden"> wellbeing tips and support details</span><svg className="wellbeing-corner__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg></summary>

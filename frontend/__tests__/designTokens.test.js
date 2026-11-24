@@ -49,7 +49,8 @@ describe("Design tokens", () => {
     ["--color-warning-strong", "--color-warning-soft", 4.5],
     ["--color-urgent", "--color-bg", 4.5], ["--color-urgent-strong", "--color-urgent-soft", 4.5],
     ["--color-routine", "--color-bg", 4.5], ["--color-routine-strong", "--color-routine-soft", 4.5],
-    ["--color-wellbeing", "--color-bg", 4.5], ["--color-wellbeing-strong", "--color-wellbeing-soft", 4.5],
+    // Wellbeing is neutral now (the lilac is retired): spruce text and actions on stone, the pulse-green breathing dot.
+    ["--color-primary-strong", "--color-sunken", 4.5], ["--color-primary", "--color-sunken", 4.5], ["--color-pulse", "--color-surface", 3],
     ["--color-border-strong", "--color-bg", 3], ["--color-border-strong", "--color-surface", 3], ["--color-border-strong", "--color-sunken", 3],
     ["--color-warning", "--color-bg", 3], ["--color-warning", "--color-warning-soft", 3],
     ["--color-pulse", "--color-bg", 3], ["--color-pulse-on-dark", "--color-primary-strong", 3],

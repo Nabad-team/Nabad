@@ -6,10 +6,10 @@
   control boundaries and graphics meet 3:1. See docs/design-system.md for when to use each token.
 */
 :root {
-  /* Fonts. --font-atkinson and --font-atkinson-mono are set by next/font in pages/_app.js.
-     Mono is for numbers people act on (doses, times, litres, counts): use the .num class. */
-  --font-sans: var(--font-atkinson), "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-atkinson-mono), "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", monospace;
+  /* Fonts. --font-atkinson is set by next/font in pages/_app.js. "Nabad Digits" (styles/base.css) is Inter's digits
+     0-9 only, so every number in the app gets a plain zero ("140", never "14Ø") while Atkinson draws every letter.
+     Numbers people act on (doses, times, litres, counts) also use the .num class for tabular figures. */
+  --font-sans: "Nabad Digits", var(--font-atkinson), "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Paper canvas and distinct surfaces. */
   --color-bg: #f6f4ee; /* paper */
@@ -36,11 +36,6 @@
   /* Pulse: the dot in the Held mark. Graphics only, never text (3.4:1). On dark backgrounds use pulse-on-dark. */
   --color-pulse: #2e9466;
   --color-pulse-on-dark: #8fd8b4; /* 8.6:1 on --color-primary-strong */
-
-  /* Wellbeing: only for breathing, sleep and the wellbeing corner. */
-  --color-wellbeing: #6e5aa8; /* 5.2:1, 4.8:1 on wellbeing-soft */
-  --color-wellbeing-soft: #eeeaf7;
-  --color-wellbeing-strong: #3b2f66; /* 9.9:1 on wellbeing-soft */
 
   /* Accent: muted terracotta. Use sparingly, for one highlight per screen at most. */
   --color-accent: #9c4a2f; /* 5.6:1 */

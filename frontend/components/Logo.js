@@ -13,6 +13,20 @@ let dropPlayed = false;
 
 export const HELD_ARC = "M24 74 A56 56 0 0 0 136 74";
 
+// The noon mark on its own, large (the landing hero): the same arc and dot, the same first-load drop and slow beat.
+// Decorative: the page's own heading says what it is.
+export function LogoMark({ size = "7rem", className = "" }) {
+  const [drop] = useState(() => !dropPlayed);
+  useEffect(() => { dropPlayed = true; }, []);
+  return (
+    <svg className={["logo__mark", "logo-mark", drop && "logo--drop", className].filter(Boolean).join(" ")} width={size} height={size}
+      viewBox="0 0 160 160" aria-hidden="true" focusable="false">
+      <path d={HELD_ARC} fill="none" stroke="currentColor" strokeWidth="17" strokeLinecap="round" />
+      <circle className="logo__dot" cx="80" cy="64" r="19" fill="var(--color-pulse)" />
+    </svg>
+  );
+}
+
 export default function Logo({ size = "2.25rem", href = "/" }) {
   // Same value on the server and in the first client render, so hydration matches.
   const [drop] = useState(() => !dropPlayed);

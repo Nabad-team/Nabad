@@ -58,7 +58,7 @@ describe("the result's Held mark", () => {
     expect(mark.querySelector(".held__ring")).toBeNull();
     expect(card).not.toHaveClass("urgency--enter");
     // No class anywhere on the card that the stylesheet animates.
-    const animated = new Set(["urgency--enter", "held--resting", "held--thinking", "held--done", "held--breathe", "held__ring", "logo--drop"]);
+    const animated = new Set(["urgency--enter", "held--resting", "held--thinking", "held--done", "breathing-dot", "breathing-dot--cycle", "held__ring", "logo--drop"]);
     const classes = [...container.querySelectorAll("[class]")].flatMap((element) => [...element.classList]);
     expect(classes.filter((name) => animated.has(name))).toEqual([]);
     // And the urgent state itself has no animation or transition in the stylesheet.

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ProfileHeader from "../components/ProfileHeader";
 import Dialog from "../components/Dialog";
-import { MedicineBox } from "../components/illustrations";
 import PageLayout from "../components/ui/PageLayout";
 import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
@@ -10,6 +9,7 @@ import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
 import NumText from "../components/ui/NumText";
 import EmptyState from "../components/ui/EmptyState";
+import HeldIcon from "../components/ui/HeldIcon";
 import MoreMenu from "../components/ui/MoreMenu";
 import Card from "../components/ui/Card";
 import { MedicationsSkeleton } from "../components/ui/Skeleton";
@@ -323,7 +323,8 @@ export default function MedicationsPage() {
           {editing === "prescription" && <PrescriptionScan profileId={profileId} listName={listName} onDone={handlePrescriptionDone} onCancel={() => setEditing(null)} />}
 
           {medications.length === 0 && editing !== "add" && editing !== "prescription" && (
-            <EmptyState illustration={<MedicineBox size="4rem" />}
+            // The Held medicine icon; "Add medication" in the header row is the one clear action (not repeated here).
+            <EmptyState illustration={<span className="empty-state__icon"><HeldIcon name="medicine" size="2rem" /></span>}
               title={forSelf ? "No medications yet: add the ones you take so they're ready for your doctor." : `No medications yet: add the ones ${name} takes so they're ready for their doctor.`} />
           )}
 

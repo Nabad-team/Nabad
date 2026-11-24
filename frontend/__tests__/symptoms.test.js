@@ -156,10 +156,17 @@ describe("Symptoms Page", () => {
     }]);
 
     render(<SymptomsPage />);
-    const summary = await screen.findByText(/See a doctor soon/);
-    expect(summary.closest("summary")).toHaveTextContent("See a doctor soon");
-    await userEvent.setup().click(summary.closest("summary"));
-    expect(screen.getByText(/I said the cough is getting worse/)).toBeInTheDocument();
+    // One timeline row: the date, the person's words and the level chip; a chevron button opens the conversation.
+    const list = await screen.findByRole("list", { name: "Previous symptom checks" });
+    const row = within(list).getAllByRole("listitem")[0];
+    expect(within(row).getByText("See a doctor soon")).toHaveClass("level-chip", "level-chip--soon");
+    expect(row).toHaveTextContent("Past cough");
+    const toggle = within(row).getByRole("button", { name: /^Conversation from / });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText(/I said the cough is getting worse/)).not.toBeVisible();
+    await userEvent.setup().click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(/I said the cough is getting worse/)).toBeVisible();
   });
 
   test("does not submit when symptoms are empty", async () => {
