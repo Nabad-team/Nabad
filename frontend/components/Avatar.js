@@ -1,12 +1,12 @@
 import { useState } from "react";
 
-// Teal and terracotta shades from the Nabad palette (never red: red means an emergency or an error).
+// Spruce green and terracotta shades from the Nabad palette (never red: red means an emergency or an error).
 // All keep white text above WCAG AA (4.5:1); checked in __tests__/Avatar.test.js.
 export const AVATAR_COLORS = [
-  "#0f766e", // logo teal
-  "#115e59", // deep teal
-  "#134e4a", // darkest teal
-  "#2c6e63", // green teal
+  "#1d4434", // spruce (the Nabad green)
+  "#12301f", // deep spruce
+  "#2a5a46", // forest
+  "#3a5f50", // moss
   "#9c4a2f", // terracotta
   "#8a4529", // deep terracotta
   "#7a3a24", // darkest terracotta

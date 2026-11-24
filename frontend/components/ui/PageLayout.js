@@ -40,7 +40,7 @@ export default function PageLayout({ title, header, width: requestedWidth, varia
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} key="og:image" />
         <meta property="og:image:width" content="1200" key="og:image:width" />
         <meta property="og:image:height" content="630" key="og:image:height" />
-        <meta property="og:image:alt" content="The Nabad logo: a pulse line in a rounded teal square" key="og:image:alt" />
+        <meta property="og:image:alt" content="The Nabad logo, a cupped arc holding a dot, and the line: Find the right care, at the right time." key="og:image:alt" />
         <meta name="twitter:card" content="summary_large_image" key="twitter:card" />
       </Head>
       <a href="#main" className="skip-link">Skip to main content</a>

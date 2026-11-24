@@ -5,7 +5,6 @@ import fs from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { LinesSkeleton, RowsSkeleton, CardsSkeleton, MedicationOverviewSkeleton } from "../components/ui/Skeleton";
-import * as Heartbeat from "../components/ui/Heartbeat";
 import { inSentence } from "../components/ProfileCoverage";
 
 const ROOT = path.join(__dirname, "..");
@@ -20,11 +19,12 @@ const files = [...sources("pages"), ...sources("components")];
 
 test("no page or component uses the old heartbeat loader, and the component is gone", () => {
   expect(files.filter(([, code]) => /HeartbeatLoader/.test(code)).map(([file]) => file)).toEqual([]);
-  expect(Heartbeat.HeartbeatLoader).toBeUndefined();
+  // Phase 2 of the Held refresh removed components/ui/Heartbeat.js altogether (the title bar replaced its line).
+  expect(fs.existsSync(path.join(ROOT, "components", "ui", "Heartbeat.js"))).toBe(false);
 });
 
 test("the animated loader appears only on the Symptom check", () => {
-  const users = files.filter(([file, code]) => /<AssistantLoader\b/.test(code) && !file.endsWith("NabadAssistant.js")).map(([file]) => file);
+  const users = files.filter(([file, code]) => /<HeldLoader\b|state="thinking"/.test(code) && !file.endsWith("HeldMark.js")).map(([file]) => file);
   expect(users).toEqual([path.join("pages", "symptoms.js")]);
 });
 

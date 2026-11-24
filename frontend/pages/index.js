@@ -3,7 +3,8 @@ import PageLayout, { SiteHeader } from "../components/ui/PageLayout";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
-import { HeartbeatDivider } from "../components/ui/Heartbeat";
+import { TitleBar } from "../components/ui/PageTitle";
+import HeldMark from "../components/ui/HeldMark";
 import { MedicineBox, PersonWithPhone, SmallHouse, TwoHearts } from "../components/illustrations";
 import { URGENCY_SCALE, UrgencyIcon } from "../components/UrgencyResult";
 
@@ -108,8 +109,9 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="hero__text">
+          <HeldMark state="resting" size="7rem" className="hero__mark" />
           <h1>Know where to go when it matters.</h1>
-          <HeartbeatDivider />
+          <TitleBar />
           <p className="lead">
             Tell us how you feel. We'll help you understand how urgent it is and find a hospital that can
             treat you.

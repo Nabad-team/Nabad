@@ -43,7 +43,8 @@ import {
   useAccessibility,
 } from "../context/AccessibilityContext";
 import { formatDateTime } from "../lib/dates";
-import NabadAssistant, { AssistantLoader } from "../components/NabadAssistant";
+import NabadAssistant from "../components/NabadAssistant";
+import { HeldLoader } from "../components/ui/HeldMark";
 import { AiUsageLine } from "../components/AiUsage";
 import { getAiUsage } from "../lib/aiUsageApi";
 
@@ -57,6 +58,12 @@ const MAX_LENGTH = 2000;
 
 const SHOW_COUNT_FROM = 1500;
 
+
+// The first 120 characters of what the person wrote, for the panel while a check runs.
+function shortSummary(text) {
+  const clean = String(text || "").trim().replace(/\s+/g, " ");
+  return clean.length > 120 ? `${clean.slice(0, 117).trimEnd()}...` : clean;
+}
 
 export default function SymptomsPage() {
   const {
@@ -169,7 +176,7 @@ export default function SymptomsPage() {
     }
   }
 
-  // While a check is running: the button says "Checking...", can't be pressed again, and the heartbeat loader shows.
+  // While a check is running: the button says "Checking...", can't be pressed again, and the Held mark turns (HeldLoader).
   const [checking, setChecking] = useState(false);
   const checkingRef = useRef(false);
   // A short sentence for screen readers when a result arrives (a live region that is always on the page,
@@ -774,7 +781,18 @@ export default function SymptomsPage() {
         <AiUsageLine usage={aiUsage} noun="AI checks" showFrom={usageLineFrom(aiUsage)} />
       </form>
 
-      {checking && <AssistantLoader label="Checking your symptoms" />}
+      {/* While a check runs: a calm panel. The status line says only "Checking your symptoms"; the person's own words
+          and the way to 140 sit beside it. No progress steps: we don't know how long it will take. */}
+      {checking && (
+        <div className="checking-panel">
+          <HeldLoader label="Checking your symptoms" size="8.75rem" />
+          {symptoms.trim() && <p className="checking-panel__summary">“{shortSummary(symptoms)}”</p>}
+          <p className="checking-panel__emergency">
+            <span>Can&apos;t breathe, chest pain, or fainting?</span>
+            <a href="tel:140" className="button button--danger">Call 140</a>
+          </p>
+        </div>
+      )}
 
       <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
 

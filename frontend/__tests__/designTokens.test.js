@@ -36,6 +36,32 @@ describe("Design tokens", () => {
     expect(contrast(highContrast["--color-on-primary"], highContrast["--color-primary"])).toBeGreaterThanOrEqual(4.5);
   });
 
+  // Every text pair in the tokens.css comments (4.5:1), and control boundaries and graphics (3:1). The PR and
+  // docs/design-system.md list the same numbers.
+  test.each([
+    ["--color-text", "--color-bg", 4.5], ["--color-text", "--color-sunken", 4.5],
+    ["--color-text-muted", "--color-bg", 4.5], ["--color-text-muted", "--color-surface", 4.5], ["--color-text-muted", "--color-sunken", 4.5],
+    ["--color-placeholder", "--color-surface", 4.5],
+    ["--color-primary", "--color-bg", 4.5], ["--color-primary-strong", "--color-primary-soft", 4.5],
+    ["--color-accent", "--color-bg", 4.5], ["--color-accent-strong", "--color-accent-soft", 4.5],
+    ["--color-danger", "--color-bg", 4.5], ["--color-on-primary", "--color-danger", 4.5], ["--color-danger-strong", "--color-danger-soft", 4.5],
+    ["--color-success", "--color-bg", 4.5], ["--color-success-strong", "--color-success-soft", 4.5],
+    ["--color-warning-strong", "--color-warning-soft", 4.5],
+    ["--color-urgent", "--color-bg", 4.5], ["--color-urgent-strong", "--color-urgent-soft", 4.5],
+    ["--color-routine", "--color-bg", 4.5], ["--color-routine-strong", "--color-routine-soft", 4.5],
+    ["--color-wellbeing", "--color-bg", 4.5], ["--color-wellbeing-strong", "--color-wellbeing-soft", 4.5],
+    ["--color-border-strong", "--color-bg", 3], ["--color-border-strong", "--color-surface", 3], ["--color-border-strong", "--color-sunken", 3],
+    ["--color-warning", "--color-bg", 3], ["--color-warning", "--color-warning-soft", 3],
+    ["--color-pulse", "--color-bg", 3], ["--color-pulse-on-dark", "--color-primary-strong", 3],
+  ])("%s on %s is at least %s:1", (fg, bg, min) => {
+    expect(contrast(root[fg], root[bg])).toBeGreaterThanOrEqual(min);
+  });
+
+  test("the high-contrast routine colours stay readable", () => {
+    expect(contrast(highContrast["--color-routine-strong"], highContrast["--color-routine-soft"])).toBeGreaterThanOrEqual(7);
+    expect(contrast(highContrast["--color-routine"], highContrast["--color-bg"])).toBeGreaterThanOrEqual(7);
+  });
+
   // An undefined token silently falls back to the inherited value: that is how today's date in the
   // appointments calendar ended up as dark text on teal.
   test("every --color-* token used in the stylesheets is defined", () => {

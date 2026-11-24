@@ -1,4 +1,5 @@
 import Button from "./ui/Button";
+import HeldMark from "./ui/HeldMark";
 
 import {
   triageProviderLabel,
@@ -45,11 +46,13 @@ export function UrgencyIcon({ level, className = "urgency__icon" }) {
   );
 }
 
-// The 4-step scale under the result. The current step is marked by its colour, its icon, bold text,
-// a written "This result" and aria-current, so it never relies on colour alone.
+// The 4-step scale under the heading: a compact bar of four segments, the current one in full colour and the
+// others faded. The written line "Level 2 of 4: See a doctor soon", the current step's icon, "This result" and
+// aria-current mean it never relies on colour alone.
 function UrgencyScale({ level }) {
+  const index = URGENCY_SCALE.findIndex(([key]) => key === level);
   return (
-    <div className="urgency-scale">
+    <div className="urgency-scale urgency-scale--bar">
       <p id="urgency-scale-label" className="urgency-scale__label">Urgency scale, from lowest to highest</p>
       <ol aria-labelledby="urgency-scale-label" className="urgency-scale__steps">
         {URGENCY_SCALE.map(([key, label]) => {
@@ -64,6 +67,7 @@ function UrgencyScale({ level }) {
           );
         })}
       </ol>
+      {index >= 0 && <p className="urgency-scale__level">Level <span className="num">{index + 1}</span> of 4: {URGENCY_SCALE[index][1]}</p>}
     </div>
   );
 }
@@ -183,6 +187,8 @@ export default function UrgencyResult({
 
   // Emergencies keep role="alert". Other results are announced by the page's own live region
   // (pages/symptoms.js), which then moves focus here (tabIndex -1).
+  // Motion rule 1: an emergency never waits. It renders with no entrance animation and no delay; the other levels
+  // fade in once (urgency--enter, 200ms ease-out, styles/components.css).
   return (
     <section
       id="symptom-result"
@@ -193,21 +199,38 @@ export default function UrgencyResult({
           ? "alert"
           : undefined
       }
-      className={`urgency urgency--${level}`}
+      className={`urgency urgency--${level}${isEmergency ? "" : " urgency--enter"}`}
     >
+      {/* The header block, in the level's soft colour: the Held mark (the done ring in the level colour; for an
+          emergency the still, danger-coloured urgent mark), the level, how soon, and the engine's action. */}
       <div className="urgency__indicator">
-        <UrgencyIcon level={level} />
-        <div>
+        <HeldMark state={isEmergency ? "urgent" : "done"} size="3.25rem" className="urgency__mark" />
+        <div className="urgency__heading-block">
           <h2 id="urgency-heading">
-            {preliminary
-              ? "Urgency so far"
-              : "Urgency"}
-            : {result.label}
+            <UrgencyIcon level={level} />
+            <span>
+              {preliminary
+                ? "Urgency so far"
+                : "Urgency"}
+              : {result.label}
+            </span>
           </h2>
           <p className="urgency__summary">
             <strong>
               {shortAction}
             </strong>
+          </p>
+          <p className="urgency__timeframe">
+            <strong>
+              How soon:
+            </strong>{" "}
+            {result.timeframe}
+          </p>
+          <p className="urgency__action">
+            <strong className="urgency__action-label">
+              What to do:
+            </strong>{" "}
+            {result.action}
           </p>
         </div>
       </div>
@@ -231,22 +254,6 @@ export default function UrgencyResult({
             answers.
           </p>
         )}
-
-
-      <p>
-        <strong>
-          How soon:
-        </strong>{" "}
-        {result.timeframe}
-      </p>
-
-
-      <p>
-        <strong>
-          What to do:
-        </strong>{" "}
-        {result.action}
-      </p>
 
 
       <p>
@@ -353,7 +360,7 @@ export default function UrgencyResult({
 
       {result.selfCareGuidance
         ?.length > 0 && (
-        <div>
+        <div className="urgency__card">
           <h3>
             Self-care guidance
           </h3>
@@ -385,7 +392,7 @@ export default function UrgencyResult({
       {/* Open the care directory with the server-selected capability filters. */}
       <p>
         <a
-          className="button button--secondary"
+          className="button button--primary button--block urgency__find-care"
           href={
             triageProviderUrl(
               result

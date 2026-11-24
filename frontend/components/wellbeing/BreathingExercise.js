@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "../ui/Button";
+import HeldMark from "../ui/HeldMark";
 import usePrefersReducedMotion from "./usePrefersReducedMotion";
 import { BREATHING_ROUNDS, BREATHING_TOTAL_SECONDS, breathingStateAt } from "../../lib/wellbeingExercises";
 
-// Guided breathing: a circle grows (breathe in, 4 s), stays (hold, 4 s) and shrinks (breathe out, 6 s), nine rounds,
+// Guided breathing: the Held mark's arcs open (breathe in, 4 s), stay open (hold, 4 s) and close (breathe out, 6 s), nine rounds,
 // about 2 minutes, with Start, Pause and Stop.
-//   - With "reduce motion" there is no circle: the same steps as text with their countdown.
+//   - With "reduce motion" there is no mark: the same steps as text with their countdown.
 //   - Screen readers hear each step once: the step line is a polite live region that only changes between steps,
 //     and the second-by-second countdown is hidden from them.
 //   - Start, Pause and Resume are one button, so focus stays on it; Stop puts the exercise back to the start.
@@ -61,19 +62,20 @@ export default function BreathingExercise({ onComplete }) {
       {status === "idle" && (
         <p>{reduced
           ? "Follow the steps: breathe in for 4 seconds, hold for 4, and breathe out for 6. About 2 minutes."
-          : "Follow the circle: breathe in as it grows, hold, and breathe out as it gets smaller. About 2 minutes."}</p>
+          : "Follow the shape: breathe in as it opens, hold, and breathe out as it closes. About 2 minutes."}</p>
       )}
-      {/* The circle is there (small) before Start, so the first "Breathe in" visibly grows it. */}
+      {/* The mark is there (closed) before Start, so the first "Breathe in" visibly opens it. */}
       {!reduced && (
         <div className="breathing__stage" aria-hidden="true">
-          <div className={`breathing__circle${active ? ` breathing__circle--${state.phase.key}` : ""}${status === "paused" ? " breathing__circle--paused" : ""}`} />
+          <HeldMark state="breathe" phase={active ? state.phase.key : "out"} paused={status === "paused"} size="100%"
+            className="breathing__mark" />
         </div>
       )}
       {/* Changes only when the step changes, so a screen reader hears "Breathe in", "Hold", "Breathe out" once each. */}
       <p className="breathing__step" aria-live="polite">{active ? (status === "paused" ? "Paused" : state.phase.label) : ""}</p>
       {active && (
         <p className="breathing__count" aria-hidden="true">
-          <span className="breathing__seconds">{state.secondsLeft}</span>
+          <span className="breathing__seconds num">{state.secondsLeft}</span>
           <span className="text-muted"> · Round {state.round} of {BREATHING_ROUNDS}</span>
         </p>
       )}

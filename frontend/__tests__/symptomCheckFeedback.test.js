@@ -198,16 +198,16 @@ describe("Nabad assistant on the symptom check", () => {
     Element.prototype.scrollIntoView = jest.fn();
   });
 
-  test("the loader is the assistant's tracing pulse line, announced only as Checking your symptoms", async () => {
+  test("the loader is the turning Held mark, announced only as Checking your symptoms", async () => {
     const user = userEvent.setup({ delay: null });
     assessUrgency.mockReturnValue(new Promise(() => {}));
     render(<SymptomsPage />);
     await user.type(screen.getByRole("textbox", { name: "Symptoms" }), "mild headache since yesterday");
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
     const loader = screen.getByText("Checking your symptoms").closest('[role="status"]');
-    const mascot = loader.querySelector("svg.nabad-assistant--tracing");
-    expect(mascot).not.toBeNull();
-    expect(mascot).toHaveAttribute("aria-hidden", "true");
+    const mark = loader.querySelector("svg.held.held--thinking");
+    expect(mark).not.toBeNull();
+    expect(mark).toHaveAttribute("aria-hidden", "true");
     expect(loader).toHaveTextContent(/^Checking your symptoms$/);
   });
 

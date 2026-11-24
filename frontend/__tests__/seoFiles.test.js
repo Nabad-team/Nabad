@@ -46,11 +46,12 @@ describe("sitemap.xml", () => {
 });
 
 describe("web app manifest", () => {
-  test("names the app, uses the teal theme and lists icons that exist", () => {
+  test("names the app, uses the Held spruce theme and paper background, and lists icons that exist", () => {
     const manifest = JSON.parse(read("site.webmanifest"));
     expect(manifest.short_name).toBe("Nabad");
     expect(manifest.name).toMatch(/^Nabad/);
-    expect(manifest.theme_color).toBe("#0f766e");
+    expect(manifest.theme_color).toBe("#12301f");
+    expect(manifest.background_color).toBe("#f6f4ee");
     expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512"]);
     for (const icon of manifest.icons) expect(fs.existsSync(path.join(__dirname, "../public", icon.src))).toBe(true);
   });

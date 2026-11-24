@@ -8,7 +8,7 @@ import Card from "./Card";
 //     so its padding, borders and grid match what replaces it.
 // Every signed-in page uses these while its data loads (docs/design-system.md, "Loading placeholders"). Actions in
 // progress (uploading, reading a prescription, searching) show a plain status line instead; the only animated
-// loader left is the Symptom check's (AssistantLoader in components/NabadAssistant.js) while it is checking.
+// loader left is the Symptom check's (HeldLoader in components/ui/HeldMark.js) while it is checking.
 
 export function SkeletonRegion({ label = "Loading...", className = "", children }) {
   return (

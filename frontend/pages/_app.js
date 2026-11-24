@@ -1,7 +1,7 @@
 import Head from "next/head";
 import OfflineSupport from "../components/OfflineSupport";
 import StagingBanner from "../components/StagingBanner";
-import { IBM_Plex_Sans } from "next/font/google";
+import { Atkinson_Hyperlegible_Mono, Atkinson_Hyperlegible_Next } from "next/font/google";
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import SessionTimeout from "../components/SessionTimeout";
 import RequireSignIn from "../components/RequireSignIn";
@@ -11,8 +11,11 @@ import "../styles/base.css";
 import "leaflet/dist/leaflet.css";
 import "../styles/components.css";
 
-// IBM Plex Sans, served from our own site by next/font (no request goes to Google from the browser).
-const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: "variable", display: "swap" });
+// Atkinson Hyperlegible Next (body and headings) and Atkinson Hyperlegible Mono (doses, times, litres, counts: the
+// .num class). Designed by the Braille Institute for readers with low vision; look-alike characters such as I l 1
+// and 0 O stay distinct. Served from our own site by next/font (no request goes to Google from the browser).
+const atkinson = Atkinson_Hyperlegible_Next({ subsets: ["latin"], weight: ["400", "700", "800"], display: "swap" });
+const atkinsonMono = Atkinson_Hyperlegible_Mono({ subsets: ["latin"], weight: ["400", "600"], display: "swap" });
 
 // Next.js wraps every page with this component. We use it to run the inactivity sign-out timer on every page,
 // and to share the active profile (self or a dependent) with all pages. The profile provider sits inside
@@ -21,10 +24,12 @@ const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: "variable", display: "s
 export default function MyApp({ Component, pageProps }) {
   return (
     <>
-      {/* Gives the font to the whole page (body, dialogs, everything), through --font-sans in styles/tokens.css. */}
+      {/* Gives the fonts to the whole page (body, dialogs, everything), through --font-sans and --font-mono in
+          styles/tokens.css. */}
       <style jsx global>{`
         :root {
-          --font-plex: ${plex.style.fontFamily};
+          --font-atkinson: ${atkinson.style.fontFamily};
+          --font-atkinson-mono: ${atkinsonMono.style.fontFamily};
         }
       `}</style>
       {/* viewport-fit=cover lets env(safe-area-inset-*) report the iPhone notch and home indicator; the page gutters,
