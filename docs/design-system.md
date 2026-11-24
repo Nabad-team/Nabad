@@ -12,7 +12,7 @@ Everything lives in three stylesheets (imported once in `frontend/pages/_app.js`
 | `frontend/styles/tokens.css` | Colors, font, type scale, spacing, radius, shadows (CSS variables) |
 | `frontend/styles/base.css` | Defaults for `body`, headings, links, form controls, focus ring |
 | `frontend/styles/components.css` | Classes used by the components below |
-| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `MoreMenu`, `InlinePanel`, `Heartbeat`, `HeldMark` |
+| `frontend/components/ui/` | `Button`, `Input`, `Card`, `Alert`, `Badge`, `EmptyState`, `PageLayout`, `PageTitle`, `MoreMenu`, `InlinePanel`, `HeldMark`, `NumText` |
 | `frontend/components/illustrations.js` | The five line drawings |
 
 **Rule of thumb:** a new page should need no `style={{...}}` and no hex colors. If you need a color or a size, use a token (`var(--color-primary)`, `var(--space-4)`). If you need something new, add it to the system rather than to your page.
@@ -26,7 +26,7 @@ Every signed-in page follows the same frame, so the app reads as one product:
 ```
 ┌ header (74rem) ─────────────────────────────────────────────────────────────┐
 │ My vitals                                              [Log reading] [More ▾] │  ← PageTitle: title + one-line lead left,
-│ ~~~~~                                                                         │    one primary action and More right
+│ ━━•                                                                           │    one primary action and More right
 │ Log measurements and see how they change over time.                           │    (stacked on phones)
 │ ───────────────────────────────────────────────────────────────────────────── │
 │ ┌ card ─────────────────────────────────────────────────────────────────────┐ │  ← data first: the list, history or
@@ -58,6 +58,42 @@ Every signed-in page follows the same frame, so the app reads as one product:
 5. **Empty states** use the one `EmptyState` component.
 
 A short form keeps its 28rem width inside its card. On a page of short sections, the card grid puts two cards side by side from 64rem, so the wide column never looks half empty.
+
+## Layouts
+
+### Phones and tablets (under 64rem, 1024px)
+
+The header and the bottom tab bar, as they were before the Held refresh: under 40rem the header has the logo, search and the bell, and the tab bar has Symptom check, Dashboard, Find care and Menu; from 40rem the header has the workspace row with the My care and My records dropdowns.
+
+**Today (the dashboard), in this order:**
+
+1. The date (muted) and the greeting, "Good morning / afternoon / evening, <first name>" in Beirut time (800 weight, 36px; 48px on desktop).
+2. **The symptom card**: deep spruce (`--color-primary-strong`), "Something feels off?", "Answer a few questions. We'll tell you where to go.", a resting Held mark (paper arcs, `--color-pulse-on-dark` dot), one light full-width button **Check a symptom**, and **Or speak instead** (`/symptoms?voice=1`, named "Speak your symptoms").
+3. **Next step** (`NextStepCard`): the time in a soft spruce mono chip, the line, and one primary button. When the Getting started card applies, Next step is hidden and Getting started sits lower down: never both.
+4. **Your day**: water and sleep (and medicines, when there are any) as small pills with their numbers in mono, linking to Water and sleep and My medications, and a round lilac button with a small breathing mark to Wellbeing ("Breathe for two minutes").
+
+Then everything else, in the order it had before: Getting started, Your progress, Quick actions and the Wellbeing Corner.
+
+### Desktop (64rem and up)
+
+```
+┌ sidebar 16rem ┐┌ header: search · bell · Acting for · account ──────────────────────┐
+│ nabad         ││ Tuesday 24 November                                                  │
+│ Symptom check ││ Good evening, Maya                                                   │
+│(Dashboard)    ││ ┌ symptom card (deep spruce, mark 190px) ┐ ┌ Next step ──────────┐ │
+│ My care     ▾ ││ │ Something feels off?          ( • )    │ │ Your day: pills     │ │
+│ My records  ▾ ││ │ [Check a symptom]                      │ │ A calm moment (lilac)│ │
+│ Health assist.││ └────────────────────────────────────────┘ └─────────────────────┘ │
+│ Find care     ││ ┌ Recent checks ─ See all ───────────────┐                          │
+│               ││ │ runny nose   [Routine]   24 Nov 2026   │                          │
+│[Emergency·140]││ └────────────────────────────────────────┘                          │
+│ (MP) Maya     ││ Getting started · Your progress · Quick actions · Wellbeing Corner  │
+└───────────────┘└──────────────────────────────────────────────────────────────────────┘
+```
+
+- **Sidebar** (`AppHeader.js`, from `useDesktopLayout()`: 64rem of the page's own text size, so with text at 200% a 1280px window keeps the phone and tablet layout instead of overflowing): stone (`--color-sunken`), 16rem, stays in view while the page scrolls. The logo, then the same "Workspace" navigation as the header row it replaces (same links, routes and My care / My records disclosures, now in a column with icons; the current page is a spruce pill), then **Emergency · 140** (`tel:140`) and the signed-in person, linking to My profile. Search, notifications, "Acting for" and the account menu stay in the header's top row. The phone tab bar isn't rendered at this width.
+- **Today**: the greeting row, then two columns. Left (wider): the symptom card large and **Recent checks** (the last three checks with their level as a chip in that level's colours and the date in mono; "See all" goes to My history). Right: Next step, Your day (water, sleep, medicines in mono) and a lilac **A calm moment** card to Wellbeing.
+- Every other page sits in the main area beside the sidebar, in its usual 74rem column.
 
 ## A new page in 30 seconds
 
@@ -137,7 +173,7 @@ Each level has its own three tokens. Colour is never the only signal: every leve
 
 Why Atkinson: the Braille Institute designed it for readers with low vision. It keeps look-alike characters distinct (`I l 1`, `0 O`), which matters when the text is a dose: 1 mg and l mg, or 10 and 1O, must never be confused.
 
-**Numbers:** put the `.num` class on doses, times, litres and counts (the medication summary and reminder lines, the drink log, the water and sleep totals, the breathing countdown, the Medication overview's Dose and Times). It switches to the mono font with tabular, slashed-zero digits at the same size. Put it on the element that already holds the text; don't split a line into extra spans for it.
+**Numbers:** only the number and its unit are mono ("500 mg", "20:00", "1.2 L"); labels stay in the normal font. In a sentence use `<NumText>` (`components/ui/NumText.js`): it finds numbers with their unit and times, shows them with `.num`, and gives screen readers (and tests) the whole sentence once as one text. Where an element holds only a number, put `.num` on it (the drink log, the breathing countdown, the Medication overview's Dose and Times, Your day's pills). `.num` is the mono font with tabular, slashed-zero digits at the same size.
 
 | Token | Size | Use |
 | --- | --- | --- |
@@ -178,23 +214,29 @@ The logo and Nabad's one moving element. A cupped arc holds a dot: someone held,
 
 **Logo** (`components/Logo.js`, props `size` and `href`): on a 160 grid, the arc `M24 74 A56 56 0 0 0 136 74` (stroke 17, round caps, `--color-primary`) and a dot (cx 80, cy 64, r 19, `--color-pulse`), then the wordmark "nabad" in lowercase, weight 800, letter-spacing -0.03em, `--color-text`. The link is named "Nabad"; the drawing is `aria-hidden`. On the first load of the app the dot drops in (10px, 500ms, `cubic-bezier(.23,1,.32,1)`), then beats slowly (scale 1 to 1.18, 2.4s); the beat pauses while the tab is hidden.
 
-**App icons** (`frontend/public/`): the mark on a deep spruce (`#12301f`) rounded square (rx 36 on 160), arc in paper `#f6f4ee`, dot `#8fd8b4`. The 16 and 32px favicons use a bolder mark (arc 22, dot r 22). `apple-touch-icon.png` is a full square because iOS rounds the corners itself. `site.webmanifest`: theme `#12301f`, background `#f6f4ee`. `og-image.png` still shows the old logo.
+**App icons** (`frontend/public/`): the mark on a deep spruce (`#12301f`) rounded square (rx 36 on 160), arc in paper `#f6f4ee`, dot `#8fd8b4`. The 16 and 32px favicons use a bolder mark (arc 22, dot r 22). `apple-touch-icon.png` is a full square because iOS rounds the corners itself. `site.webmanifest`: theme `#12301f`, background `#f6f4ee`. `og-image.png` (1200 by 630): paper, the Held logo large with "nabad", and "Find the right care, at the right time." in Atkinson Hyperlegible Next.
 
-**HeldMark** (`components/ui/HeldMark.js`): two open arcs around a dot, `<HeldMark state="..." />`. Always decorative: write what it means next to it.
+**HeldMark** (`components/ui/HeldMark.js`): two open arcs around a dot, `<HeldMark state="..." />`. Decorative (`aria-hidden`) unless it gets a `title`; always write what it means next to it.
 
 | State | What moves | Where |
 | --- | --- | --- |
-| `resting` | The dot beats slowly (2.4s) | Calm places |
-| `thinking` | The arcs turn around the dot (1.4s a turn, `cubic-bezier(.5,0,.5,1)`) | The loader: `<HeldLoader label="Checking your symptoms" />` (role `status`, visible text). The symptom check is the only animated loader |
-| `done` | A full ring draws closed (600ms, ease-out) | A finished task |
-| `breathe` | The arcs open and close in `--color-wellbeing` (10s: open 4s, close 6s). `phase="in"`, `"hold"` or `"out"` follows an exercise step by step | The breathing exercise |
-| `urgent` | Arcs in `--color-danger`, the dot beats fast (0.6s) | **Only** on an emergency result |
+| `resting` | The dot beats slowly (2.4s) | The Nabad assistant (onboarding, the symptom-check history's empty state, the health assistant greeting), the dashboard's symptom card, the landing page hero |
+| `thinking` | The arcs turn around the dot (1.4s a turn, `cubic-bezier(.5,0,.5,1)`) | The symptom check while it runs: `<HeldLoader label="Checking your symptoms" size="8.75rem" />` (role `status`, visible text). The only animated loader |
+| `done` | A full ring draws closed once (600ms, ease-out), in the level's colour | The header of a routine, see-a-doctor-soon or urgent result |
+| `breathe` | The arcs open and close in `--color-wellbeing` (10s: open 4s, close 6s). `phase="in"`, `"hold"` or `"out"` follows an exercise step by step | The breathing exercise, the dashboard's breathe button and A calm moment card |
+| `urgent` | Nothing: arcs and dot in `--color-danger`, completely still | **Only** on an emergency result |
 
-**The heartbeat line** (`components/ui/Heartbeat.js`) stays for now as a quiet line under page titles (`PageTitle` draws it). It is not a loader.
+### The page title bar
+
+Under every page title (`PageTitle`, and the landing headline through `TitleBar`): a static 28 by 3px spruce bar ending in a 6px pulse dot. It replaced the heartbeat line; `components/ui/Heartbeat.js` is gone.
 
 ```jsx
 <PageTitle lead="Optional short sentence under the title.">Your medicines</PageTitle>
 ```
+
+### Kept as it is for now: the offline page
+
+`public/offline.html` (the page the service worker shows when Nabad can't connect) keeps its pre-Held colours and fonts. The service worker serves it cache-first under `nabad-public-help-v2`, so a restyle also means a new cache version and a careful check of the offline emergency path (`public/service-worker.js`, `offline-emergency.js`). That page exists to show 140 when nothing else loads; it isn't worth touching for looks alone. Restyle it together with a planned service-worker change.
 
 ## Motion
 
@@ -202,23 +244,22 @@ The logo and Nabad's one moving element. A cupped arc holds a dot: someone held,
 2. **Interface motion is 150 to 250ms, ease-out** (`--duration-enter`, `--ease-out`).
 3. **Things people see often barely move.** An entrance plays once per visit, not on every return.
 4. **Only the Held mark moves on its own.** Nothing else loops, pulses or moves to draw attention.
-5. **Only `transform` and `opacity` animate** (the `done` ring's `stroke-dashoffset` is the one exception). With `prefers-reduced-motion` everything is still: the logo dot doesn't drop or beat, and every Held state is static.
+5. **Only `transform` and `opacity` animate** (the `done` ring's `stroke-dashoffset` is the one exception). With `prefers-reduced-motion` everything is still: the logo dot doesn't drop or beat, and every Held state is static. The `urgent` state is still for everyone.
 
 ### The Nabad assistant
 
-A small friendly face drawn from the pulse line: the big beat of the heartbeat becomes a rounded head peeking up ("Pulse peek"). It is not a person, a doctor or a nurse. `components/NabadAssistant.js`:
+The illustrated mascot ("Pulse peek") is **retired** (Held refresh, Phase 2). `components/NabadAssistant.js` keeps its props, so its callers didn't change, but it now draws the resting Held mark:
 
 ```jsx
 import NabadAssistant from "../components/NabadAssistant";
-<NabadAssistant size="4.5rem" title="Nabad assistant" />            // full drawing, 4rem and up
-<NabadAssistant size="3rem" crop="head" title="Nabad assistant" />  // cropped to the head, bigger eyes: 2 to 3rem
+<NabadAssistant size="4.5rem" title="Nabad assistant" />   // the resting Held mark, named "Nabad assistant"
+<NabadAssistant size="3rem" crop="head" />                 // crop is kept for compatibility; without a title it's decorative
 ```
 
-- **Only in calm places:** onboarding (step 1), empty states (the symptom-check history) and the health assistant greeting. Since the Held refresh the symptom-check loader is the Held mark. Phase 2 decides the assistant's new look.
+- `size` sets the mark's size, `title` its accessible name (role `img`), and `tracing` shows the thinking state. `AssistantLoader` is gone: the loader is `HeldLoader`.
+- **Only in calm places:** onboarding (step 1), empty states (the symptom-check history) and the health assistant greeting.
 - **Never** on urgent or emergency results, next to the emergency dialog, on the emergency card (or its offline copy), or on any "Call 140" screen or bar. The symptom check hides it as soon as a result is urgent or an emergency.
-- Name it "Nabad assistant" (`title`) where it carries meaning.
 - Next to the assistant, keep the existing wording "Nabad gives guidance, not a diagnosis."
-- Line in `--color-primary`, eyes and smile in `--color-primary-strong`, round ends, no fills. Below about 3rem use `crop="head"` so the face stays readable.
 
 ---
 
@@ -343,9 +384,24 @@ Use `role="alert"` for errors that need attention now and `role="status"` for ca
 
 ### Symptom check result
 
-While a check runs, the submit button reads "Checking..." and is disabled, and `HeldLoader` (the Held mark, thinking) shows "Checking your symptoms". When the result arrives (or follow-up answers update it), the page moves focus to the result card, scrolls to it (instantly with reduced motion) and announces one short line in a live region that is always on the page. Emergencies are the exception: the emergency dialog takes focus and the card keeps `role="alert"`.
+While a check runs, the submit button reads "Checking..." and is disabled, and a calm panel shows the thinking Held mark (about 140px) with "Checking your symptoms" (the only text in its `role="status"`), the person's own words (the first 120 characters) and a line that stays: "Can't breathe, chest pain, or fainting?" with a red **Call 140** button. No progress steps: we don't know how long a check takes. When the result arrives (or follow-up answers update it), the page moves focus to the result card, scrolls to it (instantly with reduced motion) and announces one short line in a live region that is always on the page. Emergencies are the exception: the emergency dialog takes focus and the card keeps `role="alert"`.
 
-The card starts with the level's icon, "Urgency: <label>" and one short line, then a 4-step scale (Routine / self-care, See a doctor soon, Urgent, Emergency) using the triage API's own labels. The current step has its colour, its icon, bold text, "This result" and `aria-current="step"`. Colours: [The urgency scale](#the-urgency-scale). An emergency card appears instantly ([Motion](#motion), rule 1). The scale only displays the server's level; it never decides one.
+**Result anatomy** (`components/UrgencyResult.js`). Everything the engine returns is shown, in the same order of importance; only the look changed in the Held refresh:
+
+1. **Header block**, in the level's soft colour with a border in the level colour: the Held mark, "Urgency: <label>" with the level's icon, one short line ("Call now", "Get help today", "See a doctor soon", "You can monitor this"), "How soon: <timeframe>", then "What to do:" and the engine's action in large heavy text.
+2. **The scale bar**: four segments (routine, soon, urgent, emergency), the current one in full colour and the others faded, and the line "Level 2 of 4: See a doctor soon". The list keeps every step name, the current step's icon, "This result" and `aria-current="step"` for screen readers. It only displays the server's level; it never decides one.
+3. Notes ("Answer the questions below...", "Updated using your answers."), Read aloud, and for an emergency **Call 140 now**.
+4. **White cards**: "Why we suggest this" (with the red flags, "Get help sooner if things change", in a block with a soft danger outline) and the self-care guidance.
+5. The disclaimer ("This is guidance, not a diagnosis..."), **Print or save as PDF**, and **find care** as the spruce full-width primary button (the providers link with the level's filters). Checks are saved to the history automatically, as before.
+
+| Level | Mark | Header colours |
+| --- | --- | --- |
+| Routine / self-care | `done` ring, drawn once, in `--color-routine` | routine |
+| See a doctor soon | `done` ring in `--color-warning` | warning |
+| Urgent | `done` ring in `--color-urgent` | urgent |
+| Emergency | `urgent`: still, in `--color-danger` | danger |
+
+An emergency card appears instantly, with nothing animated anywhere on it ([Motion](#motion), rule 1; `__tests__/heldRefreshPhase2.test.js`). The other levels fade in once (200ms).
 
 ### Next step (dashboard)
 
@@ -362,8 +418,8 @@ The card starts with the level's icon, "Urgency: <label>" and one short line, th
 - Every time is Beirut time (`APP_TIME_ZONE`), whatever the device's time zone. A dose after midnight belongs to tomorrow, so ticking today's check-in doesn't hide it. A once-a-day medication already checked off today is skipped. With two or more doses a day the next dose still shows, because the check-in is one tick per day.
 - For a linked profile the line names them: "Sami's Amlodipine 5 mg is due at 08:00", "Cardiology check-up for Sami on Friday: prepare the visit", "Add Sami's health basics for safer guidance", "Log Sami's sleep from last night".
 - The line starts with a capital even when it starts with something the user typed ("checking on my date" becomes "Checking on my date today: prepare your visit").
-- Plain reminders only, never medical advice. It sits under the email bar and the page title and above Symptom check, and it is never placed above or instead of an emergency message.
-- Looks like: a white card with a spruce left edge, a small "Next step" label (its h2), the line in large text, and one secondary button (it must not compete with the spruce Symptom check panel).
+- Plain reminders only, never medical advice. It sits under the greeting and the symptom card ([Layouts](#layouts)), and it is never placed above or instead of an emergency message.
+- Looks like: a white card with a spruce left edge, a small "Next step" label (its h2), the line in large text with a dose time in a soft spruce mono chip ("at" stays in the sentence for screen readers), and one primary button.
 
 ### Getting started (dashboard)
 
@@ -432,7 +488,7 @@ The white surface the dashboard uses. On signed-in pages, **page content sits in
 - **Same layout:** a page skeleton reuses the real list and card classes (`.medication`, `.appointment`, `.medical-documents__list li`, `.provider-card`, `.card-grid`, `.vitals-charts`, `.progress-summary__item`) and puts `<Bone />` shapes inside. A new list page adds its own skeleton the same way.
 - **Header actions:** a page that shows its primary action or More only after loading passes `loadingActions={2}` (or 1) to `PageTitle` while it loads. Button-shaped placeholders (`aria-hidden`) then hold the row, so the list doesn't move down when the buttons appear (My medications, My appointments).
 - **Motion:** a slow shimmer, and no animation with `prefers-reduced-motion`. Skeletons never print.
-- **Kept in check:** `__tests__/loadingPlaceholders.test.js` fails if a page brings back the heartbeat loader or uses the Held loader outside the Symptom check.
+- **Kept in check:** `__tests__/loadingPlaceholders.test.js` fails if a page brings back the heartbeat loader (or `Heartbeat.js`) or uses the Held loader outside the Symptom check.
 - The Selenium accessibility audit waits until no `.loader` and no `[aria-busy="true"]` region is on screen before it scans.
 
 ### Wellbeing exercises
@@ -489,7 +545,7 @@ Drawings are 4rem. The default is the clipboard; use the medicine box for medica
 | `.button-row` | Buttons side by side, wrapping on phones |
 | `.details` + `.details__label` | Label above value (profile details) |
 | `.plain-list` | Rows separated by thin lines (linked profiles) |
-| `.check-in` | The one light-green panel for the main thing to do on a page (dashboard) |
+| `.symptom-card` | The dashboard's deep spruce symptom card: the one main thing to do on Today |
 | `.visually-hidden` | Text for screen readers only |
 
 ---

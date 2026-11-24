@@ -8,6 +8,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
+import NumText from "../components/ui/NumText";
 import EmptyState from "../components/ui/EmptyState";
 import MoreMenu from "../components/ui/MoreMenu";
 import Card from "../components/ui/Card";
@@ -275,9 +276,9 @@ export default function MedicationsPage() {
       onCancel={() => setEditing(null)}
     /> : <>
       <div className="medication__heading"><h3>{medication.name}</h3>{medication.status === "active" ? <Badge>Active</Badge> : <Badge tone="neutral">Discontinued</Badge>}</div>
-      {summary(medication) && <p className="medication__summary num">{summary(medication)}</p>}
+      {summary(medication) && <p className="medication__summary"><NumText>{summary(medication)}</NumText></p>}
       <p className="text-muted text-sm">{dates(medication)}</p>
-      {medication.reminderTimes?.length > 0 && <p className="num">Daily reminders: {medication.reminderTimes.join(", ")} ({medication.reminderTimeZone}){medication.status === "discontinued" ? " — paused" : ""}</p>}
+      {medication.reminderTimes?.length > 0 && <p><NumText>{`Daily reminders: ${medication.reminderTimes.join(", ")} (${medication.reminderTimeZone})${medication.status === "discontinued" ? " — paused" : ""}`}</NumText></p>}
       {medication.notes && <p className="medication__notes"><span className="text-muted">Notes:</span> {medication.notes}</p>}
       <div className="button-row">
         <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>

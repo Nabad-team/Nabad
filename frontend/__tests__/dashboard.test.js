@@ -2,7 +2,11 @@
 // These tests run automatically on every pull request.
 
 import { render, screen, act, within, fireEvent } from "@testing-library/react";
-import DashboardPage from "../pages/dashboard";
+import DashboardPage, { greetingFor } from "../pages/dashboard";
+// The greeting follows the time of day in Beirut ("Good morning/afternoon/evening, Demo"); the tests build the
+// exact text the page shows right now.
+const greeting = (name) => `${greetingFor()}, ${name}`;
+const ANY_GREETING = /Good (morning|afternoon|evening)/;
 import { ActiveProfileProvider } from "../context/ActiveProfileContext";
 import { AccessibilityProvider } from "../context/AccessibilityContext";
 import { getMyProfile, updateMyProfile, addLinkedProfile } from "../lib/profileApi";
@@ -61,24 +65,24 @@ describe("Dashboard Page", () => {
     mockStatus = "signedIn";
   });
 
-  test("welcomes the demo user by name", async () => {
+  test("greets the demo user by name, with the time of day", async () => {
     renderDashboard();
 
     expect(
-      await screen.findByText("Welcome, Demo")
+      await screen.findByText(greeting("Demo"))
     ).toBeInTheDocument();
   });
 
   test("doesn't repeat the menu as a second set of section tiles", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
     expect(screen.queryByRole("heading", { name: "Explore your health space" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Dashboard sections" })).not.toBeInTheDocument();
   });
 
   test("offers direct quick actions for common health tasks", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
     const quickActions = screen.getByRole("navigation", { name: "Quick actions" });
     expect(within(quickActions).getByRole("link", { name: "Log vitals" })).toHaveAttribute("href", "/vitals");
     expect(within(quickActions).getByRole("link", { name: "Add medication" })).toHaveAttribute("href", "/medications");
@@ -102,20 +106,20 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     expect(
-      await screen.findByText("Welcome, Layla")
+      await screen.findByText(greeting("Layla"))
     ).toBeInTheDocument();
   });
 
   test("greets the user by first name only", async () => {
     renderDashboard();
 
-    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Welcome, Demo");
-    expect(screen.queryByText(/Welcome, Demo User/)).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(greeting("Demo"));
+    expect(screen.queryByText(`${greetingFor()}, Demo User`)).not.toBeInTheDocument();
   });
 
   test("links to the security settings once, from the account menu", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
     expect(screen.queryByRole("link", { name: "Account security" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
@@ -126,7 +130,7 @@ describe("Dashboard Page", () => {
 
   test("keeps the picture controls on the profile page, not the dashboard", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
 
     expect(screen.queryByRole("button", { name: "Upload picture" })).not.toBeInTheDocument();
   });
@@ -135,7 +139,7 @@ describe("Dashboard Page", () => {
     renderDashboard();
     expect(screen.getByText("Loading...")).toBeInTheDocument();
 
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
   });
 
@@ -144,7 +148,7 @@ describe("Dashboard Page", () => {
 
     renderDashboard();
 
-    expect(await screen.findByText("Welcome, Rami")).toBeInTheDocument();
+    expect(await screen.findByText(greeting("Rami"))).toBeInTheDocument();
     expect(screen.queryByText(/Demo User/)).not.toBeInTheDocument();
   });
 
@@ -155,14 +159,14 @@ describe("Dashboard Page", () => {
     await act(async () => {});
 
     expect(fakeProfileApi.profileLoads).toBe(0);
-    expect(screen.queryByText(/Welcome/)).not.toBeInTheDocument();
+    expect(screen.queryByText(ANY_GREETING)).not.toBeInTheDocument();
   });
 
   test("forgets the profiles after signing out", async () => {
     const child = await addLinkedProfile({ fullName: "Sami", dateOfBirth: "2015-03-10", relationship: "child" });
     localStorage.setItem("nabad-active-profile-id", child.id);
     const { rerender } = renderDashboard();
-    await screen.findByText("Welcome, Sami");
+    await screen.findByText(greeting("Sami"));
 
     mockStatus = "ended";
     rerender(
@@ -172,7 +176,7 @@ describe("Dashboard Page", () => {
     );
 
     await act(async () => {});
-    expect(screen.queryByText(/Welcome/)).not.toBeInTheDocument();
+    expect(screen.queryByText(ANY_GREETING)).not.toBeInTheDocument();
     expect(localStorage.getItem("nabad-active-profile-id")).toBeNull();
   });
 
@@ -193,14 +197,14 @@ describe("Dashboard Page", () => {
 
     renderDashboard();
 
-    expect(await screen.findByText("Welcome, Sami")).toBeInTheDocument();
+    expect(await screen.findByText(greeting("Sami"))).toBeInTheDocument();
     // The "managing ... care" note belongs to /profile only.
     expect(screen.queryByText(/You're managing/)).not.toBeInTheDocument();
   });
 
   test("account menu contains the account links", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
 
     fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     expect(
@@ -210,11 +214,12 @@ describe("Dashboard Page", () => {
 
   test("offers to check how you're feeling by typing or by speaking", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
 
-    expect(screen.getByRole("heading", { name: "Symptom check" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Something feels off?" })).toBeInTheDocument();
+    expect(screen.getByText("Answer a few questions. We'll tell you where to go.")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Type your symptoms" })
+      screen.getByRole("link", { name: "Check a symptom" })
     ).toHaveAttribute("href", "/symptoms");
     // Speak opens the symptoms page already listening.
     expect(
@@ -230,7 +235,7 @@ describe("Dashboard Page", () => {
 
     renderDashboard();
 
-    expect(await screen.findByRole("heading", { name: "Symptom check" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Something feels off?" })).toBeInTheDocument();
     expect(screen.getByText("Choose how to tell us.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Account menu" }));
     const accountMenu = document.getElementById("account-menu");
@@ -283,16 +288,16 @@ describe("Dashboard Page", () => {
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 
-  test("the Next step card sits under the title, above Symptom check, and loads the data only once", async () => {
+  test("the Next step card sits under the title and the symptom card, and loads the data only once", async () => {
     renderDashboard();
     const card = await screen.findByRole("region", { name: "Next step" });
     // The demo user has health basics left to fill in (and no dose or visit coming up).
     expect(card).toHaveTextContent("Add your health basics for safer guidance");
     expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
     const title = screen.getByRole("heading", { level: 1 });
-    const symptomCheck = screen.getByRole("heading", { name: "Symptom check" });
-    expect(title.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(card.compareDocumentPosition(symptomCheck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const symptomCard = screen.getByRole("heading", { name: "Something feels off?" });
+    expect(title.compareDocumentPosition(symptomCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(symptomCard.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The card and Your progress share one set of requests.
     await screen.findByText("0 of 5 health basics are filled in.");
     expect(fakeHealth.calls.filter(([name]) => name === "getHealthProfile")).toHaveLength(1);
@@ -351,7 +356,7 @@ describe("Dashboard Page", () => {
 
   test("is short: the Wellbeing Corner is one compact card, and 140 shows once besides the footer", async () => {
     renderDashboard();
-    await screen.findByText("Welcome, Demo");
+    await screen.findByText(greeting("Demo"));
     const corner = screen.getByRole("region", { name: "Wellbeing Corner" });
     // Today's message and both numbers stay visible; tips and notes are under More.
     expect(within(corner).getByRole("link", { name: "Call 1564" })).toHaveAttribute("href", "tel:1564");

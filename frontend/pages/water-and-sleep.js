@@ -10,6 +10,7 @@ import WindDown from "../components/wellbeing/WindDown";
 import WellbeingHelp from "../components/wellbeing/WellbeingHelp";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
+import NumText from "../components/ui/NumText";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
 import { CardsSkeleton } from "../components/ui/Skeleton";
@@ -41,7 +42,7 @@ function WaterToday({ water, who, onAdd, onUndo, onSetGoal, onClearGoal, busy })
       <h2 id="water-heading">Water today</h2>
       <div role="status" className="tracker__status">
         <p className="tracker__count">
-          <strong className="num">{waterCountText(totalMl, goal)}</strong>
+          <strong><NumText>{waterCountText(totalMl, goal)}</NumText></strong>
           {goalLine && !status && <span className="text-muted"> {goalLine}</span>}
         </p>
         {status && <Alert tone="warning" as="p">{goalLine}</Alert>}
@@ -68,7 +69,7 @@ function WaterToday({ water, who, onAdd, onUndo, onSetGoal, onClearGoal, busy })
           <h3 id="drink-log-heading">Today's log</h3>
           <ul aria-labelledby="drink-log-heading">
             {entries.map((entry, i) => (
-              <li key={i} className="num"><span className="drink-log__time">{timeText(entry.at)}</span> {mlText(entry.ml)}</li>
+              <li key={i}><span className="drink-log__time num">{timeText(entry.at)}</span> <span className="num">{mlText(entry.ml)}</span></li>
             ))}
           </ul>
           <Button variant="secondary" size="small" onClick={onUndo} disabled={busy} aria-describedby="undo-detail">Undo last drink</Button>
