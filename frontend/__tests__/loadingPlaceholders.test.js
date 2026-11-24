@@ -24,7 +24,7 @@ test("no page or component uses the old heartbeat loader, and the component is g
 });
 
 test("the animated loader appears only on the Symptom check", () => {
-  const users = files.filter(([file, code]) => /<AssistantLoader\b/.test(code) && !file.endsWith("NabadAssistant.js")).map(([file]) => file);
+  const users = files.filter(([file, code]) => /<HeldLoader\b|state="thinking"/.test(code) && !file.endsWith("HeldMark.js")).map(([file]) => file);
   expect(users).toEqual([path.join("pages", "symptoms.js")]);
 });
 

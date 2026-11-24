@@ -183,6 +183,8 @@ export default function UrgencyResult({
 
   // Emergencies keep role="alert". Other results are announced by the page's own live region
   // (pages/symptoms.js), which then moves focus here (tabIndex -1).
+  // Motion rule 1: an emergency never waits. It renders with no entrance animation and no delay; the other levels
+  // fade in once (urgency--enter, 200ms ease-out, styles/components.css).
   return (
     <section
       id="symptom-result"
@@ -193,7 +195,7 @@ export default function UrgencyResult({
           ? "alert"
           : undefined
       }
-      className={`urgency urgency--${level}`}
+      className={`urgency urgency--${level}${isEmergency ? "" : " urgency--enter"}`}
     >
       <div className="urgency__indicator">
         <UrgencyIcon level={level} />

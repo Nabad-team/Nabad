@@ -1,28 +1,39 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
-const TEAL = "#0f766e";
 
-// The Nabad logo: a pulse icon followed by the name.
-// The icon is drawn on a 32x32 grid (the viewBox), then scaled to `size` (2.25rem = 36px by default).
+// The Nabad logo, "Held": a cupped arc holding a dot, then the lowercase name. The shape is also the Arabic letter
+// noon (ن), the first letter of نبض. The mark is drawn on a 160x160 grid (the viewBox), scaled to `size`.
+//
+// Motion (docs/design-system.md#motion): on the first load of the app only, the dot drops in (500ms), then it
+// beats slowly (2.4s). The beat pauses while the tab is hidden. With reduced motion the dot stays still.
+// The keyframes live in styles/components.css (.logo).
+
+// Module scope: true once a Logo has mounted, so moving between pages doesn't replay the drop.
+let dropPlayed = false;
+
+export const HELD_ARC = "M24 74 A56 56 0 0 0 136 74";
+
 export default function Logo({ size = "2.25rem", href = "/" }) {
+  // Same value on the server and in the first client render, so hydration matches.
+  const [drop] = useState(() => !dropPlayed);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    dropPlayed = true;
+    const update = () => setHidden(document.hidden);
+    update();
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
+
+  const className = ["logo", drop && "logo--drop", hidden && "logo--paused"].filter(Boolean).join(" ");
   return (
-    <Link
-      href={href}
-      style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: TEAL }}
-    >
-      <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-        {/* Rounded square background: light teal fill, teal border */}
-        <rect x="1" y="1" width="30" height="30" rx="8" fill="#f0fdfa" stroke={TEAL} strokeWidth="2" />
-        {/* Pulse line: flat, small bump, sharp spike up and down, flat again (like an ECG) */}
-        <polyline
-          points="5,17 11,17 13,14 15,17 17,7 20,25 22,17 27,17"
-          fill="none"
-          stroke={TEAL}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+    <Link href={href} className={className} aria-label="Nabad">
+      <svg className="logo__mark" width={size} height={size} viewBox="0 0 160 160" aria-hidden="true" focusable="false">
+        <path d={HELD_ARC} fill="none" stroke="var(--color-primary)" strokeWidth="17" strokeLinecap="round" />
+        <circle className="logo__dot" cx="80" cy="64" r="19" fill="var(--color-pulse)" />
       </svg>
-      <span style={{ fontSize: "1.5rem", fontWeight: "bold", lineHeight: 1 }}>Nabad</span>
+      <span className="logo__word" aria-hidden="true">nabad</span>
     </Link>
   );
 }

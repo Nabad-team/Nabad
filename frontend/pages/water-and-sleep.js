@@ -41,7 +41,7 @@ function WaterToday({ water, who, onAdd, onUndo, onSetGoal, onClearGoal, busy })
       <h2 id="water-heading">Water today</h2>
       <div role="status" className="tracker__status">
         <p className="tracker__count">
-          <strong>{waterCountText(totalMl, goal)}</strong>
+          <strong className="num">{waterCountText(totalMl, goal)}</strong>
           {goalLine && !status && <span className="text-muted"> {goalLine}</span>}
         </p>
         {status && <Alert tone="warning" as="p">{goalLine}</Alert>}
@@ -68,7 +68,7 @@ function WaterToday({ water, who, onAdd, onUndo, onSetGoal, onClearGoal, busy })
           <h3 id="drink-log-heading">Today's log</h3>
           <ul aria-labelledby="drink-log-heading">
             {entries.map((entry, i) => (
-              <li key={i}><span className="drink-log__time">{timeText(entry.at)}</span> {mlText(entry.ml)}</li>
+              <li key={i} className="num"><span className="drink-log__time">{timeText(entry.at)}</span> {mlText(entry.ml)}</li>
             ))}
           </ul>
           <Button variant="secondary" size="small" onClick={onUndo} disabled={busy} aria-describedby="undo-detail">Undo last drink</Button>
@@ -216,7 +216,7 @@ function SleepToday({ sleep, who, onSave, onDelete, busy }) {
         />
       ) : (
         <>
-          <p className="tracker__count"><strong>{hoursText(sleep.hours)}</strong> · {sleptText(sleep.quality)}</p>
+          <p className="tracker__count"><strong className="num">{hoursText(sleep.hours)}</strong> · {sleptText(sleep.quality)}</p>
           {times && <p className="text-muted">{times}</p>}
           {sleep.note && <p><span className="text-muted">Note:</span> {sleep.note}</p>}
           <div className="button-row">

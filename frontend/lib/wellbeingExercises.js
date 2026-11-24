@@ -116,7 +116,7 @@ export const WHEN_TO_REACH_OUT = [
 
 // The exercises, as named on the Wellbeing Corner, the page and in the URL (/wellbeing?start=breathing).
 export const EXERCISES = [
-  { key: "breathing", title: "Breathing exercise", summary: "About 2 minutes of slow breathing, with a circle to follow. It can help you slow down." },
+  { key: "breathing", title: "Breathing exercise", summary: "About 2 minutes of slow breathing, with a shape to follow. It can help you slow down." },
   { key: "grounding", title: "Grounding exercise", summary: "Five short steps that bring your attention back to what is around you." },
   { key: "reset", title: "5-minute reset", summary: "The breathing exercise, then grounding, then one question to think about." },
   { key: "wind-down", title: "Bedtime wind-down", summary: "A short checklist to help you get ready for sleep." },

@@ -40,7 +40,7 @@
 .vitals-table { width: 100%; border-collapse: collapse; }
 .vitals-table caption { text-align: left; font-weight: 700; margin-bottom: var(--space-2); }
 .vitals-table th, .vitals-table td { padding: var(--space-3); border-bottom: 1px solid var(--color-border); text-align: left; white-space: nowrap; }
-.calendar__event--medication { background: #e8f4ef; color: #185b48; border-left: 3px solid #27866b; }
+.calendar__event--medication { background: var(--color-primary-soft); color: var(--color-primary-strong); border-left: 3px solid var(--color-primary); }
 
 .text-muted {
   color: var(--color-text-muted);
@@ -48,6 +48,13 @@
 
 .text-sm {
   font-size: var(--text-sm);
+}
+
+/* Numbers people act on (doses, times, litres, counts) in Atkinson Hyperlegible Mono: 1, l and I, 0 and O never mix,
+   and digits line up. Same size as the text around it. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
 }
 
 .lead {
@@ -287,7 +294,66 @@
   color: var(--color-primary);
 }
 
-/* ---------- Heartbeat loader ---------- */
+/* ---------- The Held logo and mark (components/Logo.js, components/ui/HeldMark.js) ---------- */
+
+/* Logo: the mark and the lowercase wordmark. */
+.logo { display: flex; align-items: center; gap: 0.5rem; color: var(--color-text); text-decoration: none; }
+.logo__mark { flex: none; overflow: visible; }
+.logo__word { font-size: 1.625rem; font-weight: var(--weight-heavy); letter-spacing: -0.03em; line-height: 1; color: var(--color-text); }
+.logo__dot, .held__dot { transform-box: fill-box; transform-origin: center; }
+.logo__dot { animation: held-beat 2.4s ease-in-out infinite; }
+/* First load of the app only: the dot drops in, then starts beating. */
+.logo--drop .logo__dot { animation: held-drop 500ms cubic-bezier(0.23, 1, 0.32, 1) both, held-beat 2.4s ease-in-out 500ms infinite; }
+.logo--paused .logo__dot { animation-play-state: paused; }
+@keyframes held-drop { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes held-beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+/* The mark: brand arcs and the pulse dot by default; danger for urgent, wellbeing for breathe. */
+.held { flex: none; overflow: visible; }
+.held__arc, .held__ring { stroke: var(--color-primary); }
+.held__dot { fill: var(--color-pulse); }
+.held__arcs { transform-box: view-box; transform-origin: 80px 80px; }
+
+.held--resting .held__dot { animation: held-beat 2.4s ease-in-out infinite; }
+
+.held--thinking .held__arcs { animation: held-turn 1.4s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+@keyframes held-turn { to { transform: rotate(360deg); } }
+
+.held__ring { stroke-dasharray: 100; animation: held-close 600ms ease-out both; }
+@keyframes held-close { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+
+.held--breathe .held__arc { stroke: var(--color-wellbeing); }
+.held--breathe .held__dot { fill: var(--color-wellbeing); }
+.held--breathe:not(.held--phase) .held__arc--left { animation: held-breathe-left 10s infinite; }
+.held--breathe:not(.held--phase) .held__arc--right { animation: held-breathe-right 10s infinite; }
+@keyframes held-breathe-left {
+  0% { transform: translateX(0); animation-timing-function: ease-in-out; }
+  40% { transform: translateX(-14px); animation-timing-function: ease-in-out; }
+  100% { transform: translateX(0); }
+}
+@keyframes held-breathe-right {
+  0% { transform: translateX(0); animation-timing-function: ease-in-out; }
+  40% { transform: translateX(14px); animation-timing-function: ease-in-out; }
+  100% { transform: translateX(0); }
+}
+/* Following an exercise step by step: breathe in opens the arcs (4s), hold keeps them open, breathe out closes them (6s). */
+.held--phase-in .held__arc--left, .held--phase-hold .held__arc--left { transform: translateX(-14px); }
+.held--phase-in .held__arc--right, .held--phase-hold .held__arc--right { transform: translateX(14px); }
+.held--phase-in .held__arc { transition: transform 4s ease-in-out; }
+.held--phase-out .held__arc { transition: transform 6s ease-in-out; }
+
+.held--urgent .held__arc { stroke: var(--color-danger); }
+.held--urgent .held__dot { fill: var(--color-danger); animation: held-beat 0.6s ease-in-out infinite; }
+
+.held--paused, .held--paused * { animation-play-state: paused !important; transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo__dot, .logo--drop .logo__dot, .held, .held * { animation: none !important; transition: none !important; }
+}
+
+.held-loader { color: var(--color-text); }
+
+/* ---------- The Nabad assistant ---------- */
 
 /* The Nabad assistant (components/NabadAssistant.js). Calm places only; see docs/design-system.md. */
 .nabad-assistant { color: var(--color-primary); flex: none; }
@@ -302,7 +368,7 @@
 .assistant-greeting__name { display: block; font-weight: var(--weight-semibold); color: var(--color-primary-strong); }
 .assistant-greeting__note { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }
 
-/* The Symptom check's loader (AssistantLoader), the only animated loader left. */
+/* The Symptom check's loader (HeldLoader in components/ui/HeldMark.js), the only animated loader. */
 .loader {
   display: flex;
   align-items: center;
@@ -1845,6 +1911,12 @@ select.input {
   margin-bottom: 0;
 }
 
+/* Motion rule 1: emergency never waits. Only non-emergency results get this entrance (components/UrgencyResult.js);
+   never add an animation, transition or delay to .urgency or .urgency--emergency. */
+.urgency--enter { animation: urgency-enter var(--duration-enter) ease-out both; }
+@keyframes urgency-enter { from { opacity: 0; transform: translateY(0.25rem); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .urgency--enter { animation: none; } }
+
 .urgency h2 {
   color: inherit;
   margin: 0;
@@ -1892,9 +1964,10 @@ select.input {
   .urgency-scale__steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .urgency-scale__step {
-  --step-color: var(--color-primary);
-  --step-strong: var(--color-primary-strong);
-  --step-soft: var(--color-primary-soft);
+  /* Each level has its own colours (styles/tokens.css). The brand green is never a medical level. */
+  --step-color: var(--color-routine);
+  --step-strong: var(--color-routine-strong);
+  --step-soft: var(--color-routine-soft);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -1908,6 +1981,7 @@ select.input {
   font-size: var(--text-sm);
   line-height: 1.35;
 }
+.urgency-scale__step--routine { --step-color: var(--color-routine); --step-strong: var(--color-routine-strong); --step-soft: var(--color-routine-soft); }
 .urgency-scale__step--soon { --step-color: var(--color-warning); --step-strong: var(--color-warning-strong); --step-soft: var(--color-warning-soft); }
 .urgency-scale__step--urgent { --step-color: var(--color-urgent); --step-strong: var(--color-urgent-strong); --step-soft: var(--color-urgent-soft); }
 .urgency-scale__step--emergency { --step-color: var(--color-danger); --step-strong: var(--color-danger-strong); --step-soft: var(--color-danger-soft); }
@@ -1964,9 +2038,9 @@ select.input {
 }
 
 .urgency--routine {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary);
-  color: var(--color-primary-strong);
+  background: var(--color-routine-soft);
+  border-color: var(--color-routine);
+  color: var(--color-routine-strong);
 }
 
 .follow-up {
@@ -4868,7 +4942,7 @@ select.input {
 @media print { .skeleton { display: none; } }
 
 /* ---------- Wellbeing exercises (pages/wellbeing.js, components/wellbeing/) ---------- */
-/* Calm and plain: one teal circle, large step text, nothing that blinks. Nothing here is saved. */
+/* Calm and plain: the Held mark breathing in the wellbeing colour, large step text, nothing that blinks. Nothing here is saved. */
 .wellbeing-reflection { margin-top: var(--space-4); }
 .wellbeing-exercises { margin-top: var(--space-6); }
 .wellbeing-exercises h3 { margin: 0 0 var(--space-1); }
@@ -4883,16 +4957,10 @@ select.input {
 .breathing > p:first-child { max-width: var(--width-prose); }
 .breathing--still { justify-items: start; text-align: left; }
 .breathing__stage { display: grid; place-items: center; width: 12rem; height: 12rem; max-width: 100%; }
-.breathing__circle { width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--color-primary-soft); border: 0.1875rem solid var(--color-primary); transform: scale(0.45); }
-/* Each step's transition lasts exactly as long as the step (lib/wellbeingExercises.js): in 4 s, hold 4 s, out 6 s. */
-.breathing__circle--in { transform: scale(1); transition: transform 4s ease-in-out; }
-.breathing__circle--hold { transform: scale(1); }
-.breathing__circle--out { transform: scale(0.45); transition: transform 6s ease-in-out; }
-.breathing__circle--paused { transition: none; }
-.breathing__step { margin: 0; min-height: 2.5rem; font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-primary-strong); }
+.breathing__mark { width: 100%; height: 100%; }
+.breathing__step { margin: 0; min-height: 2.5rem; font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-wellbeing-strong); }
 .breathing__count { margin: 0; }
 .breathing__seconds { font-size: var(--text-lg); font-variant-numeric: tabular-nums; }
-@media (prefers-reduced-motion: reduce) { .breathing__circle { transition: none !important; } }
 
 .grounding__step { display: flex; align-items: center; gap: var(--space-4); margin: 0 0 var(--space-3); font-size: var(--text-lg); }
 .grounding__step:focus { outline: none; }

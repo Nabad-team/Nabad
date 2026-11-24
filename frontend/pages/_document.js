@@ -1,7 +1,7 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
-// The site's teal (--color-primary in styles/tokens.css): the browser bar color on phones.
-export const THEME_COLOR = "#0f766e";
+// Deep spruce (--color-primary-strong in styles/tokens.css, and theme_color in site.webmanifest): the browser bar color on phones.
+export const THEME_COLOR = "#12301f";
 
 // The <html> and <body> tags around every page. Only things that never change per page go here,
 // like the icons (made by scripts/generate-icons.js); titles and meta tags are set by PageLayout
