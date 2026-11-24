@@ -871,6 +871,16 @@ export default function SymptomsPage() {
         result={urgency}
         preliminary={followUps.length > 0}
         onCheckAgain={checkSomethingElse}
+        followUps={
+          <FollowUpQuestions
+            key={`${assessmentCount}-${followUpState?.round ?? 0}`}
+            questions={followUps}
+            progress={followUpState}
+            onSubmit={handleFollowUpSubmit}
+            onSkip={() => setFollowUps([])}
+            busy={refining}
+          />
+        }
       />
 
 
@@ -908,22 +918,6 @@ export default function SymptomsPage() {
         )}
 
 
-      <FollowUpQuestions
-        key={`${assessmentCount}-${followUpState?.round ?? 0}`}
-        questions={
-          followUps
-        }
-        progress={
-          followUpState
-        }
-        onSubmit={
-          handleFollowUpSubmit
-        }
-        onSkip={() =>
-          setFollowUps([])
-        }
-        busy={refining}
-      />
 
 
       {error && (

@@ -340,3 +340,46 @@ describe("Phone menu", () => {
     expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 });
+
+// Phones and tablets (no sidebar, under 64rem): a compact red 140 next to the bell on every signed-in page.
+// Desktop keeps the sidebar's Emergency · 140 button instead (Held refresh, phase 3.1).
+describe("the phone emergency button", () => {
+  const realMatchMedia = window.matchMedia;
+  const realWidth = window.innerWidth;
+  beforeEach(() => {
+    localStorage.clear();
+    fakeProfileApi.resetFakeProfiles();
+    mockSignedIn = true;
+  });
+  afterEach(() => {
+    window.matchMedia = realMatchMedia;
+    window.innerWidth = realWidth;
+  });
+
+  test.each(["/dashboard", "/symptoms", "/medications", "/profile", "/wellbeing"])("on %s: tel:140 next to the bell, named for the Red Cross", async (path) => {
+    renderHeader(path);
+    const call = await screen.findByRole("link", { name: "Call 140, Lebanese Red Cross emergency" });
+    expect(call).toHaveAttribute("href", "tel:140");
+    expect(call).toHaveTextContent(/^140$/);
+    expect(call).toHaveClass("header-call");
+    // Right before the bell, in the header's end group.
+    const bell = document.querySelector(".notification-bell__button, .notification-bell button");
+    expect(call.closest(".app-header__end")).not.toBeNull();
+    expect(call.compareDocumentPosition(bell) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  test("not on desktop, where the sidebar has its own Emergency · 140 button", async () => {
+    window.matchMedia = (query) => ({ matches: query === "(min-width: 64rem)", media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    window.innerWidth = 1440;
+    renderHeader("/dashboard");
+    expect(await screen.findByRole("link", { name: "Emergency: call 140" })).toHaveAttribute("href", "tel:140");
+    expect(screen.queryByRole("link", { name: "Call 140, Lebanese Red Cross emergency" })).toBeNull();
+  });
+
+  test("not while signed out (the public pages have their own emergency strip)", async () => {
+    mockSignedIn = false;
+    renderHeader("/providers");
+    await act(async () => {});
+    expect(screen.queryByRole("link", { name: "Call 140, Lebanese Red Cross emergency" })).toBeNull();
+  });
+});

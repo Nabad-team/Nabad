@@ -13,7 +13,7 @@ import { SkeletonRegion, Bone, NextStepSkeleton, HealthTilesSkeleton } from "../
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { APP_TIME_ZONE, formatDate } from "../lib/dates";
-import { hoursText, litresText } from "../lib/wellbeing";
+import { hoursText } from "../lib/wellbeing";
 
 // "Rana Haddad" -> "Rana"
 // The greeting uses only the first name.
@@ -64,29 +64,48 @@ function SymptomCard({ simplified }) {
   );
 }
 
-// Today's water and sleep (and medicines) as small pills. Breathing is in the Wellbeing Corner below (said once).
+// "0.8", "2" (no "2.0"): litres for the meters, at most two decimals.
+const litres = (ml) => String(Math.round(ml / 10) / 100);
+
+// One meter: a label, the value (numbers through the digits font), and a bar when there is something to measure
+// against. The whole meter is the link. The bar is decorative: the value says the same in words.
+function Meter({ href, label, value, fraction }) {
+  return (
+    <a href={href} className="day-meter">
+      <span className="day-meter__label">{label}</span>{" "}
+      <span className="day-meter__value">{value}</span>
+      {fraction !== null && (
+        <span className="day-meter__bar" aria-hidden="true"><span style={{ width: `${Math.round(Math.min(1, Math.max(0, fraction)) * 100)}%` }} /></span>
+      )}
+    </a>
+  );
+}
+
+// Today's water and last night's sleep, as two meters in one white card, linking to Water and sleep.
+//   Water: "0.8 of 2 L" filling toward the daily goal (or limit); "0.8 L today" without a goal; "Not logged".
+//   Sleep: the hours on a 0 to 12 hour bar; "Not logged". No healthy-range band: the app defines no sleep target.
+export const SLEEP_SCALE_HOURS = 12;
+export function waterMeter(water) {
+  if (!water || !water.totalMl) return { value: "Not logged", fraction: null };
+  const goal = water.goal?.ml;
+  if (!goal) return { value: `${litres(water.totalMl)} L today`, fraction: null };
+  return { value: `${litres(water.totalMl)} of ${litres(goal)} L${water.goal.type === "atMost" ? " limit" : ""}`, fraction: water.totalMl / goal };
+}
+export function sleepMeter(sleep) {
+  if (!sleep) return { value: "Not logged", fraction: null };
+  return { value: hoursText(sleep.hours), fraction: sleep.hours / SLEEP_SCALE_HOURS };
+}
+
 function YourDay({ data }) {
-  const water = data?.wellbeing?.water;
-  const sleep = data?.wellbeing?.sleep;
-  const medications = data?.medications;
-  const taken = medications?.filter((medication) => medication.taken).length || 0;
+  const water = waterMeter(data?.wellbeing?.water);
+  const sleep = sleepMeter(data?.wellbeing?.sleep);
   return (
     <section className="your-day" aria-labelledby="your-day-heading">
       <h2 id="your-day-heading" className="your-day__heading">Your day</h2>
-      <ul className="your-day__pills">
-        <li><a href="/water-and-sleep" className="day-pill">
-          <span className="day-pill__label">Water</span>{" "}
-          {water ? <span className="num">{litresText(water.totalMl)}</span> : <span>not logged</span>}
-        </a></li>
-        <li><a href="/water-and-sleep" className="day-pill">
-          <span className="day-pill__label">Sleep</span>{" "}
-          {sleep ? <span className="num">{hoursText(sleep.hours)}</span> : <span>not logged</span>}
-        </a></li>
-        {medications?.length > 0 && <li><a href="/medications" className="day-pill">
-          <span className="day-pill__label">Medicines</span>{" "}
-          <span><span className="num">{taken}</span> of <span className="num">{medications.length}</span></span>
-        </a></li>}
-      </ul>
+      <div className="your-day__card">
+        <Meter href="/water-and-sleep" label="Water" {...water} />
+        <Meter href="/water-and-sleep" label="Sleep" {...sleep} />
+      </div>
     </section>
   );
 }

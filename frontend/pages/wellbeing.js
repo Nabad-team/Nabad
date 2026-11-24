@@ -6,7 +6,7 @@ import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import InlinePanel from "../components/ui/InlinePanel";
-import BreathingDot from "../components/ui/BreathingDot";
+import { BreathingRings } from "../components/ui/BreathingDot";
 import BreathingExercise from "../components/wellbeing/BreathingExercise";
 import GroundingExercise from "../components/wellbeing/GroundingExercise";
 import ResetExercise from "../components/wellbeing/ResetExercise";
@@ -71,7 +71,7 @@ export default function WellbeingPage() {
           const name = <span className="visually-hidden"> the {item.title.charAt(0).toLowerCase()}{item.title.slice(1)}</span>;
           return (
             <Card key={item.key} aria-labelledby={`card-${item.key}-heading`} className={`exercise-card${lead ? " exercise-card--lead" : ""}`}>
-              {lead && <BreathingDot size="5.5rem" className="exercise-card__dot" />}
+              {lead && <BreathingRings size="6rem" className="exercise-card__dot" />}
               <div className="exercise-card__text">
                 <h2 id={`card-${item.key}-heading`}>{item.title}</h2>
                 <p>{item.summary}</p>

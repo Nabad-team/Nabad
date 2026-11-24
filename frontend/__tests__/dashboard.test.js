@@ -85,7 +85,7 @@ describe("Dashboard Page", () => {
     const section = await screen.findByRole("region", { name: "Your health" });
     const tiles = within(section).getAllByRole("link");
     expect(tiles.map((link) => link.getAttribute("href"))).toEqual([
-      "/my-health", "/medications", "/symptoms", "/appointments", "/vitals", "/medical-documents", "/emergency-card",
+      "/my-health", "/medications", "/appointments", "/vitals", "/medical-documents", "/symptoms", "/emergency-card",
     ]);
     // Said once: the old Quick actions and Your progress sections are gone.
     expect(screen.queryByRole("navigation", { name: "Quick actions" })).not.toBeInTheDocument();
@@ -254,8 +254,13 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const day = await screen.findByRole("region", { name: "Your day" });
-    expect(await within(day).findByRole("link", { name: "Water 1.25 L" })).toHaveAttribute("href", "/water-and-sleep");
-    expect(within(day).getByRole("link", { name: "Sleep 7.5 hours" })).toHaveAttribute("href", "/water-and-sleep");
+    // Two meters in one card. No goal: the litres alone and no bar; sleep on its 0 to 12 hour bar.
+    const water = await within(day).findByRole("link", { name: "Water 1.25 L today" });
+    expect(water).toHaveAttribute("href", "/water-and-sleep");
+    expect(water.querySelector(".day-meter__bar")).toBeNull();
+    const sleep = within(day).getByRole("link", { name: "Sleep 7.5 hours" });
+    expect(sleep).toHaveAttribute("href", "/water-and-sleep");
+    expect(sleep.querySelector(".day-meter__bar > span")).toHaveStyle({ width: "63%" });
     expect(within(day).queryByRole("img", { name: /Water today/ })).not.toBeInTheDocument();
     // Said once: Your health has no water or sleep tile repeating them.
     const health = await screen.findByRole("region", { name: "Your health" });
@@ -269,8 +274,10 @@ describe("Dashboard Page", () => {
     renderDashboard();
 
     const day = await screen.findByRole("region", { name: "Your day" });
-    expect(await within(day).findByRole("link", { name: "Water 0.9 L" })).toBeInTheDocument();
-    expect(within(day).getByRole("link", { name: "Sleep not logged" })).toBeInTheDocument();
+    // A limit: "0.9 of 1.5 L limit" with the bar toward it.
+    const water = await within(day).findByRole("link", { name: "Water 0.9 of 1.5 L limit" });
+    expect(water.querySelector(".day-meter__bar > span")).toHaveStyle({ width: "60%" });
+    expect(within(day).getByRole("link", { name: "Sleep Not logged" }).querySelector(".day-meter__bar")).toBeNull();
   });
 
   test("the My health tile counts the basics gently and links to My health", async () => {
@@ -327,8 +334,9 @@ describe("Dashboard Page", () => {
 
     const card = await screen.findByRole("region", { name: "Your health" });
     // The tile says what's next; the count ("1 of 2") is said once, in Your day.
-    expect(await within(card).findByRole("link", { name: /^Medicines Next: Aspirin/ })).toHaveAttribute("href", "/medications");
-    expect(within(screen.getByRole("region", { name: "Your day" })).getByRole("link", { name: "Medicines 1 of 2" })).toBeInTheDocument();
+    // The count is said once, on the Medicines tile (Your day has water and sleep only).
+    expect(await within(card).findByRole("link", { name: /^Medicines 1 of 2 taken today/ })).toHaveAttribute("href", "/medications");
+    expect(within(screen.getByRole("region", { name: "Your day" })).queryByText(/Medicines/)).toBeNull();
     expect(await within(card).findByRole("button", { name: "Mark taken: Aspirin" })).toBeInTheDocument();
     expect(within(card).queryByRole("heading", { name: "Medication check-in" })).not.toBeInTheDocument();
     expect(within(card).queryByRole("checkbox")).not.toBeInTheDocument();
@@ -368,7 +376,7 @@ describe("Dashboard Page", () => {
   test("is short: the Wellbeing Corner is one compact card, and 140 shows once besides the footer", async () => {
     renderDashboard();
     await screen.findByText(greeting("Demo"));
-    const corner = screen.getByRole("region", { name: "Wellbeing Corner" });
+    const corner = screen.getByRole("region", { name: "Wellbeing" });
     // Today's message and both numbers stay visible; tips and notes are under More.
     expect(within(corner).getByRole("link", { name: "Call 1564" })).toHaveAttribute("href", "tel:1564");
     expect(within(corner).getByRole("link", { name: "Call 140" })).toHaveAttribute("href", "tel:140");
@@ -405,5 +413,33 @@ describe("Dashboard Page", () => {
     // Breathing is the dot alone (not a mark), in the Wellbeing Corner only.
     expect(document.querySelectorAll("svg.breathing-dot")).toHaveLength(1);
     expect(document.querySelector("svg.breathing-dot").closest("#wellbeing-corner-heading ~ *, .wellbeing-corner")).not.toBeNull();
+  });
+
+  // Rows are always full: six regular tiles in an even grid (2 on phones, 3 from 40rem), then the Emergency card as
+  // one full-width special tile (Held refresh, phase 3.1).
+  test("Your health: six regular tiles in an even grid, then the full-width Emergency card tile", async () => {
+    renderDashboard();
+    const section = await screen.findByRole("region", { name: "Your health" });
+    const items = [...section.querySelectorAll("ul.tile-grid > li")];
+    const regular = items.filter((item) => !item.classList.contains("tile-grid__item--wide"));
+    expect(regular.map((item) => item.querySelector(".tile__title").textContent)).toEqual(["My health", "Medicines", "Appointments", "Vitals", "Documents", "Symptom checks"]);
+    expect(regular.length % 2).toBe(0);
+    expect(regular.length % 3).toBe(0);
+    const wide = items.filter((item) => item.classList.contains("tile-grid__item--wide"));
+    expect(wide).toHaveLength(1);
+    expect(items.at(-1)).toBe(wide[0]);
+    const emergency = within(wide[0]).getByRole("link");
+    expect(emergency).toHaveAttribute("href", "/emergency-card");
+    expect(emergency).toHaveClass("tile", "tile--emergency");
+    expect(emergency.querySelector(".tile__title")).toHaveTextContent(/^Emergency card$/);
+    expect(emergency.querySelector(".tile__status")).toHaveTextContent(/^Your key info for a doctor, even offline/);
+    // Every icon sits in its own small square; status lines wrap instead of being cut off.
+    for (const tile of section.querySelectorAll(".tile")) expect(tile.querySelector(".tile__icon > svg.held-icon")).not.toBeNull();
+    const fs = require("fs"); const path = require("path");
+    const css = fs.readFileSync(path.join(__dirname, "../styles/components.css"), "utf8");
+    expect(css).toMatch(/\.tile-grid \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+    expect(css).toMatch(/@media \(min-width: 40rem\) \{ \.tile-grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \} \}/);
+    expect(css).toMatch(/\.tile-grid__item--wide \{ grid-column: 1 \/ -1; \}/);
+    expect(css).not.toMatch(/\.tile__status \{[^}]*(ellipsis|nowrap)/);
   });
 });
