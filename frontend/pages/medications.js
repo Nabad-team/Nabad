@@ -275,9 +275,9 @@ export default function MedicationsPage() {
       onCancel={() => setEditing(null)}
     /> : <>
       <div className="medication__heading"><h3>{medication.name}</h3>{medication.status === "active" ? <Badge>Active</Badge> : <Badge tone="neutral">Discontinued</Badge>}</div>
-      {summary(medication) && <p className="medication__summary">{summary(medication)}</p>}
+      {summary(medication) && <p className="medication__summary num">{summary(medication)}</p>}
       <p className="text-muted text-sm">{dates(medication)}</p>
-      {medication.reminderTimes?.length > 0 && <p>Daily reminders: {medication.reminderTimes.join(", ")} ({medication.reminderTimeZone}){medication.status === "discontinued" ? " — paused" : ""}</p>}
+      {medication.reminderTimes?.length > 0 && <p className="num">Daily reminders: {medication.reminderTimes.join(", ")} ({medication.reminderTimeZone}){medication.status === "discontinued" ? " — paused" : ""}</p>}
       {medication.notes && <p className="medication__notes"><span className="text-muted">Notes:</span> {medication.notes}</p>}
       <div className="button-row">
         <Button variant="secondary" size="small" onClick={() => open(medication.id)} aria-label={`Edit ${medication.name}`}>Edit</Button>

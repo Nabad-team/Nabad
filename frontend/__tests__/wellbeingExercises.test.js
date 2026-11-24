@@ -59,7 +59,7 @@ describe("breathing timing", () => {
     expect(liveStep(container)).toHaveAttribute("aria-live", "polite");
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
     expect(liveStep(container)).toHaveTextContent("Breathe in");
-    expect(container.querySelector(".breathing__circle--in")).not.toBeNull();
+    expect(container.querySelector(".held--breathe.held--phase-in")).not.toBeNull();
     const node = liveStep(container).firstChild;
     tick(1);
     // Within a step only the hidden countdown changes; the live text stays the very same node.
@@ -70,7 +70,7 @@ describe("breathing timing", () => {
     expect(liveStep(container)).toHaveTextContent("Hold");
     tick(4);
     expect(liveStep(container)).toHaveTextContent("Breathe out");
-    expect(container.querySelector(".breathing__circle--out")).not.toBeNull();
+    expect(container.querySelector(".held--breathe.held--phase-out")).not.toBeNull();
   });
 
   test("Pause stops the clock, Resume carries on, Stop goes back to the start; focus stays on the one button", () => {
@@ -106,13 +106,13 @@ describe("breathing timing", () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
-  test("with reduce motion: no circle, just the text steps with their countdown", () => {
+  test("with reduce motion: no moving mark, just the text steps with their countdown", () => {
     reduceMotion(true);
     jest.useFakeTimers();
     const { container } = render(<BreathingExercise />);
     expect(screen.getByText(/breathe in for 4 seconds, hold for 4, and breathe out for 6/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
-    expect(container.querySelector(".breathing__circle")).toBeNull();
+    expect(container.querySelector(".held")).toBeNull();
     expect(container.querySelector(".breathing--still")).not.toBeNull();
     expect(liveStep(container)).toHaveTextContent("Breathe in");
     expect(container.querySelector(".breathing__seconds")).toHaveTextContent("4");

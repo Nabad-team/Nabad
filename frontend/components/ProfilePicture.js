@@ -4,8 +4,8 @@ import Button from "./ui/Button";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { updateProfilePicture, removeProfilePicture } from "../lib/profileApi";
 
-// The avatar ring uses the logo teal (the same value as --color-primary).
-const TEAL = "#0f766e";
+// The avatar ring uses the Nabad spruce green (the same value as --color-primary).
+const SPRUCE = "#1d4434";
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
@@ -83,7 +83,7 @@ export default function ProfilePicture({ profile: chosenProfile }) {
 
   return (
     <div className="profile-picture">
-      <Avatar name={profile.fullName} src={displayedPicture} size={72} borderColor={TEAL} />
+      <Avatar name={profile.fullName} src={displayedPicture} size={72} borderColor={SPRUCE} />
       <div>
         <input
           ref={fileInputRef}

@@ -1,6 +1,6 @@
-// The heartbeat line from the Nabad logo, our one signature element, under page titles (HeartbeatDivider, via
+// The heartbeat line, a quiet accent under page titles (HeartbeatDivider, via
 // PageTitle). Pages that load show grey placeholders (ui/Skeleton.js); the only animated loader is the Symptom
-// check's while it is checking (AssistantLoader in components/NabadAssistant.js).
+// check's while it is checking (HeldLoader in components/ui/HeldMark.js).
 
 // The logo's pulse (flat, small bump, sharp spike up and down, flat) drawn on a 144x16 grid.
 const DIVIDER_POINTS = "1,8 16,8 19,5.5 22,8 25,1.5 29,14.5 32,8 143,8";

@@ -29,6 +29,7 @@ import {
 // Read-only: each section links to that person's own medications page for editing.
 // Printing shows exactly what is on screen (same filters), for a shift handover.
 
+const NUMBER_DETAILS = new Set(["dose", "times"]);
 const sectionId = (profile) => `overview-${profile.id}`;
 
 function MedicationRow({ medication, recentChangeDays }) {
@@ -45,7 +46,8 @@ function MedicationRow({ medication, recentChangeDays }) {
         {medicationDetails(medication).map((detail) => (
           <div key={detail.key} className={`overview-medication__detail overview-medication__detail--${detail.key}`}>
             <dt>{detail.label}</dt>
-            <dd>{detail.value}</dd>
+            {/* Doses and times in the mono number font (.num), so 1 and l, 0 and O never mix up. */}
+            <dd className={NUMBER_DETAILS.has(detail.key) ? "num" : undefined}>{detail.value}</dd>
           </div>
         ))}
       </dl>

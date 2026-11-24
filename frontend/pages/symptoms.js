@@ -43,7 +43,8 @@ import {
   useAccessibility,
 } from "../context/AccessibilityContext";
 import { formatDateTime } from "../lib/dates";
-import NabadAssistant, { AssistantLoader } from "../components/NabadAssistant";
+import NabadAssistant from "../components/NabadAssistant";
+import { HeldLoader } from "../components/ui/HeldMark";
 import { AiUsageLine } from "../components/AiUsage";
 import { getAiUsage } from "../lib/aiUsageApi";
 
@@ -169,7 +170,7 @@ export default function SymptomsPage() {
     }
   }
 
-  // While a check is running: the button says "Checking...", can't be pressed again, and the heartbeat loader shows.
+  // While a check is running: the button says "Checking...", can't be pressed again, and the Held mark turns (HeldLoader).
   const [checking, setChecking] = useState(false);
   const checkingRef = useRef(false);
   // A short sentence for screen readers when a result arrives (a live region that is always on the page,
@@ -774,7 +775,7 @@ export default function SymptomsPage() {
         <AiUsageLine usage={aiUsage} noun="AI checks" showFrom={usageLineFrom(aiUsage)} />
       </form>
 
-      {checking && <AssistantLoader label="Checking your symptoms" />}
+      {checking && <HeldLoader label="Checking your symptoms" />}
 
       <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
 
