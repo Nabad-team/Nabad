@@ -92,6 +92,8 @@
   "moreDetails": "More details",
   "dataLine": "From published sources. Call to confirm before travelling.",
   "aboutData": "About this data",
+  "filtersButton": "Filters",
+  "filtersActive": "active",
   "signInToSaveName": "Sign in to save {name}",
   "detailsOf": "{name}, details",
   "moreDetailsAbout": " about {name}",

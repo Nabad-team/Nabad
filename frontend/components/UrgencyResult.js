@@ -90,6 +90,7 @@ function DetailRow({ title, open = false, children }) {
 //      Under it the scale bar (visual only; its words are for screen readers).
 //   2. "Get help sooner if things change" (an emergency: "don't wait"), always visible in its soft danger outline.
 //      The only place on the result that lists the call-140 conditions. Never collapsed, never shortened.
+//      Follow-up questions (the page's `followUps` slot) come right after it, under "Answer the questions below...".
 //   3. One white card of disclosure rows: "Why we suggest this" (open), "What the AI check noted" and "Self-care
 //      guidance" (closed). Their content is unchanged.
 //   4. Find care, the one primary button; Read aloud and Print or PDF as quiet text buttons; then, from the page,
@@ -99,6 +100,7 @@ export default function UrgencyResult({
   result,
   preliminary = false,
   onCheckAgain,
+  followUps = null,
 }) {
   const {
     preferences,
@@ -175,7 +177,9 @@ export default function UrgencyResult({
       {/* Always visible, right under the header: never inside a disclosure. */}
       {explanation && <WatchFor watchFor={explanation.watchFor} isEmergency={isEmergency} />}
 
-      {preliminary && <p>Answer the questions below to make this more accurate.</p>}
+      {/* Follow-up questions come straight after the red flags: before "Why we suggest this" and the actions. */}
+      {preliminary && <p className="urgency__follow-up-intro">Answer the questions below to make this more accurate.</p>}
+      {followUps}
       {!preliminary && result.confidence === "refined" && <p>Updated using your answers.</p>}
 
       {isSelfHarm && (

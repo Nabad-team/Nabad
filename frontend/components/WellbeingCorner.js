@@ -1,20 +1,36 @@
 import Card from "./ui/Card";
 import Button from "./ui/Button";
-import BreathingDot from "./ui/BreathingDot";
+import { BreathingRings } from "./ui/BreathingDot";
 import HeldIcon from "./ui/HeldIcon";
 import { formatDate } from "../lib/dates";
 import { wellbeingSupport } from "../data/wellbeingSupport";
 import { beirutDayNumber } from "../lib/wellbeingExercises";
 
-// compact: a call row (the dashboard and Wellbeing cards, and the help under every exercise). The number is in the
-// heading only (the button says "Call", its accessible name keeps the number), and the longer description moves to the
-// card's "More" section.
+// compact: a call row (the dashboard and Wellbeing cards, and the help under every exercise): the name, a small
+// "24/7 · verified <date>" line (the Red Cross: "Emergency · verified <date>"), the number itself as the call button
+// (1564 in spruce, 140 in danger) and a small link to the official source. The row's accessible name is the full
+// name with the number ("Lebanese Red Cross 140"); the number shows once, on the button. The longer description is
+// in the card's "More" section.
 export function WellbeingSupportNumber({ contact, compact = false }) {
   const value = contact.verifiedOn;
   const parsed = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : null;
   const date = parsed && Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
   const source = typeof contact.sourceUrl === "string" && /^https:\/\//.test(contact.sourceUrl) ? contact.sourceUrl : null;
   const emergency = contact.id === "lebanese-red-cross";
+  if (compact) {
+    return <section className={`wellbeing-support-number wellbeing-support-number--row${emergency ? " wellbeing-support-number--emergency" : ""}`} aria-label={contact.name}>
+      <div className="wellbeing-support-number__content">
+        <p className="wellbeing-support-number__name" aria-hidden="true">{contact.name.replace(/\s*\d+$/, "")}</p>
+        <p className="wellbeing-support-number__meta">
+          <small>{emergency ? "Emergency" : "24/7"} · {date ? <>verified <time dateTime={date}>{formatDate(date)}</time></> : "verification date unavailable"}</small>
+          {source && <> · <a href={source} target="_blank" rel="noopener noreferrer" aria-label={`Official verification source for ${contact.name}`}>Official source</a></>}
+        </p>
+      </div>
+      <Button className="wellbeing-support-number__call" variant={emergency ? "danger" : "primary"} href={`tel:${contact.phone}`} aria-label={`Call ${contact.phone}`}>
+        <HeldIcon name="phone" size="1.125rem" /><span className="wellbeing-support-number__phone">{contact.phone}</span>
+      </Button>
+    </section>;
+  }
   return <section className={`wellbeing-support-number${emergency ? " wellbeing-support-number--emergency" : ""}${compact ? " wellbeing-support-number--row" : ""}`} aria-labelledby={`wellbeing-support-${contact.id}`}>
     <div className="wellbeing-support-number__icon" aria-hidden="true">
       <HeldIcon name="phone" size="1.25rem" />
@@ -68,44 +84,45 @@ function getDailyMessage(now = new Date()) {
   return dailyMessages[beirutDayNumber(now) % dailyMessages.length];
 }
 
-// Two minutes to breathe: the breathing dot and its timing, the whole row a link that starts the exercise.
-export function BreatheRow({ headingLevel = 3 }) {
-  const Heading = `h${headingLevel}`;
+// Two minutes to breathe: the breathing dot in its still rings, the title, the timing and one spruce Start.
+export function BreatheHero() {
   return (
-    <a href="/wellbeing?start=breathing" className="breathe-row">
-      <BreathingDot size="2.75rem" className="breathe-row__dot" />
-      <span className="breathe-row__text">
-        <Heading className="breathe-row__title">Two minutes to breathe</Heading>
-        <span className="breathe-row__timing">In for <span className="num">4</span>, hold for <span className="num">4</span>, out for <span className="num">6</span></span>
-      </span>
-      <HeldIcon name="chevronRight" size="1.25rem" className="breathe-row__chevron" />
-    </a>
+    <section className="breathe-hero" aria-labelledby="breathe-hero-heading">
+      <BreathingRings size="6rem" className="breathe-hero__rings" />
+      <div className="breathe-hero__text">
+        <h3 id="breathe-hero-heading" className="breathe-hero__title">Two minutes to breathe</h3>
+        <p className="breathe-hero__timing">In for <span className="num">4</span>, hold for <span className="num">4</span>, out for <span className="num">6</span></p>
+        <Button href="/wellbeing?start=breathing" size="small" aria-describedby="breathe-hero-heading">Start</Button>
+      </div>
+    </section>
   );
 }
 
-// The dashboard's Wellbeing Corner, one stone card: today's message, the two helplines as call rows, then two
-// minutes to breathe (the self-harm result links here: /dashboard#wellbeing-corner-heading). The tips and notes are under
-// "More". The calm exercises and the question of the day live on /wellbeing only. 140 appears once in the card
-// (the page footer also has it).
+// The dashboard's wellbeing card, soft green: the label "Wellbeing", the two helplines in one white block, then two
+// minutes to breathe as the hero, then today's message as a quoted line. The helplines come first because the
+// self-harm result links here (/dashboard#wellbeing-corner-heading): someone sent here for support sees them before
+// anything else. The tips and notes are under "More". The calm exercises and the question of the day live on
+// /wellbeing only. 140 appears once in the card (the page footer also has it).
 export default function WellbeingCorner() {
   const dailyMessage = getDailyMessage();
   const lifeline = wellbeingSupport.find((contact) => contact.id !== "lebanese-red-cross");
 
   return (
     <Card aria-labelledby="wellbeing-corner-heading" className="section wellbeing-corner wellbeing-corner--compact">
-      <h2 id="wellbeing-corner-heading">Wellbeing Corner</h2>
-      <section className="wellbeing-message" aria-labelledby="wellbeing-message-heading">
-        <h3 id="wellbeing-message-heading" className="wellbeing-message__label">Today&apos;s message</h3>
-        <p>{dailyMessage}</p>
-      </section>
+      <h2 id="wellbeing-corner-heading" className="wellbeing-corner__label">Wellbeing</h2>
 
       <section className="wellbeing-support" aria-labelledby="wellbeing-support-heading">
-        <h3 id="wellbeing-support-heading" className="wellbeing-support__title">Support in Lebanon</h3>
-        <div className="wellbeing-support__grid">{wellbeingSupport.map(contact => <WellbeingSupportNumber key={contact.id} contact={contact} compact />)}</div>
+        <h3 id="wellbeing-support-heading" className="visually-hidden">Support in Lebanon</h3>
+        <div className="wellbeing-support__grid wellbeing-support__block">{wellbeingSupport.map(contact => <WellbeingSupportNumber key={contact.id} contact={contact} compact />)}</div>
       </section>
 
       {/* After the support numbers, so someone sent here for support (the self-harm result) sees those first. */}
-      <BreatheRow />
+      <BreatheHero />
+
+      <section className="wellbeing-message wellbeing-message--quote" aria-labelledby="wellbeing-message-heading">
+        <h3 id="wellbeing-message-heading" className="visually-hidden">Today&apos;s message</h3>
+        <blockquote><p>“{dailyMessage}”</p></blockquote>
+      </section>
 
       <details className="wellbeing-corner__more">
         <summary>More<span className="visually-hidden"> wellbeing tips and support details</span><svg className="wellbeing-corner__chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg></summary>

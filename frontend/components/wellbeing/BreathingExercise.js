@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "../ui/Button";
-import BreathingDot from "../ui/BreathingDot";
+import { BreathingRings } from "../ui/BreathingDot";
 import usePrefersReducedMotion from "./usePrefersReducedMotion";
 import { BREATHING_ROUNDS, BREATHING_TOTAL_SECONDS, breathingStateAt } from "../../lib/wellbeingExercises";
 
@@ -67,7 +67,7 @@ export default function BreathingExercise({ onComplete }) {
       {/* The dot is there (small) before Start, so the first "Breathe in" visibly grows it. */}
       {!reduced && (
         <div className="breathing__stage" aria-hidden="true">
-          <BreathingDot phase={active ? state.phase.key : "out"} paused={status === "paused"} size="100%"
+          <BreathingRings phase={active ? state.phase.key : "out"} paused={status === "paused"} size="8rem"
             className="breathing__mark" />
         </div>
       )}

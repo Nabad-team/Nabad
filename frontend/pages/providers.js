@@ -108,6 +108,8 @@ export default function ProvidersPage() {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [showMap, setShowMap] = useState(false);
+  // Phones (under 48rem): only the name search shows; "Filters" opens the rest (styles/components.css).
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const loadedFilters = useRef(null);
   // Refresh scheduled availability while the page remains open.
   useEffect(() => { const timer = setInterval(() => setRetry(value => value + 1), 60000); return () => clearInterval(timer); }, []);
@@ -138,6 +140,9 @@ export default function ProvidersPage() {
   const categoryCount = data.typeCounts?.[filters?.type];
   const limitedCategory = Number.isInteger(categoryCount) && categoryCount < 10;
   const isSaved = (provider) => favorites?.includes(provider.id) || false;
+  // The filters in use (not the name search), for the phone's "Filters" button.
+  const activeFilters = filters ? ["type", "specialty", "city", "district", "governorate", "service", "insurance", "radiusKm", "emergency24h", "openNow", "favorites"]
+    .filter((key) => Boolean(filters[key]) && (key !== "favorites" || signedIn)).length : 0;
   // Signed out: the landing page's header (Find care, Log in, Sign up). Signed in: the app's header.
   const header = signedIn ? <ProfileHeader /> : (
     <SiteHeader>
@@ -180,7 +185,7 @@ export default function ProvidersPage() {
     </Alert>}
     {/* The filters in one row above the results (never a side column, so desktop never has three columns), with the
         result count at its end. "More filters" opens a panel under the row. */}
-    <form className="provider-filters" aria-label={t("filtersLabel")} onSubmit={event => {
+    <form id="provider-filters" className={`provider-filters${filtersOpen ? " provider-filters--open" : ""}`} aria-label={t("filtersLabel")} onSubmit={event => {
       event.preventDefault();
       applyFilters({ ...draft, type: draft.emergency24h ? "" : draft.type, ...(location || {}), page: 1 });
     }}>
@@ -204,7 +209,13 @@ export default function ProvidersPage() {
             {data.cities.map(city => <option key={city} value={city.toLowerCase()}>{city}</option>)}
           </select>
         </div>
-        <Button type="submit" className="provider-filters__submit">{t("submit")}</Button>
+        <div className="provider-filters__buttons">
+          <button type="button" className="button button--secondary provider-filters__toggle" aria-expanded={filtersOpen} aria-controls="provider-filters"
+            onClick={() => setFiltersOpen((value) => !value)}>
+            {t("filtersButton")}{activeFilters > 0 && <span className="provider-filters__badge">{activeFilters}<span className="visually-hidden"> {t("filtersActive")}</span></span>}
+          </button>
+          <Button type="submit" className="provider-filters__submit">{t("submit")}</Button>
+        </div>
       </div>
       <div className="provider-filters__toggles">
         <label className="check"><input type="checkbox" disabled={Boolean(draft.emergencyNeeds)} checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> <span>{t("emergencyOnly")}</span></label>

@@ -65,19 +65,21 @@ A short form keeps its 28rem width inside its card. On a page of short sections,
 
 ### Phones and tablets (under 64rem, 1024px)
 
-The header and the bottom tab bar, as they were before the Held refresh: under 40rem the header has the logo, search and the bell, and the tab bar has Symptom check, Dashboard, Find care and Menu; from 40rem the header has the workspace row with the My care and My records dropdowns.
+The header and the bottom tab bar, as they were before the Held refresh: under 40rem the header has the logo, a search button (it opens the search field) and the bell, and the tab bar has Symptom check, Dashboard, Find care and Menu; from 40rem the header has the search field and the workspace row with the My care and My records dropdowns.
+
+**The phone emergency button:** on every signed-in page without the desktop sidebar (under 64rem), a compact red **140** (`tel:140`, named "Call 140, Lebanese Red Cross emergency", `.header-call`) sits right before the bell. On desktop the sidebar's **Emergency · 140** button takes its place. The emergency call is never more than one tap away.
 
 **Today (the dashboard), in this order:**
 
 1. The date (muted) and the greeting, "Good morning / afternoon / evening, <first name>" in Beirut time (800 weight, 36px; 48px on desktop).
 2. **The symptom card**: deep spruce (`--color-primary-strong`), "Something feels off?", "Answer a few questions. We'll tell you where to go.", a resting Held mark (paper arcs, `--color-pulse-on-dark` dot), one light full-width button **Check a symptom**, and **Or speak instead** (`/symptoms?voice=1`, named "Speak your symptoms").
 3. **Next step** (`NextStepCard`): the time in a soft spruce chip, the line, and one primary button. While the first steps apply (their To do tags on Your health), Next step is hidden: never both.
-4. **Your day**: water and sleep (and medicines, when there are any) as small pills, linking to Water and sleep and My medications. Today's water, sleep and medicine count are said here and nowhere else on the dashboard.
+4. **Your day**: one white card with two [meters](#your-day-meters), water and sleep, each a link to Water and sleep. Today's water and last night's sleep are said here and nowhere else on the dashboard.
 
 Below the first screen:
 
-5. **Your health** (`components/YourHealth.js`): one grid of [tiles](#tiles), 2 columns on phones, 3 from 40rem, 4 with the desktop sidebar. My health ("0 of 5 basics"), Medicines ("Next: Aspirin", "All taken today", "No active medicines"), Symptom checks ("No checks yet", "3 saved"), Appointments (the next one, its date, time and place), Vitals ("Log a reading"), Documents ("Upload or view") and Emergency card ("Ready to show", "Not set up"). It replaced Getting started, Your progress and Quick actions: the first steps that aren't done carry a small **To do** tag (its hidden text names the step), the header says "First steps: 2 of 4 done" with a small **Hide**, and the four hints became one muted line. Under the grid, one quiet text button checks off the next medicine ("Mark taken: Aspirin").
-6. **The Wellbeing Corner**: one stone card. Today's message, the two helplines as call rows (National Lifeline 1564 and Lebanese Red Cross 140, before anything else so someone sent here by the self-harm result sees them first), **Two minutes to breathe** (the [breathing dot](#the-breathing-dot), "In for 4, hold for 4, out for 6", the whole row a link to the exercise), and the tips and notes under **More**. The four calm exercises and the question of the day are on /wellbeing only.
+5. **Your health** (`components/YourHealth.js`): [tiles](#tiles), six regular ones in an even grid (2 columns on phones, 3 from 40rem, so rows are always full): My health ("0 of 5 basics"), Medicines ("1 of 2 taken today", "All taken today", "No active medicines"), Appointments (the next one, its date, time and place), Vitals ("Log a reading"), Documents ("Upload or view") and Symptom checks ("No checks yet", "3 saved"). Then the **Emergency card** as one full-width special tile: white with a soft danger outline, a danger-soft icon square, "Your key info for a doctor, even offline". It replaced Getting started, Your progress and Quick actions: the first steps that aren't done carry a small **To do** tag (its hidden text names the step), and the heading row shows a small **setup ring** (pulse green on a stone track), "Setup 2/4" and a quiet **Hide**; when everything is done the ring and the text go. Under the grid, one quiet text button checks off the next medicine ("Mark taken: Aspirin").
+6. **The wellbeing card** (`components/WellbeingCorner.js`): soft green (`--color-primary-soft`). The label **Wellbeing**; the two helplines in ONE white block, two rows (the name, "24/7 · verified <date>" or for the Red Cross "Emergency · verified <date>", a small "Official source" link, and the number itself as the call button: **1564** in spruce, **140** in danger); then **Two minutes to breathe** as the hero (the [breathing dot](#the-breathing-dot) in three still primary-soft rings, "In for 4, hold for 4, out for 6", one spruce **Start**); then today's message as a quoted line; the tips and notes under **More**. **The helplines come first, before the breathing**: the self-harm result links to this card, and `__tests__/wellbeingExercises.test.js` keeps them first. The four calm exercises and the question of the day are on /wellbeing only.
 
 The emergency call appears once on the dashboard (the sidebar's **Emergency · 140** on desktop, the Red Cross row everywhere), plus the footer line.
 
@@ -94,12 +96,12 @@ The emergency call appears once on the dashboard (the sidebar's **Emergency · 1
 │ Find care     ││ ┌ Recent checks ─ See all ───────────────┐                          │
 │               ││ │ runny nose   24 Nov 2026     [Routine] │                          │
 │[Emergency·140]││ └────────────────────────────────────────┘                          │
-│ (MP) Maya     ││ Your health (tiles, 4 a row) · Wellbeing Corner (stone)             │
+│ (MP) Maya     ││ Your health (6 tiles, 3 a row, + Emergency card) · Wellbeing (green)│
 └───────────────┘└──────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Sidebar** (`AppHeader.js`, from `useDesktopLayout()`: 64rem of the page's own text size, so with text at 200% a 1280px window keeps the phone and tablet layout instead of overflowing): stone (`--color-sunken`), 16rem, stays in view while the page scrolls. The logo, then the same "Workspace" navigation as the header row it replaces (same links, routes and My care / My records disclosures, now in a column with icons; the current page is a spruce pill), then **Emergency · 140** (`tel:140`) and the signed-in person, linking to My profile. Search, notifications, "Acting for" and the account menu stay in the header's top row. The phone tab bar isn't rendered at this width.
-- **Today**: the greeting row, then two columns. Left (wider): the symptom card large and **Recent checks** (the last three checks as a [timeline](#timeline): the date, the words and the level chip; each row opens that check, "See all" goes to My history). Right: Next step and Your day. The former lilac "A calm moment" card is merged into the Wellbeing Corner below.
+- **Today**: the greeting row, then two columns. Left (wider): the symptom card large and **Recent checks** (the last three checks as a [timeline](#timeline): the date, the words and the level chip; each row opens that check, "See all" goes to My history). Right: Next step and Your day. Below: Your health (three tiles a row, then the full-width Emergency card) and the wellbeing card.
 - Every other page sits in the main area beside the sidebar, in its usual 74rem column.
 
 ## A new page in 30 seconds
@@ -251,9 +253,9 @@ The Held mark appears **at most once per screen besides the logo**. On the dashb
 
 ### The breathing dot
 
-`components/ui/BreathingDot.js`: breathing is shown by the Held dot alone, no arcs. A pulse-green dot (`--color-pulse`) grows to twice its size and shrinks back on the exercise's real timing: in for 4 seconds, hold for 4, out for 6 (one 14-second round). Only `transform` animates; with reduced motion it stays still (and the exercise shows its steps as text). `phase="in" | "hold" | "out"` follows the running exercise step by step (`paused` freezes it); without a phase it runs the 14-second cycle on its own. Decorative: "In for 4, hold for 4, out for 6" is always written next to it.
+`components/ui/BreathingDot.js`: breathing is shown by the Held dot alone, no arcs. A pulse-green dot (`--color-pulse`), about 18px at rest (14 to 20px), grows to about twice its size and shrinks back on the exercise's real timing: in for 4 seconds, hold for 4, out for 6 (one 14-second round). Only `transform` animates; with reduced motion it stays still (and the exercise shows its steps as text). `phase="in" | "hold" | "out"` follows the running exercise step by step (`paused` freezes it); without a phase it runs the 14-second cycle on its own. Decorative: "In for 4, hold for 4, out for 6" is always written next to it.
 
-Used on /wellbeing (the lead card and the running exercise) and on the dashboard's Wellbeing Corner ("Two minutes to breathe"). Nowhere else; never on a result.
+`BreathingRings` puts the dot inside three still, soft primary-soft rings (only the dot moves). Used on /wellbeing (the lead card and the running exercise) and on the dashboard's wellbeing card ("Two minutes to breathe"). Nowhere else; never on a result.
 
 ### The page title bar
 
@@ -298,11 +300,18 @@ Phase 3 of the Held refresh. The app used to repeat the same information two or 
 
 ### Tiles
 
-`components/YourHealth.js` (`.tile-grid`, `.tile`). A grid of small tiles, each **an icon, a title and ONE status line**, and **the whole tile is the link**: no buttons inside a tile, ever. The status line says one fact once ("0 of 5 basics", "Next: Aspirin", "None coming up"); it is one line, truncated with the full text in the link's name. A small accent tag ("To do") may sit in the corner. 2 columns on phones, 3 from 40rem, 4 with the desktop sidebar. An action that isn't "go there" (checking off a medicine) is a quiet text button under the grid, not in a tile. `__tests__/dashboard.test.js` checks there's no button in a tile and at most 7 buttons on the dashboard (there were 19).
+`components/YourHealth.js` (`.tile-grid`, `.tile`). A grid of small tiles, each **an icon in a small primary-soft square, a title and ONE status line**, and **the whole tile is the link**: no buttons inside a tile, ever. The status line says one fact once ("0 of 5 basics", "1 of 2 taken today", "None coming up"); it may wrap to two lines, never an ellipsis. A small accent tag ("To do") may sit in the corner. **The grid rule: an even number of regular tiles, so every row is full** (six: 2 columns on phones, 3 from 40rem and on desktop), **then at most one full-width special tile** (`.tile-grid__item--wide`), here the Emergency card in a soft danger outline. An action that isn't "go there" (checking off a medicine) is a quiet text button under the grid, not in a tile. `__tests__/dashboard.test.js` checks there's no button in a tile and at most 7 buttons on the dashboard (there were 19).
 
 ### Icons
 
 `components/ui/HeldIcon.js`: one line set in the Held hand, 24 grid, **2.2px strokes, round caps and joins**, no fills (the bookmark fills when saved). Tiles, the landing cards, the timeline, the result's quiet buttons, the provider cards and the header search use it. Decorative: the link or button always has a visible label or an `aria-label`. Use these instead of drawing a new thin-line icon.
+
+### Your day meters
+
+`pages/dashboard.js` (`.your-day__card`, `.day-meter`). One white card with two meters, each a link to Water and sleep: the label, the value (numbers through the digits font, tabular) and, when there is something to measure against, a thin pulse-green bar on stone (decorative: the value says the same).
+
+- **Water:** "0.8 of 2 L" with the bar filling toward the daily goal ("0.9 of 1.5 L limit" for a limit, never encouraging more); without a goal "0.8 L today" and no bar; "Not logged" when nothing is logged.
+- **Sleep:** last night's hours ("7.5 hours") on a 0 to 12 hour bar; "Not logged" when empty. No healthy-range band: Nabad defines no sleep target anywhere, and the dashboard doesn't invent one.
 
 ### Timeline
 
@@ -312,6 +321,7 @@ Phase 3 of the Held refresh. The app used to repeat the same information two or 
 
 `pages/providers.js`, `ProviderBadges` and `ProviderCaveats` in `components/ProviderFacts.js`.
 
+- **Phones (under 48rem):** only the name search, a **Filters** button with the number of active filters ("Filters 3", named "Filters 3 active", `aria-expanded`) and Search; Filters opens type, specialty, city, the checkboxes and More filters under them, so the first result starts on the first screen. Use my location and Show map stay at the top.
 - **The page:** Use my location and Show map at the top right; the filters in **one row** above the results (search, type, specialty, city, Search), then the toggles (24/7 emergency, open now, saved) and the result count; **More filters** opens a panel under the row (district, governorate, service, insurance, distance). Desktop never has three columns. The directory notes are one muted line ("From published sources. Call to confirm before travelling.") ending in **About this data**, which holds the same notes in full. Signed out, the header is the landing page's (Find care, Log in, Sign up).
 - **A card:** the bold name (not underlined) is the card's header and the link to every detail on the facility's page (it replaced "More details"); type, city and distance in muted text; status chips (open per published hours, 24/7 ER, driving time); and, never hidden, the caveats: information that may be outdated, an approximate pin, an address or map location that isn't verified.
 - **ONE primary action:** Directions once your location is known, otherwise Call. The other is an icon button with a name ("Call <name>", "Directions to <name> in Google Maps"); Save is a bookmark icon button ("Save <name>", `aria-pressed`); Compare is a checkbox labelled "Compare" (named "Compare <name>"). `__tests__/providers.test.js` checks one primary action per card.
@@ -449,9 +459,10 @@ The form folds into one line above the result: **You said: "<the words>" · Edit
 
 1. **Header**, in the level's soft colour with a border in the level colour: ONE mark (the `done` ring in the level colour; the still `urgent` mark for an emergency), the level once ("Urgency: <label>", the heading that gets focus) with "How soon: <timeframe>", then the engine's action as the main line (700, 21px on phones, 26px from 40rem; "What to do:" is said to screen readers before it). Along the bottom, the **scale bar**: four segments, the current one in full colour. Visually only the bar: every step name, "This result", `aria-current="step"` and "Level 2 of 4: See a doctor soon" are for screen readers. It only displays the server's level; it never decides one.
 2. For an emergency, **Call 140 now** (full width, red).
-3. **Get help sooner if things change** (for an emergency, the one strong "don't wait" line): always visible, right under the header, in its soft danger outline. **Never collapsed, never shortened, also in simplified mode.** It is the only place on the result that lists the call-140 conditions. Notes follow ("Answer the questions below...", "Updated using your answers."), and for the self-harm rule "View mental health support".
-4. **One white card of disclosure rows** (secondary detail only): **Why we suggest this** (open), **What the AI check noted** and **Self-care guidance** (closed). Their content is unchanged.
-5. The disclaimer, then **Find care** as the one primary button (the providers link with the level's filters), **Read aloud** and **Print or save as PDF** as quiet text buttons with icons, and **Check something else**. Checks are saved to the history automatically, as before.
+3. **Get help sooner if things change** (for an emergency, the one strong "don't wait" line): always visible, right under the header, in its soft danger outline. **Never collapsed, never shortened, also in simplified mode.** It is the only place on the result that lists the call-140 conditions.
+4. **Follow-up questions**, when the engine asks any: the line "Answer the questions below to make this more accurate." and the questions right under it (the page passes them in as `followUps`), so they come before "Why we suggest this" and before the actions. Then "Updated using your answers." after a refined result, and for the self-harm rule "View mental health support".
+5. **One white card of disclosure rows** (secondary detail only): **Why we suggest this** (open), **What the AI check noted** and **Self-care guidance** (closed). Their content is unchanged.
+6. The disclaimer, then **Find care** as the one primary button (the providers link with the level's filters), **Read aloud** and **Print or save as PDF** as quiet text buttons with icons, and **Check something else**. Checks are saved to the history automatically, as before.
 
 `__tests__/heldRefreshPhase3.test.js` checks the red flags are visible, outside every disclosure, before the details card, and listed once.
 

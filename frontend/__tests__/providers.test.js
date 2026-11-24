@@ -276,3 +276,31 @@ test("cards show only known facts as badges; unverified ones get no badge and on
   expect(within(known).queryByText("Information may be outdated")).toBeNull();
   expect(screen.getAllByText(/Cards show opening hours and 24\/7 ER status only when they are published/)).toHaveLength(1);
 });
+
+test("phones: a Filters button with the number of active filters opens the rest; the name search stays", async () => {
+  mockRouter = { ...mockRouter, query: { specialty: "pediatrics", city: "beirut", openNow: "true" }, asPath: "/providers?specialty=pediatrics&city=beirut&openNow=true" };
+  const user = userEvent.setup(); render(<ProvidersPage />);
+  await screen.findByText("Test Clinic");
+  const toggle = screen.getByRole("button", { name: "Filters 3 active" });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(toggle).toHaveAttribute("aria-controls", "provider-filters");
+  const form = document.getElementById("provider-filters");
+  expect(form).not.toHaveClass("provider-filters--open");
+  // The name search and Search are outside what the button folds (CSS under 48rem).
+  expect(screen.getByLabelText("Search by facility name")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Search providers" })).toBeInTheDocument();
+  await user.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(form).toHaveClass("provider-filters--open");
+  // Use my location and Show map stay at the top, outside the form.
+  expect(form.contains(screen.getByRole("button", { name: "Use my location" }))).toBe(false);
+  expect(form.contains(screen.getByRole("button", { name: "Show map" }))).toBe(false);
+});
+
+test("the phone rule hides only type, specialty, city, the checkboxes and more filters while closed", () => {
+  const css = require("fs").readFileSync(require("path").join(__dirname, "../styles/components.css"), "utf8").replace(/\r\n/g, "\n");
+  const block = css.slice(css.indexOf("@media (max-width: 47.99rem) {\n  .provider-filters {"));
+  expect(block).toMatch(/\.provider-filters__toggle \{ display: inline-flex; \}/);
+  expect(block).toMatch(/\.provider-filters:not\(\.provider-filters--open\) \.provider-filters__row > \.field:not\(:first-child\),\n {2}\.provider-filters:not\(\.provider-filters--open\) \.provider-filters__toggles > \.check,\n {2}\.provider-filters:not\(\.provider-filters--open\) \.provider-filters__advanced \{ display: none; \}/);
+  expect(css).toMatch(/\.provider-filters__toggle \{ display: none; \}/);
+});

@@ -93,7 +93,11 @@ describe("the first steps on the dashboard (To do tags on Your health)", () => {
   test("a new account sees the four first steps instead of Next step: a To do tag on each tile and 0 of 4 done", async () => {
     await renderSlot(EMPTY);
     const section = screen.getByRole("region", { name: "Your health" });
-    expect(section).toHaveTextContent("First steps: 0 of 4 done");
+    // The heading row: a small ring, "Setup 0/4" (said as "0 of 4 first steps done") and Hide.
+    const setup = section.querySelector(".your-health__setup");
+    expect(setup).toHaveTextContent("Setup 0/4");
+    expect(setup).toHaveTextContent("0 of 4 first steps done");
+    expect(setup.querySelector("svg.setup-ring")).toHaveAttribute("aria-hidden", "true");
     expect(todoTags()).toHaveLength(4);
     expect(tile("health")).toHaveAttribute("href", "/my-health");
     expect(tile("medication")).toHaveAttribute("href", "/medications");
@@ -107,7 +111,7 @@ describe("the first steps on the dashboard (To do tags on Your health)", () => {
 
   test("a half-done account: done steps lose their tag, the others keep theirs", async () => {
     await renderSlot(HALF);
-    expect(screen.getByRole("region", { name: "Your health" })).toHaveTextContent("First steps: 2 of 4 done");
+    expect(document.querySelector(".your-health__setup")).toHaveTextContent("Setup 2/4");
     expect(within(tile("health")).queryByText("To do")).toBeNull();
     expect(within(tile("medication")).queryByText("To do")).toBeNull();
     expect(within(tile("symptoms")).getByText("To do")).toBeInTheDocument();
@@ -120,6 +124,7 @@ describe("the first steps on the dashboard (To do tags on Your health)", () => {
     expect(hideGettingStarted).toHaveBeenCalledTimes(1);
     expect(todoTags()).toHaveLength(0);
     expect(screen.queryByText(/First steps/)).toBeNull();
+    expect(document.querySelector(".your-health__setup, svg.setup-ring")).toBeNull();
     expect(screen.getByRole("region", { name: "Next step" })).toHaveTextContent("Add your health basics for safer guidance");
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
   });
@@ -147,12 +152,13 @@ describe("the first steps on the dashboard (To do tags on Your health)", () => {
     await renderSlot(DONE);
     expect(todoTags()).toHaveLength(0);
     expect(screen.queryByText(/First steps/)).toBeNull();
+    expect(document.querySelector(".your-health__setup, svg.setup-ring")).toBeNull();
     expect(hideGettingStarted).toHaveBeenCalledTimes(1);
   });
 
   test("Acting for: the steps are the family member's, named, and finishing theirs doesn't hide yours", async () => {
     await renderSlot(HALF, { forName: "Sami", isSelf: false });
-    expect(screen.getByRole("region", { name: "Your health" })).toHaveTextContent("First steps for Sami: 2 of 4 done");
+    expect(document.querySelector(".your-health__setup")).toHaveTextContent("Setup 2/4 for Sami: 2 of 4 first steps done");
     expect(EMPTY_STEPS_FOR("Sami").map((step) => step.text)).toEqual([
       "Add Sami's health basics", "Add a medication Sami takes", "Try a symptom check for Sami", "Set up Sami's emergency information card",
     ]);
@@ -173,6 +179,21 @@ describe("the first steps on the dashboard (To do tags on Your health)", () => {
     await renderSlot({ ...EMPTY, symptoms: null, symptomsFailed: true });
     expect(todoTags()).toHaveLength(0);
     expect(screen.getByRole("region", { name: "Next step" })).toBeInTheDocument();
+  });
+
+  test("the setup ring fills with the steps done and disappears with its text when everything is done", async () => {
+    await renderSlot(HALF);
+    const ring = document.querySelector(".your-health__setup svg.setup-ring");
+    const value = ring.querySelector(".setup-ring__value");
+    const circumference = Number(value.getAttribute("stroke-dasharray"));
+    expect(Number(value.getAttribute("stroke-dashoffset"))).toBeCloseTo(circumference / 2, 5);
+    expect(screen.getByRole("button", { name: "Hide" })).toHaveClass("link-button");
+    document.body.innerHTML = "";
+    await renderSlot(DONE);
+    expect(document.querySelector(".your-health__setup")).toBeNull();
+    expect(document.querySelector("svg.setup-ring")).toBeNull();
+    expect(screen.queryByText(/Setup/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Hide" })).toBeNull();
   });
 
   test("only on the dashboard: never on the symptom check or its urgent and emergency results", () => {

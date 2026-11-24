@@ -263,10 +263,13 @@ describe("140 and 1564 are always shown", () => {
 describe("where the exercises appear", () => {
   test("the dashboard's Wellbeing Corner says breathing once (two minutes, with its timing); the four exercises and the question of the day are on /wellbeing", () => {
     render(<WellbeingCorner />);
-    const breathe = screen.getByRole("link", { name: /Two minutes to breathe/ });
+    // The breathing hero: the dot in its rings, the title, the timing and one Start.
+    const hero = screen.getByRole("region", { name: "Two minutes to breathe" });
+    expect(hero).toHaveTextContent("Two minutes to breatheIn for 4, hold for 4, out for 6");
+    expect(hero.querySelector(".breathing-rings svg.breathing-dot")).not.toBeNull();
+    const breathe = within(hero).getByRole("link", { name: "Start" });
     expect(breathe).toHaveAttribute("href", "/wellbeing?start=breathing");
-    expect(breathe).toHaveTextContent("Two minutes to breatheIn for 4, hold for 4, out for 6");
-    expect(breathe.querySelector("svg.breathing-dot")).not.toBeNull();
+    expect(within(hero).getAllByRole("link")).toHaveLength(1);
     // Said once: the exercise buttons and the question of the day live on /wellbeing only (pages/wellbeing.js).
     for (const name of ["Breathing exercise", "Grounding exercise", "5-minute reset", "Bedtime wind-down"]) {
       expect(screen.queryByRole("link", { name })).toBeNull();

@@ -855,7 +855,8 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/dashboard")
         for phone in ("1564", "140"):
             entry = self.visible((By.XPATH, f"//section[contains(@class,'wellbeing-support-number')][.//a[@href='tel:{phone}']]"))
-            self.assertIn("Last verified:", entry.text)
+            # The dashboard's call row: "24/7 · verified <date>" (the Red Cross: "Emergency · verified <date>").
+            self.assertRegex(entry.text, r"(24/7|Emergency) · verified \d{1,2} [A-Za-z]+ \d{4}")
             verified = entry.find_element(By.TAG_NAME, "time")
             self.assertRegex(verified.get_attribute("datetime"), r"^\d{4}-\d{2}-\d{2}$")
             self.assertRegex(verified.text, r"^\d{1,2} [A-Za-z]+ \d{4}$")
