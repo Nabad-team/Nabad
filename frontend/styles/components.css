@@ -187,7 +187,7 @@
   align-items: center;
   min-height: var(--tap-target);
   padding-inline: var(--space-2);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   text-decoration: none;
 }
 
@@ -257,7 +257,7 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-target);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
 }
 
 .site-footer__disclaimer {
@@ -575,7 +575,7 @@ html[data-simplified-mode="true"] .urgency__summary {
 .field__error {
   color: var(--color-danger);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
 }
 
 .input {
@@ -880,7 +880,7 @@ select.input {
 .wellbeing-corner__heart { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; color: var(--color-primary); background: var(--color-primary-soft); font-size: 1.35rem; }
 .wellbeing-message { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5); border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border)); border-radius: var(--radius-lg); background: var(--color-primary-soft); }
 .wellbeing-message > span { display: grid; place-items: center; flex: 0 0 3rem; height: 3rem; border-radius: 50%; background: var(--color-surface); color: #b46b00; font-size: 1.45rem; box-shadow: var(--shadow-sm); }
-.wellbeing-message h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
+.wellbeing-message h3 { margin: 0 0 var(--space-1); font-size: var(--text-base); }
 .wellbeing-message p { margin: 0; font-size: var(--text-lg); }
 .wellbeing-tips { margin-top: var(--space-6); }
 .wellbeing-tips ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
@@ -894,15 +894,15 @@ select.input {
 .wellbeing-support-number--emergency { border-color: color-mix(in srgb, var(--color-danger) 38%, var(--color-border)); background: var(--color-danger-soft); }
 .wellbeing-support-number__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md); color: var(--color-primary); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .wellbeing-support-number--emergency .wellbeing-support-number__icon { color: var(--color-danger); }
-.wellbeing-support-number__label { margin: 0 0 var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: 600; }
+.wellbeing-support-number__label { margin: 0 0 var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
 .wellbeing-support-number h4 { margin: 0 0 var(--space-2); font-size: var(--text-lg); }
 .wellbeing-support-number__content > p:not(.wellbeing-support-number__label) { margin: 0 0 var(--space-4); }
 .wellbeing-support-number__call { width: 100%; justify-content: center; gap: var(--space-3); padding-block: var(--space-3); }
 .wellbeing-support-number__call svg { width: 1.4rem; height: 1.4rem; fill: currentColor; }
 .wellbeing-support-number__call span { display: grid; text-align: left; font-size: var(--text-lg); line-height: 1.05; }
-.wellbeing-support-number__call small { font-size: var(--text-xs); font-weight: 600; opacity: 1; }
+.wellbeing-support-number__call small { font-size: var(--text-xs); font-weight: var(--weight-semibold); opacity: 1; }
 .wellbeing-support-number__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--text-sm); }
-.wellbeing-support-number__meta a { display: inline-flex; align-items: center; gap: .25rem; font-weight: 600; }
+.wellbeing-support-number__meta a { display: inline-flex; align-items: center; gap: .25rem; font-weight: var(--weight-semibold); }
 .wellbeing-support-number__meta a svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .wellbeing-support__note { margin: var(--space-4) 0 0; }
 
@@ -1033,7 +1033,7 @@ select.input {
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   text-decoration: none;
   transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
@@ -1138,13 +1138,13 @@ select.input {
 .more-menu__panel button {
   display: flex; align-items: center; width: 100%; min-height: var(--tap-target); padding: var(--space-2) var(--space-3);
   border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-primary-strong);
-  font: inherit; font-weight: var(--weight-medium); text-align: left; cursor: pointer;
+  font: inherit; font-weight: var(--weight-regular); text-align: left; cursor: pointer;
 }
 .more-menu__panel button:hover:not(:disabled) { background: var(--color-primary-soft); }
 .more-menu__panel button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
 .more-menu__panel a {
   display: flex; align-items: center; min-height: var(--tap-target); padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm); color: var(--color-primary-strong); font-weight: var(--weight-medium); text-decoration: none;
+  border-radius: var(--radius-sm); color: var(--color-primary-strong); font-weight: var(--weight-regular); text-decoration: none;
 }
 .more-menu__panel a:hover { background: var(--color-primary-soft); }
 
@@ -1267,7 +1267,7 @@ select.input {
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   color: var(--color-text);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   text-decoration: none;
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
@@ -1401,7 +1401,7 @@ select.input {
   padding-inline: var(--space-3);
   border-radius: var(--radius-md);
   color: var(--color-text);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   text-decoration: none;
 }
 
@@ -1463,7 +1463,7 @@ select.input {
   border-radius: var(--radius-full);
   background: var(--color-danger);
   color: #fff;
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   line-height: 1;
   display: inline-flex;
@@ -1553,7 +1553,7 @@ select.input {
 }
 
 .notification-panel__entry:not(.notification-panel__entry--unread) strong {
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
 }
 
 /* A care circle alert's Call button, under its text (a link can't hold another link). */
@@ -1573,7 +1573,7 @@ select.input {
   min-height: var(--tap-target);
   margin-top: var(--space-2);
   border-top: 0.0625rem solid var(--color-border);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
 }
 
 /* Phones: the panel spans the bar between the page gutters instead of hanging off the bell. */
@@ -1801,7 +1801,7 @@ select.input {
     color: var(--color-text-muted);
     font: inherit;
     font-size: var(--text-xs);
-    font-weight: var(--weight-medium);
+    font-weight: var(--weight-regular);
     line-height: 1.2;
     text-align: center;
     text-decoration: none;
@@ -2076,11 +2076,11 @@ select.input {
   border-color: var(--step-color);
   background: var(--step-soft);
   color: var(--step-strong);
-  font-weight: var(--weight-semibold, 600);
+  font-weight: var(--weight-semibold);
 }
 .urgency-scale__you {
   font-size: 0.8125rem;
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -2165,7 +2165,7 @@ select.input {
   --level-soft: var(--color-routine-soft);
 }
 
-/* The compact scale bar: four segments, the current one in full colour, the others faded. Visually only the bar:
+/* The compact scale bar: four segments, the current one in the level colour, the others neutral stone. Visually only the bar:
    the step names, "This result" and "Level 2 of 4: ..." are for screen readers (the header says the level once). */
 .urgency-scale--bar .urgency-scale__steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-1); }
 .urgency-scale--bar .urgency-scale__step {
@@ -2174,10 +2174,9 @@ select.input {
   padding: 0;
   border: 0;
   border-radius: var(--radius-full);
-  background: var(--step-color);
-  opacity: 0.3;
+  background: var(--color-border);
 }
-.urgency-scale--bar .urgency-scale__step--current { opacity: 1; }
+.urgency-scale--bar .urgency-scale__step--current { background: var(--step-color); }
 .urgency-scale--bar .urgency-scale__step > * {
   position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
@@ -2252,13 +2251,14 @@ select.input {
 /* Home hero: a sample symptom-check result, built from the real result's header and scale bar, labelled "Sample". */
 .sample-result { margin: 0; width: 100%; max-width: 26rem; justify-self: center; }
 .sample-result__caption { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
-.sample-result__card { margin-top: 0; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); color: var(--color-text); }
+.sample-result__card { display: grid; gap: var(--space-3); margin-top: 0; padding: var(--space-5); border-radius: var(--radius-lg); border-top: 0.25rem solid var(--level); background: var(--color-surface); box-shadow: var(--shadow-sm); color: var(--color-text); }
 .sample-result__card > * { margin: 0; }
-.sample-result__card .urgency__indicator { margin: var(--space-3) 0; padding: var(--space-4); }
-.sample-result__card .urgency__action { font-size: var(--text-lg); }
+.sample-result__card .urgency__action { margin: 0; font-size: var(--text-lg); color: var(--color-text); }
+.sample-result__card .urgency-scale { margin: 0; }
+.sample-result__card .urgency__timeframe { margin: 0; }
 .sample-result__quote { font-style: italic; color: var(--color-text-muted); }
-.sample-result__level { margin: 0; font-weight: var(--weight-semibold); font-size: var(--text-lg); color: inherit; }
-.sample-result__next { font-size: var(--text-sm); color: var(--color-text); }
+.sample-result__level { margin: 0; }
+.sample-result__next { padding-top: var(--space-3); border-top: 1px solid var(--color-border); font-size: var(--text-sm); color: var(--color-text); }
 @media (min-width: 52rem) { .sample-result { justify-self: end; } }
 
 /* How Nabad helps: four cards, each wholly a link: a Held icon, a bold title (not underlined) and one line. */
@@ -2465,7 +2465,7 @@ select.input {
 .next-step__text {
   margin: 0;
   font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   overflow-wrap: anywhere;
 }
 
@@ -2529,11 +2529,20 @@ select.input {
 .recent-checks { padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
 .recent-checks__header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
 .recent-checks__header h2 { margin: 0 0 var(--space-3); font-size: var(--text-lg); }
-.level-chip, .status-chip { display: inline-block; flex: none; padding: 0.125rem var(--space-3); border: 1px solid; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: var(--weight-semibold); white-space: nowrap; }
-.level-chip--routine { background: var(--color-routine-soft); border-color: var(--color-routine); color: var(--color-routine-strong); }
-.level-chip--soon { background: var(--color-warning-soft); border-color: var(--color-warning); color: var(--color-warning-strong); }
-.level-chip--urgent { background: var(--color-urgent-soft); border-color: var(--color-urgent); color: var(--color-urgent-strong); }
-.level-chip--emergency { background: var(--color-danger-soft); border-color: var(--color-danger); color: var(--color-danger-strong); }
+.status-chip { display: inline-block; flex: none; padding: 0.125rem var(--space-3); border: 1px solid; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: var(--weight-semibold); white-space: nowrap; }
+/* A level chip: the level's soft background, its dark text and a small dot in the level colour (text on soft is AA,
+   the dot is a graphic at 3:1 or more; tokens.css). The label is always written: colour is never the only signal. */
+.level-chip {
+  display: inline-flex; align-items: center; gap: 0.375rem; flex: none; padding: 0.125rem var(--space-3) 0.125rem var(--space-2);
+  border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: var(--weight-semibold); line-height: 1.5; white-space: nowrap;
+  background: var(--chip-soft); color: var(--chip-strong);
+}
+.level-chip::before { content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--chip-dot); }
+.level-chip--routine { --chip-soft: var(--color-routine-soft); --chip-strong: var(--color-routine-strong); --chip-dot: var(--color-routine); }
+.level-chip--soon { --chip-soft: var(--color-warning-soft); --chip-strong: var(--color-warning-strong); --chip-dot: var(--color-warning); }
+.level-chip--urgent { --chip-soft: var(--color-urgent-soft); --chip-strong: var(--color-urgent-strong); --chip-dot: var(--color-urgent); }
+.level-chip--emergency { --chip-soft: var(--color-danger-soft); --chip-strong: var(--color-danger-strong); --chip-dot: var(--color-danger); }
+@media (forced-colors: active) { .level-chip { border: 1px solid CanvasText; } .level-chip::before { background: CanvasText; } }
 /* Not a level: a quiet status ("Upcoming", "Planned") in neutral, info or attention colours. */
 .status-chip--neutral { background: var(--color-sunken); border-color: var(--color-border); color: var(--color-text); }
 .status-chip--info { background: var(--color-primary-soft); border-color: var(--color-primary-line); color: var(--color-primary-strong); }
@@ -2824,7 +2833,7 @@ select.input {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  font-weight: 650;
+  font-weight: var(--weight-semibold);
 }
 
 .sr-only {
@@ -3164,7 +3173,7 @@ select.input {
   margin: var(--space-5) 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
 }
 
 .onboarding {
@@ -3207,7 +3216,7 @@ select.input {
   background: var(--color-primary-soft);
   color: var(--color-primary-strong);
   font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   line-height: 1.5;
   vertical-align: middle;
   white-space: nowrap;
@@ -3406,7 +3415,7 @@ select.input {
   border-radius: var(--radius-sm);
   background: var(--color-primary-soft);
   color: var(--color-primary-strong);
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3469,7 +3478,7 @@ select.input {
   }
 
   .calendar__event {
-    font-size: 0.65rem;
+    font-size: var(--text-xs);
   }
 }
 
@@ -3984,8 +3993,8 @@ select.input {
 }
 /* Provider directory */
 .provider-map { height: 25rem; width: 100%; position: relative; z-index: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); }
-.provider-pin { display: grid; place-items: center; background: var(--color-primary); color: var(--color-surface); border: 2px solid var(--color-surface); border-radius: 50%; font-weight: bold; }
-.provider-map .leaflet-control-attribution { font-size: 0.75rem; }
+.provider-pin { display: grid; place-items: center; background: var(--color-primary); color: var(--color-surface); border: 2px solid var(--color-surface); border-radius: 50%; font-weight: var(--weight-semibold); }
+.provider-map .leaflet-control-attribution { font-size: var(--text-xs); }
 .provider-list { list-style: none; padding: 0; }
 .provider-comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
 .provider-comparison > section { min-width: 0; overflow-wrap: anywhere; }
@@ -4438,7 +4447,7 @@ select.input {
 /* Who this is when two people share a name (relationship, date of birth): part of the h2. */
 .overview-person__detail {
   color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   font-size: var(--text-base);
 }
 
@@ -4495,8 +4504,8 @@ select.input {
     border-top: 0.0625rem solid #000;
     color: #000;
     font-family: var(--font-sans, system-ui, sans-serif);
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
   }
 }
 
@@ -5145,3 +5154,20 @@ select.input {
 .breathing-rings__ring--2 { fill: color-mix(in srgb, var(--color-primary-line) 50%, var(--color-surface)); }
 .breathing-rings__ring--1 { fill: color-mix(in srgb, var(--color-primary-line) 75%, var(--color-surface)); }
 .breathing-rings__dot { position: relative; }
+
+/* ---------- Urgency as an accent, not a flood (components/UrgencyResult.js, phase 3.2) ---------- */
+/* Routine, soon and urgent: a white card with a 4px top edge in the level colour, the level as a chip with how soon
+   beside it in muted text, a small ring, the action in ink, and the scale bar with only the current segment coloured.
+   Only an emergency fills its card with its colour (.urgency--emergency keeps the danger fill and the still mark). */
+.urgency--accent .urgency__indicator {
+  border: 1px solid var(--color-border);
+  border-top: 0.25rem solid var(--level);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.urgency__level-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.urgency__level-row > h2, .urgency__level-row > p { margin: 0; }
+.urgency--accent .urgency__level-row .level-chip { font-size: var(--text-base); padding-block: 0.25rem; }
+.urgency--accent .urgency__timeframe { color: var(--color-text-muted); }
+.urgency--accent .urgency__timeframe-label { font-weight: var(--weight-regular); }
+.urgency--accent .urgency__mark { align-self: start; }

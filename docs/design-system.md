@@ -158,7 +158,7 @@ Contrast is the WCAG 2 ratio against the paper background (`--color-bg`) unless 
 | `--color-accent` | `#9c4a2f` | Muted terracotta. **Sparingly**: one highlight per screen at most | 5.6:1 |
 | `--color-danger` | `#b3141a` | **Only** emergencies, errors and delete buttons. Red must always mean something. | 6.3:1; white on it 6.9:1 |
 | `--color-success` | `#146c43` | Saved, done | 5.9:1 |
-| `--color-warning` / `-strong` | `#ad7e0a` / `#6e4e00` | "See a doctor soon" and needs-attention borders / text | border 3.3:1; text on soft 6.8:1 |
+| `--color-warning` / `-strong` / `-soft` | `#b47f10` / `#5a3d00` / `#fcefcb` | Warm amber: "See a doctor soon" and needs-attention borders / text | graphic 3.5:1 on white, 3.2:1 on paper, 3.1:1 on soft; text on soft 8.7:1 |
 | `--color-urgent` | `#c2410c` | Symptom urgency level "urgent" only | 4.7:1 |
 | `--color-routine` | `#2f5a86` | Slate blue: symptom urgency level "routine" only | 6.5:1 |
 
@@ -170,11 +170,17 @@ Colors have `-strong` (text on the soft background) and `-soft` (background) var
 
 Each level has its own three tokens. Colour is never the only signal: every result writes its label once ("Urgency: Routine / self-care") with its timeframe ("How soon: ..."), and level chips always carry the label.
 
+**Colour is an accent, not a flood** (phase 3.2). Only an **Emergency** fills its result card with its colour (danger-soft, with the still urgent mark). Routine, soon and urgent use a white card with the level as an accent: a 4px top edge in the level colour, the **level chip**, a small ring, the action in ink, and only the current scale segment coloured (the others neutral stone, `--color-border`).
+
+**The level chip** (`.level-chip.level-chip--<level>`, the result header, the timeline, Recent checks and history): the level's soft background, its dark `-strong` text, and a small dot in the level colour (`::before`); no border (a 1px outline in forced-colors mode).
+
+**Soon is a warm amber.** The brief's starting amber `#C48A12` is exactly 3.0:1 on white but 2.7:1 on paper and 2.6:1 on its new soft, so it is darkened only as far as needed for every 3:1 pair: `#b47f10` (3.5:1 on white, 3.2:1 on paper, 3.1:1 on `#fcefcb`). Chip text `#5a3d00` on `#fcefcb` is 8.7:1 (10.0:1 on white). `__tests__/designTokens.test.js` checks each, plus every level's colour on white for the dots and the scale segment.
+
 | Level | Border, bar | Text | Background | Text on background |
 | --- | --- | --- | --- | --- |
 | Emergency | `--color-danger` `#b3141a` | `--color-danger-strong` `#8a1015` | `--color-danger-soft` `#fdecec` | 8.5:1 (white on `#b3141a`: 6.9:1) |
 | Urgent | `--color-urgent` `#c2410c` | `--color-urgent-strong` `#7c2d12` | `--color-urgent-soft` `#ffede0` | 8.2:1 |
-| See a doctor soon | `--color-warning` `#ad7e0a` (borders and graphics only) | `--color-warning-strong` `#6e4e00` | `--color-warning-soft` `#fbf1d5` | 6.8:1 |
+| See a doctor soon | `--color-warning` `#b47f10` (borders and graphics only) | `--color-warning-strong` `#5a3d00` | `--color-warning-soft` `#fcefcb` | 8.7:1 |
 | Routine / self-care | `--color-routine` `#2f5a86` | `--color-routine-strong` `#1f3f60` | `--color-routine-soft` `#e6eef6` | 9.3:1 |
 
 ## Typography
@@ -204,7 +210,9 @@ Atkinson Hyperlegible Next and Mono only have a slashed zero: no `zero`, `ss01` 
 | `--text-base` | 16px | Body text |
 | `--text-sm` | 15px | Hints, footnotes |
 
-Body text is never below 16px. Line height is 1.6 for text and 1.25 for headings. Headings are bold (`--weight-semibold`, 700), in `--color-primary-strong`. Only the wordmark uses 800.
+Body text is never below 16px, and **no text is below 13px** (`--text-xs`): tags, badges, calendar events, the map's attribution and print footers included; a `<small>` never shrinks below it (`small { font-size: max(var(--text-xs), 0.875em) }` in `base.css`). Line height is 1.6 for text and 1.25 for headings. Headings are bold (`--weight-semibold`, 700), in `--color-primary-strong`. Only the wordmark uses 800.
+
+**Weights: 400, 700 and 800 only**, the three Atkinson weights that are loaded. Links, menu items, tags and badges are regular (400); headings and emphasis are 700. There is no medium (500) or 600: they used to round to 400 or 700 anyway. `__tests__/heldRefreshPhase32.test.js` checks every weight and every font size in the stylesheets.
 
 **Use `rem`, never `px`.** The text-size setting (#20) will change the root font size, and everything in rem grows with it. `1rem` = 16px by default.
 
@@ -457,7 +465,7 @@ The form folds into one line above the result: **You said: "<the words>" · Edit
 
 **Result anatomy** (`components/UrgencyResult.js`). Everything the engine returns is shown, said once, in order of importance:
 
-1. **Header**, in the level's soft colour with a border in the level colour: ONE mark (the `done` ring in the level colour; the still `urgent` mark for an emergency), the level once ("Urgency: <label>", the heading that gets focus) with "How soon: <timeframe>", then the engine's action as the main line (700, 21px on phones, 26px from 40rem; "What to do:" is said to screen readers before it). Along the bottom, the **scale bar**: four segments, the current one in full colour. Visually only the bar: every step name, "This result", `aria-current="step"` and "Level 2 of 4: See a doctor soon" are for screen readers. It only displays the server's level; it never decides one.
+1. **Header.** Routine, soon and urgent: a **white card with a 4px top edge in the level colour**; the level as a [level chip](#the-urgency-scale) inside the heading ("Urgency: " is said to screen readers before it, so the heading that gets focus still reads "Urgency: <label>"), "How soon: <timeframe>" beside it in muted text, ONE small `done` ring (2rem), then the engine's action as the main line in ink (700, 21px on phones, 26px from 40rem; "What to do:" is said to screen readers before it). An **emergency** keeps its full danger fill, the heading as plain text and the large still `urgent` mark. Along the bottom, the **scale bar**: four segments, the current one in the level colour, the others neutral stone. Visually only the bar: every step name, "This result", `aria-current="step"` and "Level 2 of 4: See a doctor soon" are for screen readers. It only displays the server's level; it never decides one.
 2. For an emergency, **Call 140 now** (full width, red).
 3. **Get help sooner if things change** (for an emergency, the one strong "don't wait" line): always visible, right under the header, in its soft danger outline. **Never collapsed, never shortened, also in simplified mode.** It is the only place on the result that lists the call-140 conditions.
 4. **Follow-up questions**, when the engine asks any: the line "Answer the questions below to make this more accurate." and the questions right under it (the page passes them in as `followUps`), so they come before "Why we suggest this" and before the actions. Then "Updated using your answers." after a refined result, and for the self-harm rule "View mental health support".
@@ -468,10 +476,10 @@ The form folds into one line above the result: **You said: "<the words>" · Edit
 
 | Level | Mark | Header colours |
 | --- | --- | --- |
-| Routine / self-care | `done` ring, drawn once, in `--color-routine` | routine |
-| See a doctor soon | `done` ring in `--color-warning` | warning |
-| Urgent | `done` ring in `--color-urgent` | urgent |
-| Emergency | `urgent`: still, in `--color-danger` | danger |
+| Routine / self-care | small `done` ring, drawn once, in `--color-routine` | white, routine top edge and chip |
+| See a doctor soon | small `done` ring in `--color-warning` | white, amber top edge and chip |
+| Urgent | small `done` ring in `--color-urgent` | white, urgent top edge and chip |
+| Emergency | `urgent`: still, in `--color-danger` | full danger fill |
 
 An emergency card appears instantly, with nothing animated anywhere on it ([Motion](#motion), rule 1; `__tests__/heldRefreshPhase2.test.js`). The other levels fade in once (200ms).
 
@@ -642,7 +650,7 @@ import { MedicineBox } from "../components/illustrations";
 
 ### The landing page sample result
 
-The landing hero shows a **sample symptom-check result** instead of a drawing, so visitors see what Nabad gives back. It is built from the real result's pieces (the coloured header with the `done` ring, the level once with how soon and the action, and the four-segment `UrgencyScale` bar), uses the triage API's own wording for "See a doctor soon" (label, timeframe and action), and is always:
+The landing hero shows a **sample symptom-check result** instead of a drawing, so visitors see what Nabad gives back. It is ONE white card in the result's accent style (the quoted symptom, the level chip with how soon, the action in ink, the four-segment `UrgencyScale` bar with only the current segment coloured, then "Then: family medicine providers near you" under a thin divider; no nested card), uses the triage API's own wording for "See a doctor soon" (label, timeframe and action), and is always:
 
 - labelled as a sample (a "Sample" badge and the caption "An example result, with made-up symptoms"),
 - made-up, generic symptoms, never a real person's data,

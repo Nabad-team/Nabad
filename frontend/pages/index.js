@@ -3,7 +3,6 @@ import PageLayout, { SiteHeader } from "../components/ui/PageLayout";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import Badge from "../components/ui/Badge";
-import HeldMark from "../components/ui/HeldMark";
 import HeldIcon from "../components/ui/HeldIcon";
 import { LogoMark } from "../components/Logo";
 import { UrgencyScale } from "../components/UrgencyResult";
@@ -46,26 +45,24 @@ const moreFeatures = [
   ["lock", "Offline emergency card", "Your key health information, ready to show a doctor, even without internet."],
 ];
 
-// A made-up result, so visitors can see what a symptom check gives back: the real result's header (the level's soft
-// colour, the done ring, the level once with how soon, the action) and its four-segment bar. Clearly labelled as a
-// sample, with the triage API's own wording for "See a doctor soon". Nothing in it is interactive.
+// A made-up result, so visitors can see what a symptom check gives back: ONE white card with the result's accent style
+// (the level chip with how soon, the action in ink, the scale bar with only the current segment coloured), then the
+// next step under a thin divider. Clearly labelled as a sample, with the triage API's own wording for "See a doctor
+// soon". Nothing in it is interactive.
 function SampleResult() {
   return (
     <figure className="sample-result" aria-labelledby="sample-result-caption">
       <figcaption id="sample-result-caption" className="sample-result__caption">
         <Badge tone="neutral">Sample</Badge> An example result, with made-up symptoms
       </figcaption>
-      <div className="sample-result__card urgency urgency--soon">
+      <div className="sample-result__card urgency urgency--soon urgency--accent">
         <p className="sample-result__quote">“Fever since yesterday and a sore throat”</p>
-        <div className="urgency__indicator">
-          <HeldMark state="done" size="3.25rem" className="urgency__mark" />
-          <div className="urgency__heading-block">
-            <p className="sample-result__level">Urgency: See a doctor soon</p>
-            <p className="urgency__timeframe"><span className="urgency__timeframe-label">How soon:</span> Within 24 to 48 hours</p>
-            <p className="urgency__action">Book an appointment with a doctor in the next day or two. Get help sooner if it gets worse.</p>
-          </div>
-          <UrgencyScale level="soon" />
+        <div className="urgency__level-row">
+          <p className="sample-result__level"><span className="visually-hidden">Urgency: </span><span className="level-chip level-chip--soon">See a doctor soon</span></p>
+          <p className="urgency__timeframe"><span className="urgency__timeframe-label">How soon:</span> Within 24 to 48 hours</p>
         </div>
+        <p className="urgency__action">Book an appointment with a doctor in the next day or two. Get help sooner if it gets worse.</p>
+        <UrgencyScale level="soon" />
         <p className="sample-result__next">Then: family medicine providers near you</p>
       </div>
     </figure>
