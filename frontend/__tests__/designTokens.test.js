@@ -49,9 +49,14 @@ describe("Design tokens", () => {
     ["--color-warning-strong", "--color-warning-soft", 4.5],
     ["--color-urgent", "--color-bg", 4.5], ["--color-urgent-strong", "--color-urgent-soft", 4.5],
     ["--color-routine", "--color-bg", 4.5], ["--color-routine-strong", "--color-routine-soft", 4.5],
-    ["--color-wellbeing", "--color-bg", 4.5], ["--color-wellbeing-strong", "--color-wellbeing-soft", 4.5],
+    // Wellbeing is neutral now (the lilac is retired): spruce text and actions on stone, the pulse-green breathing dot.
+    ["--color-primary-strong", "--color-sunken", 4.5], ["--color-primary", "--color-sunken", 4.5], ["--color-pulse", "--color-surface", 3],
     ["--color-border-strong", "--color-bg", 3], ["--color-border-strong", "--color-surface", 3], ["--color-border-strong", "--color-sunken", 3],
     ["--color-warning", "--color-bg", 3], ["--color-warning", "--color-warning-soft", 3],
+    // Urgency as an accent on a white result card (phase 3.2): each level's dot and current scale segment on white,
+    // and the soon chip's text on white too.
+    ["--color-warning", "--color-surface", 3], ["--color-warning-strong", "--color-surface", 4.5],
+    ["--color-routine", "--color-surface", 3], ["--color-urgent", "--color-surface", 3], ["--color-danger", "--color-surface", 3],
     ["--color-pulse", "--color-bg", 3], ["--color-pulse-on-dark", "--color-primary-strong", 3],
   ])("%s on %s is at least %s:1", (fg, bg, min) => {
     expect(contrast(root[fg], root[bg])).toBeGreaterThanOrEqual(min);

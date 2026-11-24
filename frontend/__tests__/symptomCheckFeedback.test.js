@@ -102,8 +102,14 @@ describe("Symptom check feedback", () => {
     expect(assessUrgency).toHaveBeenCalledTimes(1);
 
     pending.resolve(ROUTINE);
-    expect(await screen.findByRole("button", { name: "Submit symptoms" })).toBeEnabled();
+    // The form folds into one line once the result is shown; Edit opens it again, ready to send.
+    const edit = await screen.findByRole("button", { name: "Edit what you said" });
     expect(screen.queryByText("Checking your symptoms")).not.toBeInTheDocument();
+    expect(screen.getByText("“mild headache since yesterday”")).toBeInTheDocument();
+    await user.click(edit);
+    expect(screen.getByRole("button", { name: "Submit symptoms" })).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: "Symptoms" })).toHaveValue("mild headache since yesterday");
+    expect(screen.getByRole("textbox", { name: "Symptoms" })).toHaveFocus();
   });
 
   test("moves focus to the result, scrolls to it and announces it", async () => {
@@ -114,8 +120,7 @@ describe("Symptom check feedback", () => {
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
 
     const heading = await screen.findByRole("heading", { name: "Urgency: Routine / self-care" });
-    const result = heading.closest("section");
-    await waitFor(() => expect(result).toHaveFocus());
+    await waitFor(() => expect(heading).toHaveFocus());
     expect(scrollIntoView).toHaveBeenCalled();
     expect(screen.getByText(/^Result ready\. Urgency: Routine \/ self-care\./)).toHaveAttribute("role", "status");
   });
@@ -133,20 +138,26 @@ describe("Symptom check feedback", () => {
     await user.click(screen.getByRole("radio", { name: "39.5°C or higher" }));
     await user.click(screen.getByRole("button", { name: "Update my urgency" }));
     const heading = await screen.findByRole("heading", { name: "Urgency: Urgent" });
-    await waitFor(() => expect(heading.closest("section")).toHaveFocus());
+    await waitFor(() => expect(heading).toHaveFocus());
     expect(scrollIntoView).toHaveBeenCalled();
     expect(screen.getByText(/^Urgency updated\. Urgency: Urgent\./)).toBeInTheDocument();
   });
 });
 
 describe("Urgency result card", () => {
-  test("starts with an icon, the level and one short line", () => {
+  test("starts with ONE mark and the level said once, with how soon and the engine's action", () => {
     render(<UrgencyResult result={ROUTINE} />);
     const result = screen.getByRole("heading", { name: "Urgency: Routine / self-care" }).closest("section");
     const indicator = result.querySelector(".urgency__indicator");
-    expect(indicator.querySelector("svg.urgency__icon")).not.toBeNull();
-    expect(indicator).toHaveTextContent("You can monitor this");
     expect(result.firstElementChild).toBe(indicator);
+    // One mark (the Held ring), no second icon anywhere on the result.
+    expect([...result.querySelectorAll("svg")].filter((svg) => !svg.closest("summary, .urgency__actions"))).toHaveLength(1);
+    expect(indicator.querySelector("svg.held.held--done")).not.toBeNull();
+    expect(indicator).toHaveTextContent(`How soon: ${ROUTINE.timeframe}`);
+    expect(within(indicator).getByText(ROUTINE.action, { exact: false })).toHaveClass("urgency__action");
+    // The label is written once where people see it (the scale repeats it for screen readers only).
+    const visible = [...result.querySelectorAll("*")].filter((el) => el.children.length === 0 && !el.closest(".urgency-scale"));
+    expect(visible.filter((el) => el.textContent.includes("Routine / self-care"))).toHaveLength(1);
   });
 
   test.each([
@@ -154,7 +165,7 @@ describe("Urgency result card", () => {
     ["soon", "See a doctor soon"],
     ["urgent", "Urgent"],
     ["emergency", "Emergency"],
-  ])("the 4-step scale marks %s with its label, an icon and text, not colour alone", (level, label) => {
+  ])("the 4-step scale marks %s with its label and text for screen readers, not colour alone", (level, label) => {
     render(<UrgencyResult result={{ ...ROUTINE, level, label, explanation: null, reasons: [] }} />);
     const scale = screen.getByRole("list", { name: "Urgency scale, from lowest to highest" });
     const steps = within(scale).getAllByRole("listitem");
@@ -163,7 +174,10 @@ describe("Urgency result card", () => {
     expect(current).toHaveLength(1);
     expect(current[0]).toHaveTextContent(label);
     expect(current[0]).toHaveTextContent("This result");
-    expect(current[0].querySelector("svg")).not.toBeNull();
+    // The level is written out for screen readers; the eye gets it from the header ("Urgency: <label>").
+    const index = ["routine", "soon", "urgent", "emergency"].indexOf(level) + 1;
+    expect(scale.closest(".urgency-scale").querySelector(".urgency-scale__level")).toHaveTextContent(`Level ${index} of 4: ${label}`);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(`Urgency: ${label}`);
   });
 
   test("the scale uses exactly the four triage levels, lowest first", () => {

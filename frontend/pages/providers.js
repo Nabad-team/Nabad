@@ -3,10 +3,11 @@ import { useRouter } from "next/router";
 import { useSignedIn } from "../components/SessionTimeout";
 import Card from "../components/ui/Card";
 import Link from "next/link";
-import ProviderFacts, { ProviderBadges, directionsUrl, hasMapLocation } from "../components/ProviderFacts";
+import ProviderFacts, { ProviderBadges, ProviderCaveats, directionsUrl, hasMapLocation } from "../components/ProviderFacts";
 import { readProviderFilters, providerUrl } from "../lib/providerFilters";
 import ProfileHeader from "../components/ProfileHeader";
-import PageLayout from "../components/ui/PageLayout";
+import PageLayout, { SiteHeader } from "../components/ui/PageLayout";
+import HeldIcon from "../components/ui/HeldIcon";
 import PageTitle from "../components/ui/PageTitle";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -107,6 +108,8 @@ export default function ProvidersPage() {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [showMap, setShowMap] = useState(false);
+  // Phones (under 48rem): only the name search shows; "Filters" opens the rest (styles/components.css).
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const loadedFilters = useRef(null);
   // Refresh scheduled availability while the page remains open.
   useEffect(() => { const timer = setInterval(() => setRetry(value => value + 1), 60000); return () => clearInterval(timer); }, []);
@@ -136,8 +139,38 @@ export default function ProvidersPage() {
   const field = key => ({ value: draft[key], onChange: e => setDraft(old => ({ ...old, [key]: e.target.value })) });
   const categoryCount = data.typeCounts?.[filters?.type];
   const limitedCategory = Number.isInteger(categoryCount) && categoryCount < 10;
-  return <PageLayout title={t("title")} header={<ProfileHeader />}>
-    <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
+  const isSaved = (provider) => favorites?.includes(provider.id) || false;
+  // The filters in use (not the name search), for the phone's "Filters" button.
+  const activeFilters = filters ? ["type", "specialty", "city", "district", "governorate", "service", "insurance", "radiusKm", "emergency24h", "openNow", "favorites"]
+    .filter((key) => Boolean(filters[key]) && (key !== "favorites" || signedIn)).length : 0;
+  // Signed out: the landing page's header (Find care, Log in, Sign up). Signed in: the app's header.
+  const header = signedIn ? <ProfileHeader /> : (
+    <SiteHeader>
+      <a href="/providers" className="site-nav__link" aria-current="page">Find care</a>
+      <a href="/login" className="site-nav__link">Log in</a>
+      <Button href="/signup" size="small">Sign up</Button>
+    </SiteHeader>
+  );
+  return <PageLayout title={t("title")} header={header}>
+    {/* Title and lead on the left; Use my location and Show map at the top right. */}
+    <div className="providers-head">
+      <PageTitle lead={t("lead")}>{t("title")}</PageTitle>
+      <div className="providers-head__tools">
+        <button type="button" className="quiet-button" disabled={locating} aria-describedby="provider-location-hint" onClick={() => locate()}>
+          <HeldIcon name="location" size="1.25rem" />{t(locating ? "locating" : "location")}
+        </button>
+        {(location || locating) && <button type="button" className="quiet-button" onClick={() => {
+          locationRequest.current += 1; setLocation(null); setLocating(false); setLocationError("");
+          setDraft(old => ({ ...old, radiusKm: "" }));
+          applyFilters({ ...filters, lat: undefined, lng: undefined, radiusKm: "", page: 1 });
+        }}>{t("clearLocation")}</button>}
+        <button type="button" className="quiet-button" aria-pressed={showMap} onClick={() => setShowMap(value => !value)}>
+          <HeldIcon name="map" size="1.25rem" />{t(showMap ? "hideMap" : "showMap")}
+        </button>
+      </div>
+    </div>
+    {!filters?.emergency24h && locationError && <p role="alert">{locationError}</p>}
+    {location && <p role="status" className="text-muted">{t("locationReady")}</p>}
     {filters?.emergency24h && <Alert tone="danger">
       <p><a href="tel:140">{t("emergencyCall")}</a> {t("emergencyHelp")}</p>
       <p>{filters.emergencyNeeds ? t("emergencyMatching", { needs: filters.emergencyNeeds.split(",").map(id => t(`emergencyNeeds.${id}`)).join(", ") }) : t("emergencyGeneral")}</p>
@@ -150,33 +183,48 @@ export default function ProvidersPage() {
     {favoriteError && <Alert tone="danger" role="alert"><p>{favoriteError}</p>
       {!favorites && <Button variant="secondary" onClick={() => setFavoriteRetry(value => value + 1)}>{t("retryFavorites")}</Button>}
     </Alert>}
-    {/* Wide screens: filters in a side panel next to the results. Phones: filters, then results. */}
-    <div className="providers-layout">
-    <form className="form provider-filters" aria-label={t("filtersLabel")} onSubmit={event => {
+    {/* The filters in one row above the results (never a side column, so desktop never has three columns), with the
+        result count at its end. "More filters" opens a panel under the row. */}
+    <form id="provider-filters" className={`provider-filters${filtersOpen ? " provider-filters--open" : ""}`} aria-label={t("filtersLabel")} onSubmit={event => {
       event.preventDefault();
       applyFilters({ ...draft, type: draft.emergency24h ? "" : draft.type, ...(location || {}), page: 1 });
     }}>
-      <Input id="provider-search" label={t("search")} maxLength={100} {...field("q")} />
-      <div className="field"><label htmlFor="provider-type" className="field__label">{t("facilityType")}</label>
-        <select id="provider-type" className="input" disabled={draft.emergency24h} {...field("type")}>
-          <option value="">{t("allFacilityTypes")}</option>
-          {["hospital", "clinic", "laboratory", "imaging-center"].map(type => <option key={type} value={type}>{t(type)}</option>)}
-        </select>
+      <div className="provider-filters__row">
+        <Input id="provider-search" label={t("search")} maxLength={100} {...field("q")} />
+        <div className="field"><label htmlFor="provider-type" className="field__label">{t("facilityType")}</label>
+          <select id="provider-type" className="input" disabled={draft.emergency24h} {...field("type")}>
+            <option value="">{t("allFacilityTypes")}</option>
+            {["hospital", "clinic", "laboratory", "imaging-center"].map(type => <option key={type} value={type}>{t(type)}</option>)}
+          </select>
+        </div>
+        <div className="field"><label htmlFor="provider-specialty" className="field__label">{t("specialty")}</label>
+          <select id="provider-specialty" className="input" {...field("specialty")}>
+            <option value="">{t("allSpecialties")}</option>
+            {data.specialties.map(value => <option key={value} value={value}>{t(`specialties.${value}`)}</option>)}
+          </select>
+        </div>
+        <div className="field"><label htmlFor="provider-city" className="field__label">{t("city")}</label>
+          <select id="provider-city" className="input" {...field("city")}>
+            <option value="">{t("allCities")}</option>
+            {data.cities.map(city => <option key={city} value={city.toLowerCase()}>{city}</option>)}
+          </select>
+        </div>
+        <div className="provider-filters__buttons">
+          <button type="button" className="button button--secondary provider-filters__toggle" aria-expanded={filtersOpen} aria-controls="provider-filters"
+            onClick={() => setFiltersOpen((value) => !value)}>
+            {t("filtersButton")}{activeFilters > 0 && <span className="provider-filters__badge">{activeFilters}<span className="visually-hidden"> {t("filtersActive")}</span></span>}
+          </button>
+          <Button type="submit" className="provider-filters__submit">{t("submit")}</Button>
+        </div>
       </div>
-      <div className="field"><label htmlFor="provider-specialty" className="field__label">{t("specialty")}</label>
-        <select id="provider-specialty" className="input" {...field("specialty")}>
-          <option value="">{t("allSpecialties")}</option>
-          {data.specialties.map(value => <option key={value} value={value}>{t(`specialties.${value}`)}</option>)}
-        </select>
-      </div>
-      <div className="field"><label htmlFor="provider-city" className="field__label">{t("city")}</label>
-        <select id="provider-city" className="input" {...field("city")}>
-          <option value="">{t("allCities")}</option>
-          {data.cities.map(city => <option key={city} value={city.toLowerCase()}>{city}</option>)}
-        </select>
+      <div className="provider-filters__toggles">
+        <label className="check"><input type="checkbox" disabled={Boolean(draft.emergencyNeeds)} checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> <span>{t("emergencyOnly")}</span></label>
+        <label className="check"><input type="checkbox" checked={draft.openNow} onChange={e => setDraft(old => ({ ...old, openNow: e.target.checked }))} /> <span>{t("openNow")}</span></label>
+        {signedIn && <label className="check"><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> <span>{t("favoritesOnly")}</span></label>}
+        {!loading && !error && <p role="status" className="provider-filters__count">{t("count", { count: data.total })}</p>}
       </div>
       <details className="provider-filters__advanced">
-        <summary>{t("moreFilters")}</summary>
+        <summary>{t("moreFilters")}<HeldIcon name="chevronDown" size="1.125rem" className="provider-filters__chevron" /></summary>
         <div className="provider-filters__advanced-content">
           <div className="field"><label htmlFor="provider-district" className="field__label">{t("district")}</label>
             <select id="provider-district" className="input" {...field("district")}>
@@ -204,51 +252,37 @@ export default function ProvidersPage() {
             </select>
             <p className="text-muted">{t("insuranceNote")}</p>
           </div>
-          <p id="provider-location-hint">{t("locationHint")}</p>
-          <div className="form-actions">
-            <Button variant="secondary" disabled={locating} aria-describedby="provider-location-hint" onClick={() => locate()}>{t(locating ? "locating" : "location")}</Button>
-            {(location || locating) && <Button variant="secondary" onClick={() => {
-              locationRequest.current += 1; setLocation(null); setLocating(false); setLocationError("");
-              setDraft(old => ({ ...old, radiusKm: "" }));
-              applyFilters({ ...filters, lat: undefined, lng: undefined, radiusKm: "", page: 1 });
-            }}>{t("clearLocation")}</Button>}
-          </div>
-          {!filters?.emergency24h && locationError && <p role="alert">{locationError}</p>}
-          {location && <p role="status">{t("locationReady")}</p>}
           <div className="field"><label htmlFor="provider-radius" className="field__label">{t("radius")}</label>
             <select id="provider-radius" className="input" disabled={!location} {...field("radiusKm")}>
               <option value="">{t("anyDistance")}</option>
               {[5, 10, 25, 50, 100].map(km => <option key={km} value={km}>{t("within", { km })}</option>)}
             </select>
+            <p id="provider-location-hint" className="text-muted">{t("locationHint")}</p>
           </div>
-          <label><input type="checkbox" checked={draft.openNow} onChange={e => setDraft(old => ({ ...old, openNow: e.target.checked }))} /> {t("openNow")}</label>
-          <label><input type="checkbox" disabled={Boolean(draft.emergencyNeeds)} checked={draft.emergency24h} onChange={e => setDraft(old => ({ ...old, emergency24h: e.target.checked }))} /> {t("emergencyOnly")}</label>
-          {signedIn && <label><input type="checkbox" checked={draft.favorites} onChange={e => setDraft(old => ({ ...old, favorites: e.target.checked }))} /> {t("favoritesOnly")}</label>}
         </div>
       </details>
-      <Button type="submit">{t("submit")}</Button>
     </form>
-    <div className="providers-layout__results">
+    <div className="providers-results">
     {loading ? <ProvidersSkeleton label={t("loading")} /> : error ? <Alert tone="danger" role="alert">
       <p>{error}</p><Button variant="secondary" onClick={() => setRetry(value => value + 1)}>{t("retry")}</Button>
     </Alert> : <>
-      <p role="status">{t("count", { count: data.total })}</p>
-      {/* The info notes: one short directory note for every result (instead of the same notes on each card), and
-          how saving works. */}
+      {/* Said once: one muted line, the same notes in full under "About this data". */}
       <div className="provider-notes">
-        <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
-        {limitedCategory && <p className="text-muted">{t("limitedCoverage", {
-          category: t(filters.type), count: categoryCount, listings: categoryCount === 1 ? "listing" : "listings",
-        })}</p>}
-        <p className="text-muted provider-saved-note">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
+        <p className="text-muted provider-notes__line">{t("dataLine")}{" "}</p>
+        <details className="provider-notes__about">
+          <summary>{t("aboutData")}<HeldIcon name="chevronDown" size="1rem" className="provider-filters__chevron" /></summary>
+          <p className="text-muted provider-directory-note">{t("resultsNote")}</p>
+          {limitedCategory && <p className="text-muted">{t("limitedCoverage", {
+            category: t(filters.type), count: categoryCount, listings: categoryCount === 1 ? "listing" : "listings",
+          })}</p>}
+          <p className="text-muted provider-saved-note">{t(signedIn ? "favoritesHint" : "publicHint")}</p>
+          {!filters.emergency24h && travelIds.length > 0 && <p id="provider-travel-hint" className="text-muted">{t("travelHint")}</p>}
+        </details>
       </div>
-      {!filters.emergency24h && travelIds.length > 0 && <p id="provider-travel-hint">{t("travelHint")}</p>}
-      {/* Side by side from 40rem, stacked on phones. */}
-      <div className="provider-tools">
-        {!filters.emergency24h && travelIds.length > 0 && <Button variant="secondary" disabled={locating || estimating}
-          aria-describedby="provider-travel-hint" onClick={estimateTravel}>{t(estimating ? "travelLoading" : "travelButton")}</Button>}
-        <Button variant="secondary" aria-pressed={showMap} onClick={() => setShowMap(value => !value)}>{t(showMap ? "hideMap" : "showMap")}</Button>
-      </div>
+      {!filters.emergency24h && travelIds.length > 0 && <div className="provider-tools">
+        <button type="button" className="quiet-button" disabled={locating || estimating}
+          aria-describedby="provider-travel-hint" onClick={estimateTravel}>{t(estimating ? "travelLoading" : "travelButton")}</button>
+      </div>}
       {!filters.emergency24h && travelIds.length > 0 && travelResults && <p role="status">{t(travelResults.error ? "travelError" : "travelReady")}</p>}
       {showMap && <ProviderMap providers={data.providers} />}
       {!data.providers.length && <p>{t(filters.emergencyNeeds ? "emergencyNoMatch" : "empty")}</p>}
@@ -274,29 +308,39 @@ export default function ProvidersPage() {
         {data.providers.map((provider, index) => {
           const comparing = comparison.some(item => item.id === provider.id);
           const drivingMinutes = travelResults?.minutes?.[provider.id];
-          // Compact card: name, type and city, key badges and the main actions. Everything else is kept,
-          // unchanged, under "More details".
+          const canDirect = hasMapLocation(provider);
+          // ONE primary action: Directions once your location is known, otherwise Call. The other is an icon button.
+          const directionsFirst = Boolean(canDirect && (location || !provider.phone));
+          const callAction = !provider.phone ? null : (primary => <a className={primary ? "button button--primary button--small" : "icon-button"}
+            href={`tel:${provider.phone}`} aria-label={t("call", { name: provider.name })}>
+            <HeldIcon name="phone" size="1.25rem" />{primary && t("callShort")}</a>);
+          const directionsAction = !canDirect ? null : (primary => <a className={primary ? "button button--primary button--small" : "icon-button"}
+            href={directionsUrl(provider)} target="_blank" rel="noopener noreferrer" aria-label={t("directionsTo", { name: provider.name })}>
+            <HeldIcon name="directions" size="1.25rem" />{primary && t("directionsShort")}</a>);
+          const saved = isSaved(provider);
+          // The card: the name (the link to every detail), type, city and distance, status chips, then the actions.
           return <Card as="li" className="provider-item provider-card" key={provider.id} id={`provider-${provider.id}`} tabIndex={-1}>
             {filters.emergencyNeeds && filters.lat != null && data.page === 1 && index === 0 && provider.distanceKm != null && <p role="status">{t("emergencyNearest")}</p>}
-            <h2><Link href={`/providers/${provider.id}`}>{provider.name}</Link></h2>
-            <p className="provider-card__meta">{t(provider.type)}{provider.city ? ` · ${provider.city}` : ""}</p>
-            <ProviderBadges provider={provider} drivingMinutes={drivingMinutes} />
-            <div className="button-row provider-card__actions">
-              {provider.phone && <a className="button button--secondary button--small" href={`tel:${provider.phone}`} aria-label={t("call", { name: provider.name })}>{t("callShort")}</a>}
-              {hasMapLocation(provider) && <a className="button button--secondary button--small" href={directionsUrl(provider)} target="_blank" rel="noopener noreferrer"
-                aria-label={t("directionsTo", { name: provider.name })}>{t("directionsShort")}</a>}
-              {signedIn ? <Button variant="secondary" size="small" disabled={!!saving || !favorites} aria-pressed={favorites?.includes(provider.id) || false}
-                aria-label={t(favorites?.includes(provider.id) ? "unsave" : "save", { name: provider.name })}
-                onClick={() => toggleFavorite(provider)}>{saving === provider.id ? t("saving") : t(favorites?.includes(provider.id) ? "unsaveButton" : "saveButton")}</Button> : <a className="button button--secondary button--small" href="/login">{t("signInToSave")}</a>}
-              <Button variant="secondary" size="small" aria-pressed={comparing} disabled={!comparing && comparison.length === 3}
-                aria-label={t("compareName", { name: provider.name })} onClick={() => toggleComparison(provider)}>{t("compareAdd")}</Button>
+            <Link href={`/providers/${provider.id}`} className="provider-card__header">
+              <h2 className="provider-card__name">{provider.name}</h2>
+              <HeldIcon name="chevronRight" size="1.25rem" className="provider-card__chevron" />
+            </Link>
+            <p className="provider-card__meta">{t(provider.type)}{provider.city ? ` · ${provider.city}` : ""}{provider.distanceKm != null ? ` · ${t("distance", { km: provider.distanceKm })}` : ""}</p>
+            <ProviderBadges provider={provider} drivingMinutes={drivingMinutes} card />
+            <ProviderCaveats provider={provider} />
+            <div className="provider-card__actions">
+              {directionsFirst ? directionsAction(true) : callAction?.(true)}
+              {directionsFirst ? callAction?.(false) : directionsAction?.(false)}
+              {signedIn ? <button type="button" className="icon-button" disabled={!!saving || !favorites} aria-pressed={saved}
+                aria-label={t(saved ? "unsave" : "save", { name: provider.name })}
+                onClick={() => toggleFavorite(provider)}><HeldIcon name={saved ? "bookmarkFilled" : "bookmark"} size="1.25rem" /></button>
+                : <a className="icon-button" href="/login" aria-label={t("signInToSaveName", { name: provider.name })}><HeldIcon name="bookmark" size="1.25rem" /></a>}
+              <label className="check provider-card__compare">
+                <input type="checkbox" checked={comparing} disabled={!comparing && comparison.length === 3} onChange={() => toggleComparison(provider)}
+                  aria-label={t("compareName", { name: provider.name })} />
+                <span aria-hidden="true">{t("compareAdd")}</span>
+              </label>
             </div>
-            <details className="provider-card__more">
-              <summary>{t("moreDetails")}<span className="visually-hidden">{t("moreDetailsAbout", { name: provider.name })}</span></summary>
-              <div className="provider-card__details">
-                <ProviderFacts provider={provider} drivingMinutes={drivingMinutes} variant="details" />
-              </div>
-            </details>
           </Card>;
         })}
       </ul>
@@ -306,7 +350,6 @@ export default function ProvidersPage() {
         <Button variant="secondary" disabled={data.page * data.limit >= data.total} onClick={() => applyFilters({ ...filters, page: data.page + 1 })}>{t("next")}</Button>
       </div>}
     </>}
-    </div>
     </div>
   </PageLayout>;
 }

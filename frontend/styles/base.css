@@ -1,4 +1,42 @@
 /* Element defaults built on tokens.css. Pages should rarely need their own styles. */
+
+/* "Nabad Digits": the digits 0-9 from Inter 4.1 (SIL Open Font License, public/fonts/Inter-LICENSE.txt), subset to
+   about 1.5 KB per weight. Atkinson Hyperlegible Next and Mono only have a slashed zero (no zero, ss01-ss08, cv01-cv05 or
+   salt alternate removes the slash), so "140" read as "14Ø". unicode-range limits these faces to digits, so Atkinson
+   still draws every letter and punctuation mark. The faces follow Atkinson's own steps (it has 400, 700 and 800, so
+   CSS 500 draws as 400 and 600 as 700): Inter Medium answers up to 549 (Inter Regular is lighter than Atkinson
+   Regular), Inter Bold 550 to 749, Inter ExtraBold from 750. size-adjust 93% matches Inter's digit height (0.747 em)
+   to Atkinson's (0.694 em). See docs/design-system.md#numbers-and-the-zero. */
+@font-face {
+  font-family: "Nabad Digits";
+  src: url("/fonts/nabad-digits-medium.woff2") format("woff2");
+  font-weight: 100 549;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039;
+  size-adjust: 93%;
+}
+
+@font-face {
+  font-family: "Nabad Digits";
+  src: url("/fonts/nabad-digits-bold.woff2") format("woff2");
+  font-weight: 550 749;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039;
+  size-adjust: 93%;
+}
+
+@font-face {
+  font-family: "Nabad Digits";
+  src: url("/fonts/nabad-digits-extrabold.woff2") format("woff2");
+  font-weight: 750 1000;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039;
+  size-adjust: 93%;
+}
+
 *,
 *::before,
 *::after {
@@ -148,4 +186,9 @@ legend {
 @media (forced-colors: active) {
   :focus-visible { outline-color: Highlight; }
   .button, .input, .calendar__day { forced-color-adjust: auto; }
+}
+
+/* The smallest text in Nabad is 13px (--text-xs). A <small> inside small text would otherwise shrink below it. */
+small {
+  font-size: max(var(--text-xs), 0.875em);
 }

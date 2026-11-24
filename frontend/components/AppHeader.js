@@ -11,6 +11,7 @@ import { useAccessibility } from "../context/AccessibilityContext";
 import { providerText } from "../lib/providerText";
 import useDisclosure from "./useDisclosure";
 import NotificationBell from "./NotificationBell";
+import HeldIcon from "./ui/HeldIcon";
 import HeaderSearch from "./HeaderSearch";
 import NavIcon from "./NavIcon";
 import BottomTabBar from "./BottomTabBar";
@@ -271,6 +272,13 @@ export default function AppHeader() {
 
           {signedIn && (
             <div className="app-header__end">
+              {/* Phones and tablets (no sidebar): the emergency call is always one tap away, next to the bell. The
+                  desktop sidebar has its own "Emergency · 140" button instead. */}
+              {!sidebar && (
+                <a href="tel:140" className="header-call" aria-label="Call 140, Lebanese Red Cross emergency">
+                  <HeldIcon name="phone" size="1rem" />140
+                </a>
+              )}
               <NotificationBell />
               <div className="app-header__account app-header__desktop">
                 <ProfileSwitcher id="profile-switcher-desktop" />

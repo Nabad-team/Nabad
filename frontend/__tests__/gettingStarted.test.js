@@ -1,9 +1,11 @@
-// The dashboard's Getting started card (lib/gettingStarted.js, components/GettingStartedCard.js) and the Next step
+// The dashboard's first steps (lib/gettingStarted.js, components/GettingStartedCard.js, shown as To do tags on
+// components/YourHealth.js) and the Next step
 // capitalisation fix (lib/nextStep.js).
 import fs from "fs";
 import path from "path";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import DashboardFirstSteps from "../components/GettingStartedCard";
+import { NextStepSlot, useFirstSteps } from "../components/GettingStartedCard";
+import YourHealth from "../components/YourHealth";
 import GettingStartedSetting from "../components/GettingStartedSetting";
 import { emergencyCardHasContent, gettingStartedSteps, progressText } from "../lib/gettingStarted";
 import { pickNextStep, sentence } from "../lib/nextStep";
@@ -16,13 +18,25 @@ const EMPTY = { health: { dateOfBirth: "", facts: [] }, medications: [], symptom
 const HALF = { ...EMPTY, health: FULL_HEALTH, medications: [{ id: "m1", name: "Metformin", times: [] }] };
 const DONE = { ...HALF, symptoms: [{ id: "s1" }], emergencyCard: { ...EMPTY.emergencyCard, emergencyContact: { name: "Sami", phone: "71123456" } } };
 // What useDashboardData() returns once everything has answered.
-const loaded = (sources) => ({ ...sources, wellbeing: { sleep: null }, appointments: [], loaded: true, startLoaded: true });
+const loaded = (sources) => ({ ...sources, wellbeing: { sleep: null }, appointments: [], loaded: true, startLoaded: true, profileId: "self", profileRef: { current: "self" }, setMedications: () => {} });
+const EMPTY_STEPS_FOR = (forName) => gettingStartedSteps(EMPTY, forName);
+
+// The dashboard's first steps, placed as pages/dashboard.js places them: Next step, and Your health with its To do tags.
+function FirstSteps({ data, forName = "", isSelf = true, now }) {
+  const firstSteps = useFirstSteps({ data, forName, isSelf });
+  return (
+    <>
+      <NextStepSlot firstSteps={firstSteps} data={data} forName={forName} now={now} />
+      <YourHealth data={data} firstSteps={firstSteps} forName={forName} />
+    </>
+  );
+}
 const NOON = new Date("2026-11-16T10:00:00Z");
 
 async function renderSlot(sources, props = {}) {
   let result;
   await act(async () => {
-    result = render(<main><h1>Welcome, Rania</h1><DashboardFirstSteps data={loaded(sources)} now={NOON} {...props} /></main>);
+    result = render(<main><h1>Welcome, Rania</h1><FirstSteps data={loaded(sources)} now={NOON} {...props} /></main>);
   });
   return result;
 }
@@ -70,96 +84,129 @@ describe("each step is ticked from data the account already has", () => {
   });
 });
 
-describe("the card on the dashboard", () => {
-  test("a new account sees Getting started instead of Next step, with one button per step and 0 of 4 done", async () => {
+describe("the first steps on the dashboard (To do tags on Your health)", () => {
+  // The four steps' tiles, by their link name's start.
+  const TILES = { health: "My health", medication: "Medicines", symptoms: "Symptom checks", "emergency-card": "Emergency card" };
+  const tile = (key) => screen.getByRole("link", { name: new RegExp(`^${TILES[key]}`) });
+  const todoTags = () => [...document.querySelectorAll(".tile__tag")];
+
+  test("a new account sees the four first steps instead of Next step: a To do tag on each tile and 0 of 4 done", async () => {
     await renderSlot(EMPTY);
-    const card = screen.getByRole("region", { name: "Getting started" });
-    expect(within(card).getByText("0 of 4 done")).toBeInTheDocument();
-    expect(within(card).getAllByRole("listitem")).toHaveLength(4);
-    expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
-    expect(within(card).getByRole("link", { name: "Open my medications" })).toHaveAttribute("href", "/medications");
-    expect(within(card).getByRole("link", { name: "Check symptoms" })).toHaveAttribute("href", "/symptoms");
-    expect(within(card).getByRole("link", { name: "Open the card" })).toHaveAttribute("href", "/emergency-card");
+    const section = screen.getByRole("region", { name: "Your health" });
+    // The heading row: a small ring, "Setup 0/4" (said as "0 of 4 first steps done") and Hide.
+    const setup = section.querySelector(".your-health__setup");
+    expect(setup).toHaveTextContent("Setup 0/4");
+    expect(setup).toHaveTextContent("0 of 4 first steps done");
+    expect(setup.querySelector("svg.setup-ring")).toHaveAttribute("aria-hidden", "true");
+    expect(todoTags()).toHaveLength(4);
+    expect(tile("health")).toHaveAttribute("href", "/my-health");
+    expect(tile("medication")).toHaveAttribute("href", "/medications");
+    expect(tile("symptoms")).toHaveAttribute("href", "/symptoms");
+    expect(tile("emergency-card")).toHaveAttribute("href", "/emergency-card");
+    for (const key of Object.keys(TILES)) expect(within(tile(key)).getByText("To do")).toBeInTheDocument();
     // Next step would say "Add your health basics for safer guidance": it must not compete.
     expect(screen.queryByRole("region", { name: "Next step" })).toBeNull();
     expect(document.body).not.toHaveTextContent(/streak|hurry|don't miss/i);
   });
 
-  test("a half-done account: done steps are ticked without a button, the others keep theirs", async () => {
+  test("a half-done account: done steps lose their tag, the others keep theirs", async () => {
     await renderSlot(HALF);
-    const card = screen.getByRole("region", { name: "Getting started" });
-    expect(within(card).getByText("2 of 4 done")).toBeInTheDocument();
-    expect(within(card).getByText("Add your health basics").closest("p")).toHaveTextContent("Done: Add your health basics");
-    expect(within(card).queryByRole("link", { name: "Open my health" })).toBeNull();
-    expect(within(card).getByRole("link", { name: "Check symptoms" })).toBeInTheDocument();
+    expect(document.querySelector(".your-health__setup")).toHaveTextContent("Setup 2/4");
+    expect(within(tile("health")).queryByText("To do")).toBeNull();
+    expect(within(tile("medication")).queryByText("To do")).toBeNull();
+    expect(within(tile("symptoms")).getByText("To do")).toBeInTheDocument();
+    expect(todoTags()).toHaveLength(2);
   });
 
-  test("Hide is saved on the server for the account, the card goes, Next step returns and focus moves to the title", async () => {
+  test("Hide is saved on the server for the account, the tags go, Next step returns and focus moves to the title", async () => {
     await renderSlot(EMPTY);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Hide" })); });
     expect(hideGettingStarted).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
+    expect(screen.queryByText(/First steps/)).toBeNull();
+    expect(document.querySelector(".your-health__setup, svg.setup-ring")).toBeNull();
     expect(screen.getByRole("region", { name: "Next step" })).toHaveTextContent("Add your health basics for safer guidance");
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
   });
 
-  test("if hiding fails, the card stays and says so", async () => {
+  test("if hiding fails, the first steps stay and it says so", async () => {
     hideGettingStarted.mockRejectedValue(new Error("offline"));
     await renderSlot(EMPTY);
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Hide" })); });
-    expect(screen.getByRole("alert")).toHaveTextContent("We couldn't hide the card.");
-    expect(screen.getByRole("region", { name: "Getting started" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("We couldn't hide the first steps.");
+    expect(todoTags()).toHaveLength(4);
   });
 
-  test("once hidden on the server, it never shows again, on any profile", async () => {
+  test("once hidden on the server, they never show again, on any profile", async () => {
     getMe.mockResolvedValue({ user: { gettingStartedHidden: true } });
     await renderSlot(EMPTY);
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: "Hide" })).toBeNull();
     expect(screen.getByRole("region", { name: "Next step" })).toBeInTheDocument();
+    document.body.innerHTML = "";
     await renderSlot(EMPTY, { forName: "Sami", isSelf: false });
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
   });
 
-  test("all four done on your own profile: gone, and remembered so it stays gone", async () => {
+  test("all four done on your own profile: the tags go, and it's remembered so they stay gone", async () => {
     await renderSlot(DONE);
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
+    expect(screen.queryByText(/First steps/)).toBeNull();
+    expect(document.querySelector(".your-health__setup, svg.setup-ring")).toBeNull();
     expect(hideGettingStarted).toHaveBeenCalledTimes(1);
   });
 
   test("Acting for: the steps are the family member's, named, and finishing theirs doesn't hide yours", async () => {
     await renderSlot(HALF, { forName: "Sami", isSelf: false });
-    const card = screen.getByRole("region", { name: "Getting started" });
-    expect(card).toHaveTextContent("A few first steps for Sami, whenever you're ready.");
-    expect(within(card).getAllByRole("listitem").map((item) => item.querySelector(".getting-started__title").textContent.replace("Done: ", ""))).toEqual([
+    expect(document.querySelector(".your-health__setup")).toHaveTextContent("Setup 2/4 for Sami: 2 of 4 first steps done");
+    expect(EMPTY_STEPS_FOR("Sami").map((step) => step.text)).toEqual([
       "Add Sami's health basics", "Add a medication Sami takes", "Try a symptom check for Sami", "Set up Sami's emergency information card",
     ]);
+    // Each tag tells screen readers which step it is.
+    expect(todoTags().map((tag) => tag.textContent)).toEqual(["To do: Try a symptom check for Sami", "To do: Set up Sami's emergency information card"]);
     document.body.innerHTML = "";
     await renderSlot(DONE, { forName: "Sami", isSelf: false });
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
     expect(hideGettingStarted).not.toHaveBeenCalled();
   });
 
   test("while loading it holds the Next step placeholder, and if a source fails it falls back to Next step", async () => {
     let result;
-    await act(async () => { result = render(<DashboardFirstSteps data={{ ...loaded(EMPTY), startLoaded: false }} now={NOON} />); });
+    await act(async () => { result = render(<FirstSteps data={{ ...loaded(EMPTY), startLoaded: false }} now={NOON} />); });
     expect(result.container.querySelector('.skeleton[aria-hidden="true"]')).not.toBeNull();
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
     result.unmount();
     await renderSlot({ ...EMPTY, symptoms: null, symptomsFailed: true });
-    expect(screen.queryByRole("region", { name: "Getting started" })).toBeNull();
+    expect(todoTags()).toHaveLength(0);
     expect(screen.getByRole("region", { name: "Next step" })).toBeInTheDocument();
+  });
+
+  test("the setup ring fills with the steps done and disappears with its text when everything is done", async () => {
+    await renderSlot(HALF);
+    const ring = document.querySelector(".your-health__setup svg.setup-ring");
+    const value = ring.querySelector(".setup-ring__value");
+    const circumference = Number(value.getAttribute("stroke-dasharray"));
+    expect(Number(value.getAttribute("stroke-dashoffset"))).toBeCloseTo(circumference / 2, 5);
+    expect(screen.getByRole("button", { name: "Hide" })).toHaveClass("link-button");
+    document.body.innerHTML = "";
+    await renderSlot(DONE);
+    expect(document.querySelector(".your-health__setup")).toBeNull();
+    expect(document.querySelector("svg.setup-ring")).toBeNull();
+    expect(screen.queryByText(/Setup/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Hide" })).toBeNull();
   });
 
   test("only on the dashboard: never on the symptom check or its urgent and emergency results", () => {
     const root = path.join(__dirname, "..");
-    const users = ["pages", "components"].flatMap(function walk(dir) {
+    const users = (pattern) => ["pages", "components"].flatMap(function walk(dir) {
       return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((entry) => {
         const relative = path.join(dir, entry.name);
         if (entry.isDirectory()) return walk(relative);
-        return entry.name.endsWith(".js") && /GettingStartedCard/.test(fs.readFileSync(path.join(root, relative), "utf8")) ? [relative] : [];
+        return entry.name.endsWith(".js") && pattern.test(fs.readFileSync(path.join(root, relative), "utf8")) ? [relative] : [];
       });
-    }).filter((file) => !file.endsWith("GettingStartedCard.js"));
-    expect(users).toEqual([path.join("pages", "dashboard.js")]);
+    });
+    expect(users(/GettingStartedCard/).filter((file) => !file.endsWith("GettingStartedCard.js"))).toEqual([path.join("pages", "dashboard.js")]);
+    expect(users(/components\/YourHealth|"\.\/YourHealth"/)).toEqual([path.join("pages", "dashboard.js")]);
   });
 });
 

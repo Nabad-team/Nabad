@@ -7,7 +7,7 @@ describe("Wellbeing Corner", () => {
     render(<WellbeingCorner />);
 
     expect(
-      screen.getByText("Wellbeing Corner")
+      screen.getByRole("heading", { level: 2, name: "Wellbeing" })
     ).toBeInTheDocument();
   });
 
@@ -36,13 +36,14 @@ describe("Wellbeing Corner", () => {
   test("shows National Lifeline 1564", () => {
     render(<WellbeingCorner />);
 
-    expect(
-      screen.getByText("National Lifeline 1564")
-    ).toBeInTheDocument();
+    // The row is named by the full name; the number shows once, as the call button.
+    const row = screen.getByRole("region", { name: "National Lifeline 1564" });
+    expect(row).toHaveTextContent("National Lifeline");
 
-    const callLink = screen.getByRole("link", {
+    const callLink = within(row).getByRole("link", {
       name: "Call 1564",
     });
+    expect(callLink).toHaveTextContent(/^1564$/);
 
     expect(callLink).toHaveAttribute("href", "tel:1564");
     expect(callLink).toHaveClass("button", "wellbeing-support-number__call");
@@ -67,7 +68,8 @@ describe("Wellbeing Corner", () => {
       const entry = screen.getByRole("region", { name: contact.name });
       expect(within(entry).getByRole("link", { name: `Call ${contact.phone}` })).toHaveAttribute("href", `tel:${contact.phone}`);
       expect(entry.querySelector("time")).toHaveAttribute("datetime", contact.verifiedOn);
-      expect(entry).toHaveTextContent(/Last verified: \d{1,2} [A-Za-z]+ \d{4}/);
+      // The compact row: "24/7 · verified 31 October 2026" (the Red Cross: "Emergency · verified ...").
+      expect(entry).toHaveTextContent(/(24\/7|Emergency) · verified \d{1,2} [A-Za-z]+ \d{4}/);
       const source = within(entry).getByRole("link", { name: `Official verification source for ${contact.name}` });
       expect(source).toHaveAttribute("href", contact.sourceUrl);
       expect(source).toHaveAttribute("rel", "noopener noreferrer");

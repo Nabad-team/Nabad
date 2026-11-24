@@ -100,6 +100,8 @@ test("skipping ends the questions, and a new check starts again from round 1 wit
   const NEW_CHECK = { ...ROUND_1, followUpQuestions: [SEVERITY], followUpState: state(1, ["severity"]) };
   assessUrgency.mockResolvedValueOnce(NEW_CHECK);
   assessUrgencyWithAnswers.mockResolvedValueOnce(DONE);
+  await user.click(screen.getByRole("button", { name: "Check something else" }));
+  expect(screen.getByLabelText("Symptoms")).toHaveValue("");
   await user.type(screen.getByLabelText("Symptoms"), "a headache now");
   await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
   expect(await screen.findByText(/Question 1 of at most 3/)).toBeInTheDocument();

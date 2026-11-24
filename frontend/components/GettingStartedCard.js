@@ -1,49 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import Card from "./ui/Card";
-import Button from "./ui/Button";
-import Alert from "./ui/Alert";
 import NextStepCard from "./NextStepCard";
 import { NextStepSkeleton } from "./ui/Skeleton";
 import { getMe, hideGettingStarted } from "../lib/api";
-import { allDone, doneCount, gettingStartedSteps, progressText } from "../lib/gettingStarted";
+import { allDone, gettingStartedSteps } from "../lib/gettingStarted";
 
-// The dashboard's "Getting started" card: four first steps for the profile being viewed, each with one button,
-// ticked from data the dashboard already loads (lib/gettingStarted.js). "2 of 4 done" in words. Calm: no streaks,
-// no pressure, and "Hide" turns it off for good for the account (stored on the server).
-export function GettingStartedCard({ steps, forName, onHide, hiding }) {
-  const done = doneCount(steps);
-  return (
-    <Card className="getting-started" aria-labelledby="getting-started-heading">
-      <div className="getting-started__header">
-        <div>
-          <h2 id="getting-started-heading">Getting started</h2>
-          <p className="text-muted">{forName ? `A few first steps for ${forName}, whenever you're ready.` : "A few first steps, whenever you're ready."}</p>
-        </div>
-        <Button variant="secondary" size="small" onClick={onHide} disabled={hiding} aria-describedby="getting-started-hide-hint">Hide</Button>
-      </div>
-      <p id="getting-started-hide-hint" className="visually-hidden">Hides this card for good. Every page stays in the menu.</p>
-      <p className="getting-started__progress">
-        <strong>{progressText(steps)}</strong>
-        <span className="getting-started__bar" aria-hidden="true"><span style={{ width: `${(done / steps.length) * 100}%` }} /></span>
-      </p>
-      <ol className="getting-started__steps">
-        {steps.map((step) => (
-          <li key={step.key} className={`getting-started__step${step.done ? " getting-started__step--done" : ""}`}>
-            <span className="getting-started__mark" aria-hidden="true">{step.done ? "✓" : ""}</span>
-            <div className="getting-started__text">
-              <p className="getting-started__title">{step.done && <span className="visually-hidden">Done: </span>}{step.text}</p>
-              {!step.done && <p className="text-muted text-sm">{step.hint}</p>}
-            </div>
-            {step.done ? <span className="getting-started__done" aria-hidden="true">Done</span>
-              : <Button variant="secondary" size="small" href={step.href}>{step.action}</Button>}
-          </li>
-        ))}
-      </ol>
-    </Card>
-  );
-}
+// Getting started: four first steps for the profile being viewed, ticked from data the dashboard already loads
+// (lib/gettingStarted.js). They show as "To do" tags on the dashboard's Your health tiles (the YourHealth component),
+// with "2 of 4 done" in words. Calm: no streaks, no pressure, and "Hide" turns them off for good for the account
+// (stored on the server).
 
-// Which first-steps card applies: the Getting started card while it applies, otherwise the Next step card, never
+// Which applies: the first steps (To do tags on Your health) while they apply, otherwise the Next step card, never
 // both. Until every source has answered, `ready` is false (hold a placeholder, so nothing jumps).
 //   data: useDashboardData()   forName: the linked profile's first name, "" for your own   isSelf: your own profile
 export function useFirstSteps({ data, forName = "", isSelf = true }) {
@@ -76,11 +42,11 @@ export function useFirstSteps({ data, forName = "", isSelf = true }) {
     try {
       await hideGettingStarted();
       setHidden(true);
-      // The card is gone: put focus somewhere sensible instead of on nothing.
+      // The Hide button is gone: put focus somewhere sensible instead of on nothing.
       const title = document.querySelector("main h1");
       if (title) { title.setAttribute("tabindex", "-1"); title.focus(); }
     } catch {
-      setError("We couldn't hide the card. Please try again.");
+      setError("We couldn't hide the first steps. Please try again.");
     } finally {
       setHiding(false);
     }
@@ -89,31 +55,10 @@ export function useFirstSteps({ data, forName = "", isSelf = true }) {
   return { ready, steps, showStart: Boolean(ready && !hidden && steps && !finished), error, hide, hiding };
 }
 
-// The Getting started card (with its error line) when it applies; nothing otherwise.
-export function GettingStartedSlot({ firstSteps, forName = "" }) {
-  if (!firstSteps.showStart) return null;
-  return (
-    <>
-      {firstSteps.error && <Alert tone="danger" as="p" role="alert">{firstSteps.error}</Alert>}
-      <GettingStartedCard steps={firstSteps.steps} forName={forName} onHide={firstSteps.hide} hiding={firstSteps.hiding} />
-    </>
-  );
-}
-
 // The Next step card when Getting started doesn't apply; its placeholder until every source has answered.
 export function NextStepSlot({ firstSteps, data, forName = "", now }) {
   if (!data) return null;
   if (!firstSteps.ready) return <div className="skeleton" aria-hidden="true"><NextStepSkeleton /></div>;
   if (firstSteps.showStart) return null;
   return <NextStepCard data={data} forName={forName} now={now} />;
-}
-
-// Both in one slot (the Getting started card, otherwise Next step), as the dashboard had them before the Held
-// refresh. The dashboard now places the two apart with useFirstSteps.
-export default function DashboardFirstSteps({ data, forName = "", isSelf = true, now }) {
-  const firstSteps = useFirstSteps({ data, forName, isSelf });
-  if (!data) return null;
-  return firstSteps.showStart
-    ? <GettingStartedSlot firstSteps={firstSteps} forName={forName} />
-    : <NextStepSlot firstSteps={firstSteps} data={data} forName={forName} now={now} />;
 }

@@ -59,7 +59,7 @@ describe("breathing timing", () => {
     expect(liveStep(container)).toHaveAttribute("aria-live", "polite");
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
     expect(liveStep(container)).toHaveTextContent("Breathe in");
-    expect(container.querySelector(".held--breathe.held--phase-in")).not.toBeNull();
+    expect(container.querySelector(".breathing-dot.breathing-dot--in")).not.toBeNull();
     const node = liveStep(container).firstChild;
     tick(1);
     // Within a step only the hidden countdown changes; the live text stays the very same node.
@@ -70,7 +70,7 @@ describe("breathing timing", () => {
     expect(liveStep(container)).toHaveTextContent("Hold");
     tick(4);
     expect(liveStep(container)).toHaveTextContent("Breathe out");
-    expect(container.querySelector(".held--breathe.held--phase-out")).not.toBeNull();
+    expect(container.querySelector(".breathing-dot.breathing-dot--out")).not.toBeNull();
   });
 
   test("Pause stops the clock, Resume carries on, Stop goes back to the start; focus stays on the one button", () => {
@@ -113,6 +113,7 @@ describe("breathing timing", () => {
     expect(screen.getByText(/breathe in for 4 seconds, hold for 4, and breathe out for 6/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
     expect(container.querySelector(".held")).toBeNull();
+    expect(container.querySelector(".breathing-dot")).toBeNull();
     expect(container.querySelector(".breathing--still")).not.toBeNull();
     expect(liveStep(container)).toHaveTextContent("Breathe in");
     expect(container.querySelector(".breathing__seconds")).toHaveTextContent("4");
@@ -260,18 +261,24 @@ describe("140 and 1564 are always shown", () => {
 });
 
 describe("where the exercises appear", () => {
-  test("the Wellbeing Corner shows the question of the day next to Today's message and the four exercise buttons", () => {
+  test("the dashboard's Wellbeing Corner says breathing once (two minutes, with its timing); the four exercises and the question of the day are on /wellbeing", () => {
     render(<WellbeingCorner />);
-    expect(screen.getByRole("heading", { name: "Question of the day" })).toBeInTheDocument();
-    expect(screen.getByText(reflectionQuestionFor())).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Breathing exercise" })).toHaveAttribute("href", "/wellbeing?start=breathing");
-    expect(screen.getByRole("link", { name: "Grounding exercise" })).toHaveAttribute("href", "/wellbeing?start=grounding");
-    expect(screen.getByRole("link", { name: "5-minute reset" })).toHaveAttribute("href", "/wellbeing?start=reset");
-    expect(screen.getByRole("link", { name: "Bedtime wind-down" })).toHaveAttribute("href", "/wellbeing?start=wind-down");
-    // The support numbers come first, so someone sent here for support sees them before the exercises.
+    // The breathing hero: the dot in its rings, the title, the timing and one Start.
+    const hero = screen.getByRole("region", { name: "Two minutes to breathe" });
+    expect(hero).toHaveTextContent("Two minutes to breatheIn for 4, hold for 4, out for 6");
+    expect(hero.querySelector(".breathing-rings svg.breathing-dot")).not.toBeNull();
+    const breathe = within(hero).getByRole("link", { name: "Start" });
+    expect(breathe).toHaveAttribute("href", "/wellbeing?start=breathing");
+    expect(within(hero).getAllByRole("link")).toHaveLength(1);
+    // Said once: the exercise buttons and the question of the day live on /wellbeing only (pages/wellbeing.js).
+    for (const name of ["Breathing exercise", "Grounding exercise", "5-minute reset", "Bedtime wind-down"]) {
+      expect(screen.queryByRole("link", { name })).toBeNull();
+    }
+    expect(screen.queryByRole("heading", { name: "Question of the day" })).toBeNull();
+    expect(screen.queryByText(reflectionQuestionFor())).toBeNull();
+    // The support numbers come first, so someone sent here for support sees them before the breathing.
     const support = screen.getByRole("heading", { name: "Support in Lebanon" });
-    const exercises = screen.getByRole("heading", { name: "Calm exercises" });
-    expect(support.compareDocumentPosition(exercises) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(support.compareDocumentPosition(breathe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   test.each(["urgent", "emergency"])("never on an %s symptom result, including the self-harm one", (level) => {

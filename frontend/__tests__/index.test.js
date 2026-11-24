@@ -67,9 +67,10 @@ describe("Landing Page", () => {
   test("lets anyone call the Lebanese Red Cross before signing in", () => {
     render(<HomePage />);
 
-    const emergencyCall = screen.getByRole("link", { name: "Emergency? Call 140 (Lebanese Red Cross) now" });
+    // Said once: the top strip names who answers and that no account is needed (the old box at the bottom is gone).
+    const emergencyCall = screen.getByRole("link", { name: /^Emergency\? Call 140/ });
     expect(emergencyCall).toHaveAttribute("href", "tel:140");
-    expect(emergencyCall).toHaveTextContent("You do not need to sign in");
+    expect(emergencyCall).toHaveTextContent("Lebanese Red Cross, no sign-in needed");
   });
 
   test("every feature card links to its page, and nothing says Coming soon", () => {
@@ -77,7 +78,8 @@ describe("Landing Page", () => {
 
     expect(screen.queryByText("Coming soon")).not.toBeInTheDocument();
     const features = screen.getByRole("heading", { name: "How Nabad helps" }).closest("section");
-    expect(within(features).getAllByRole("heading", { level: 3 }).map((heading) => [heading.textContent, heading.querySelector("a")?.getAttribute("href")])).toEqual([
+    // The whole card is the link; its bold title is the heading inside it.
+    expect(within(features).getAllByRole("heading", { level: 3 }).map((heading) => [heading.textContent, heading.closest("a.feature-card")?.getAttribute("href")])).toEqual([
       ["Symptom check", "/symptoms"],
       ["The right hospital in an emergency", "/providers?emergency24h=true"],
       ["Find hospitals and clinics", "/providers"],
@@ -94,14 +96,14 @@ describe("Landing Page", () => {
     }
   });
 
-  test("has a slim Call 140 bar near the top, and keeps the larger box", () => {
+  test("has one slim Call 140 strip near the top (said once; the footer line has 140 too)", () => {
     render(<HomePage />);
 
-    const bar = screen.getByRole("link", { name: "Emergency? Call 140" });
+    const bar = screen.getByRole("link", { name: "Emergency? Call 140 · Lebanese Red Cross, no sign-in needed" });
     expect(bar).toHaveAttribute("href", "tel:140");
     const main = document.querySelector("main");
     expect(main.querySelector("a")).toBe(bar);
-    expect(screen.getByRole("link", { name: "Emergency? Call 140 (Lebanese Red Cross) now" })).toBeInTheDocument();
+    expect(main.querySelectorAll('a[href="tel:140"]')).toHaveLength(1);
   });
 
   test("shows a clearly labelled sample result instead of a drawing", () => {

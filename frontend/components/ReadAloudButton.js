@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import Button from "./ui/Button";
+import HeldIcon from "./ui/HeldIcon";
 
-export default function ReadAloudButton({ text }) {
+// quiet: a text button with the speaker icon (the symptom result), instead of the outlined secondary button.
+export default function ReadAloudButton({ text, quiet = false }) {
   const [speaking, setSpeaking] = useState(false);
   const supported =
     typeof window !== "undefined" &&
@@ -30,6 +32,14 @@ export default function ReadAloudButton({ text }) {
     setSpeaking(true);
   }
 
+  if (quiet) {
+    return (
+      <button type="button" className="quiet-button" onClick={toggleReadAloud} aria-pressed={speaking}>
+        <HeldIcon name="speaker" size="1.25rem" />
+        {speaking ? "Stop reading" : "Read aloud"}
+      </button>
+    );
+  }
   return (
     <Button variant="secondary" onClick={toggleReadAloud} aria-pressed={speaking}>
       {speaking ? "Stop reading" : "Read aloud"}

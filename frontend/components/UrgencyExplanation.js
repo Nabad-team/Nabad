@@ -7,8 +7,9 @@
 //   - the follow-up answers that made it more urgent
 //   - what My health shows that made it more urgent (SCRUM-279)
 //   - warning signs the user said they don't have, so they can spot a misreading
-//   - when to get help sooner (always shown: it is the safety advice)
 //   - what the result was based on
+// When to get help sooner is WatchFor below: the result shows it on its own, always visible, right under the header
+// (never inside the "Why we suggest this" disclosure).
 // Everything here is text from our own API, rendered as text (React escapes it).
 
 const quote = (words) => `“${words}”`;
@@ -18,13 +19,34 @@ function joinList(items) {
   return `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 }
 
-export default function UrgencyExplanation({ explanation, isEmergency = false, simplified = false }) {
+// The red flags: "Get help sooner if things change" and its list in full, or for an emergency the one strong
+// "don't wait" line, in a soft danger outline (styles/components.css .urgency__watch). Every line, every time,
+// also in simplified mode: it is the safety advice.
+export function WatchFor({ watchFor = [], isEmergency = false }) {
+  if (!watchFor.length) return null;
+  return (
+    <div className="urgency__watch">
+      {isEmergency ? (
+        <p><strong>{watchFor[0]}</strong></p>
+      ) : (
+        <>
+          <p className="urgency__label"><strong>Get help sooner if things change:</strong></p>
+          <ul>
+            {watchFor.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+// The body of "Why we suggest this" (the title is the disclosure row's, in components/UrgencyResult.js).
+export default function UrgencyExplanation({ explanation, simplified = false }) {
   if (!explanation?.summary) return null;
-  const { summary, triggers = [], changedBy = [], fromMyHealth = [], notCounted = [], watchFor = [], basedOn } = explanation;
+  const { summary, triggers = [], changedBy = [], fromMyHealth = [], notCounted = [], basedOn } = explanation;
 
   return (
     <div className="urgency__explanation">
-      <h3 className="urgency__why">Why we suggest this</h3>
       <p>{summary}</p>
 
       {!simplified && triggers.length > 0 && (
@@ -67,22 +89,6 @@ export default function UrgencyExplanation({ explanation, isEmergency = false, s
           <strong>Not counted:</strong> you said you don&apos;t have {joinList(notCounted.map(quote))}, so{" "}
           {notCounted.length === 1 ? "it was" : "they were"} not counted. If that&apos;s wrong, describe your symptoms again.
         </p>
-      )}
-
-      {/* Red flags in their own block with a soft danger outline (styles/components.css .urgency__watch). */}
-      {watchFor.length > 0 && (
-        <div className="urgency__watch">
-          {isEmergency ? (
-            <p><strong>{watchFor[0]}</strong></p>
-          ) : (
-            <>
-              <p className="urgency__label"><strong>Get help sooner if things change:</strong></p>
-              <ul>
-                {watchFor.map((line) => <li key={line}>{line}</li>)}
-              </ul>
-            </>
-          )}
-        </div>
       )}
 
       {!simplified && basedOn && <p className="text-sm">Based on {basedOn}</p>}

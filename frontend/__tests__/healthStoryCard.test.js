@@ -51,18 +51,26 @@ test("shows the months newest first, each event with its date, kind, detail and 
   expect(screen.getByText("Showing June 2026 to November 2026")).toBeInTheDocument();
 
   const [visit, vitals, check, letter] = within(within(november).getByRole("list")).getAllByRole("listitem");
-  expect(visit).toHaveTextContent("Appointment25 November 2026, 10:30Upcoming");
+  // One timeline row each: the kind (for screen readers, with an icon), the date, one line of words, a chip; the whole row is the link.
+  expect(visit).toHaveTextContent("Appointment, 25 November 2026, 10:30Cardiology follow-up · AUBMC, HamraUpcoming");
   expect(visit).toHaveTextContent("AUBMC, Hamra");
-  expect(within(visit).getByRole("link", { name: "Open in Appointments" })).toHaveAttribute("href", "/appointments#appointment-a1");
-  expect(within(vitals).getByRole("link", { name: "Open in My vitals" })).toHaveAttribute("href", "/vitals");
-  expect(check).toHaveTextContent("You described: “chest pain when climbing stairs”");
-  expect(within(check).getByText("Urgent")).toHaveClass("badge--warning");
-  expect(within(letter).getByRole("link", { name: "Open in Medical documents" })).toHaveAttribute("href", "/medical-documents#document-d1");
+  expect(within(visit).getAllByRole("link")).toHaveLength(1);
+  expect(within(visit).getByRole("link")).toHaveAttribute("href", "/appointments#appointment-a1");
+  expect(within(visit).getByText("Upcoming")).toHaveClass("status-chip--info");
+  expect(within(vitals).getByRole("link")).toHaveAttribute("href", "/vitals");
+  expect(vitals).toHaveTextContent("3 vitals readings · Latest: Blood pressure 138/88, heart rate 88");
+  expect(check).toHaveTextContent("“chest pain when climbing stairs”");
+  // A symptom check's chip is its level, in that level's soft colours; its row opens that check on /symptoms.
+  expect(within(check).getByText("Urgent")).toHaveClass("level-chip", "level-chip--urgent");
+  expect(within(check).getByRole("link")).toHaveAttribute("href", "/symptoms#check-s1");
+  expect(within(letter).getByRole("link")).toHaveAttribute("href", "/medical-documents#document-d1");
+  // No bullets, triangles or "Open..." links.
+  expect(screen.queryByText(/^Open /)).toBeNull();
 
   const september = screen.getByRole("region", { name: "September 2026" });
   expect(september).toHaveTextContent("2 medication changes");
-  expect(within(september).getAllByRole("listitem").map((item) => item.querySelector(".history-record__title").textContent)).toEqual(["Stopped Amoxicillin", "Started Amoxicillin"]);
-  expect(within(september).getAllByRole("link", { name: "Open in Medications" })[0]).toHaveAttribute("href", "/medications#medication-m1");
+  expect(within(september).getAllByRole("listitem").map((item) => item.querySelector(".timeline__words").textContent)).toEqual(["Stopped Amoxicillin · 500 mg, 3 times a day", "Started Amoxicillin · 500 mg, 3 times a day"]);
+  expect(within(september).getAllByRole("link")[0]).toHaveAttribute("href", "/medications#medication-m1");
 });
 
 test("filters hide and show kinds of records, with their counts, without asking the server again", async () => {

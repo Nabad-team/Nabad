@@ -55,7 +55,9 @@ const EMERGENCY_RESULT = {
 };
 
 const setSimplified = (simplifiedMode) => useAccessibility.mockReturnValue({ preferences: { simplifiedMode } });
-const explanationBox = () => screen.getByRole("heading", { name: "Why we suggest this" }).closest(".urgency__explanation");
+const explanationBox = () => screen.getByRole("heading", { name: "Why we suggest this" }).closest("details").querySelector(".urgency__explanation");
+// The red flags block: its own block right under the header, never inside a disclosure.
+const watchBox = () => document.querySelector(".urgency__watch");
 
 beforeEach(() => setSimplified(false));
 
@@ -141,8 +143,9 @@ describe("UrgencyResult explanation", () => {
 
   test("an emergency shows 'don't wait' as one strong line, not a 'get help sooner' list", () => {
     render(<UrgencyResult result={EMERGENCY_RESULT} />);
-    const box = explanationBox();
+    const box = watchBox();
     expect(within(box).getByText(/Don't wait to see if it gets better/).tagName).toBe("STRONG");
+    expect(box.closest("details")).toBeNull();
     expect(screen.queryByText("Get help sooner if things change:")).not.toBeInTheDocument();
     expect(screen.queryByText(/Not counted/)).not.toBeInTheDocument();
   });
@@ -168,8 +171,9 @@ describe("UrgencyResult explanation", () => {
   test("with an AI check, its own notes are shown too", () => {
     const result = { ...URGENT_RESULT, ai: { used: true, level: "urgent", guardrails: ["model_raised"] }, reasons: ["Trouble swallowing saliva should be checked today."] };
     render(<UrgencyResult result={result} />);
-    expect(screen.getByText("What the AI check noted:")).toBeInTheDocument();
-    expect(screen.getByText("Trouble swallowing saliva should be checked today.")).toBeInTheDocument();
+    const row = screen.getByRole("heading", { name: "What the AI check noted" }).closest("details");
+    expect(row).not.toHaveAttribute("open");
+    expect(within(row).getByText("Trouble swallowing saliva should be checked today.")).toBeInTheDocument();
   });
 
   test("an older response without an explanation still shows the reasons", () => {

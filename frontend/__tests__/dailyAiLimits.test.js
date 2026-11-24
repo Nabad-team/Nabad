@@ -96,7 +96,8 @@ describe("symptom check", () => {
     getAiUsage.mockResolvedValue(allUsage({ symptomChecks: usage("symptomChecks", 3, 20) }));
     assessUrgency.mockResolvedValue({ ...ROUTINE, aiUsage: usage("symptomChecks", 4, 20) });
     await check(user);
-    expect(await screen.findByText("Routine / self-care")).toBeInTheDocument();
+    // Wait for the result's visible level chip (the scale also names every step, for screen readers).
+    expect(await screen.findByText("Routine / self-care", { selector: ".level-chip" })).toBeInTheDocument();
     expect(screen.queryByTestId("ai-usage-line")).not.toBeInTheDocument();
     expect(screen.queryByText(RULES_NOTE)).not.toBeInTheDocument();
   });
@@ -120,7 +121,8 @@ describe("symptom check", () => {
       dailyLimit: { reached: true, message: RULES_NOTE },
     });
     await check(user);
-    expect(await screen.findByText("Routine / self-care")).toBeInTheDocument();
+    // Wait for the result's visible level chip (the scale also names every step, for screen readers).
+    expect(await screen.findByText("Routine / self-care", { selector: ".level-chip" })).toBeInTheDocument();
     const note = screen.getByText(RULES_NOTE);
     expect(note).toHaveAttribute("role", "status");
     // Read first: the note is the element right before the result, so it is seen before the urgency.
