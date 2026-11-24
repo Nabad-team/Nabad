@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Button from "./ui/Button";
+import HeldIcon from "./ui/HeldIcon";
 import { searchNabad } from "../lib/searchApi";
 
 const GROUPS = [["pages", "Pages"], ["medications", "Medications"], ["documents", "Documents"], ["appointments", "Appointments"], ["hospitals", "Hospitals"]];
@@ -10,6 +11,8 @@ export default function HeaderSearch({ profileId, profileName }) {
   const root = useRef(null), input = useRef(null), panel = useRef(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  // Phones: the field folds behind a search icon button (styles/components.css), so it never sits above the page title.
+  const [shown, setShown] = useState(false);
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -24,6 +27,7 @@ export default function HeaderSearch({ profileId, profileName }) {
         !event.target.closest?.("input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox']");
       if (!command && !slash) return;
       event.preventDefault();
+      setShown(true);
       input.current?.focus();
       setOpen(true);
     };
@@ -56,14 +60,19 @@ export default function HeaderSearch({ profileId, profileName }) {
   }, []);
 
   const count = current ? GROUPS.reduce((sum, [key]) => sum + (current[key]?.items.length || 0), 0) : 0;
-  return <div className="header-search" ref={root} onKeyDown={event => {
+  return <div className={`header-search${shown ? " header-search--shown" : ""}`} ref={root} onKeyDown={event => {
     if (event.key === "Escape") { input.current?.focus(); setOpen(false); }
     if (event.key === "ArrowDown" && event.target === input.current) {
       const first = panel.current?.querySelector("a");
       if (first) { event.preventDefault(); first.focus(); }
     }
   }}>
-    <form role="search" aria-label="Search Nabad" className="header-search__form" onSubmit={event => {
+    <button type="button" className="icon-button header-search__toggle" aria-label="Search Nabad" aria-expanded={shown}
+      aria-controls={`${id}-form`} disabled={!profileId}
+      onClick={() => { const next = !shown; setShown(next); if (next) setTimeout(() => input.current?.focus(), 0); else setOpen(false); }}>
+      <HeldIcon name="search" size="1.25rem" />
+    </button>
+    <form id={`${id}-form`} role="search" aria-label="Search Nabad" className="header-search__form" onSubmit={event => {
       event.preventDefault(); setOpen(true); setAttempt(value => value + 1);
     }}>
       <label htmlFor={id} className="visually-hidden">Search Nabad</label>

@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { render, screen, within } from "@testing-library/react";
 import PageTitle from "../components/ui/PageTitle";
-import { MedicationsSkeleton, AppointmentsSkeleton, DocumentsSkeleton, VitalsSkeleton, HealthSkeleton, ProvidersSkeleton, ProgressSkeleton, SkeletonRegion } from "../components/ui/Skeleton";
+import { MedicationsSkeleton, AppointmentsSkeleton, DocumentsSkeleton, VitalsSkeleton, HealthSkeleton, ProvidersSkeleton, HealthTilesSkeleton, SkeletonRegion } from "../components/ui/Skeleton";
 
 const SKELETONS = { MedicationsSkeleton, AppointmentsSkeleton, DocumentsSkeleton, VitalsSkeleton, HealthSkeleton, ProvidersSkeleton };
 
@@ -28,7 +28,7 @@ describe("Loading placeholders", () => {
     expect(render(<ProvidersSkeleton />).container.querySelectorAll("ul.provider-list > li.provider-card")).toHaveLength(4);
     expect(render(<VitalsSkeleton />).container.querySelector(".vitals-charts")).not.toBeNull();
     expect(render(<HealthSkeleton />).container.querySelector(".card-grid")).not.toBeNull();
-    expect(render(<ProgressSkeleton />).container.querySelectorAll(".progress-summary__list > .progress-summary__item")).toHaveLength(4);
+    expect(render(<HealthTilesSkeleton />).container.querySelectorAll("ul.tile-grid > li.tile-grid__item > .tile")).toHaveLength(7);
   });
 
   test("the default label is Loading...", () => {

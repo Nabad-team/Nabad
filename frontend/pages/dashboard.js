@@ -1,14 +1,15 @@
 import ProfileHeader from "../components/ProfileHeader";
 import EmailVerificationBanner from "../components/EmailVerificationBanner";
 import WellbeingCorner from "../components/WellbeingCorner";
-import ProgressSummary from "../components/ProgressSummary";
-import { useFirstSteps, GettingStartedSlot, NextStepSlot } from "../components/GettingStartedCard";
+import YourHealth from "../components/YourHealth";
+import { useFirstSteps, NextStepSlot } from "../components/GettingStartedCard";
 import useDashboardData from "../components/useDashboardData";
 import PageLayout from "../components/ui/PageLayout";
 import Button from "../components/ui/Button";
 import HeldMark from "../components/ui/HeldMark";
+import Timeline from "../components/ui/Timeline";
 import Alert from "../components/ui/Alert";
-import { SkeletonRegion, Bone, NextStepSkeleton, ProgressSkeleton } from "../components/ui/Skeleton";
+import { SkeletonRegion, Bone, NextStepSkeleton, HealthTilesSkeleton } from "../components/ui/Skeleton";
 import { useActiveProfile } from "../context/ActiveProfileContext";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { APP_TIME_ZONE, formatDate } from "../lib/dates";
@@ -22,24 +23,12 @@ function firstName(fullName) {
     .split(/\s+/)[0];
 }
 
-const iconProps = {
-  width: "1.25rem",
-  height: "1.25rem",
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: "1.8",
-  strokeLinecap: "round",
-  strokeLinejoin: "round",
-  "aria-hidden": "true",
-  focusable: "false",
-};
-
 function MicrophoneIcon() {
   return (
-    <svg {...iconProps}>
-      <rect x="9" y="2" width="6" height="12" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" />
+    <svg width="1.25rem" height="1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <rect x="9" y="2.5" width="6" height="11.5" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
     </svg>
   );
 }
@@ -55,7 +44,8 @@ export function todayLine(date = new Date()) {
   return new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: APP_TIME_ZONE }).format(date).replace(",", "");
 }
 
-// The main thing to do: describe a symptom. Deep spruce, a resting Held mark, one wide button, and speaking as an option.
+// The main thing to do: describe a symptom. Deep spruce, a resting Held mark (the dashboard's one Held mark besides
+// the logo), one wide button, and speaking as an option.
 function SymptomCard({ simplified }) {
   return (
     <section className="symptom-card" aria-labelledby="symptom-card-heading">
@@ -74,7 +64,7 @@ function SymptomCard({ simplified }) {
   );
 }
 
-// Today's water and sleep (and medicines) as small pills, plus a round button to the breathing exercise.
+// Today's water and sleep (and medicines) as small pills. Breathing is in the Wellbeing Corner below (said once).
 function YourDay({ data }) {
   const water = data?.wellbeing?.water;
   const sleep = data?.wellbeing?.sleep;
@@ -94,17 +84,14 @@ function YourDay({ data }) {
         </a></li>
         {medications?.length > 0 && <li><a href="/medications" className="day-pill">
           <span className="day-pill__label">Medicines</span>{" "}
-          <span className="num">{taken} of {medications.length}</span>
+          <span><span className="num">{taken}</span> of <span className="num">{medications.length}</span></span>
         </a></li>}
       </ul>
-      <a href="/wellbeing" className="breathe-button" aria-label="Breathe for two minutes">
-        <HeldMark state="breathe" size="2rem" />
-      </a>
     </section>
   );
 }
 
-// Desktop only (CSS): the last few symptom checks, each with its level in that level's colours.
+// Desktop only (CSS): the last few symptom checks, in the shared timeline style (components/ui/Timeline.js).
 function RecentChecks({ symptoms }) {
   const recent = (symptoms || []).filter((record) => record.urgencyResult?.level).slice(0, 3);
   return (
@@ -115,50 +102,15 @@ function RecentChecks({ symptoms }) {
       </div>
       {symptoms === null ? <p className="text-muted">Loading your recent checks...</p>
         : recent.length === 0 ? <p className="text-muted">No symptom checks yet.</p> : (
-          <ul className="recent-checks__list">
-            {recent.map((record) => (
-              <li key={record.id}>
-                <span className="recent-checks__summary">{record.description}</span>
-                <span className={`level-chip level-chip--${record.urgencyResult.level}`}>{record.urgencyResult.label}</span>
-                {record.createdAt && <span className="recent-checks__date num">{formatDate(record.createdAt)}</span>}
-              </li>
-            ))}
-          </ul>
+          <Timeline label="Recent checks" className="recent-checks__list" items={recent.map((record) => ({
+            key: record.id, id: undefined, kind: "Symptom check",
+            date: record.createdAt ? formatDate(record.createdAt) : "",
+            words: record.description,
+            chip: { text: record.urgencyResult.label, level: record.urgencyResult.level },
+            href: `/symptoms#check-${record.id}`,
+          }))} />
         )}
     </section>
-  );
-}
-
-// Desktop only (CSS): a way into Wellbeing, in the wellbeing colour.
-function WellbeingLink() {
-  return (
-    <section className="wellbeing-link" aria-labelledby="wellbeing-link-heading">
-      <HeldMark state="breathe" size="3rem" />
-      <div>
-        <h2 id="wellbeing-link-heading">A calm moment</h2>
-        <p>Breathing, grounding and a bedtime wind-down.</p>
-        <a href="/wellbeing">Open Wellbeing</a>
-      </div>
-    </section>
-  );
-}
-
-// Quick actions: one small line icon each (same style as the menu icons), so every button reads the same way.
-const QUICK_ICONS = {
-  vitals: <path d="M3 12h4l2-5 4 10 2-5h6" />,
-  medication: <><path d="m8.5 4.5 11 11a3.5 3.5 0 0 1-5 5l-11-11a3.5 3.5 0 0 1 5-5Z" /><path d="m6 7 5 5" /></>,
-  appointment: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 9h18M12 12v6M9 15h6" /></>,
-  document: <><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M14 3v5h5M12 11v6M9 14l3-3 3 3" /></>,
-};
-
-function QuickAction({ href, icon, label, fullLabel }) {
-  return (
-    <li>
-      <a href={href} className="quick-action" aria-label={fullLabel}>
-        <svg {...iconProps} className="quick-action__icon">{QUICK_ICONS[icon]}</svg>
-        <span>{label}</span>
-      </a>
-    </li>
   );
 }
 
@@ -166,8 +118,7 @@ export default function DashboardPage() {
   // The active profile can be the user or a linked dependent.
   const { activeProfile, error, loading } = useActiveProfile();
   const forName = activeProfile?.isSelf === false ? firstName(activeProfile.fullName) : "";
-  const actionFor = forName ? ` for ${forName}` : "";
-  // Loaded once for Next step, Your day, Recent checks and Your progress.
+  // Loaded once for Next step, Your day, Recent checks and Your health.
   const data = useDashboardData(activeProfile?.id);
   const firstSteps = useFirstSteps({ data: activeProfile ? data : null, forName, isSelf: activeProfile?.isSelf !== false });
 
@@ -176,8 +127,9 @@ export default function DashboardPage() {
   const simplified = preferences.simplifiedMode;
 
   // Today, in the Held layout (docs/design-system.md#layouts). Phones: greeting, symptom card, Next step, Your day.
-  // Desktop (64rem): the greeting row, then the symptom card and Recent checks on the left, Next step, Your day and
-  // a wellbeing card on the right. Everything else follows below, in the order it had before.
+  // Desktop (64rem): the greeting row, then the symptom card and Recent checks on the left, Next step and Your day on
+  // the right. Below: Your health (one grid of tiles, with the first steps as To do tags) and the Wellbeing Corner.
+  // Say each thing once: the emergency call is the sidebar button (desktop) and the Red Cross row, besides the footer.
   return (
     <PageLayout
       title="Dashboard"
@@ -213,29 +165,14 @@ export default function DashboardPage() {
           {activeProfile && <RecentChecks symptoms={data.symptoms} />}
         </div>
         <div className="today__side">
-          {/* Next step, unless the Getting started card applies (that one sits lower down): never both. */}
+          {/* Next step, unless the first steps apply (their To do tags are on Your health below): never both. */}
           {activeProfile && <NextStepSlot firstSteps={firstSteps} data={data} forName={forName} />}
           {activeProfile && <YourDay data={data} />}
-          <WellbeingLink />
         </div>
       </div>
 
-      {activeProfile && <GettingStartedSlot firstSteps={firstSteps} forName={forName} />}
-
-      {activeProfile ? <ProgressSummary data={data} /> : loading && <div className="skeleton" aria-hidden="true"><ProgressSkeleton /></div>}
-
-      <section className="quick-actions section" aria-labelledby="quick-actions-heading">
-        <h2 id="quick-actions-heading">Quick actions</h2>
-        <p className="text-muted">{forName ? `Go straight to something you want to update for ${forName}.` : "Go straight to something you want to update."}</p>
-        <nav aria-label="Quick actions">
-          <ul className="quick-actions__list">
-            <QuickAction href="/vitals" icon="vitals" label="Log vitals" fullLabel={`Log vitals${actionFor}`} />
-            <QuickAction href="/medications" icon="medication" label="Add medication" fullLabel={`Add medication${actionFor}`} />
-            <QuickAction href="/appointments" icon="appointment" label="Add appointment" fullLabel={`Add appointment${actionFor}`} />
-            <QuickAction href="/medical-documents" icon="document" label="Upload document" fullLabel={`Upload document${actionFor}`} />
-          </ul>
-        </nav>
-      </section>
+      {activeProfile ? <YourHealth data={data} firstSteps={firstSteps} forName={forName} />
+        : loading && <div className="skeleton" aria-hidden="true"><HealthTilesSkeleton /></div>}
 
       <WellbeingCorner />
     </PageLayout>

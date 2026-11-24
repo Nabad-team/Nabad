@@ -610,9 +610,19 @@ class SignedInWorkflowTests(NabadWebsiteTests):
             try:
                 for path in ("/dashboard", "/symptoms", "/medications", "/appointments", "/profile", "/emergency-card"):
                     self.open(path)
-                    self.visible((By.CSS_SELECTOR, "header input[type='search']:not(:disabled)"))
+                    # Under 40rem the search field folds behind a search icon button (Held refresh, phase 3).
+                    ready = "header input[type='search']:not(:disabled), header .header-search__toggle:not(:disabled)"
+                    self.wait.until(lambda d: any(e.is_displayed() for e in d.find_elements(By.CSS_SELECTOR, ready)))
                     self.driver.execute_script("document.documentElement.style.fontSize = arguments[0]", text_size)
                     self.assertTrue(self.driver.execute_script("return document.documentElement.scrollWidth <= innerWidth + 1"), f"Horizontal overflow: {path}, {width}px, {text_size}")
+                if width == 320:
+                    # The phone header: the search button opens the field and puts focus in it, with no overflow.
+                    toggle = self.visible((By.CSS_SELECTOR, "header .header-search__toggle:not(:disabled)"))
+                    self.assertFalse(self.driver.find_element(By.CSS_SELECTOR, "header input[type='search']").is_displayed())
+                    toggle.click()
+                    self.wait.until(lambda _: self.driver.switch_to.active_element.get_attribute("type") == "search")
+                    self.assertEqual(toggle.get_attribute("aria-expanded"), "true")
+                    self.assertTrue(self.driver.execute_script("return document.documentElement.scrollWidth <= innerWidth + 1"), f"Horizontal overflow with search open, {width}px, {text_size}")
             finally:
                 self.driver.execute_cdp_cmd("Emulation.clearDeviceMetricsOverride", {})
         self.open("/dashboard")
@@ -863,7 +873,10 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.assertTrue(heading.text.startswith("Urgency"), heading.text)
         result = self.visible((By.CSS_SELECTOR, "section[aria-labelledby='urgency-heading']"))
         self.assertIn("How soon:", result.text)
-        self.assertIn("What to do:", result.text)
+        # The engine's action is the result's main line; "What to do:" is said to screen readers before it.
+        action = result.find_element(By.CSS_SELECTOR, ".urgency__action")
+        self.assertTrue(action.text.strip(), "The result has no action line")
+        self.assertTrue(action.get_attribute("textContent").startswith("What to do: "))
         read_aloud = result.find_element(By.XPATH, ".//button[@aria-pressed]")
         self.assertEqual(read_aloud.get_attribute("aria-pressed"), "false")
         self.assertEqual(read_aloud.text, "Read aloud")

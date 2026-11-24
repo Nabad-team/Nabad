@@ -34,6 +34,7 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Alert from "../components/ui/Alert";
 import EmptyState from "../components/ui/EmptyState";
+import Timeline from "../components/ui/Timeline";
 
 import {
   PersonWithPhone,
@@ -42,7 +43,7 @@ import {
 import {
   useAccessibility,
 } from "../context/AccessibilityContext";
-import { formatDateTime } from "../lib/dates";
+import { formatDate, formatDateTime } from "../lib/dates";
 import NabadAssistant from "../components/NabadAssistant";
 import { HeldLoader } from "../components/ui/HeldMark";
 import { AiUsageLine } from "../components/AiUsage";
@@ -183,16 +184,55 @@ export default function SymptomsPage() {
   // so the announcement is reliable), and a counter that moves focus to the result.
   const [announcement, setAnnouncement] = useState("");
   const [resultFocus, setResultFocus] = useState(0);
+  // The result scrolls into view and focus moves to its heading ("Urgency: ..."), so keyboard and screen reader users
+  // start reading at the level.
   useEffect(() => {
     if (!resultFocus) return;
     const result = document.getElementById("symptom-result");
     if (!result) return;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    result.focus({ preventScroll: true });
+    (document.getElementById("urgency-heading") || result).focus({ preventScroll: true });
     result.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
   }, [resultFocus]);
 
+  // Once a result is shown the form folds into one line: 'You said: "<text>" · Edit' (with "Symptoms recorded for
+  // ..." in the same line). Edit opens it again with the words; "Check something else" (end of the result) opens it
+  // empty. Either way focus goes to the text box.
+  const [formOpen, setFormOpen] = useState(true);
+  const [said, setSaid] = useState("");
+  const [focusForm, setFocusForm] = useState(0);
+  useEffect(() => {
+    if (!focusForm) return;
+    document.getElementById("symptoms")?.focus();
+  }, [focusForm]);
+  function editSaid() {
+    setSymptoms(said);
+    setFormOpen(true);
+    setFocusForm((value) => value + 1);
+  }
+  function checkSomethingElse() {
+    assessmentRequestRef.current += 1;
+    setUrgency(null);
+    setFollowUps([]);
+    setFollowUpState(null);
+    setRefining(false);
+    setMessage("");
+    setError("");
+    setDailyLimitNote("");
+    setAnnouncement("");
+    setSaid("");
+    setSymptoms("");
+    setFormOpen(true);
+    setFocusForm((value) => value + 1);
+  }
+
   const [savedRecord, setSavedRecord] = useState(null);
+  // /symptoms#check-<id> (Recent checks, My history): open that check's conversation and bring it into view.
+  const [openCheck, setOpenCheck] = useState("");
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (/^check-[\w-]+$/.test(hash)) setOpenCheck(hash);
+  }, []);
   const [history, setHistory] = useState([]);
 
   const [
@@ -247,6 +287,8 @@ export default function SymptomsPage() {
     setEmergencyContact(null);
     setSavedRecord(null);
     setHistory([]);
+    setFormOpen(true);
+    setSaid("");
     if (activeProfile?.id) {
       getSymptomsForProfile(activeProfile.id)
         .then((records) => {
@@ -497,6 +539,8 @@ export default function SymptomsPage() {
       if (request !== assessmentRequestRef.current) return;
       // Alert immediately on detection; storage and contact lookup must never delay it.
       presentAssessment(result);
+      setSaid(description);
+      setFormOpen(false);
 
       // Save BOTH the symptom description
       // and its urgency result on the backend.
@@ -677,7 +721,7 @@ export default function SymptomsPage() {
         Symptom check
       </PageTitle>
 
-      <p>
+      <p hidden={!formOpen}>
         {simplified
           ? "For: "
           : "You are entering symptoms for:"}
@@ -689,7 +733,21 @@ export default function SymptomsPage() {
       </p>
 
 
+      {!formOpen && said && (
+        <div className="said-line">
+          <p className="said-line__text">
+            <span className="said-line__label">You said:</span>{" "}
+            <span className="said-line__words">“{said}”</span>
+          </p>
+          <button type="button" className="link-button said-line__edit" onClick={editSaid}>
+            Edit<span className="visually-hidden"> what you said</span>
+          </button>
+          {message && <p className="said-line__saved symptoms-message">{message}</p>}
+        </div>
+      )}
+
       <form
+        hidden={!formOpen}
         onSubmit={handleSubmit}
         className="form symptoms-form"
         aria-busy={checking || undefined}
@@ -797,15 +855,7 @@ export default function SymptomsPage() {
       <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
 
 
-      {message && (
-        <Alert
-          tone="success"
-          as="p"
-          className="symptoms-message"
-        >
-          {message}
-        </Alert>
-      )}
+      {/* "Symptoms recorded for ..." is part of the said line above (one line, said once). */}
 
 
       {emergencyAlert && <EmergencyAlert result={emergencyAlert} onDismiss={() => setEmergencyAlert(null)} profileId={activeProfile?.id} contact={emergencyContact} contactLoading={contactLoading} contactError={contactError} onRetryContact={() => setContactRetry(value => value + 1)} />}
@@ -819,9 +869,8 @@ export default function SymptomsPage() {
 
       <UrgencyResult
         result={urgency}
-        preliminary={
-          followUps.length > 0
-        }
+        preliminary={followUps.length > 0}
+        onCheckAgain={checkSomethingElse}
       />
 
 
@@ -892,21 +941,27 @@ export default function SymptomsPage() {
         {/* SCRUM-156, SCRUM-332 */}
         <p><a href="/my-history">See your history month by month</a>, or ask a question about it, for example when you last had a symptom.</p>
         {history.length === 0 ? <EmptyState illustration={calmScreen ? <NabadAssistant size="4.5rem" title="Nabad assistant" /> : null} title="No symptom checks yet: your saved conversations will appear here." /> : (
-          <ul className="symptom-history__list">
-            {history.slice(0, 10).map((record) => (
-              <li key={record.id}>
-                <details>
-                  <summary>{record.createdAt ? formatDateTime(record.createdAt) : "Previous check"} · {record.urgencyResult?.label || "Urgency check"}</summary>
-                  <ol aria-label="Saved conversation">
+          <Timeline label="Previous symptom checks" className="symptom-history__list" items={history.slice(0, 10).map((record) => {
+            const when = record.createdAt ? formatDateTime(record.createdAt) : "Previous check";
+            return {
+              key: record.id, id: `check-${record.id}`, kind: "Symptom check",
+              date: record.createdAt ? formatDate(record.createdAt) : "Previous check",
+              words: record.description,
+              chip: record.urgencyResult?.label ? { text: record.urgencyResult.label, level: record.urgencyResult.level } : null,
+              expand: {
+                label: `Conversation from ${when}`,
+                open: openCheck === `check-${record.id}`,
+                content: (
+                  <ol aria-label="Saved conversation" className="symptom-history__conversation">
                     {(record.conversation || [
                       { role: "patient", content: record.description },
                       { role: "assistant", content: `${record.urgencyResult?.label || ""}. ${record.urgencyResult?.timeframe || ""}. ${record.urgencyResult?.action || ""}` },
                     ]).map((turn, index) => <li key={`${record.id}-${index}`}><strong>{turn.role === "patient" ? "You" : "Nabad"}:</strong> {turn.content}</li>)}
                   </ol>
-                </details>
-              </li>
-            ))}
-          </ul>
+                ),
+              },
+            };
+          })} />
         )}
       </section>
     </PageLayout>

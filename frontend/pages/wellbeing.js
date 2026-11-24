@@ -6,6 +6,7 @@ import PageTitle from "../components/ui/PageTitle";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import InlinePanel from "../components/ui/InlinePanel";
+import BreathingDot from "../components/ui/BreathingDot";
 import BreathingExercise from "../components/wellbeing/BreathingExercise";
 import GroundingExercise from "../components/wellbeing/GroundingExercise";
 import ResetExercise from "../components/wellbeing/ResetExercise";
@@ -56,24 +57,43 @@ export default function WellbeingPage() {
         </InlinePanel>
       )}
 
-      <div className="card-grid">
-        {EXERCISES.map((item) => (
-          <Card key={item.key} aria-labelledby={`card-${item.key}-heading`} className="exercise-card">
-            <h2 id={`card-${item.key}-heading`}>{item.title}</h2>
-            <p>{item.summary}</p>
-            <Button variant="secondary" ref={(element) => { buttons.current[item.key] = element; }}
-              onClick={() => openExercise(item.key)} aria-expanded={open === item.key} aria-controls={open === item.key ? `exercise-${item.key}` : undefined}>
-              {item.key === "wind-down" ? "Open the checklist" : `Start the ${item.title.charAt(0).toLowerCase()}${item.title.slice(1)}`}
-            </Button>
-          </Card>
-        ))}
-        <Card aria-labelledby="reflection-heading" className="card--full">
-          <h2 id="reflection-heading">Question of the day</h2>
-          <p className="reflection__question">{question}</p>
-          <p className="text-muted">Just think about it. Nothing is saved.</p>
-        </Card>
-        {!exercise && <Card aria-labelledby="page-help-heading" className="card--full"><WellbeingHelp id="page-help" /></Card>}
+      {/* Neutral surfaces (the lilac is retired). Breathing leads, with the breathing dot; the other three are smaller
+          cards with one "Start" each (its hidden end names the exercise for screen readers). */}
+      <div className="exercise-grid">
+        {EXERCISES.map((item) => {
+          const lead = item.key === "breathing";
+          const startProps = {
+            ref: (element) => { buttons.current[item.key] = element; },
+            onClick: () => openExercise(item.key),
+            "aria-expanded": open === item.key,
+            "aria-controls": open === item.key ? `exercise-${item.key}` : undefined,
+          };
+          const name = <span className="visually-hidden"> the {item.title.charAt(0).toLowerCase()}{item.title.slice(1)}</span>;
+          return (
+            <Card key={item.key} aria-labelledby={`card-${item.key}-heading`} className={`exercise-card${lead ? " exercise-card--lead" : ""}`}>
+              {lead && <BreathingDot size="5.5rem" className="exercise-card__dot" />}
+              <div className="exercise-card__text">
+                <h2 id={`card-${item.key}-heading`}>{item.title}</h2>
+                <p>{item.summary}</p>
+                {lead && <p className="exercise-card__timing">In for 4, hold for 4, out for 6</p>}
+                {lead ? <Button {...startProps}>Start{name}</Button>
+                  : <button type="button" className="link-button exercise-card__start" {...startProps}>Start{name}</button>}
+              </div>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* The question of the day and the helplines, in the same compact stone style as the dashboard's card. The help
+          moves into an open exercise's panel, so 140 shows once on the page apart from the footer. */}
+      <Card aria-labelledby="reflection-heading" className="section wellbeing-corner wellbeing-corner--compact">
+        <section className="wellbeing-message" aria-labelledby="reflection-heading">
+          <h2 id="reflection-heading" className="wellbeing-message__label">Question of the day</h2>
+          <p className="reflection__question">{question}</p>
+          <p className="text-muted text-sm">Just think about it. Nothing is saved.</p>
+        </section>
+        {!exercise && <WellbeingHelp id="page-help" />}
+      </Card>
     </PageLayout>
   );
 }

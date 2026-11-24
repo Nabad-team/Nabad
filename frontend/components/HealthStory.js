@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import Card from "./ui/Card";
 import Button from "./ui/Button";
 import Alert from "./ui/Alert";
-import Badge from "./ui/Badge";
 import EmptyState from "./ui/EmptyState";
+import Timeline from "./ui/Timeline";
 import { LinesSkeleton } from "./ui/Skeleton";
 import { getHealthStory } from "../lib/historyApi";
 import { formatDate } from "../lib/dates";
@@ -18,7 +18,8 @@ const COUNT_WORDS = {
   "symptom-check": ["symptom check", "symptom checks"], appointment: ["appointment", "appointments"],
   medication: ["medication change", "medication changes"], document: ["document", "documents"], vitals: ["day of vitals", "days of vitals"],
 };
-const OPEN_LABELS = { "symptom-check": "Open symptom checks", appointment: "Open in Appointments", medication: "Open in Medications", document: "Open in Medical documents", vitals: "Open in My vitals" };
+// The shared timeline (components/ui/Timeline.js): an icon per kind, the date, one line of words, a chip.
+const ICONS = { "symptom-check": "symptom", appointment: "calendar", medication: "medicine", document: "document", vitals: "vitals" };
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const monthName = (key) => `${MONTH_NAMES[Number(key.slice(5)) - 1]} ${key.slice(0, 4)}`;
 
@@ -112,20 +113,16 @@ export default function HealthStory({ profileId, forSelf = true, name }) {
             <section key={month.month} className="health-story__month" aria-labelledby={`health-story-${month.month}`}>
               <h3 id={`health-story-${month.month}`}>{month.label}</h3>
               <p className="text-sm text-muted">{countsText(month.counts, shown)}</p>
-              <ol className="history-records health-story__events" aria-label={`${month.label} records`}>
-                {month.events.map((event) => (
-                  <li key={`${event.type}-${event.id}`} className={`history-record health-story__event health-story__event--${event.type}`}>
-                    <div className="history-record__heading">
-                      <Badge tone="neutral">{TYPE_LABELS[event.type]}</Badge>
-                      <span className="history-record__date">{formatDate(event.day)}{event.time ? `, ${event.time}` : ""}</span>
-                      {event.badge && <Badge tone={event.attention ? "warning" : event.badge === "Upcoming" || event.badge === "Planned" ? "info" : "neutral"}>{event.badge}</Badge>}
-                    </div>
-                    <p className="history-record__title">{event.title}</p>
-                    {event.detail && <p>{event.type === "symptom-check" ? `${forSelf ? "You" : name} described: “${event.detail}”` : event.detail}</p>}
-                    <a href={event.href}>{OPEN_LABELS[event.type]}</a>
-                  </li>
-                ))}
-              </ol>
+              <Timeline label={`${month.label} records`} className="health-story__events" items={month.events.map((event) => ({
+                key: `${event.type}-${event.id}`, kind: TYPE_LABELS[event.type], icon: ICONS[event.type],
+                date: `${formatDate(event.day)}${event.time ? `, ${event.time}` : ""}`,
+                // A symptom check: the person's own words. Anything else: what it was, and its detail.
+                words: event.type === "symptom-check"
+                  ? `${forSelf ? "" : `${name} described: `}“${event.detail}”`
+                  : `${event.title}${event.detail ? ` · ${event.detail}` : ""}`,
+                chip: event.badge ? { text: event.badge, tone: event.attention ? "attention" : event.badge === "Upcoming" || event.badge === "Planned" ? "info" : "neutral" } : null,
+                href: event.type === "symptom-check" ? `/symptoms#check-${event.id}` : event.href,
+              }))} />
             </section>
           ))}
 

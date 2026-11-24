@@ -100,6 +100,8 @@ test("closing the alert survives rerenders but a new emergency check alerts agai
   view.rerender(<SymptomsPage />);
   expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Urgency: Emergency" })).toBeInTheDocument();
+  // A new check starts from the end of the result.
+  await user.click(screen.getByRole("button", { name: "Check something else" }));
   await submit(user);
   expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
   expect(await screen.findByRole("button", { name: "Share my location with Rana" })).toBeInTheDocument();
@@ -122,7 +124,8 @@ test("follow-up escalation alerts before the updated record is saved", async () 
 test("history does not trigger a new emergency popup", async () => {
   getSymptomsForProfile.mockResolvedValue([{ id: "old", description: "Old emergency", createdAt: new Date().toISOString(), urgencyResult: EMERGENCY }]);
   render(<SymptomsPage />);
-  await screen.findByText(/Old emergency/);
+  // The timeline row shows the person's words (the saved conversation under it has them too).
+  await screen.findByText(/Old emergency/, { selector: ".timeline__words" });
   expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
 });
 

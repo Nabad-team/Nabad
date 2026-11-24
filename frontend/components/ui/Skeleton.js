@@ -137,8 +137,8 @@ export function ProvidersSkeleton({ label }) {
   );
 }
 
-// Dashboard: Next step, then Your progress with its four rings and the appointment row. While the profile is
-// loading the whole dashboard shows this; afterwards Your progress shows it until its data has arrived.
+// Dashboard: Next step, then Your health with its tiles. While the profile is loading the whole dashboard shows
+// this; afterwards Your health shows its tiles placeholder until its data has arrived.
 export function NextStepSkeleton() {
   return (
     <Card as="div" className="next-step">
@@ -148,20 +148,17 @@ export function NextStepSkeleton() {
   );
 }
 
-export function ProgressSkeleton() {
+// Your health: the heading and its seven tiles.
+export function HealthTilesSkeleton() {
   return (
-    <Card as="div" className="section progress-summary">
+    <div className="section your-health">
       <Bone size="title" width="10rem" />
-      <ul className="progress-summary__list">
-        {repeat(4, (index) => (
-          <li key={index} className="progress-summary__item">
-            <div className="progress-summary__visual"><Bone size="ring" round /></div>
-            <div className="progress-summary__copy skeleton__stack"><Bone size="title" width="50%" /><Bone width="35%" /><Bone width="80%" /><Bone size="button" width="8rem" /></div>
-          </li>
+      <ul className="tile-grid">
+        {repeat(7, (index) => (
+          <li key={index} className="tile-grid__item"><div className="tile skeleton__stack"><Bone size="ring" round /><Bone width="60%" /><Bone width="80%" /></div></li>
         ))}
       </ul>
-      <div className="progress-summary__appointments"><div className="skeleton__stack"><Bone width="14rem" /><Bone width="60%" /></div><Bone size="button" width="9rem" /></div>
-    </Card>
+    </div>
   );
 }
 
@@ -169,7 +166,7 @@ export function DashboardSkeleton({ label, nextStep = true }) {
   return (
     <SkeletonRegion label={label}>
       {nextStep && <NextStepSkeleton />}
-      <ProgressSkeleton />
+      <HealthTilesSkeleton />
     </SkeletonRegion>
   );
 }

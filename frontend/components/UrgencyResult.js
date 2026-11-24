@@ -1,5 +1,6 @@
 import Button from "./ui/Button";
 import HeldMark from "./ui/HeldMark";
+import HeldIcon from "./ui/HeldIcon";
 
 import {
   triageProviderLabel,
@@ -7,7 +8,7 @@ import {
 } from "../lib/providerFilters";
 
 import ReadAloudButton from "./ReadAloudButton";
-import UrgencyExplanation from "./UrgencyExplanation";
+import UrgencyExplanation, { WatchFor } from "./UrgencyExplanation";
 
 import {
   useAccessibility,
@@ -30,26 +31,11 @@ export const URGENCY_SCALE = [
   ["emergency", "Emergency"],
 ];
 
-// One line icon per level, so the level never depends on colour alone (the label is always written too).
-export function UrgencyIcon({ level, className = "urgency__icon" }) {
-  const paths = {
-    routine: <><path d="M4 11.5 12 5l8 6.5V20H4Z" /><path d="M10 20v-5h4v5" /></>,
-    soon: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
-    urgent: <><path d="M12 3.5 21.5 20h-19Z" /><path d="M12 10v4.5M12 17.4h.01" /></>,
-    emergency: <><circle cx="12" cy="12" r="9" /><path d="M12 6.8v6.4M12 16.8h.01" /></>,
-  };
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-      {paths[level]}
-    </svg>
-  );
-}
-
-// The 4-step scale under the heading: a compact bar of four segments, the current one in full colour and the
-// others faded. The written line "Level 2 of 4: See a doctor soon", the current step's icon, "This result" and
-// aria-current mean it never relies on colour alone.
-function UrgencyScale({ level }) {
+// The 4-step scale under the header: visually just a bar of four segments, the current one in full colour and the
+// others faded. The level is said once, in the header ("Urgency: <label>", with how soon). For screen readers the
+// list keeps every step, "This result" and aria-current, and "Level 2 of 4: See a doctor soon" is written out, so
+// it never relies on colour alone.
+export function UrgencyScale({ level }) {
   const index = URGENCY_SCALE.findIndex(([key]) => key === level);
   return (
     <div className="urgency-scale urgency-scale--bar">
@@ -60,14 +46,13 @@ function UrgencyScale({ level }) {
           return (
             <li key={key} className={`urgency-scale__step urgency-scale__step--${key}${current ? " urgency-scale__step--current" : ""}`}
               aria-current={current ? "step" : undefined}>
-              {current && <UrgencyIcon level={key} className="urgency-scale__icon" />}
               <span className="urgency-scale__name">{label}</span>
               {current && <span className="urgency-scale__you">This result</span>}
             </li>
           );
         })}
       </ol>
-      {index >= 0 && <p className="urgency-scale__level">Level <span className="num">{index + 1}</span> of 4: {URGENCY_SCALE[index][1]}</p>}
+      {index >= 0 && <p className="urgency-scale__level">Level {index + 1} of 4: {URGENCY_SCALE[index][1]}</p>}
     </div>
   );
 }
@@ -85,10 +70,35 @@ export function unrepeatedReasons(reasons = [], explanation = null) {
   return reasons.filter((reason) => !shown.has(sameText(reason)));
 }
 
+// One disclosure row of the details card. Secondary detail only: the red flags are never in one of these.
+function DetailRow({ title, open = false, children }) {
+  return (
+    <details className="urgency__row" open={open}>
+      <summary>
+        <h3 className="urgency__row-title">{title}</h3>
+        <HeldIcon name="chevronDown" size="1.25rem" className="urgency__row-chevron" />
+      </summary>
+      <div className="urgency__row-body">{children}</div>
+    </details>
+  );
+}
 
+
+// The symptom check result (docs/design-system.md#result-anatomy). Top to bottom:
+//   1. The header, in the level's soft colour: ONE mark (the Held ring in the level colour; for an emergency the
+//      still urgent mark), the level once ("Urgency: <label>") with how soon, and the engine's action as the main line.
+//      Under it the scale bar (visual only; its words are for screen readers).
+//   2. "Get help sooner if things change" (an emergency: "don't wait"), always visible in its soft danger outline.
+//      The only place on the result that lists the call-140 conditions. Never collapsed, never shortened.
+//   3. One white card of disclosure rows: "Why we suggest this" (open), "What the AI check noted" and "Self-care
+//      guidance" (closed). Their content is unchanged.
+//   4. Find care, the one primary button; Read aloud and Print or PDF as quiet text buttons; then, from the page,
+//      "Check something else".
+// Every word of triage text comes from the server, rendered as text.
 export default function UrgencyResult({
   result,
   preliminary = false,
+  onCheckAgain,
 }) {
   const {
     preferences,
@@ -98,312 +108,135 @@ export default function UrgencyResult({
     return null;
   }
 
+  const simplified = preferences.simplifiedMode;
+  const level = LEVELS.includes(result.level) ? result.level : "routine";
+  const isEmergency = result.level === "emergency";
+  const isSelfHarm = result.matchedRuleIds?.includes("self-harm");
+  const explanation = result.explanation?.summary ? result.explanation : null;
 
-  const simplified =
-    preferences.simplifiedMode;
-
-
-  const level =
-    LEVELS.includes(
-      result.level
-    )
-      ? result.level
-      : "routine";
-
-
-  const isEmergency =
-    result.level ===
-    "emergency";
-
-
-  const isSelfHarm =
-    result.matchedRuleIds?.includes(
-      "self-harm"
-    );
-
-
-  const explanation =
-    result.explanation?.summary
-      ? result.explanation
-      : null;
-
-
-  const spokenWhy =
-    explanation
-      ? [
-          explanation.summary,
-          ...(
-            explanation.watchFor ||
-            []
-          ),
-        ].join(" ")
-      : result.reasons?.length
-        ? `Why: ${result.reasons.join(
-            ". "
-          )}.`
-        : "";
-
-
-  const spokenSelfCare =
-    result.selfCareGuidance?.length
-      ? `Self-care guidance: ${result.selfCareGuidance.join(
-          ". "
-        )}.`
+  const spokenWhy = explanation
+    ? [explanation.summary, ...(explanation.watchFor || [])].join(" ")
+    : result.reasons?.length
+      ? `Why: ${result.reasons.join(". ")}.`
       : "";
-
-
+  const spokenSelfCare = result.selfCareGuidance?.length
+    ? `Self-care guidance: ${result.selfCareGuidance.join(". ")}.`
+    : "";
   const spokenResult = [
-    `${
-      preliminary
-        ? "Urgency so far"
-        : "Urgency"
-    }: ${result.label}.`,
-
+    `${preliminary ? "Urgency so far" : "Urgency"}: ${result.label}.`,
     `How soon: ${result.timeframe}.`,
-
     `What to do: ${result.action}.`,
-
     spokenWhy,
-
     spokenSelfCare,
-
     result.disclaimer,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-
-  const shortAction =
-    isEmergency
-      ? "Call now"
-      : level === "urgent"
-        ? "Get help today"
-        : level === "soon"
-          ? "See a doctor soon"
-          : "You can monitor this";
-
+  ].filter(Boolean).join(" ");
 
   const aiReasons = unrepeatedReasons(result.reasons, explanation);
+  const showAi = Boolean(explanation && !simplified && result.ai?.used && aiReasons.length > 0);
+  const olderReasons = !explanation && result.reasons?.length > 0;
+  const hasDetails = Boolean(explanation || olderReasons || showAi || result.selfCareGuidance?.length);
 
   // Emergencies keep role="alert". Other results are announced by the page's own live region
-  // (pages/symptoms.js), which then moves focus here (tabIndex -1).
-  // Motion rule 1: an emergency never waits. It renders with no entrance animation and no delay; the other levels
-  // fade in once (urgency--enter, 200ms ease-out, styles/components.css).
+  // (pages/symptoms.js), which then moves focus to the heading.
+  // Motion rule 1: an emergency never waits. It renders with no entrance animation and no delay, and nothing on it
+  // moves; the other levels fade in once (urgency--enter, 200ms ease-out, styles/components.css).
   return (
     <section
       id="symptom-result"
       tabIndex={-1}
       aria-labelledby="urgency-heading"
-      role={
-        isEmergency
-          ? "alert"
-          : undefined
-      }
+      role={isEmergency ? "alert" : undefined}
       className={`urgency urgency--${level}${isEmergency ? "" : " urgency--enter"}`}
     >
-      {/* The header block, in the level's soft colour: the Held mark (the done ring in the level colour; for an
-          emergency the still, danger-coloured urgent mark), the level, how soon, and the engine's action. */}
       <div className="urgency__indicator">
         <HeldMark state={isEmergency ? "urgent" : "done"} size="3.25rem" className="urgency__mark" />
         <div className="urgency__heading-block">
-          <h2 id="urgency-heading">
-            <UrgencyIcon level={level} />
-            <span>
-              {preliminary
-                ? "Urgency so far"
-                : "Urgency"}
-              : {result.label}
-            </span>
+          <h2 id="urgency-heading" tabIndex={-1}>
+            {preliminary ? "Urgency so far" : "Urgency"}: {result.label}
           </h2>
-          <p className="urgency__summary">
-            <strong>
-              {shortAction}
-            </strong>
-          </p>
           <p className="urgency__timeframe">
-            <strong>
-              How soon:
-            </strong>{" "}
-            {result.timeframe}
+            <span className="urgency__timeframe-label">How soon:</span>{" "}{result.timeframe}
           </p>
           <p className="urgency__action">
-            <strong className="urgency__action-label">
-              What to do:
-            </strong>{" "}
-            {result.action}
+            <span className="visually-hidden">What to do: </span>{result.action}
           </p>
         </div>
+        <UrgencyScale level={level} />
       </div>
 
-      <UrgencyScale level={level} />
-
-
-      {preliminary && (
-        <p>
-          Answer the questions below
-          to make this more accurate.
-        </p>
-      )}
-
-
-      {!preliminary &&
-        result.confidence ===
-          "refined" && (
-          <p>
-            Updated using your
-            answers.
-          </p>
-        )}
-
-
-      <p>
-        <ReadAloudButton
-          text={spokenResult}
-        />
-      </p>
-
-
       {isEmergency && (
-        <p>
-          <Button
-            variant="danger"
-            href="tel:140"
-          >
+        <p className="urgency__call">
+          <Button variant="danger" href="tel:140" block>
             Call 140 now
           </Button>
         </p>
       )}
 
+      {/* Always visible, right under the header: never inside a disclosure. */}
+      {explanation && <WatchFor watchFor={explanation.watchFor} isEmergency={isEmergency} />}
+
+      {preliminary && <p>Answer the questions below to make this more accurate.</p>}
+      {!preliminary && result.confidence === "refined" && <p>Updated using your answers.</p>}
 
       {isSelfHarm && (
         <p>
-          <Button
-            variant="secondary"
-            href="/dashboard#wellbeing-corner-heading"
-          >
+          <Button variant="secondary" href="/dashboard#wellbeing-corner-heading">
             View mental health support
           </Button>
         </p>
       )}
 
-
-      {explanation ? (
-        <>
-          <UrgencyExplanation
-            explanation={
-              explanation
-            }
-            isEmergency={
-              isEmergency
-            }
-            simplified={
-              simplified
-            }
-          />
-
-
-          {!simplified &&
-            result.ai?.used &&
-            aiReasons.length >
-              0 && (
-              <>
-                <p className="urgency__label">
-                  <strong>
-                    What the AI check
-                    noted:
-                  </strong>
-                </p>
-
-                <ul>
-                  {aiReasons.map(
-                    (reason) => (
-                      <li
-                        key={
-                          reason
-                        }
-                      >
-                        {reason}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </>
-            )}
-        </>
-      ) : (
-        result.reasons?.length >
-          0 && (
-          <>
-            <p className="urgency__why">
-              <strong>
-                Why:
-              </strong>
-            </p>
-
-            <ul>
-              {result.reasons.map(
-                (reason) => (
-                  <li
-                    key={
-                      reason
-                    }
-                  >
-                    {reason}
-                  </li>
-                )
-              )}
-            </ul>
-          </>
-        )
-      )}
-
-
-      {result.selfCareGuidance
-        ?.length > 0 && (
-        <div className="urgency__card">
-          <h3>
-            Self-care guidance
-          </h3>
-
-          <ul>
-            {result.selfCareGuidance.map(
-              (item) => (
-                <li key={item}>
-                  {item}
-                </li>
-              )
-            )}
-          </ul>
+      {hasDetails && (
+        <div className="urgency__details">
+          {explanation && (
+            <DetailRow title="Why we suggest this" open>
+              <UrgencyExplanation explanation={explanation} simplified={simplified} />
+            </DetailRow>
+          )}
+          {olderReasons && (
+            <DetailRow title="Why:" open>
+              <ul>
+                {result.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </DetailRow>
+          )}
+          {showAi && (
+            <DetailRow title="What the AI check noted">
+              <ul>
+                {aiReasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </DetailRow>
+          )}
+          {result.selfCareGuidance?.length > 0 && (
+            <DetailRow title="Self-care guidance">
+              <ul>
+                {result.selfCareGuidance.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </DetailRow>
+          )}
         </div>
       )}
 
+      <p className="text-sm urgency__disclaimer">{result.disclaimer}</p>
 
-      <p className="text-sm">
-        {result.disclaimer}
-      </p>
-
-      <p className="urgency__print">
-        <Button variant="secondary" onClick={() => window.print()}>
-          Print or save as PDF
-        </Button>
-      </p>
-
-
-      {/* Open the care directory with the server-selected capability filters. */}
-      <p>
-        <a
-          className="button button--primary button--block urgency__find-care"
-          href={
-            triageProviderUrl(
-              result
-            )
-          }
-        >
-          {triageProviderLabel(
-            result
-          )}
+      <div className="urgency__actions">
+        {/* Open the care directory with the server-selected capability filters. */}
+        <a className="button button--primary button--block urgency__find-care" href={triageProviderUrl(result)}>
+          {triageProviderLabel(result)}
         </a>
-      </p>
+        <div className="urgency__quiet-actions">
+          <ReadAloudButton text={spokenResult} quiet />
+          <button type="button" className="quiet-button urgency__print" onClick={() => window.print()}>
+            <HeldIcon name="print" size="1.25rem" />
+            Print or save as PDF
+          </button>
+        </div>
+        {onCheckAgain && (
+          <Button variant="secondary" block onClick={onCheckAgain} className="urgency__again">
+            Check something else
+          </Button>
+        )}
+      </div>
     </section>
   );
 }

@@ -80,23 +80,28 @@ describe("Dashboard Page", () => {
     expect(screen.queryByRole("region", { name: "Dashboard sections" })).not.toBeInTheDocument();
   });
 
-  test("offers direct quick actions for common health tasks", async () => {
+  test("Your health: one grid of tiles (former Getting started, Your progress and Quick actions), each tile one link", async () => {
     renderDashboard();
-    await screen.findByText(greeting("Demo"));
-    const quickActions = screen.getByRole("navigation", { name: "Quick actions" });
-    expect(within(quickActions).getByRole("link", { name: "Log vitals" })).toHaveAttribute("href", "/vitals");
-    expect(within(quickActions).getByRole("link", { name: "Add medication" })).toHaveAttribute("href", "/medications");
-    expect(within(quickActions).getByRole("link", { name: "Add appointment" })).toHaveAttribute("href", "/appointments");
-    expect(within(quickActions).getByRole("link", { name: "Upload document" })).toHaveAttribute("href", "/medical-documents");
-    // Four at most: Medication overview lives in My care and on My medications, visit prep in My records.
-    expect(within(quickActions).getAllByRole("link")).toHaveLength(4);
-    expect(within(quickActions).queryByRole("link", { name: "Medication overview" })).not.toBeInTheDocument();
-    expect(within(quickActions).queryByRole("link", { name: "Prepare for a visit" })).not.toBeInTheDocument();
-    // Equal tiles: every action has an icon and a short one-line label.
-    for (const link of within(quickActions).getAllByRole("link")) {
-      expect(link).toHaveClass("quick-action");
-      expect(link.querySelector("svg.quick-action__icon")).not.toBeNull();
+    const section = await screen.findByRole("region", { name: "Your health" });
+    const tiles = within(section).getAllByRole("link");
+    expect(tiles.map((link) => link.getAttribute("href"))).toEqual([
+      "/my-health", "/medications", "/symptoms", "/appointments", "/vitals", "/medical-documents", "/emergency-card",
+    ]);
+    // Said once: the old Quick actions and Your progress sections are gone.
+    expect(screen.queryByRole("navigation", { name: "Quick actions" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Your progress" })).not.toBeInTheDocument();
+    expect(within(section).queryByRole("link", { name: "Medication overview" })).not.toBeInTheDocument();
+    expect(within(section).queryByRole("link", { name: "Prepare for a visit" })).not.toBeInTheDocument();
+    // Equal tiles: an icon, a title and ONE status line; the whole tile is the link, with no button inside.
+    for (const link of tiles) {
+      expect(link).toHaveClass("tile");
+      expect(link.querySelector("svg.held-icon")).not.toBeNull();
+      expect(link.querySelectorAll(".tile__title")).toHaveLength(1);
+      expect(link.querySelectorAll(".tile__status")).toHaveLength(1);
+      expect(link.querySelector("a, button, .button")).toBeNull();
     }
+    expect(within(section).getByRole("link", { name: /^Vitals Log a reading/ })).toHaveAttribute("href", "/vitals");
+    expect(within(section).getByRole("link", { name: /^Documents Upload or view/ })).toHaveAttribute("href", "/medical-documents");
   });
 
   test("welcomes the user by their saved name", async () => {
@@ -243,48 +248,51 @@ describe("Dashboard Page", () => {
     expect(within(accountMenu).getByRole("link", { name: "Account security" })).toHaveTextContent("Account security");
   });
 
-  test("shows health, water and sleep progress as plain sentences", async () => {
+  test("shows today's water and sleep once, in Your day, and links to them", async () => {
     fakeWellbeing.seedWater("self", todayString(), [250, 500, 500]);
     fakeWellbeing.seedSleep("self", todayString(), 7.5, 4);
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("1.25 L logged today.")).toBeInTheDocument();
-    expect(within(card).getByText("7.5 hours logged for last night.")).toBeInTheDocument();
-    expect(within(card).queryByRole("img", { name: /Water today/ })).not.toBeInTheDocument();
-    expect(within(card).getByRole("link", { name: "Track water" })).toHaveAttribute("href", "/water-and-sleep");
-    expect(within(card).getByRole("link", { name: "Log sleep" })).toHaveAttribute("href", "/water-and-sleep");
-    expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
+    const day = await screen.findByRole("region", { name: "Your day" });
+    expect(await within(day).findByRole("link", { name: "Water 1.25 L" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(within(day).getByRole("link", { name: "Sleep 7.5 hours" })).toHaveAttribute("href", "/water-and-sleep");
+    expect(within(day).queryByRole("img", { name: /Water today/ })).not.toBeInTheDocument();
+    // Said once: Your health has no water or sleep tile repeating them.
+    const health = await screen.findByRole("region", { name: "Your health" });
+    expect(health).not.toHaveTextContent(/1\.25 L|7\.5 hours|Water|Sleep/);
+    expect(within(health).getByRole("link", { name: /^My health/ })).toHaveAttribute("href", "/my-health");
   });
 
-  test("the water card shows progress against a limit and keeps not logged apart from zero", async () => {
+  test("Your day keeps not logged apart from zero", async () => {
     fakeWellbeing.seedWater("self", todayString(), 900);
     fakeWellbeing.seedGoal("self", { type: "atMost", ml: 1500 });
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("0.9 L logged today.")).toBeInTheDocument();
-    expect(within(card).getByText("Sleep is not logged yet for last night.")).toBeInTheDocument();
+    const day = await screen.findByRole("region", { name: "Your day" });
+    expect(await within(day).findByRole("link", { name: "Water 0.9 L" })).toBeInTheDocument();
+    expect(within(day).getByRole("link", { name: "Sleep not logged" })).toBeInTheDocument();
   });
 
-  test("the My health card counts the basics gently and links to My health", async () => {
+  test("the My health tile counts the basics gently and links to My health", async () => {
     fakeHealth.seedFact("self", "sex", "female");
     fakeHealth.seedFact("self", "bloodType", "unknown");
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("2 of 5 health basics are filled in.")).toBeInTheDocument();
-    expect(within(card).getByRole("link", { name: "Open my health" })).toHaveAttribute("href", "/my-health");
+    const section = await screen.findByRole("region", { name: "Your health" });
+    const tile = within(section).getByRole("link", { name: /^My health/ });
+    expect(within(tile).getByText("2 of 5 basics")).toBeInTheDocument();
+    expect(tile).toHaveAttribute("href", "/my-health");
   });
 
-  test("the My health card follows the active profile", async () => {
+  test("the My health tile follows the active profile", async () => {
     const child = await addLinkedProfile({ fullName: "Sami Haddad", dateOfBirth: "2018-04-02", relationship: "child" });
     fakeHealth.seedAge(child.id, "2018-04-02", 8);
     localStorage.setItem("nabad-active-profile-id", child.id);
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("1 of 5 health basics are filled in for Sami Haddad.")).toBeInTheDocument();
+    const section = await screen.findByRole("region", { name: "Your health" });
+    const tile = within(section).getByRole("link", { name: /^My health for Sami/ });
+    expect(within(tile).getByText("1 of 5 basics")).toBeInTheDocument();
     expect(fakeHealth.calls).toContainEqual(["getHealthProfile", child.id]);
   });
 
@@ -298,8 +306,8 @@ describe("Dashboard Page", () => {
     const symptomCard = screen.getByRole("heading", { name: "Something feels off?" });
     expect(title.compareDocumentPosition(symptomCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(symptomCard.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // The card and Your progress share one set of requests.
-    await screen.findByText("0 of 5 health basics are filled in.");
+    // The card and Your health share one set of requests.
+    await screen.findByText("0 of 5 basics");
     expect(fakeHealth.calls.filter(([name]) => name === "getHealthProfile")).toHaveLength(1);
   });
 
@@ -312,12 +320,15 @@ describe("Dashboard Page", () => {
     expect(card).toHaveTextContent("Add Sami's health basics for safer guidance");
   });
 
-  test("the medication ring records taken today without a checklist below the rings", async () => {
+  test("Your health records the next medicine as taken today, without a checklist", async () => {
     fakeMedications.seedMedication("self", { id: "aspirin", name: "Aspirin", dose: "81", unit: "mg" });
     fakeMedications.seedMedication("self", { id: "vitamin", name: "Vitamin D", taken: true });
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Your progress" });
+    const card = await screen.findByRole("region", { name: "Your health" });
+    // The tile says what's next; the count ("1 of 2") is said once, in Your day.
+    expect(await within(card).findByRole("link", { name: /^Medicines Next: Aspirin/ })).toHaveAttribute("href", "/medications");
+    expect(within(screen.getByRole("region", { name: "Your day" })).getByRole("link", { name: "Medicines 1 of 2" })).toBeInTheDocument();
     expect(await within(card).findByRole("button", { name: "Mark taken: Aspirin" })).toBeInTheDocument();
     expect(within(card).queryByRole("heading", { name: "Medication check-in" })).not.toBeInTheDocument();
     expect(within(card).queryByRole("checkbox")).not.toBeInTheDocument();
@@ -331,11 +342,11 @@ describe("Dashboard Page", () => {
     fakeAppointments.seedAppointment("self", { title: "Eye exam", hospital: "Eye Center", appointmentDate: "2099-01-12", appointmentTime: "11:00" });
     renderDashboard();
 
-    const card = await screen.findByRole("region", { name: "Your progress" });
-    expect(await within(card).findByText("Eye exam")).toBeInTheDocument();
-    expect(within(card).getByText(/Eye Center · 12 January 2099 at 11:00/)).toBeInTheDocument();
-    expect(within(card).queryByText("Annual check-up")).not.toBeInTheDocument();
-    expect(within(card).getByRole("link", { name: "View appointments" })).toHaveAttribute("href", "/appointments");
+    const card = await screen.findByRole("region", { name: "Your health" });
+    const tile = await within(card).findByRole("link", { name: /^Appointments Eye exam/ });
+    expect(tile).toHaveTextContent("Eye exam · 12 January 2099 at 11:00, Eye Center");
+    expect(within(card).queryByText(/Annual check-up/)).not.toBeInTheDocument();
+    expect(tile).toHaveAttribute("href", "/appointments");
   });
 
   test("the medication ring updates before saving finishes and rolls back on failure", async () => {
@@ -346,7 +357,7 @@ describe("Dashboard Page", () => {
     const button = await screen.findByRole("button", { name: "Mark taken: Aspirin" });
     fireEvent.click(button);
     expect(screen.getByRole("button", { name: "Undo taken: Aspirin" })).toBeDisabled();
-    expect(screen.getByText("All checked off")).toBeInTheDocument();
+    expect(screen.getByText("All taken today")).toBeInTheDocument();
     fireEvent.click(button);
     expect(setMedicationTaken).toHaveBeenCalledTimes(1);
     await act(async () => { rejectSave(new Error("Offline")); });
@@ -370,5 +381,29 @@ describe("Dashboard Page", () => {
     const footer = document.querySelector("footer");
     const visibleText = [...main.querySelectorAll("*")].filter((el) => !el.closest("details:not([open]) > :not(summary)") && !footer?.contains(el) && el.children.length === 0).map((el) => el.textContent).join(" ");
     expect(visibleText.match(/\b140\b/g)).toHaveLength(1);
+  });
+
+  // Say each thing once: before phase 3 a new account's phone dashboard had 19 buttons (outlined buttons, button links
+  // and disclosures) in main; the target was at least 12 fewer. Tiles, rows and the breathing row are plain links.
+  test("the dashboard has at most 7 buttons, and none inside a tile", async () => {
+    fakeMedications.seedMedication("self", { id: "aspirin", name: "Aspirin" });
+    renderDashboard();
+    await screen.findByRole("region", { name: "Your health" });
+    await screen.findByRole("button", { name: "Mark taken: Aspirin" });
+    const main = document.querySelector("main");
+    const buttons = [...main.querySelectorAll("button, summary, a.button, [role='button']")];
+    expect(buttons.length).toBeLessThanOrEqual(7);
+    expect(main.querySelectorAll(".tile button, .tile .button, .tile summary")).toHaveLength(0);
+  });
+
+  test("the Held mark appears once besides the logo: on the symptom card", async () => {
+    renderDashboard();
+    await screen.findByRole("region", { name: "Your health" });
+    const marks = [...document.querySelectorAll("svg.held")];
+    expect(marks).toHaveLength(1);
+    expect(marks[0].closest(".symptom-card")).not.toBeNull();
+    // Breathing is the dot alone (not a mark), in the Wellbeing Corner only.
+    expect(document.querySelectorAll("svg.breathing-dot")).toHaveLength(1);
+    expect(document.querySelector("svg.breathing-dot").closest("#wellbeing-corner-heading ~ *, .wellbeing-corner")).not.toBeNull();
   });
 });
