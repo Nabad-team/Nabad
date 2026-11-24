@@ -75,7 +75,7 @@ export default function Avatar({ name, src, size = 100, borderColor }) {
         justifyContent: "center",
         background: initials ? avatarColor(name) : NO_NAME_COLOR,
         color: "white",
-        fontWeight: 600,
+        fontWeight: 700, // Atkinson is loaded at 400, 700 and 800 only
         fontSize: rem(size * 0.4),
         userSelect: "none",
       }}

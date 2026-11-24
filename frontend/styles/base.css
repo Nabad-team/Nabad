@@ -187,3 +187,8 @@ legend {
   :focus-visible { outline-color: Highlight; }
   .button, .input, .calendar__day { forced-color-adjust: auto; }
 }
+
+/* The smallest text in Nabad is 13px (--text-xs). A <small> inside small text would otherwise shrink below it. */
+small {
+  font-size: max(var(--text-xs), 0.875em);
+}

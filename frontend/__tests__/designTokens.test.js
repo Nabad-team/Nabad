@@ -53,6 +53,10 @@ describe("Design tokens", () => {
     ["--color-primary-strong", "--color-sunken", 4.5], ["--color-primary", "--color-sunken", 4.5], ["--color-pulse", "--color-surface", 3],
     ["--color-border-strong", "--color-bg", 3], ["--color-border-strong", "--color-surface", 3], ["--color-border-strong", "--color-sunken", 3],
     ["--color-warning", "--color-bg", 3], ["--color-warning", "--color-warning-soft", 3],
+    // Urgency as an accent on a white result card (phase 3.2): each level's dot and current scale segment on white,
+    // and the soon chip's text on white too.
+    ["--color-warning", "--color-surface", 3], ["--color-warning-strong", "--color-surface", 4.5],
+    ["--color-routine", "--color-surface", 3], ["--color-urgent", "--color-surface", 3], ["--color-danger", "--color-surface", 3],
     ["--color-pulse", "--color-bg", 3], ["--color-pulse-on-dark", "--color-primary-strong", 3],
   ])("%s on %s is at least %s:1", (fg, bg, min) => {
     expect(contrast(root[fg], root[bg])).toBeGreaterThanOrEqual(min);

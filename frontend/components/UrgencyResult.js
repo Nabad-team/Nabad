@@ -148,17 +148,25 @@ export default function UrgencyResult({
       tabIndex={-1}
       aria-labelledby="urgency-heading"
       role={isEmergency ? "alert" : undefined}
-      className={`urgency urgency--${level}${isEmergency ? "" : " urgency--enter"}`}
+      className={`urgency urgency--${level}${isEmergency ? "" : " urgency--accent urgency--enter"}`}
     >
+      {/* Urgency colour is an accent, not a flood (docs/design-system.md#symptom-check-result): routine, soon and
+          urgent sit on a white card with a 4px top edge in the level colour, the level as a chip and a small ring.
+          Only an emergency fills its card with its colour, with the still urgent mark. */}
       <div className="urgency__indicator">
-        <HeldMark state={isEmergency ? "urgent" : "done"} size="3.25rem" className="urgency__mark" />
+        <HeldMark state={isEmergency ? "urgent" : "done"} size={isEmergency ? "3.25rem" : "2rem"} className="urgency__mark" />
         <div className="urgency__heading-block">
-          <h2 id="urgency-heading" tabIndex={-1}>
-            {preliminary ? "Urgency so far" : "Urgency"}: {result.label}
-          </h2>
-          <p className="urgency__timeframe">
-            <span className="urgency__timeframe-label">How soon:</span>{" "}{result.timeframe}
-          </p>
+          <div className="urgency__level-row">
+            <h2 id="urgency-heading" tabIndex={-1}>
+              {isEmergency ? <>{preliminary ? "Urgency so far" : "Urgency"}: {result.label}</> : <>
+                <span className="visually-hidden">{preliminary ? "Urgency so far" : "Urgency"}: </span>
+                <span className={`level-chip level-chip--${level}`}>{result.label}</span>
+              </>}
+            </h2>
+            <p className="urgency__timeframe">
+              <span className="urgency__timeframe-label">How soon:</span>{" "}{result.timeframe}
+            </p>
+          </div>
           <p className="urgency__action">
             <span className="visually-hidden">What to do: </span>{result.action}
           </p>
