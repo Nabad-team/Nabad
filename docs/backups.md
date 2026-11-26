@@ -178,7 +178,15 @@ You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) runni
    Remove-Item -Recurse -Force $Drill
    ```
 
-9. **Write it down.** Note the date, the backup timestamp and "passed" in the sprint notes. If anything failed, open an issue saying which step failed (no data, counts or collection names) and fix it before the next drill.
+9. **Write it down.** Add a row to the [drill log](#drill-log) below: the date, the backup timestamp, the result and who ran it. If anything failed, open an issue saying which step failed (no data, counts or collection names) and fix it before the next drill.
+
+### Drill log
+
+One row per drill. Never record data, counts or collection names here.
+
+| Date | Backup | Result | Who |
+| --- | --- | --- | --- |
+| 26 Nov 2026 | `nabad-20261126T142012Z` | Passed: SHA-256 matched the manifest, decrypted with the offline key, restored into MongoDB 8.0 with 0 documents failed, `DRILL PASSED`; container and decrypted files deleted | Gerges |
 
 ## When a backup-failure issue opens
 

@@ -20,7 +20,8 @@ On business goals:
 - **Triage safety:** the triage rules place all 109 clinical safety cases at a safe level, with none under-triaged, and all 50 quality cases at exactly the expected level.
 - **Accessibility:** the axe checks report no violations.
 - **Usability:** the five-person study has not been run with people, only as five automated scenarios.
-- **Not measured:** running cost and time to a symptom check result.
+- **Running cost:** $0 a month; everything runs on free tiers.
+- **Not measured:** time to a symptom check result.
 
 ## How this report was made
 
@@ -268,7 +269,7 @@ So this means **no errors reported to Sentry in 30 days**, not that nothing went
 | Failed backup runs | 3: two on 7 Nov while the workflow was being set up, and **the scheduled run on 26 Nov** | same |
 | Successful weekly backup verifications | 4 (1 by hand on 7 Nov, then 3 scheduled; last 23 Nov); 2 failed runs on 7 Nov during setup | `gh run list --workflow db-backup-verify.yml`, 26 Nov 2026 |
 | Automated restore checks | 29: every successful nightly backup restores its dump and checks collections, document counts and indexes | [backups.md](backups.md) |
-| Last monthly decryption drill (restore on the key holder's computer) | **Not recorded.** [backups.md](backups.md#monthly-decryption-drill) describes the drill, but no drill result is written down in the repository | repository, 26 Nov 2026 |
+| Last monthly decryption drill (restore on the key holder's computer) | **Passed 26 Nov 2026** (backup `nabad-20261126T142012Z`) | [backups.md drill log](backups.md#drill-log) |
 | Last rollback drill | 9 Nov 2026: Vercel Instant Rollback and back, took about 3 s | [rollback.md](rollback.md#rollback-drill) |
 
 **About the 26 November failure:**
@@ -326,7 +327,7 @@ Nabad's goals are to give a safe, understandable triage result, be usable and ac
 | Accessible | axe-core 4.10.3, WCAG 2.0/2.1 A and AA, 2.2 AA rules, in CI | 3 of 3 accessibility tests pass (public pages; core signed-in pages and keyboard; modals, search and validation) | `selenium` job, run 45466997403, 24 Nov 2026 |
 | Accessible ("Held" refresh) | axe on 19 signed-in pages at 1280 px, 10 at 390 px and 6 public pages | **no violations** | [#270](https://github.com/Nabad-team/Nabad/pull/270), 24 Nov 2026 |
 | Accessible colour contrast | Contrast tests for every colour pair in the new palette | pass; for example routine `#0b3a66` on white 11.59:1, amber `#B47F10` on paper 3.19:1 (3:1 needed) | [#264](https://github.com/Nabad-team/Nabad/pull/264), [#272](https://github.com/Nabad-team/Nabad/pull/272), `frontend/__tests__/designTokens.test.js` |
-| Run within a student budget | Running cost per month | **Not measured.** No bill or cost figure is recorded in the repository. The docs describe free plans for Render, Vercel (Hobby), MongoDB Atlas (M0), Brevo, the Gemini API (free quota per Google Cloud project) and UptimeRobot. The Backblaze B2 and Sentry plans are not documented | [operations.md](operations.md), [environments.md](environments.md), [uptime.md](uptime.md) |
+| Run within a student budget | Running cost per month | **$0.** Everything runs on free tiers. The Backblaze B2 and Sentry billing pages both show $0. Vercel (Hobby), Render, MongoDB Atlas (M0), UptimeRobot and the Gemini free tier are free plans, and the docs describe Brevo's free plan | billing pages checked by Gerges, 26 Nov 2026; [operations.md](operations.md), [environments.md](environments.md) |
 | Fast result | Time to get a symptom check result | **Not measured.** The JMeter runs don't include the triage endpoint, and the app doesn't log triage duration | repository, 26 Nov 2026 |
 | Available | Monthly availability target of 99% | met: 99.590% over 30 days | [Service](#2-service) |
 
@@ -344,12 +345,13 @@ Nabad's goals are to give a safe, understandable triage result, be usable and ac
 - **One check, every 5 minutes.** An outage shorter than 5 minutes can be missed, and each failed check counts as up to 5 minutes. A failure in the AI provider or email is not downtime.
 - **The 1 November cause is unknown.** Render's events show the instance was never reported unhealthy, but logs from that window were not available.
 - **Sentry sees server errors only on the backend**, and nothing about slow requests.
-- **No human usability data**, no clinician sign-off, no cost figure and no time-to-result measurement.
+- **No human usability data**, no clinician sign-off and no time-to-result measurement.
+- **Free tiers.** The $0 running cost depends on staying within free-plan limits (Render's 750 instance hours, Brevo's 300 emails a day, the Gemini free quota). Free plans also come with no uptime guarantees.
 - **The change failure judgement is the team's own**, from PR descriptions.
 
 ## Improvements
 
-1. **Fix the backup failure and log the drills.** Fix the tool-install step behind issue [#275](https://github.com/Nabad-team/Nabad/issues/275) and re-run the backup the same day (done: fixed in #277, verified by run 45837859628 on 26 Nov). Then add a "Drill log" table to [backups.md](backups.md), like [rollback.md](rollback.md#rollback-drill) has, so the monthly decryption drill leaves a dated record. Today the last drill can't be shown.
+1. **Fix the backup failure and log the drills.** Fix the tool-install step behind issue [#275](https://github.com/Nabad-team/Nabad/issues/275) and re-run the backup the same day (done: fixed in #277, verified by run 45837859628 on 26 Nov). Then add a "Drill log" table to [backups.md](backups.md), like [rollback.md](rollback.md#rollback-drill) has, so the monthly decryption drill leaves a dated record (done: [drill log](backups.md#drill-log), first drill passed 26 Nov 2026).
 2. **Keep an incident log.** For each incident, record the start and end in UTC, how it was detected, the cause, the time to restore and the follow-up. Put it in [operations.md](operations.md) or the release log. This report had to rebuild both incidents from screenshots and copied Render events.
 3. **Measure time to a symptom check result.** Log the duration of each triage request, anonymously and with no symptom text, next to the existing usage counters. Also add a triage sample to the staging JMeter run (SCRUM-349). Then "fast result" can be measured instead of assumed.
 4. **Make `selenium` reliable.** It passes on the first run 86.9% of the time, against 94% to 100% for the other checks. Track each failing test and fix its waits, as #174, #186 and #202 did. This would raise the first-try green rate and shorten lead time.
