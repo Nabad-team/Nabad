@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 D, REPO = sys.argv[1], sys.argv[2]
 BEIRUT = ZoneInfo("Asia/Beirut")
-NOW = dt.datetime(2026, 11, 24, 12, 0, tzinfo=dt.timezone.utc)  # snapshot time for "so far"
+NOW = dt.datetime(2026, 11, 26, 13, 0, tzinfo=dt.timezone.utc)  # snapshot time for "so far"
 T = lambda s: dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
 day = lambda t: t.astimezone(BEIRUT).date()
 SPRINTS = [  # name, first day, last day (inclusive, Beirut)
@@ -28,7 +28,7 @@ def weeks(name):
 def med(xs): return round(statistics.median(xs), 1) if xs else None
 def git(*a): return subprocess.run(["git", *a], cwd=REPO, capture_output=True, text=True).stdout.strip()
 
-prs = json.load(open(os.path.join(D, "prs.json")))
+prs = json.load(open(os.path.join(D, "prs.json"), encoding="utf-8"))
 main = sorted([p for p in prs if p["baseRefName"] == "main"], key=lambda p: p["mergedAt"])
 rel = sorted([p for p in prs if p["baseRefName"] == "production"], key=lambda p: p["mergedAt"])
 names = [s[0] for s in SPRINTS]
@@ -43,7 +43,7 @@ for n in names:
     m = [p for p in main if sprint_of(T(p["mergedAt"])) == n]
     r = [p for p in rel if sprint_of(T(p["mergedAt"])) == n]
     out["merged_prs"][n] = {"main": len(m), "release": len(r)}
-    out["pr_cycle_minutes"][n] = {"median": med([minutes(p) for p in m]), "p75": q([minutes(p) for p in m], 0.75), "under_2_min": sum(minutes(p) < 2 for p in m), "n": len(m)}
+    out["pr_cycle_minutes"][n] = {"median": med([minutes(p) for p in m]), "p75": q([minutes(p) for p in m], 0.75), "p90": q([minutes(p) for p in m], 0.9), "under_2_min": sum(minutes(p) < 2 for p in m), "n": len(m)}
 
 # 3. Deployment frequency: formal releases (PRs into production) per week, and actual production deploys of the
 # official app (successful Vercel "Production" records on nabad-psi / nabad3) per week.
@@ -51,7 +51,8 @@ deps = json.load(open(os.path.join(D, "prod_deploys.json")))
 psi = [d for d in deps if d["env"] == "Production" and d["state"] == "success" and ("nabad-psi" in d["url"] or "nabad3" in d["url"])]
 other = [d for d in deps if d["env"] == "Production" and d not in psi]
 nhv5 = [d for d in deps if d["env"] == "main - nabad-backend-nhv5" and d["state"] == "success"]
-project_weeks = ((day(NOW) - dt.date(2026, 9, 25)).days + 1) / 7
+# Weeks since the first deploy record (12 October); earlier production deploys were manual and left no record.
+project_weeks = ((day(NOW) - min(day(T(d["created"])) for d in psi)).days + 1) / 7
 release_weeks = ((day(NOW) - day(T(rel[0]["mergedAt"]))).days + 1) / 7
 out["deploy_frequency"] = {"project": {
     "releases": len(rel), "releases_per_week_since_first": round(len(rel) / release_weeks, 1),
@@ -87,22 +88,24 @@ for p in main:
 out["lead_time_hours"] = {"project": {"median": med([x["hours"] for x in lead]), "n": len(lead),
     "median_release_era": med([x["hours"] for x in lead if x["era"] == "release"]), "n_release_era": sum(x["era"] == "release" for x in lead),
     "median_auto_era": med([x["hours"] for x in lead if x["era"] == "auto"]), "median_auto_era_minutes": med([x["hours"] * 60 for x in lead if x["era"] == "auto"]),
-    "p90_release_era": (sorted(x["hours"] for x in lead if x["era"] == "release")[int(0.9 * sum(x["era"] == "release" for x in lead))] if any(x["era"] == "release" for x in lead) else None), "n_auto_era": sum(x["era"] == "auto" for x in lead),
+    "p90_all": q([x["hours"] for x in lead], 0.9), "p90_release_era": (sorted(x["hours"] for x in lead if x["era"] == "release")[int(0.9 * sum(x["era"] == "release" for x in lead))] if any(x["era"] == "release" for x in lead) else None), "n_auto_era": sum(x["era"] == "auto" for x in lead),
     "not_measured": len(main) - len(lead)}}
 for n in names:
     xs = [x["hours"] for x in lead if x["sprint"] == n]
-    out["lead_time_hours"][n] = {"median": med(xs), "median_release_era": med([x["hours"] for x in lead if x["sprint"] == n and x["era"] == "release"]), "n": len(xs), "not_measured": sum(sprint_of(T(p["mergedAt"])) == n for p in main) - len(xs)}
+    out["lead_time_hours"][n] = {"median": med(xs), "p90": q(xs, 0.9), "median_release_era": med([x["hours"] for x in lead if x["sprint"] == n and x["era"] == "release"]), "p90_release_era": q([x["hours"] for x in lead if x["sprint"] == n and x["era"] == "release"], 0.9), "n": len(xs), "not_measured": sum(sprint_of(T(p["mergedAt"])) == n for p in main) - len(xs)}
 
 # 5. Change failure rate (judged by hand, see process.md): literal = a later release within 48 h shipped a fix
-# PR; attributed = that fix repaired something the earlier release introduced. #261 is too recent to judge.
+# PR; attributed = that fix repaired something the earlier release introduced. #273 is too recent to judge.
 judged = {197: (True, False, "#202 (47.9 h later, in #203): CI fixes and an undefined colour token from before"),
           203: (True, False, "#208, #209 (13 h later, in #210): rate limits used a proxy IP since before this release"),
           210: (False, False, "next release 101 h later"), 236: (False, False, "#238 is a feature"), 239: (False, False, "#241 is a feature"),
           242: (False, False, "#244 is a feature"), 245: (False, False, "#247 is a feature"),
           248: (True, False, "#250 (25 min later, in #251): notification texts from the notifications feature, Sprint 3"),
-          251: (False, False, "next release 8 days later")}
+          251: (False, False, "next release 8 days later"),
+          261: (False, False, "#266 (10.5 h later) shipped Held refresh phases 1 and 2 (#264, #265): features"),
+          266: (False, False, "#273 (9.8 h later) shipped Held refresh phases 3 to 3.2 (#270 to #272): design work, no fix/ PR")}
 out["change_failure"] = {"project": {"judged": len(judged), "literal": sum(v[0] for v in judged.values()), "attributed": sum(v[1] for v in judged.values()),
-                                     "rollbacks": 0, "reverts": 0, "too_recent": [261]},
+                                     "rollbacks": 0, "reverts": 0, "too_recent": [273]},
                          "releases": {str(k): {"literal": v[0], "attributed": v[1], "note": v[2]} for k, v in judged.items()}}
 for n in names:
     ks = [p["number"] for p in rel if sprint_of(T(p["mergedAt"])) == n and p["number"] in judged]
@@ -143,8 +146,58 @@ for n, a, b in SPRINTS:
     end = dt.datetime.combine(min(b, day(NOW)), dt.time(23, 59, 59), BEIRUT)
     c = git("rev-list", "-1", f"--before={end.isoformat()}", "origin/main")
     tc[n] = {"commit": c[:7], "counts": count(c)}
-tc["runtime_now"] = {"backend": 1404, "frontend": 946, "note": "npm test on main after #260 (backend), jest --runInBand (frontend)"}
+tc["runtime_now"] = {"backend": 1404, "frontend": 1055, "note": "CI run 45466997442 on main 7ffd606 (24 Nov): backend-tests and frontend-tests jobs"}
 out["test_counts"] = tc
+
+# 8. First-run pass share per required check: for each (check, commit) on a PR, did attempt 1 pass?
+allj = json.load(open(os.path.join(D, "jobs.json")))
+first_runs = {}
+for j in allj:
+    if j["name"] in REQUIRED and j.get("attempt") == 1 and j["conclusion"] in ("success", "failure", "timed_out"):
+        first_runs[(j["name"], j["head_sha"])] = j["conclusion"] == "success"
+out["ci_first_run_by_check"] = {k: {"commits": sum(1 for (c, _) in first_runs if c == k),
+                                    "passed_first_run": sum(v for (c, _), v in first_runs.items() if c == k)} for k in sorted(REQUIRED)}
+for k, v in out["ci_first_run_by_check"].items(): v["rate"] = round(100 * v["passed_first_run"] / v["commits"], 1) if v["commits"] else None
+
+# 9. CI duration. Per job: started to completed of every required job attempt that finished. Per commit: from the
+# first required job's start to the last one's completion, on the first attempt (the wall time a PR author waits).
+dur = lambda j: (T(j["completed"]) - T(j["started"])).total_seconds() / 60
+done = [j for j in allj if j["name"] in REQUIRED and j.get("completed") and j["started"] and j["conclusion"] in ("success", "failure", "timed_out")]
+walls = {}
+for j in done:
+    if j.get("attempt") != 1: continue
+    a, b = walls.get(j["head_sha"], (None, None))
+    s0, e0 = T(j["started"]), T(j["completed"])
+    walls[j["head_sha"]] = (min(a, s0) if a else s0, max(b, e0) if b else e0)
+wall_by_sprint = {}
+for sha, (a, b) in walls.items(): wall_by_sprint.setdefault(sprint_of(a), []).append((b - a).total_seconds() / 60)
+out["ci_duration_minutes"] = {"project": {"per_commit_median": med([x for xs in wall_by_sprint.values() for x in xs]),
+                                          "per_commit_p90": q([x for xs in wall_by_sprint.values() for x in xs], 0.9), "commits": len(walls),
+                                          "by_check_median": {k: med([dur(j) for j in done if j["name"] == k]) for k in sorted(REQUIRED)}}}
+for n in names: out["ci_duration_minutes"][n] = {"per_commit_median": med(wall_by_sprint.get(n, [])), "commits": len(wall_by_sprint.get(n, []))}
+
+# 10. Throughput per author (GitHub handle) and sprint, PRs into main.
+authors = sorted({p["author"]["login"] for p in main})
+out["throughput_by_author"] = {a: {n: sum(1 for p in main if p["author"]["login"] == a and sprint_of(T(p["mergedAt"])) == n) for n in names} for a in authors}
+for a in authors: out["throughput_by_author"][a]["total"] = sum(1 for p in main if p["author"]["login"] == a)
+
+# 11. AI use declared: the PR description ticks "AI use declared" or names an AI tool, or a commit in the PR has a
+# Co-Authored-By line naming one. Commits of a PR = merge commit's second parent back to the first parent.
+import re
+AI = re.compile(r"co-authored-by|claude code|codex|copilot|chatgpt|generated with|\bAI[- ](assist\w*|agent\w*|tool\w*|use|written|generated)\b|(written|drafted|made) (with|by) (an )?AI\b", re.I)
+def declared(p):
+    body = p.get("body") or ""
+    if re.search(r"\[x\]\s*AI use declared", body, re.I): return "ticked"
+    if AI.search(body): return "body"
+    m = p["mergeCommit"]["oid"]
+    msgs = git("log", "--format=%B", f"{m}^1..{m}^2")
+    if re.search(r"co-authored-by:.*(claude|codex|copilot|openai|chatgpt|gemini|cursor|noreply@anthropic)", msgs, re.I): return "commit"
+    return None
+ai = {p["number"]: declared(p) for p in main}
+out["ai_declared"] = {"project": {"prs": len(main), "declared": sum(1 for v in ai.values() if v), "by_how": {h: sum(1 for v in ai.values() if v == h) for h in ("ticked", "body", "commit")}}}
+for n in names:
+    ps = [p for p in main if sprint_of(T(p["mergedAt"])) == n]
+    out["ai_declared"][n] = {"prs": len(ps), "declared": sum(1 for p in ps if ai[p["number"]])}
 
 json.dump(out, open(os.path.join(D, "metrics.json"), "w"), indent=1)
 print(json.dumps(out, indent=1)[:6000])

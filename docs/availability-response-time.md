@@ -6,7 +6,28 @@ Sprint 5, SCRUM-350. Measurement snapshot captured on 20 November 2026.
 
 The public UptimeRobot page reports **99.588% over its rolling 30-day window** for the Nabad backend monitor at capture time. The monitor was reporting up. Its daily ratios for 17, 18 and 19 November were each 100.000%. The 20 November row was also 100.000% when captured, but that day was still in progress.
 
-The last downtime shown by the public feed began on 1 November 2026 at 14:15:59 in the feed's timestamp format and lasted 10,672 seconds, or 2 hours 57 minutes 52 seconds. The feed does not explain the cause, so none is assigned here.
+The last downtime shown by the public feed began on 1 November 2026 at 14:15:59 UTC (the UptimeRobot account's time zone is GMT/UTC) and lasted 10,672 seconds, or 2 hours 57 minutes 52 seconds, until about 17:13:51 UTC. The feed does not explain the cause, and none is assigned here.
+
+Production was deployed that day. At the time every merge to `main` deployed production, and GitHub's deployment records show 10 successful production deploys on 1 November. The outage began 33 minutes after the deploy of [#163](https://github.com/Nabad-team/Nabad/pull/163) (13:42 UTC) and ended about 7 minutes after the deploy of [#164](https://github.com/Nabad-team/Nabad/pull/164) (17:06 UTC). Render's events for `nabad-backend-nhv5` agree on the deploys: #163 went live at 13:45 UTC and #164 at 17:09 UTC, about 5 minutes before the outage ended (Render Events, copied 26 Nov 2026). They show no "Instance failed", "unhealthy" or "Service recovered" event at all on 1 November. So Render's own health check never saw the backend instance fail during the outage.
+
+The two changes don't explain it. #163 only added services and sources to four existing hospital records in `backend/data/providers.js`, data the same startup seed had loaded without trouble on two earlier deploys that day. #164 only changed medical report analysis (`backend/src/reports/analyze.js`), which runs on a report request and plays no part in startup, the database connection or `/api/health/ready`.
+
+Possible explanations, none confirmed:
+
+- The failure was on the public path. UptimeRobot calls the backend through the Vercel proxy, while Render checks the instance directly.
+- The backend hung in a way Render's check did not catch.
+
+The restart that came with the #164 deploy coincided with the recovery. The cause stays **not identified**, and the incident is not counted as a change failure.
+
+## 23 November incident
+
+UptimeRobot recorded a second, short outage: 23 November 2026 from 15:29:49 UTC for 304 seconds (5 minutes 4 seconds), see the [26 November capture](evidence/uptime-2026-11-26.json). Render recorded the same event (Render Events, copied 26 Nov 2026): "Instance failed: HTTP health check failed with status code 503 while running your code" at 15:29 UTC, and "Service recovered" at 15:31 UTC.
+
+- **Cause:** the backend's readiness check returned 503, and the instance recovered on its own in about 2 minutes. UptimeRobot shows up to 5 minutes because it checks every 5 minutes.
+- **Detected by:** both Render and UptimeRobot.
+- **Deploy-related:** no. No deploy happened around it. The next event that day was a restart for an environment variable change (the AI settings), at 20:06 UTC.
+
+More detail is in the [DevOps measurement report](devops-measurement.md#2-service).
 
 Source is the public [status page](https://stats.uptimerobot.com/GFwdUOKlhv) and its public monitor feed. The [captured evidence](evidence/uptime-2026-11-20.json) records the exact retrieval timestamp, monitor ID, rolling ratio and recent daily values. Percentages may change after this capture.
 

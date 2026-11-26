@@ -1,7 +1,7 @@
 # For each PR merged into main: the official Vercel (nabad3) status history on its final commit.
 import json, subprocess, sys
 OUT = sys.argv[1]
-prs = [p for p in json.load(open(OUT + "/prs.json")) if p["baseRefName"] == "main"]
+prs = [p for p in json.load(open(OUT + "/prs.json", encoding="utf-8")) if p["baseRefName"] == "main"]
 res = {}
 for p in prs:
     r = subprocess.run(["gh","api","--paginate",f"repos/Nabad-team/Nabad/commits/{p['headRefOid']}/statuses?per_page=100"], capture_output=True, text=True, encoding="utf-8")
