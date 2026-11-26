@@ -62,7 +62,7 @@ Before a release, the triage safety run is recorded on the release candidate: [d
 - [Architecture](./docs/architecture.md) and [diagrams](./docs/diagrams/README.md)
 - [Environments and releases](./docs/environments.md), [release log](./docs/releases.md), [rollback](./docs/rollback.md)
 - [Operations](./docs/operations.md), [uptime](./docs/uptime.md), [backups](./docs/backups.md)
-- [Quality attributes and architecture decisions](./docs/quality-attributes.md), [availability and response-time evidence](./docs/availability-response-time.md)
+- [Quality attributes and architecture decisions](./docs/quality-attributes.md), [availability and response-time evidence](./docs/availability-response-time.md), [DevOps measurement report](./docs/devops-measurement.md) (process, service, usage, business success) and [process metrics](./docs/metrics/process.md)
 - [Testing](./docs/testing.md), [accessibility](./docs/accessibility.md), [security scanning](./docs/security-scanning.md), [security layers diagram](./docs/diagrams/security-layers.md)
 - AI: [fallback and usage limits](./docs/ai-fallback.md), [self-hosted AI](./docs/self-hosted-ai.md), [assistant troubleshooting](./docs/assistant-troubleshooting.md)
 - Features: [My history: health story and questions](./docs/history-questions.md), [questions for my doctor](./docs/visit-prep-questions.md), [provider directory](./docs/provider-directory.md), [prescription photos](./docs/prescription-photos.md), [medication reminders](./docs/medication-reminders.md), [offline emergency info](./docs/offline-emergency-info.md), [header search](./docs/header-search.md)

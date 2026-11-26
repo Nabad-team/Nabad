@@ -1,6 +1,6 @@
 # Process metrics
 
-How the team delivered Nabad, measured from GitHub and the [release log](../releases.md), for the final presentation. Snapshot: **24 November 2026**, after release #261 and its release log (#262). The numbers are in [process-metrics.json](./process-metrics.json); how to recompute them is at the end.
+How the team delivered Nabad, measured from GitHub and the [release log](../releases.md), for the final presentation. Snapshot: **26 November 2026**, after release #273 and its release log (#274). The four-part [DevOps measurement report](../devops-measurement.md) builds on these numbers. The numbers are in [process-metrics.json](./process-metrics.json); how to recompute them is at the end.
 
 ## Sprints
 
@@ -12,27 +12,27 @@ Sprint dates come from Jira (given by Gerges): two-week sprints, and a PR merged
 | Sprint 2 | 7 to 20 October |
 | Sprint 3 | 21 October to 3 November |
 | Sprint 4 | 4 to 17 November |
-| Sprint 5 | 18 November to 1 December (**in progress**: numbers cover 18 to 24 November) |
+| Sprint 5 | 18 November to 1 December (**in progress**: numbers cover 18 to 26 November) |
 
 ## At a glance
 
 | Metric | Whole project |
 | --- | --- |
-| Merged pull requests | 242 into `main`, plus 10 release PRs into `production` |
-| Median time from PR opened to merged | 3.8 minutes (75% within 12 minutes) |
-| Production releases (since the release process began on 9 November) | 10, about 4.4 per week |
-| Production deploys of the app (Vercel, since 12 October) | 140, about 22 per week |
-| Median lead time, merged to `main` until in production | under 1 minute before 9 November (deploy on merge); 8.4 hours since (release PRs) |
-| Change failure rate (9 releases old enough to judge) | 0 of 9 caused a problem fixed within 48 hours; 3 of 9 were followed within 48 hours by a release containing an unrelated fix |
-| CI pass rate of the required checks on PRs | 94.9% of 1,228 check runs; 94.6% of merged PRs passed every check on the first try |
-| Tests | 3 at the first test commit (26 September); now 1,404 backend, 946 frontend and 38 end-to-end tests |
+| Merged pull requests | 251 into `main`, plus 12 release PRs into `production` |
+| Median time from PR opened to merged | 3.9 minutes (75% within 12 minutes, 90% within 28 minutes) |
+| Production releases (since the release process began on 9 November) | 12, about 4.7 per week |
+| Production deploys of the app (Vercel, since 12 October) | 142, about 21.6 per week |
+| Median lead time, merged to `main` until in production | under 1 minute before 9 November (deploy on merge); 7.2 hours since (release PRs; 90% within 100 hours) |
+| Change failure rate (11 releases old enough to judge) | 0 of 11 caused a problem fixed within 48 hours; 3 of 11 were followed within 48 hours by a release containing an unrelated fix |
+| CI pass rate of the required checks on PRs | 95.1% of 1,288 check runs; 94.8% of merged PRs passed every check on the first try; median CI duration 2.5 minutes per commit |
+| Tests | 3 at the first test commit (26 September); now 1,404 backend, 1,055 frontend and 38 end-to-end tests |
 
 ## 1. Merged pull requests
 
 | | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 (so far) | Total |
 | --- | --- | --- | --- | --- | --- | --- |
-| Into `main` | 37 | 68 | 61 | 68 | 8 | **242** |
-| Release PRs into `production` | 0 | 0 | 0 | 9 | 1 | **10** |
+| Into `main` | 37 | 68 | 61 | 68 | 17 | **251** |
+| Release PRs into `production` | 0 | 0 | 0 | 9 | 3 | **12** |
 
 **How:** `gh pr list --state merged`, grouped by the Beirut date the PR was merged. Closed, unmerged PRs are not counted.
 
@@ -40,8 +40,9 @@ Sprint dates come from Jira (given by Gerges): two-week sprints, and a PR merged
 
 | Minutes | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 (so far) | Project |
 | --- | --- | --- | --- | --- | --- | --- |
-| Median | 2.8 | 1.4 | 3.8 | 9.7 | 13.5 | **3.8** |
-| 75th percentile | 6.3 | 2.3 | 7.5 | 18.3 | 35.4 | 12.1 |
+| Median | 2.8 | 1.4 | 3.8 | 9.7 | 13.2 | **3.9** |
+| 75th percentile | 6.3 | 2.3 | 7.5 | 18.3 | 14.6 | 12.3 |
+| 90th percentile | 58.7 | 5.8 | 23.5 | 33.6 | 49.4 | 28.1 |
 | Merged within 2 minutes of opening | 17 | 43 | 5 | 0 | 0 | 65 |
 
 **How:** `mergedAt` minus `createdAt` of each PR into `main`.
@@ -50,13 +51,13 @@ Sprint dates come from Jira (given by Gerges): two-week sprints, and a PR merged
 
 ## 3. Deployment frequency
 
-| | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 (1 week so far) | Project |
+| | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 (1.3 weeks so far) | Project |
 | --- | --- | --- | --- | --- | --- | --- |
-| Release PRs to `production` per week | n/a | n/a | n/a | 4.5 (9) | 1.0 (1) | **4.4** since 9 November (10) |
-| Production deploys of the app per week (Vercel) | not recorded | 26 (52) | 29.5 (59) | 14 (28) | 1 (1) | **about 22** since 12 October (140) |
+| Release PRs to `production` per week | n/a | n/a | n/a | 4.5 (9) | 2.3 (3) | **4.7** since 9 November (12) |
+| Production deploys of the app per week (Vercel) | not recorded | 26 (52) | 29.5 (59) | 14 (28) | 2.3 (3) | **21.6** since 12 October (142) |
 
 **How:**
-- Release PRs are the PRs merged into `production`; they match the 10 rows of the [release log](../releases.md).
+- Release PRs are the PRs merged into `production`; they match the 12 rows of the [release log](../releases.md).
 - Production deploys are GitHub deployment records with environment "Production" from the official Vercel project (`nabad3`, the app at nabad-psi.vercel.app) that ended in `success`. 32 records from another team member's separate Vercel project were left out.
 
 **Caveats:**
@@ -69,8 +70,9 @@ Sprint dates come from Jira (given by Gerges): two-week sprints, and a PR merged
 
 | Hours | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 (so far) | Project |
 | --- | --- | --- | --- | --- | --- | --- |
-| Median | not measured | under 0.1 (n = 50) | under 0.1 (n = 61) | 0.9 (n = 68) | 1.1 (n = 7) | see below |
-| Median, release era only | | | | 10.7 | 1.1 | **8.4** (n = 56; 90% within 100 hours) |
+| Median | not measured | under 0.1 (n = 50) | under 0.1 (n = 61) | 0.9 (n = 68) | 6.7 (n = 16) | see below |
+| Median, release era only | | | | 10.7 | 6.7 | **7.2** (n = 65; 90% within 100 hours) |
+| 90th percentile, release era only | | | | 100.0 | 82.1 | 99.8 |
 
 Before 9 November the median was **0.3 minutes** (n = 130): the production deploy started as soon as the PR was merged.
 
@@ -80,7 +82,7 @@ Before 9 November the median was **0.3 minutes** (n = 130): the production deplo
 
 **Caveats:**
 - Both measure until the production deploy **started**. The build adds a few minutes.
-- Not measured: Sprint 1 and the start of Sprint 2 (56 PRs merged before 12 October, with no deploy records), and #262, merged after the last release.
+- Not measured: Sprint 1 and the start of Sprint 2 (56 PRs merged before 12 October, with no deploy records), and #274, merged after the last release.
 - For the early era, the frontend deploy stands for "in production". The backend deployed from the same commit on Render.
 - Sprint 4 mixes both eras, so its overall median (0.9 hours) sits between them.
 
@@ -96,17 +98,19 @@ Before 9 November the median was **0.3 minutes** (n = 130): the production deplo
 | #236, #239, #242, #245 (15 Nov) | releases of new features (#238, #241, #244, #247) | No |
 | #248 (15 Nov) | #251, 25 min later, with #250: health details in notification texts | No: those texts date from the notifications feature (Sprint 3) |
 | #251 (16 Nov) | next release after 8 days | No |
-| #261 (24 Nov) | too recent to judge | |
+| #261 (24 Nov) | #266, 10.5 h later: "Held" refresh phases 1 and 2 (#264, #265), features | No |
+| #266 (24 Nov) | #273, 9.8 h later: "Held" refresh phases 3 to 3.2 (#270 to #272), design work, no `fix/` PR | No |
+| #273 (24 Nov) | too recent to judge (window ends 26 Nov, 18:51 UTC) | |
 
 | | Sprint 1 to 3 | Sprint 4 | Sprint 5 | Project |
 | --- | --- | --- | --- | --- |
-| Releases judged | n/a | 9 | 0 (#261 too recent) | 9 |
-| Failures (introduced by the release) | n/a | 0 | | **0 of 9 (0%)** |
-| Literal count (any `fix/` PR in a release within 48 h) | n/a | 3 | | 3 of 9 (33%) |
+| Releases judged | n/a | 9 | 2 (#273 too recent) | 11 |
+| Failures (introduced by the release) | n/a | 0 | 0 | **0 of 11 (0%)** |
+| Literal count (any `fix/` PR in a release within 48 h) | n/a | 3 | 0 | 3 of 11 (27%) |
 
 No rollback was ever needed: no release log entry, no revert PR, and no `production` commit that undoes another.
 
-**Caveats:** Before 9 November there was no release record to judge: changes went to production on merge, and no incidents were logged. The judgement "caused by this release" is ours, based on each fix PR's description. Nine releases is a small sample.
+**Caveats:** Before 9 November there was no release record to judge: changes went to production on merge, and no incidents were logged. The judgement "caused by this release" is ours, based on each fix PR's description. Eleven releases is a small sample. The production incidents on 1 and 23 November were checked against release times; neither followed a release (see the [DevOps measurement report](../devops-measurement.md#incidents)).
 
 ## 6. CI pass rate of the required checks
 
@@ -114,22 +118,25 @@ The required checks are `backend-tests`, `frontend-tests`, `docker-build`, `sele
 
 | | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 (so far) | Project |
 | --- | --- | --- | --- | --- | --- | --- |
-| Check runs passed | 89.9% (79) | 95.7% (258) | 93.8% (308) | 95.9% (517) | 93.9% (66) | **94.9%** (1,165 of 1,228) |
-| Merged PRs green on the first try | 34 of 36 | 65 of 68 | 55 of 61 | 66 of 68 | 7 of 7 | **227 of 240 (94.6%)** |
+| Check runs passed | 89.9% (79) | 95.7% (258) | 93.8% (308) | 95.9% (517) | 96.8% (126) | **95.1%** (1,225 of 1,288) |
+| Merged PRs green on the first try | 34 of 36 | 65 of 68 | 55 of 61 | 66 of 68 | 16 of 16 | **236 of 249 (94.8%)** |
+| Median CI duration per commit (minutes) | 0.4 | 0.8 | 3.0 | 3.9 | 4.7 | **2.5** (90th percentile 4.3) |
 
-| Check | Runs | Passed | First run |
-| --- | --- | --- | --- |
-| `Backup tooling` | 91 | 100% | 7 Nov |
-| `Medical report safety gate` | 111 | 100% | 1 Nov |
-| `docker-build` | 226 | 99.6% | 14 Oct |
-| `frontend-tests` | 305 | 95.1% | 26 Sep |
-| `backend-tests` | 286 | 94.1% | 29 Sep |
-| `selenium` | 209 | 85.6% | 17 Oct |
-| `Vercel` (final state on each merged PR's last commit) | 188 PRs | 187 passed | 12 Oct |
+| Check | Runs | Passed | Passed on the first run (commits) | Median job minutes | First run |
+| --- | --- | --- | --- | --- | --- |
+| `Backup tooling` | 101 | 100% | 100% (100) | 0.2 | 7 Nov |
+| `Medical report safety gate` | 121 | 100% | 100% (120) | 0.2 | 1 Nov |
+| `docker-build` | 236 | 99.6% | 99.6% (234) | 0.8 | 14 Oct |
+| `frontend-tests` | 315 | 95.2% | 95.5% (313) | 0.8 | 26 Sep |
+| `backend-tests` | 296 | 94.3% | 94.2% (295) | 0.9 | 29 Sep |
+| `selenium` | 219 | 86.3% | 86.9% (214) | 3.2 | 17 Oct |
+| `Vercel` (final state on each merged PR's last commit) | 197 PRs | 196 passed | n/a | not measured | 12 Oct |
 
 **How:**
 - **Check runs passed:** every GitHub Actions job attempt of the six Actions checks, on every `pull_request` run, including re-runs: success out of success + failure + timed out. Cancelled and skipped runs are left out.
 - **Green on the first try:** a merged PR whose last commit passed every required job that ran, on the first attempt.
+- **Passed on the first run:** each (check, commit) pair counts once, by its first attempt.
+- **CI duration:** per job, its start to its end; per commit, from the first required job's start to the last one's end, on the first attempt. Queue time and the Vercel build are not included.
 - **`Vercel`:** a commit status rather than an Actions job, so it is counted on each merged PR's last commit, from the official project only.
 
 **Caveats:**
@@ -139,14 +146,14 @@ The required checks are `backend-tests`, `frontend-tests`, `docker-build`, `sele
 
 ## 7. Tests
 
-| | First tests (26 Sep, `5a102f1`) | End of Sprint 1 | End of Sprint 2 | End of Sprint 3 | End of Sprint 4 | Now (24 Nov) |
+| | First tests (26 Sep, `5a102f1`) | End of Sprint 1 | End of Sprint 2 | End of Sprint 3 | End of Sprint 4 | Now (26 Nov) |
 | --- | --- | --- | --- | --- | --- | --- |
 | Backend test cases | 0 | 110 | 425 | 736 | 891 | 951 |
-| Frontend test cases | 3 | 163 | 379 | 565 | 806 | 840 |
+| Frontend test cases | 3 | 163 | 379 | 565 | 806 | 900 |
 | End-to-end tests (Selenium, Python) | 0 | 0 | 14 | 25 | 37 | 38 |
-| **Total** | **3** | **273** | **818** | **1,326** | **1,734** | **1,829** |
+| **Total** | **3** | **273** | **818** | **1,326** | **1,734** | **1,889** |
 
-Run today, the suites report **1,404 backend tests** (`npm test`, including the 109-case triage clinical safety set and the 50-case triage quality set) and **946 frontend tests** (`jest`).
+In the latest CI run on `main` (run 45466997442, `7ffd606`, 24 November), the suites report **1,404 backend tests** (including the 109-case triage clinical safety set and the 50-case triage quality set) and **1,055 frontend tests**.
 
 **How:** the same static count at each commit, so the numbers compare fairly over time: `test(` and `it(` calls in `backend/tests` and `frontend/__tests__`, and `def test_` functions in `tests/`. The commit is the last one on `main` at the end of each sprint (Beirut time).
 
@@ -154,9 +161,9 @@ Run today, the suites report **1,404 backend tests** (`npm test`, including the 
 
 ## Caveats that apply throughout
 
-- **Sprint 5 is not over.** Its numbers cover 18 to 24 November.
-- **Small team, short project:** about 8 weeks and 252 PRs, so a few unusual days (six releases on 15 November, quick merges in Sprint 2) move the medians a lot.
-- **AI agents worked on many PRs**, as declared in each PR. This shortens time to merge and makes PRs more uniform. It doesn't change how the metrics are measured.
+- **Sprint 5 is not over.** Its numbers cover 18 to 26 November.
+- **Small team, short project:** about 9 weeks and 263 PRs, so a few unusual days (six releases on 15 November, quick merges in Sprint 2) move the medians a lot.
+- **AI agents worked on many PRs**, as declared in each PR: 127 of 251 PRs into `main` declare AI assistance (per sprint and per author in the [DevOps measurement report](../devops-measurement.md#throughput)). This shortens time to merge and makes PRs more uniform. It doesn't change how the metrics are measured.
 - **Only GitHub data** was used. Jira (story points, cycle time from "In progress") was not.
 
 ## Recomputing
@@ -165,7 +172,7 @@ The scripts are in [scripts/](./scripts). From the repository root, with `gh` si
 
 ```sh
 mkdir -p /tmp/m && gh pr list --state merged --limit 1000 \
-  --json number,title,createdAt,mergedAt,baseRefName,headRefName,headRefOid,mergeCommit,author > /tmp/m/prs.json
+  --json number,title,body,createdAt,mergedAt,baseRefName,headRefName,headRefOid,mergeCommit,author > /tmp/m/prs.json
 python -I docs/metrics/scripts/fetch_ci.py /tmp/m        # every PR workflow run and job attempt (about 800 API calls)
 python -I docs/metrics/scripts/fetch_deploys.py /tmp/m   # production deploy records and their final status
 python -I docs/metrics/scripts/fetch_vercel.py /tmp/m    # the Vercel status on each merged PR's last commit
