@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 
 const { loadConfig } = require("./config");
 const { clientIp } = require("./clientIp");
+const { requestTimeLimit } = require("./middleware/requestTimeLimit");
 const {
   requestLogger,
   errorHandler,
@@ -21,6 +22,9 @@ function createApp() {
   app.set("trust proxy", false);
 
   app.use(requestLogger);
+
+  // No API request waits for minutes: past its limit (timeLimits.js) it gets 503 "request_timeout".
+  app.use("/api", requestTimeLimit);
 
   app.use(clientIp({ secret: config.proxySecret, required: config.proxyRequired, hosted: config.secure }));
 

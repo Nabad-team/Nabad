@@ -42,7 +42,7 @@ All optional. Unset means no backup and no limit, exactly as before. Set them on
 | `LLM_FALLBACK_MAX_CALLS_PER_MINUTE`, `LLM_FALLBACK_MAX_CALLS_PER_DAY` | The backup's budget. |
 | `LLM_QUOTA_TIME_ZONE` | When the daily budget starts again. Default `UTC`. Gemini's free quota resets at midnight `America/Los_Angeles`. |
 | `LLM_TRIAGE_RESERVE_PERCENT` | The last part of each day's budget that only symptom checks may use (0 to 90, default 20). The health assistant and report review stop before it, so they can't use up the quota triage needs. |
-| `LLM_TRIAGE_DEADLINE_MS` | The most time the models get in one symptom check, both tries together (3000 to 120000). With a backup, the main model gets at most 60% so the backup still has time. Unset: each model uses its own timeout. |
+| `LLM_TRIAGE_DEADLINE_MS` | The most time the models get in one symptom check, both tries together (3000 to 120000). **12000 is recommended.** With a backup, the main model gets at most 60% (7.2 s of 12 s) so the backup still has time. Unset or invalid: 20000, the built-in default (see [Time limits](#time-limits)). Staging has 12000 since 26 November 2026; **production still needs Gerges to set it** (until then production uses the 20 s default once this code is released). |
 
 `npm run ai:check` in `backend` prints whether the backup is configured, the limits and any setting that is wrong (names and numbers only, never keys or URLs).
 
@@ -58,7 +58,7 @@ LLM_MAX_CALLS_PER_DAY=240
 LLM_FALLBACK_MAX_CALLS_PER_MINUTE=14
 LLM_FALLBACK_MAX_CALLS_PER_DAY=950
 LLM_QUOTA_TIME_ZONE=America/Los_Angeles
-LLM_TRIAGE_DEADLINE_MS=25000
+LLM_TRIAGE_DEADLINE_MS=12000
 ```
 
 Check the current limits for the project's models on Google AI Studio before setting these; they change. Keep each a little under the provider's number.
@@ -78,6 +78,29 @@ During a pause, symptom checks skip that model and go to the backup or the rules
 - The counters are in memory, per server process. A restart starts them again, and with more than one instance each one counts on its own. The provider's own limit is still there behind them, and its 429 pauses the model.
 - The health assistant and report review count against the main model's budget but have no backup: a photo of a report needs a vision model, and the backup may not be one.
 - The per-account limit (30 AI assessments per 15 minutes) is unchanged. It stops scripted floods; red flags are never limited by it. The daily limits below come on top of it.
+
+## Time limits
+
+No request waits for minutes on a stuck AI provider, database or network. All limits are in [`backend/src/timeLimits.js`](../backend/src/timeLimits.js):
+
+| What | Limit | When it is reached |
+| --- | --- | --- |
+| The AI models in one symptom check, both tries together | `LLM_TRIAGE_DEADLINE_MS` (12 s recommended), **20 s** when unset | The rules answer alone (`ai.reason: "timeout"`). |
+| One model call | `LLM_TIMEOUT_MS` (default 15 s, 1 to 60 s) and `LLM_FALLBACK_TIMEOUT_MS`; the deadline above shortens them | The backup is tried, then the rules. |
+| One database read on the symptom-check path (session check, profile check, previous checks, health summary) | 5 s on the database server (`maxTimeMS`) | The read fails. |
+| The reads the symptom check can do without: previous checks and the health summary | 5 s each, network included | The check goes on without them (`triage_previous_checks_unavailable` / `triage_health_profile_unavailable` in the logs). |
+| The MongoDB connection | 5 s to find a server (`serverSelectionTimeoutMS`), 20 s on a quiet socket (`socketTimeoutMS`) | The database call fails instead of waiting. |
+| A whole API request | **25 s** for most routes; **30 s** for the symptom check; **110 s** for the slow routes (reports, medical documents, visit preparation, prescriptions, AI history questions, coverage documents) | `503` with `{ "error": "Nabad is taking too long to answer. Please try again in a moment. In an emergency in Lebanon, call 140.", "code": "request_timeout", "requestId": "..." }`. Nothing from the request is in it. The log line `request_timeout` has the route's first segment and the limit only. |
+
+Why these numbers:
+
+- **The symptom check:** 12 s of AI (20 s by default) plus up to 5 s of optional reads fits in 30 s, so the rules or the AI always answer before the request limit. An emergency never calls a model: the rules answer at once.
+- **Every request limit is below the frontend's own** (`frontend/lib/api.js`: 30 s, and 120 s for the slow routes). The server's clear answer arrives first, and the page shows its usual error. The symptom check page shows "We could not check and save your symptoms right now. If you feel very unwell, call 140."
+- **The socket limit (20 s) is above every `maxTimeMS` (5 s)**, so a slow query fails with its own error first.
+
+After the 503 has gone out, the request's handler may still finish. Anything it then tries to send (headers, cookies, body) is dropped, and a late error is logged but not passed on.
+
+**Production:** `render.yaml` sets `LLM_TIMEOUT_MS=60000`. Without `LLM_TRIAGE_DEADLINE_MS`, a symptom check there could wait up to 60 s for each model (120 s with the backup) before this code. Gerges sets `LLM_TRIAGE_DEADLINE_MS=12000` on `nabad-backend-nhv5` when he releases this.
 
 ## Per-account daily limits
 
@@ -112,5 +135,7 @@ Only fixed codes are logged: `ai_daily_limit` when a request is refused at the l
 ## Tests
 
 `backend/tests/dailyAiLimits.test.js`: the Beirut day and its reset (winter, summer, both clock changes), the settings, each limit over HTTP, the rules-only symptom check at the limit, emergencies never counted or blocked, family profiles counting toward the account, uses given back on failure, two requests racing for the last one, what is stored, the export and account deletion. `frontend/__tests__/dailyAiLimits.test.js`: the usage lines (the symptom one only from 15 of 20), the notices at each limit, and the rules-only note.
+
+`backend/tests/requestTimeLimits.test.js`: the limits fit together and stay below the frontend's, each route's limit, a request that never answers gets the fixed 503 with nothing from the request (and its log line), a handler that answers and fails after the limit changes nothing and throws nothing, a hanging AI provider ends at `LLM_TRIAGE_DEADLINE_MS` and at the built-in default, an emergency never calls the model, slow optional reads are skipped at their limit with `maxTimeMS` on each, and a symptom check past the request limit gets the 503 without symptoms, name or email. `frontend/__tests__/symptoms.test.js`: a 503 `request_timeout` shows the usual error with 140.
 
 `backend/tests/modelFallback.test.js`: fake providers for each failure (503, 429, 401, network, unreadable reply, a model that hangs), the backup's key, per-minute and per-day limits, the triage reserve, the daily reset in a time zone, each pause, and the HTTP endpoint with the main model down, both down, both over their limit, and red flags with everything down.

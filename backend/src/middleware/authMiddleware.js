@@ -1,5 +1,6 @@
 
 const jwt = require("jsonwebtoken");
+const { timeLimits } = require("../timeLimits");
 const User = require("../models/User");
 const { signAccessToken, setAuthCookie } = require("../session");
 const { sessionConfig } = require("../sessionConfig");
@@ -17,7 +18,7 @@ async function requireAuth(req, res, next) {
     const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
     // A pending 2FA challenge must never authenticate a protected request.
     if (payload.purpose || typeof payload.sub !== "string") return res.status(401).json({ error: "Not authenticated." });
-    const user = await User.findById(payload.sub).select("authVersion");
+    const user = await User.findById(payload.sub).select("authVersion").maxTimeMS(timeLimits.DB_READ_MS);
     if (!user || (payload.ver || 0) !== (user.authVersion || 0)) {
       return res.status(401).json({ error: "Session expired. Please log in again." });
     }

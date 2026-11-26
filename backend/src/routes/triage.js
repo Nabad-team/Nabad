@@ -85,6 +85,7 @@ const { countTriageUsage } = require("../usageAnalytics");
 // Per-account daily AI limit. Emergencies never reach it: the red-flag rules run first (prepareRuleEmergency).
 // A check and all its follow-up rounds count as one (useSymptomCheck); the 15-minute limit above counts each call.
 const { useSymptomCheck, giveBackSymptomCheck } = require("../dailyAiLimits");
+const { timeLimits, withinTime } = require("../timeLimits");
 
 // Shown with a rules-only result once today's AI symptom checks are used up.
 const DAILY_LIMIT_NOTE =
@@ -120,12 +121,30 @@ const DISCLAIMER =
 
 // SCRUM-279: the person's My health profile for triage, or null. A symptom check must never fail because of it:
 // if it can't be loaded, triage goes on without it, and the log says so (never with any health data).
+// The health summary is background for the model, not required: a slow or failed read means the check goes on
+// without it (timeLimits.js: each read limited on the server, the whole lookup by OPTIONAL_READ_MS).
 async function healthForTriage(req) {
   try {
-    return readHealth(await loadHealthProfile(req.userId, req.profileId));
+    return readHealth(await withinTime(
+      loadHealthProfile(req.userId, req.profileId, { maxTimeMS: timeLimits.DB_READ_MS }),
+      timeLimits.OPTIONAL_READ_MS, "health summary"));
   } catch {
     logEvent("triage_health_profile_unavailable", { requestId: req.requestId });
     return null;
+  }
+}
+
+
+// The last 3 checks of this profile, as context for the model. Also optional: past the limit, none.
+async function previousChecksForTriage(req) {
+  try {
+    return await withinTime(
+      SymptomRecord.find({ owner: req.userId, profileId: req.profileId })
+        .sort({ createdAt: -1 }).limit(3).maxTimeMS(timeLimits.DB_READ_MS).lean(),
+      timeLimits.OPTIONAL_READ_MS, "previous checks");
+  } catch {
+    logEvent("triage_previous_checks_unavailable", { requestId: req.requestId });
+    return [];
   }
 }
 
@@ -343,8 +362,7 @@ router.post(
           }
         }
         const [previousChecks, profileHealth] = await Promise.all([
-          SymptomRecord.find({ owner: req.userId, profileId: req.profileId })
-            .sort({ createdAt: -1 }).limit(3).lean(),
+          previousChecksForTriage(req),
           healthForTriage(req),
         ]);
         health = profileHealth;

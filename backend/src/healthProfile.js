@@ -148,35 +148,39 @@ function buildHealthSummary({ age, facts = [], medications = [], tracking }) {
 }
 
 // The date of birth of a profile: the account owner's own (on the user) or a linked profile's.
-async function dateOfBirthOf(owner, profileId) {
-  const profile = String(owner) === String(profileId)
-    ? await User.findById(owner).select("dateOfBirth")
-    : await LinkedProfile.findOne({ _id: profileId, owner }).select("dateOfBirth");
+async function dateOfBirthOf(owner, profileId, maxTimeMS) {
+  const query = String(owner) === String(profileId)
+    ? User.findById(owner).select("dateOfBirth")
+    : LinkedProfile.findOne({ _id: profileId, owner }).select("dateOfBirth");
+  const profile = await (maxTimeMS ? query.maxTimeMS(maxTimeMS) : query);
   return profile ? profile.dateOfBirth : null;
 }
 
 // Today's fluids, the water goal, and the nights logged in the 7 days up to today, for trackingText().
 // today: the user's local date as UTC midnight (see days.js); UTC today when the caller doesn't know it.
-async function loadTracking(owner, profileId, today = utcToday()) {
+async function loadTracking(owner, profileId, today = utcToday(), maxTimeMS = undefined) {
   const scope = { owner, profileId };
+  const limited = (query) => (maxTimeMS ? query.maxTimeMS(maxTimeMS) : query);
   const [water, settings, nights] = await Promise.all([
-    HydrationEntry.findOne({ ...scope, date: today }).select("totalMl"),
-    WellbeingSettings.findOne(scope).select("waterGoal"),
-    SleepEntry.find({ ...scope, date: { $gte: new Date(today.getTime() - 6 * DAY), $lte: today } }).select("hours"),
+    limited(HydrationEntry.findOne({ ...scope, date: today }).select("totalMl")),
+    limited(WellbeingSettings.findOne(scope).select("waterGoal")),
+    limited(SleepEntry.find({ ...scope, date: { $gte: new Date(today.getTime() - 6 * DAY), $lte: today } }).select("hours")),
   ]);
   const goal = settings?.waterGoal ? { type: settings.waterGoal.type, ml: settings.waterGoal.ml } : null;
   return { fluidsTodayMl: water?.totalMl || 0, goal, sleepHours: nights.map((night) => night.hours) };
 }
 
 // Everything "My health" and the summary need for one profile. The caller has already checked that the
-// profile belongs to owner (middleware/profileAccess.js). today: as for loadTracking.
-async function loadHealthProfile(owner, profileId, { today } = {}) {
+// profile belongs to owner (middleware/profileAccess.js). today: as for loadTracking. maxTimeMS: a server-side
+// limit for each read (the symptom check passes timeLimits.DB_READ_MS).
+async function loadHealthProfile(owner, profileId, { today, maxTimeMS } = {}) {
   const scope = { owner, profileId };
+  const limited = (query) => (maxTimeMS ? query.maxTimeMS(maxTimeMS) : query);
   const [dateOfBirth, facts, medications, tracking] = await Promise.all([
-    dateOfBirthOf(owner, profileId),
-    HealthFact.find(scope).sort({ recordedAt: 1, _id: 1 }),
-    Medication.find({ ...scope, status: "active" }).sort({ createdAt: -1, _id: -1 }),
-    loadTracking(owner, profileId, today),
+    dateOfBirthOf(owner, profileId, maxTimeMS),
+    limited(HealthFact.find(scope).sort({ recordedAt: 1, _id: 1 })),
+    limited(Medication.find({ ...scope, status: "active" }).sort({ createdAt: -1, _id: -1 })),
+    loadTracking(owner, profileId, today, maxTimeMS),
   ]);
   const age = ageFrom(dateOfBirth);
   return { dateOfBirth, age, facts, medications, summary: buildHealthSummary({ age, facts, medications, tracking }) };
