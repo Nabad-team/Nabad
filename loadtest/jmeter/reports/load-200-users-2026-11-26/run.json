@@ -1,0 +1,23 @@
+{
+  "spikeBrowse": 0,
+  "spikeApp": 0,
+  "thinkMin": 500,
+  "thinkExtra": 1000,
+  "stopErrorPct": null,
+  "type": "load",
+  "name": "load-200-users-2026-11-26",
+  "browse": 100,
+  "app": 100,
+  "rampup": 60,
+  "duration": 180,
+  "target": "http://localhost",
+  "commit": "505a8a7",
+  "startedAt": "2026-11-26T15:37:21.800Z",
+  "date": "2026-11-26T15:40:33.622Z",
+  "stoppedEarly": null,
+  "backendMemory": {
+    "start": "306.4MiB",
+    "end": "317.3MiB",
+    "peak": "338.1MiB"
+  }
+}

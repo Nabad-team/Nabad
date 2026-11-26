@@ -1,0 +1,19 @@
+{
+  "spikeBrowse": 0,
+  "spikeApp": 0,
+  "thinkMin": 500,
+  "thinkExtra": 1000,
+  "stopErrorPct": 5,
+  "type": "staging",
+  "name": "staging-10-users-2026-11-26",
+  "browse": 10,
+  "app": 0,
+  "rampup": 10,
+  "duration": 180,
+  "target": "https://nabad-staging.vercel.app",
+  "commit": "505a8a7",
+  "startedAt": "2026-11-26T16:03:16.486Z",
+  "date": "2026-11-26T16:06:24.158Z",
+  "stoppedEarly": null,
+  "backendMemory": null
+}

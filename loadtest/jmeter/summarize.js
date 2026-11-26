@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const reportsDir = path.join(__dirname, "reports");
-const order = ["load", "stress", "spike", "soak", "prod"];
+const order = ["load", "stress", "spike", "soak", "prod", "staging"];
 const ms = (value) => (value >= 10000 ? `${(value / 1000).toFixed(1)} s` : `${Math.round(value)} ms`);
 
 const rows = fs.readdirSync(reportsDir)

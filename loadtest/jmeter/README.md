@@ -1,6 +1,6 @@
 # JMeter load, stress, spike and soak tests
 
-Apache JMeter 5.6.3 tests of the whole local app (Next.js frontend → backend → MongoDB in Docker Compose), plus one light, read-only check of production. Every run has its own HTML dashboard in [`reports/`](reports/), and slide images are in [`charts/`](charts/).
+Apache JMeter 5.6.3 tests of the whole local app (Next.js frontend → backend → MongoDB in Docker Compose), plus light, read-only checks of production and staging. Every run has its own HTML dashboard in [`reports/`](reports/), and slide images are in [`charts/`](charts/).
 
 > **One laptop.** JMeter and the whole Docker stack ran on the same laptop: 12 logical cores, 16 GB RAM, Windows 11 with Docker Desktop. JMeter, the frontend, the backend and MongoDB all competed for the same CPU and memory, and every request went through Docker Desktop's port forwarding. The numbers show how Nabad behaves **on this machine**, not what a production server can take. Production (Vercel + Render free plan + Atlas) is a different setup; see [the production check](#production-check-read-only).
 
@@ -42,6 +42,8 @@ node loadtest/jmeter/run.js stress          # ONLY=browse or ONLY=signed-in runs
 node loadtest/jmeter/run.js spike
 node loadtest/jmeter/run.js soak
 node loadtest/jmeter/run.js prod            # production, read-only, 5 users
+node loadtest/jmeter/run.js staging         # staging, read-only, 10 users for 3 minutes (wake staging first)
+$env:RUN_LABEL='2026-11-26'; node loadtest/jmeter/run.js load   # writes reports/load-50-users-2026-11-26 etc.
 
 node loadtest/jmeter/summarize.js           # prints the results table below
 node loadtest/jmeter/export-charts.js load-500-users                          # all 4 charts
@@ -52,7 +54,9 @@ docker compose up -d                        # back to the normal stack (real rat
 
 `run.js` runs JMeter in non-GUI mode (`jmeter -n -t nabad.jmx -l <run>.jtl -e -o reports/<run>`). Before each local run it re-seeds the accounts, so every run starts from the same data. During the run it samples `docker stats` every 15 s. Afterwards it writes `run.json` (settings, how the run ended, backend memory), `timeline.csv` (10-second windows) and `docker-stats.csv` into the report folder, and **deletes the raw `.jtl`**. `*.jtl`, `jmeter.log` and `users.csv` are git-ignored.
 
-**Only the local stack is loaded, never production.** Signed-in users can only run against `localhost`: `run.js` refuses anything else, `seed-users.js` refuses any database that isn't on this machine, and `prod` is limited to 1–10 browsing users with no logins and no writes.
+**Only the local stack is loaded, never production.** Signed-in users can only run against `localhost`: `run.js` refuses anything else, `seed-users.js` refuses any database that isn't on this machine, and `prod` and `staging` are limited to 1–10 browsing users with no logins and no writes. The only hosted hosts `run.js` accepts are `nabad-psi.vercel.app` and `nabad-staging.vercel.app`. Staging keeps its real rate limits: the `staging` run stops early if errors (for example `429`s) stay above 5% for 20 s.
+
+**`RUN_LABEL`** adds a suffix to every run name, so a repeat run gets its own report folder instead of overwriting an earlier one (each folder is deleted and rewritten by its run). `run.json` records the commit and the UTC start (`startedAt`) and end (`date`) of each run.
 
 ### Rate limits, 2FA and outside services: like the k6 setup
 
@@ -164,6 +168,20 @@ Browsing at 2,000 users: [response times over time](charts/stress-browse-2000-us
 - **Pages** (served by Vercel): median 61 ms, p95 96–124 ms, 0 errors.
 - **`/api/health/ready`** (Vercel → Render → Atlas): median about 400 ms. Each request crosses the internet twice and pings the Atlas database.
 - **All errors (6.45%) were `503`s from `/api/health/ready` in the first ~35 s only.** After that: 0 errors, p95 ~410 ms. The Render free instance had most likely been asleep. While it starts, `/ready` correctly answers 503 until the database connection is up, and pages are not affected. An earlier run the same day, with the backend already awake, had no errors, and 100 more requests checked afterwards were all `200`. A paid instance that doesn't sleep would avoid this first-visit delay.
+
+## Sprint 5 rerun (2026-11-26, SCRUM-349)
+
+The same load and soak runs on the same laptop, on `main` at `505a8a7`, with `RUN_LABEL=2026-11-26`, so the October reports above are kept. Stress and spike were not repeated.
+
+| Run | Users (browsing + signed-in) | Requests/s | Average | Median | p90 | p95 | p99 | Errors |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| [load-50-users-2026-11-26](reports/load-50-users-2026-11-26/index.html) | 25 + 25 | 61.6 | 18 ms | 7 ms | 16 ms | 33 ms | 249 ms | 0.00% |
+| [load-200-users-2026-11-26](reports/load-200-users-2026-11-26/index.html) | 100 + 100 | 235.5 | 47 ms | 11 ms | 47 ms | 267 ms | 1166 ms | 0.0024% (1) |
+| [load-500-users-2026-11-26](reports/load-500-users-2026-11-26/index.html) | 250 + 250 | 397.3 | 334 ms | 17 ms | 45 ms | 64 ms | 14.2 s | 0.00% |
+| [soak-200-users-15-min-2026-11-26](reports/soak-200-users-15-min-2026-11-26/index.html) | 100 + 100 | 243.4 | 112 ms | 21 ms | 221 ms | 1255 ms | 3955 ms | 0.12% (253) |
+| [staging-10-users-2026-11-26](reports/staging-10-users-2026-11-26/index.html) | 10 + 0 | 11.0 | 127 ms | 74 ms | 249 ms | 280 ms | 465 ms | 0.00% |
+
+What the comparison with October shows, and its limits, is written up in [docs/availability-response-time.md](../../docs/availability-response-time.md#sprint-5-staging-comparison).
 
 ## Compared with k6 ([`LOADTEST.md`](../../LOADTEST.md))
 
