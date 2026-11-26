@@ -276,6 +276,7 @@ So this means **no errors reported to Sentry in 30 days**, not that nothing went
 - **Where it failed:** the step that installs the pinned backup tools exited with code 141 (a broken pipe), before any database access.
 - **What happened next:** the workflow opened issue [#275](https://github.com/Nabad-team/Nabad/issues/275) itself, as designed.
 - **Effect:** the newest backup is the one from 25 November.
+- **Update: fixed in [#277](https://github.com/Nabad-team/Nabad/pull/277), verified by run [45837859628](https://github.com/Nabad-team/Nabad/actions/runs/45837859628) on 26 Nov.** The cause was `mongodump --version | head -n 1`: `head` closed the pipe early and, under `pipefail`, the SIGPIPE failed the step. That run backed up, restored, encrypted, uploaded and re-checked `nabad-20261126T142012Z` (159,095 bytes encrypted). The counts in the table above are from before the fix.
 
 ## 3. Usage
 
@@ -348,7 +349,7 @@ Nabad's goals are to give a safe, understandable triage result, be usable and ac
 
 ## Improvements
 
-1. **Fix the backup failure and log the drills.** Fix the tool-install step behind issue [#275](https://github.com/Nabad-team/Nabad/issues/275) and re-run the backup the same day. Then add a "Drill log" table to [backups.md](backups.md), like [rollback.md](rollback.md#rollback-drill) has, so the monthly decryption drill leaves a dated record. Today the last drill can't be shown.
+1. **Fix the backup failure and log the drills.** Fix the tool-install step behind issue [#275](https://github.com/Nabad-team/Nabad/issues/275) and re-run the backup the same day (done: fixed in #277, verified by run 45837859628 on 26 Nov). Then add a "Drill log" table to [backups.md](backups.md), like [rollback.md](rollback.md#rollback-drill) has, so the monthly decryption drill leaves a dated record. Today the last drill can't be shown.
 2. **Keep an incident log.** For each incident, record the start and end in UTC, how it was detected, the cause, the time to restore and the follow-up. Put it in [operations.md](operations.md) or the release log. This report had to rebuild both incidents from screenshots and copied Render events.
 3. **Measure time to a symptom check result.** Log the duration of each triage request, anonymously and with no symptom text, next to the existing usage counters. Also add a triage sample to the staging JMeter run (SCRUM-349). Then "fast result" can be measured instead of assumed.
 4. **Make `selenium` reliable.** It passes on the first run 86.9% of the time, against 94% to 100% for the other checks. Track each failing test and fix its waits, as #174, #186 and #202 did. This would raise the first-try green rate and shorten lead time.
