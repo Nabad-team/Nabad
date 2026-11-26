@@ -7,11 +7,16 @@
 //   node loadtest/jmeter/run.js soak               200 users for 15 minutes
 //   node loadtest/jmeter/run.js prod               https://nabad-psi.vercel.app, read-only: public pages and
 //                                                  /api/health/ready, 5 users, no logins, nothing written
+//   node loadtest/jmeter/run.js staging            https://nabad-staging.vercel.app, the same read-only browsing,
+//                                                  10 users for 3 minutes; stops early if errors (e.g. 429s from
+//                                                  staging's real rate limits) stay above 5% for 20 s
 // Each report folder also gets run.json (the settings and how the run ended), timeline.csv (10 s windows,
 // made from the raw results) and, for local runs, docker-stats.csv (container CPU and memory every 15 s).
 // The raw .jtl results are deleted once those are written.
 // Options: RAMPUP / DURATION (seconds) override the profile, ONLY (regex: run only matching run names, e.g.
-// ONLY=browse), COOLDOWN (seconds between runs, default 30), PROD_USERS (default 5), JMETER (path to jmeter.bat
+// ONLY=browse), COOLDOWN (seconds between runs, default 30), PROD_USERS (default 5), STAGING_USERS (default 10),
+// RUN_LABEL (added to each run name, e.g. RUN_LABEL=2026-11-26 writes reports/load-50-users-2026-11-26, so a
+// new run never overwrites an earlier report), JMETER (path to jmeter.bat
 // or jmeter; default %LOCALAPPDATA%\Programs\apache-jmeter-5.6.3\bin\jmeter.bat), JMETER_JAVA_HOME.
 const { spawn, spawnSync, execFile } = require("child_process");
 const fs = require("fs");
@@ -26,6 +31,11 @@ const jmeter = process.env.JMETER || (process.platform === "win32"
 const [mode = "load", ...levelArgs] = process.argv.slice(2);
 const LOCAL = { protocol: "http", host: "localhost", port: "3000" };
 const PRODUCTION = { protocol: "https", host: "nabad-psi.vercel.app", port: "443" };
+const STAGING = { protocol: "https", host: "nabad-staging.vercel.app", port: "443" };
+// The only hosted targets, both read-only browsing. Anything else is refused before JMeter starts.
+const HOSTED = [PRODUCTION, STAGING];
+const label = process.env.RUN_LABEL || "";
+if (label && !/^[\w-]+$/.test(label)) throw new Error("RUN_LABEL may only contain letters, digits, - and _.");
 const CONTAINERS = ["nabad-backend-1", "nabad-frontend-1", "nabad-mongo-1"];
 const num = (value, fallback) => Number(value || fallback);
 
@@ -62,8 +72,15 @@ function runs() {
       // app is always 0 here: no logins and no writes against production.
       return [{ ...base, type: "prod", name: `prod-${users}-users`, target: PRODUCTION, browse: users, app: 0, ...timing(10, 120) }];
     }
+    case "staging": {
+      const users = num(process.env.STAGING_USERS, 10);
+      if (!Number.isInteger(users) || users < 1 || users > 10) throw new Error("STAGING_USERS must be 1-10: the staging run is a light check, not a load test.");
+      // Like prod: browsing only (app is always 0), nothing written. Staging keeps its real rate limits, so a
+      // burst of 429s stops the run instead of being measured.
+      return [{ ...base, type: "staging", name: `staging-${users}-users`, target: STAGING, browse: users, app: 0, stopErrorPct: 5, ...timing(10, 180) }];
+    }
     default:
-      throw new Error(`Unknown mode "${mode}". Use load, stress, spike, soak or prod.`);
+      throw new Error(`Unknown mode "${mode}". Use load, stress, spike, soak, prod or staging.`);
   }
 }
 
@@ -217,13 +234,16 @@ function sizeOf(dir) {
 
 (async () => {
   fs.mkdirSync(reportsDir, { recursive: true });
-  const selected = runs().filter((r) => !process.env.ONLY || new RegExp(process.env.ONLY).test(r.name));
+  const selected = runs().filter((r) => !process.env.ONLY || new RegExp(process.env.ONLY).test(r.name))
+    .map((r) => (label ? { ...r, name: `${r.name}-${label}` } : r));
+  const commit = spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: here, encoding: "utf8" }).stdout.trim() || null;
   for (const [index, r] of selected.entries()) {
     // A pause between runs, so requests still queued from the last one don't spill into the next.
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, num(process.env.COOLDOWN, 30) * 1000));
     const { protocol, host, port } = r.target;
     const local = r.target === LOCAL;
     if (!local && (r.app || r.spikeApp)) throw new Error("Signed-in users only ever run against the local stack.");
+    if (!local && !HOSTED.includes(r.target)) throw new Error(`Refusing ${host}: hosted runs only go to ${HOSTED.map((t) => t.host).join(" or ")}.`);
     // Fresh accounts and no medications left from the last run, so every run starts from the same data.
     if (local) runSync(process.execPath, [path.join(here, "seed-users.js"), String(Math.max(r.app + r.spikeApp, 1))]);
     const out = path.join(reportsDir, r.name);
@@ -233,6 +253,7 @@ function sizeOf(dir) {
     fs.rmSync(jtl, { force: true });
     const spikeText = r.spikeBrowse + r.spikeApp ? `, +${r.spikeBrowse + r.spikeApp} after ${r.spikeDelay} s for ${r.spikeDuration} s` : "";
     console.log(`\n== ${r.name}: ${r.browse} browsing + ${r.app} signed-in users${spikeText}, ${r.rampup} s ramp-up, ${r.duration} s total, ${protocol}://${host}`);
+    const startedAt = new Date().toISOString();
     const containers = local ? watchContainers(path.join(reportsDir, `${r.name}-docker-stats.csv`)) : null;
     const stoppedEarly = await runJmeter([
       "-n", "-t", path.join(here, "nabad.jmx"), "-l", jtl, "-j", log, "-e", "-o", out,
@@ -254,7 +275,7 @@ function sizeOf(dir) {
     fs.rmSync(jtl, { force: true });
     fs.rmSync(log, { force: true });
     const { target, ...settings } = r;
-    fs.writeFileSync(path.join(out, "run.json"), JSON.stringify({ ...settings, target: `${protocol}://${host}`, date: new Date().toISOString(),
+    fs.writeFileSync(path.join(out, "run.json"), JSON.stringify({ ...settings, target: `${protocol}://${host}`, commit, startedAt, date: new Date().toISOString(),
       stoppedEarly, backendMemory: memory }, null, 2) + "\n");
     const total = JSON.parse(fs.readFileSync(path.join(out, "statistics.json"), "utf8")).Total;
     console.log(`${r.name}: ${total.sampleCount} requests, ${total.throughput.toFixed(1)}/s, avg ${total.meanResTime.toFixed(0)} ms, ` +

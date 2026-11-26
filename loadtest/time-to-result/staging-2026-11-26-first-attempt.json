@@ -1,0 +1,11 @@
+{
+  "target": "https://nabad-staging.vercel.app",
+  "note": "First Part C attempt. Copied from the script's console output; the script crashed before writing its file.",
+  "signupStatus": 201,
+  "checks": [
+    { "n": 1, "at": "2026-11-26T16:06:49.434Z", "status": 200, "ms": 3137, "urgency": "routine", "aiUsed": true },
+    { "n": 2, "at": "2026-11-26T16:07:52.597Z", "status": 200, "ms": 2466, "urgency": "routine", "aiUsed": true },
+    { "n": 3, "at": "about 2026-11-26T16:08:55Z", "status": null, "result": "no response; fetch failed after about 5 minutes" }
+  ],
+  "deleteStatus": "fetch failed (no response); account most likely still exists"
+}

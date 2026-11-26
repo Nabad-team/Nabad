@@ -21,7 +21,7 @@ On business goals:
 - **Accessibility:** the axe checks report no violations.
 - **Usability:** the five-person study has not been run with people, only as five automated scenarios.
 - **Running cost:** $0 a month; everything runs on free tiers.
-- **Not measured:** time to a symptom check result.
+- **Time to a symptom check result** (staging, 5 checks): median 21.0 s, maximum 56.6 s, every one answered by the AI.
 
 ## How this report was made
 
@@ -240,7 +240,8 @@ Production is https://nabad-psi.vercel.app. The backend is `nabad-backend-nhv5` 
 | JMeter, 500 users | Local Docker | median 18 ms, p95 273 ms, p99 17,405 ms, 0.0043% errors | same, 23 Oct 2026 |
 | JMeter, 200-user 15-minute soak | Local Docker | median 11 ms, p95 89 ms, 0.0017% errors | same, 18 Oct 2026 |
 | JMeter, five-user read-only sample | Production | median 63 ms, p95 504 ms, 6.4516% errors | same, 18 Oct 2026 |
-| JMeter on staging | Staging | **pending SCRUM-349** | no result files yet |
+| JMeter, local rerun on the same laptop (50, 200, 500 users; 15-minute soak) | Local Docker | 500 users: median 17 ms, p95 64 ms (October 273 ms), 0 errors. Soak: p95 1,255 ms and 0.12% errors, from one stall of about 40 s | [availability-response-time.md](availability-response-time.md#part-a-local-october-vs-26-november-same-laptop), 26 Nov 2026 |
+| JMeter on staging, 10 browsing users, 3 minutes | Staging | median 74 ms, p95 280 ms, p99 465 ms, 0 errors, 11.0 requests/s | [availability-response-time.md](availability-response-time.md#part-b-staging-read-only-browsing-hosted), 26 Nov 2026 |
 
 **Caveat:** a 5-minute readiness check measures one cheap request, not page loads or a symptom check. The production API runs in Oregon and its database in Frankfurt, which adds to every request ([uptime.md](uptime.md#known-limits)).
 
@@ -328,7 +329,7 @@ Nabad's goals are to give a safe, understandable triage result, be usable and ac
 | Accessible ("Held" refresh) | axe on 19 signed-in pages at 1280 px, 10 at 390 px and 6 public pages | **no violations** | [#270](https://github.com/Nabad-team/Nabad/pull/270), 24 Nov 2026 |
 | Accessible colour contrast | Contrast tests for every colour pair in the new palette | pass; for example routine `#0b3a66` on white 11.59:1, amber `#B47F10` on paper 3.19:1 (3:1 needed) | [#264](https://github.com/Nabad-team/Nabad/pull/264), [#272](https://github.com/Nabad-team/Nabad/pull/272), `frontend/__tests__/designTokens.test.js` |
 | Run within a student budget | Running cost per month | **$0.** Everything runs on free tiers. The Backblaze B2 and Sentry billing pages both show $0. Vercel (Hobby), Render, MongoDB Atlas (M0), UptimeRobot and the Gemini free tier are free plans, and the docs describe Brevo's free plan | billing pages checked by Gerges, 26 Nov 2026; [operations.md](operations.md), [environments.md](environments.md) |
-| Fast result | Time to get a symptom check result | **Not measured.** The JMeter runs don't include the triage endpoint, and the app doesn't log triage duration | repository, 26 Nov 2026 |
+| Fast result | Time to get a symptom check result, from request to response | **Median 21.0 s, maximum 56.6 s** on staging (5 mild checks, all answered by the AI). An earlier attempt the same day had a check with no response for about 5 minutes, during what looks like a staging outage | [availability-response-time.md](availability-response-time.md#time-to-a-symptom-check-result-staging), 26 Nov 2026 |
 | Available | Monthly availability target of 99% | met: 99.590% over 30 days | [Service](#2-service) |
 
 **Caveats:**
@@ -345,7 +346,8 @@ Nabad's goals are to give a safe, understandable triage result, be usable and ac
 - **One check, every 5 minutes.** An outage shorter than 5 minutes can be missed, and each failed check counts as up to 5 minutes. A failure in the AI provider or email is not downtime.
 - **The 1 November cause is unknown.** Render's events show the instance was never reported unhealthy, but logs from that window were not available.
 - **Sentry sees server errors only on the backend**, and nothing about slow requests.
-- **No human usability data**, no clinician sign-off and no time-to-result measurement.
+- **No human usability data** and no clinician sign-off.
+- **Time to a result is 5 checks on one afternoon**, on staging, and varied from 2.6 s to 56.6 s.
 - **Free tiers.** The $0 running cost depends on staying within free-plan limits (Render's 750 instance hours, Brevo's 300 emails a day, the Gemini free quota). Free plans also come with no uptime guarantees.
 - **The change failure judgement is the team's own**, from PR descriptions.
 
@@ -353,7 +355,7 @@ Nabad's goals are to give a safe, understandable triage result, be usable and ac
 
 1. **Fix the backup failure and log the drills.** Fix the tool-install step behind issue [#275](https://github.com/Nabad-team/Nabad/issues/275) and re-run the backup the same day (done: fixed in #277, verified by run 45837859628 on 26 Nov). Then add a "Drill log" table to [backups.md](backups.md), like [rollback.md](rollback.md#rollback-drill) has, so the monthly decryption drill leaves a dated record (done: [drill log](backups.md#drill-log), first drill passed 26 Nov 2026).
 2. **Keep an incident log.** For each incident, record the start and end in UTC, how it was detected, the cause, the time to restore and the follow-up. Put it in [operations.md](operations.md) or the release log. This report had to rebuild both incidents from screenshots and copied Render events.
-3. **Measure time to a symptom check result.** Log the duration of each triage request, anonymously and with no symptom text, next to the existing usage counters. Also add a triage sample to the staging JMeter run (SCRUM-349). Then "fast result" can be measured instead of assumed.
+3. **Keep measuring time to a symptom check result.** A first measurement exists: median 21.0 s, maximum 56.6 s, on 5 staging checks (SCRUM-349). The backend already logs each check's duration (`durationMs` in the `triage_ai` event). Counting those durations anonymously next to the usage counters would give a real distribution instead of 5 samples. It would also show whether the slow checks come from the AI provider.
 4. **Make `selenium` reliable.** It passes on the first run 86.9% of the time, against 94% to 100% for the other checks. Track each failing test and fix its waits, as #174, #186 and #202 did. This would raise the first-try green rate and shorten lead time.
 5. **Get human and clinical evidence.** Run the five usability sessions with real people, or record Karim's results if they were collected elsewhere. Also get clinician sign-off on the 109 safety cases. These are the business goals the project currently can't evidence.
 
