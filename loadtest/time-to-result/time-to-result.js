@@ -72,6 +72,8 @@ async function call(method, path, body) {
       console.log(JSON.stringify(row));
       if (out) fs.writeFileSync(out, JSON.stringify(record, null, 2) + "\n");
       if (r.status === 429) { console.log("429: stopping the checks"); break; }
+      // A hang or a server error: stop here (no retries), keeping when it started and how long it waited.
+      if (r.status === null || r.status >= 500) { console.log(`check ${i + 1} failed (${r.error || r.status}) at ${at}: stopping the checks`); break; }
     }
   } finally {
     // Retry the delete: the account must not be left behind (the password exists only in this process).

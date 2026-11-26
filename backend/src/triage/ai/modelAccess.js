@@ -36,9 +36,12 @@
 //                              midnight America/Los_Angeles)
 //   LLM_TRIAGE_RESERVE_PERCENT share of the daily budget only symptom checks may use (0-90, default 20)
 //   LLM_TRIAGE_DEADLINE_MS     the most time the models get in one symptom check, both tries together
-//                              (3000-120000). With a backup, the main model gets at most 60% of it.
+//                              (3000-120000; 12000 recommended). With a backup, the main model gets at most
+//                              60% of it. Unset or invalid: timeLimits.DEFAULT_TRIAGE_DEADLINE_MS (20 s), so
+//                              the rules always answer before the request's own time limit.
 
 const { readLlmConfig, createLlmClient, LlmError } = require("./llmClient");
+const { timeLimits } = require("../../timeLimits");
 
 const MINUTE = 60 * 1000;
 const PAUSE_AFTER_QUOTA_MS = 60 * 1000;
@@ -235,7 +238,8 @@ function getTriageLlmClient(env = process.env, fetchImpl = globalThis.fetch) {
     attempts: [],
     async complete(messages, options = {}) {
       const started = Date.now();
-      const deadline = settings.triageDeadlineMs;
+      // Never unlimited: a slow provider must not hold the check past the request's time limit (timeLimits.js).
+      const deadline = settings.triageDeadlineMs ?? timeLimits.DEFAULT_TRIAGE_DEADLINE_MS;
       let lastError = null;
       for (const [index, { role, client }] of models.entries()) {
         let timeoutMs = options.timeoutMs;

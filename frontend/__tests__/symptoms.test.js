@@ -547,6 +547,25 @@ describe("Symptoms Page", () => {
     ).not.toBeInTheDocument();
   });
 
+  test("if the server's time limit is reached (503 request_timeout), the usual error with 140 shows", async () => {
+    // The error lib/api.js throws for the backend's time limit (middleware/requestTimeLimit.js).
+    const timeout = new Error("Nabad is taking too long to answer. Please try again in a moment. In an emergency in Lebanon, call 140.");
+    timeout.status = 503;
+    assessUrgency.mockRejectedValue(timeout);
+
+    await submitSymptoms("Cough");
+
+    expect(
+      await screen.findByText(
+        "We could not check and save your symptoms right now. If you feel very unwell, call 140."
+      )
+    ).toBeInTheDocument();
+    expect(addSymptomRecord).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("heading", { name: /Urgency:/ })
+    ).not.toBeInTheDocument();
+  });
+
   test("if saving fails after assessment, the user sees an error", async () => {
     const user = userEvent.setup({ delay: null });
 

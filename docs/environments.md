@@ -83,6 +83,7 @@ Secrets never go in git. Each one is entered by hand in its dashboard.
 | `NEXT_PUBLIC_APP_ENV` | Vercel, Preview environment: `staging` | not set |
 | `API_PROXY_SECRET` | Vercel, Preview environment, **and** Render (Nabad Staging workspace): the same staging value | Vercel, Production environment, **and** Render (`nabad-backend-nhv5`): the same production value, different from staging's |
 | `API_PROXY_REQUIRED` (a setting, not a secret) | Render: `true`, set last ([Client IP](#client-ip)) | Render: `true`, set last |
+| `LLM_TRIAGE_DEADLINE_MS` (a setting, not a secret) | Render: `12000` (set 26 November 2026) | Render: **not set yet**; Gerges sets `12000`. Unset, the code uses 20000 ([Time limits](./ai-fallback.md#time-limits)) |
 | `BACKUP_MONGODB_URI` and other backup secrets | none (staging is not backed up) | GitHub Actions secrets ([backups.md](./backups.md)) |
 
 `BACKEND_URL` and the `NEXT_PUBLIC_` variables are fixed when Vercel builds, so redeploy after changing them. The full list of staging settings, with their plain values, is in the commented reference block at the end of [render.yaml](../render.yaml). It is not synced, so keep it in step with the dashboard by hand.

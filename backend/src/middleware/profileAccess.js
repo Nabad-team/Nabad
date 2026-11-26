@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { timeLimits } = require("../timeLimits");
 const LinkedProfile = require("../models/LinkedProfile");
 
 const PROFILE_NOT_FOUND = { error: "Profile not found." };
@@ -11,7 +12,7 @@ async function ownedProfileId(owner, requested) {
   const stored = requested instanceof mongoose.Types.ObjectId;
   if (requested === undefined || requested === "self" || (stored && String(requested) === String(owner))) return new mongoose.Types.ObjectId(String(owner));
   if ((typeof requested !== "string" && !stored) || !mongoose.isValidObjectId(requested)) return null;
-  const profile = await LinkedProfile.exists({ _id: requested, owner });
+  const profile = await LinkedProfile.exists({ _id: requested, owner }).maxTimeMS(timeLimits.DB_READ_MS);
   return profile ? profile._id : null;
 }
 

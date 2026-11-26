@@ -63,6 +63,9 @@ function routePattern(req) {
 const reportServerError = (req, error, status) => captureServerError(error, { requestId: req.requestId, route: routePattern(req), status });
 function errorHandler(error, req, res, next) {
   logError(req, error);
+  // The request already got its 503 "request_timeout" (middleware/requestTimeLimit.js) and is finished. Handing the
+  // error on would make Express destroy the socket, which can cut that answer off.
+  if (req.timedOut) return undefined;
   if (res.headersSent) {
     reportServerError(req, error, res.statusCode >= 500 ? res.statusCode : 500);
     return next(error);
