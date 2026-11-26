@@ -33,6 +33,10 @@ install -m 0755 "$downloads/mongosh/bin/mongosh" "$tools_dir/bin/"
 install -m 0755 "$downloads/age/age" "$tools_dir/bin/"
 
 if [ -n "${GITHUB_PATH:-}" ]; then echo "$tools_dir/bin" >> "$GITHUB_PATH"; fi
-"$tools_dir/bin/mongodump" --version | head -n 1
+# Capture the whole output, then print its first line. Piping into `head -n 1` lets head exit while mongodump is
+# still writing its other version lines; mongodump then dies of SIGPIPE and, with pipefail, the step fails with
+# exit code 141 (issue #275). Command substitution reads everything, so nothing is cut off.
+mongodump_version="$("$tools_dir/bin/mongodump" --version)"
+echo "${mongodump_version%%$'\n'*}"
 echo "mongosh $("$tools_dir/bin/mongosh" --version)"
 echo "age $("$tools_dir/bin/age" --version)"
