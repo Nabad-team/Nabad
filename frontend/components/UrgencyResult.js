@@ -84,23 +84,25 @@ function DetailRow({ title, open = false, children }) {
 }
 
 
-// The symptom check result (docs/design-system.md#result-anatomy). Top to bottom:
+// The symptom check result (docs/design-system.md#result-anatomy). It is the last step of the guided check: the
+// page asks its follow-up questions first (components/FollowUpQuestions.js) and shows this only when they are done
+// or skipped, or at once for an emergency. Top to bottom:
 //   1. The header, in the level's soft colour: ONE mark (the Held ring in the level colour; for an emergency the
 //      still urgent mark), the level once ("Urgency: <label>") with how soon, and the engine's action as the main line.
-//      Under it the scale bar (visual only; its words are for screen readers).
+//      Under it the scale bar (visual only; its words are for screen readers), and "Updated using your answers."
+//      after a refined result.
 //   2. "Get help sooner if things change" (an emergency: "don't wait"), always visible in its soft danger outline.
 //      The only place on the result that lists the call-140 conditions. Never collapsed, never shortened.
-//      Follow-up questions (the page's `followUps` slot) come right after it, under "Answer the questions below...".
-//   3. One white card of disclosure rows: "Why we suggest this" (open), "What the AI check noted" and "Self-care
-//      guidance" (closed). Their content is unchanged.
+//   3. One white card of disclosure rows: "Why we suggest this" (open), "Your answers" (the follow-up questions and
+//      what the person chose), "What the AI check noted" and "Self-care guidance" (closed).
 //   4. Find care, the one primary button; Read aloud and Print or PDF as quiet text buttons; then, from the page,
 //      "Check something else".
+// answers: [{ question, answer }] from the page, the follow-up answers given in this check (empty when none).
 // Every word of triage text comes from the server, rendered as text.
 export default function UrgencyResult({
   result,
-  preliminary = false,
   onCheckAgain,
-  followUps = null,
+  answers = [],
 }) {
   const {
     preferences,
@@ -125,7 +127,7 @@ export default function UrgencyResult({
     ? `Self-care guidance: ${result.selfCareGuidance.join(". ")}.`
     : "";
   const spokenResult = [
-    `${preliminary ? "Urgency so far" : "Urgency"}: ${result.label}.`,
+    `Urgency: ${result.label}.`,
     `How soon: ${result.timeframe}.`,
     `What to do: ${result.action}.`,
     spokenWhy,
@@ -136,7 +138,8 @@ export default function UrgencyResult({
   const aiReasons = unrepeatedReasons(result.reasons, explanation);
   const showAi = Boolean(explanation && !simplified && result.ai?.used && aiReasons.length > 0);
   const olderReasons = !explanation && result.reasons?.length > 0;
-  const hasDetails = Boolean(explanation || olderReasons || showAi || result.selfCareGuidance?.length);
+  const hasAnswers = answers.length > 0;
+  const hasDetails = Boolean(explanation || olderReasons || hasAnswers || showAi || result.selfCareGuidance?.length);
 
   // Emergencies keep role="alert". Other results are announced by the page's own live region
   // (pages/symptoms.js), which then moves focus to the heading.
@@ -158,8 +161,8 @@ export default function UrgencyResult({
         <div className="urgency__heading-block">
           <div className="urgency__level-row">
             <h2 id="urgency-heading" tabIndex={-1}>
-              {isEmergency ? <>{preliminary ? "Urgency so far" : "Urgency"}: {result.label}</> : <>
-                <span className="visually-hidden">{preliminary ? "Urgency so far" : "Urgency"}: </span>
+              {isEmergency ? <>Urgency: {result.label}</> : <>
+                <span className="visually-hidden">Urgency: </span>
                 <span className={`level-chip level-chip--${level}`}>{result.label}</span>
               </>}
             </h2>
@@ -172,6 +175,7 @@ export default function UrgencyResult({
           </p>
         </div>
         <UrgencyScale level={level} />
+        {result.confidence === "refined" && <p className="urgency__refined">Updated using your answers.</p>}
       </div>
 
       {isEmergency && (
@@ -184,11 +188,6 @@ export default function UrgencyResult({
 
       {/* Always visible, right under the header: never inside a disclosure. */}
       {explanation && <WatchFor watchFor={explanation.watchFor} isEmergency={isEmergency} />}
-
-      {/* Follow-up questions come straight after the red flags: before "Why we suggest this" and the actions. */}
-      {preliminary && <p className="urgency__follow-up-intro">Answer the questions below to make this more accurate.</p>}
-      {followUps}
-      {!preliminary && result.confidence === "refined" && <p>Updated using your answers.</p>}
 
       {isSelfHarm && (
         <p>
@@ -210,6 +209,18 @@ export default function UrgencyResult({
               <ul>
                 {result.reasons.map((reason) => <li key={reason}>{reason}</li>)}
               </ul>
+            </DetailRow>
+          )}
+          {hasAnswers && (
+            <DetailRow title="Your answers">
+              <dl className="urgency__answers">
+                {answers.map(({ question, answer }) => (
+                  <div key={question} className="urgency__answer">
+                    <dt>{question}</dt>
+                    <dd>{answer}</dd>
+                  </div>
+                ))}
+              </dl>
             </DetailRow>
           )}
           {showAi && (

@@ -62,14 +62,14 @@ test("asks one question per round and stops when the server says it is done", as
   expect(await screen.findByRole("heading", { name: "A quick question" })).toBeInTheDocument();
   expect(screen.getByText(/Question 1 of at most 3/)).toBeInTheDocument();
   await user.click(screen.getByLabelText("39.5°C or higher"));
-  await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
 
   // Round 2: the server got the first answer and the first round's state.
   expect(await screen.findByText(/Question 2 of at most 3/)).toBeInTheDocument();
   expect(assessUrgencyWithAnswers).toHaveBeenLastCalledWith("I have a fever", { "fever-temperature": "39.5-plus" }, "profile-1", "check-test", ROUND_1.followUpState);
   expect(screen.getByRole("radio", { name: "Mild: I can do my normal activities" })).not.toBeChecked();
   await user.click(screen.getByLabelText("Severe: I can hardly function"));
-  await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
 
   // Done: every answer so far went with the second round's state, and no more questions show.
   await waitFor(() => expect(assessUrgencyWithAnswers).toHaveBeenCalledTimes(2));
@@ -91,9 +91,13 @@ test("skipping ends the questions, and a new check starts again from round 1 wit
   await user.type(screen.getByLabelText("Symptoms"), "I have a fever");
   await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
   await user.click(await screen.findByLabelText("39.5°C or higher"));
-  await user.click(screen.getByRole("button", { name: "Update my urgency" }));
-  await user.click(await screen.findByRole("button", { name: "Skip questions" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
+  // Round 2's result so far is urgent, so the card says so and the skip button reads "See my result now".
+  expect(await screen.findByText("From what you told us so far, you may need care today.")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "See my result now" }));
   expect(screen.queryByRole("heading", { name: "A quick question" })).not.toBeInTheDocument();
+  // The answer given before skipping is listed on the result.
+  expect(screen.getByRole("heading", { name: "Your answers" })).toBeInTheDocument();
   expect(assessUrgencyWithAnswers).toHaveBeenCalledTimes(1);
 
   // A new check: its first question is about severity, and the old temperature answer must not come along.
@@ -106,7 +110,7 @@ test("skipping ends the questions, and a new check starts again from round 1 wit
   await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
   expect(await screen.findByText(/Question 1 of at most 3/)).toBeInTheDocument();
   await user.click(screen.getByLabelText("Mild: I can do my normal activities"));
-  await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
   await waitFor(() => expect(assessUrgencyWithAnswers).toHaveBeenCalledTimes(2));
   expect(assessUrgencyWithAnswers).toHaveBeenLastCalledWith("a headache now", { severity: "mild" }, "profile-1", "check-test", NEW_CHECK.followUpState);
 });

@@ -125,18 +125,23 @@ describe("Symptom check feedback", () => {
     expect(screen.getByText(/^Result ready\. Urgency: Routine \/ self-care\./)).toHaveAttribute("role", "status");
   });
 
-  test("does the same when follow-up answers update the result", async () => {
+  test("with a question: focus goes to the question first, then to the result once it is answered", async () => {
     const user = userEvent.setup({ delay: null });
     assessUrgency.mockResolvedValue(SOON_WITH_QUESTION);
     assessUrgencyWithAnswers.mockResolvedValue(URGENT);
     render(<SymptomsPage />);
     await user.type(screen.getByRole("textbox", { name: "Symptoms" }), "fever since yesterday");
     await user.click(screen.getByRole("button", { name: "Submit symptoms" }));
-    await screen.findByRole("heading", { name: "Urgency so far: See a doctor soon" });
+    const card = (await screen.findByRole("heading", { name: "A few quick questions" })).closest("form");
+    await waitFor(() => expect(card).toHaveFocus());
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(screen.getByText(/^A few questions first: What is the highest temperature/)).toHaveAttribute("role", "status");
+    // The result waits until the questions are done.
+    expect(screen.queryByRole("heading", { name: /Urgency:/ })).not.toBeInTheDocument();
     scrollIntoView.mockClear();
 
     await user.click(screen.getByRole("radio", { name: "39.5°C or higher" }));
-    await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     const heading = await screen.findByRole("heading", { name: "Urgency: Urgent" });
     await waitFor(() => expect(heading).toHaveFocus());
     expect(scrollIntoView).toHaveBeenCalled();

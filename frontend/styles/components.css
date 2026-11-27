@@ -2197,6 +2197,75 @@ select.input {
   margin: 0;
 }
 
+/* The guided check's question card (components/FollowUpQuestions.js): step 2, shown instead of the result. */
+.follow-up:focus { outline: none; }
+.follow-up:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.follow-up__header > * { margin: 0; }
+.follow-up__header > * + * { margin-top: var(--space-2); }
+.follow-up__progress {
+  color: var(--color-primary-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.follow-up__question legend { font-size: var(--text-lg); margin-bottom: var(--space-2); }
+.follow-up__option {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.follow-up__option:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.follow-up__urgent {
+  padding: var(--space-4);
+  border: 1px solid var(--color-urgent);
+  border-left-width: 0.375rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-urgent-soft);
+  color: var(--color-urgent-strong);
+}
+.follow-up__urgent > p { margin: 0; }
+.follow-up__urgent > p + p { margin-top: var(--space-1); }
+.follow-up__emergency {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
+  padding-top: var(--space-4); border-top: 1px solid var(--color-border);
+  color: var(--color-danger-strong); font-weight: var(--weight-semibold);
+}
+
+/* "Your answers" on the result: each question with the answer under it. */
+.urgency__answers { margin: 0; }
+.urgency__answer + .urgency__answer { margin-top: var(--space-3); }
+.urgency__answer dt { color: var(--color-text-muted); }
+.urgency__answer dd { margin: 0; font-weight: var(--weight-semibold); }
+.urgency__refined { margin: var(--space-2) 0 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+/* The three steps of the guided check (pages/symptoms.js CheckSteps). The current step: a filled number, bold text,
+   aria-current and "(current step)" for screen readers. One row from 40rem, stacked on phones. */
+.check-steps {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  margin: 0 0 var(--space-5); padding: 0; list-style: none;
+}
+@media (min-width: 40rem) {
+  .check-steps { flex-direction: row; gap: var(--space-4); }
+  .check-steps__step { flex: 1; }
+}
+.check-steps__step {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin: 0; color: var(--color-text-muted); font-size: var(--text-sm);
+}
+.check-steps__number {
+  display: inline-grid; place-items: center; flex: none;
+  width: 1.75rem; height: 1.75rem; border-radius: var(--radius-full);
+  border: 2px solid var(--color-border); font-weight: var(--weight-semibold);
+}
+.check-steps__step--done .check-steps__number { border-color: var(--color-primary); color: var(--color-primary-strong); }
+.check-steps__step--current { color: var(--color-text); font-weight: var(--weight-semibold); }
+.check-steps__step--current .check-steps__number { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-on-primary, #fff); }
+@media (forced-colors: active) { .check-steps__step--current .check-steps__number { border-color: Highlight; } }
+
 /* ---------- Landing page ---------- */
 
 /* The hero: the noon logo mark large (with its dot drop), the headline, one button, and the sample result.

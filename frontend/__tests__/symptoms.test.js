@@ -601,16 +601,25 @@ describe("Symptoms Page", () => {
 
   // ---- SCRUM-126: follow-up questions ----
 
-  test("shows follow-up questions and marks the first result as provisional", async () => {
+  test("asks the follow-up questions first and holds the result back until they are done", async () => {
     assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
 
     await submitSymptoms("Fever since yesterday");
 
     expect(
       await screen.findByRole("heading", {
-        name: "Urgency so far: See a doctor soon",
+        name: "A few quick questions",
       })
     ).toBeInTheDocument();
+
+    // Guided: step 2 of 3, and no result yet.
+    expect(
+      screen.getByRole("list", { name: "Symptom check steps" }).querySelector('[aria-current="step"]')
+    ).toHaveTextContent("Answer a few questions");
+
+    expect(
+      screen.queryByRole("heading", { name: /Urgency/ })
+    ).not.toBeInTheDocument();
 
     expect(
       screen.getByRole("group", {
@@ -625,7 +634,7 @@ describe("Symptoms Page", () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: "Update my urgency" })
+      screen.getByRole("button", { name: "Continue" })
     ).toBeDisabled();
   });
 
@@ -642,7 +651,7 @@ describe("Symptoms Page", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Update my urgency" })
+      screen.getByRole("button", { name: "Continue" })
     );
 
     expect(
@@ -668,11 +677,42 @@ describe("Symptoms Page", () => {
       screen.getByText("Updated using your answers.")
     ).toBeInTheDocument();
 
+    // The answers are listed on the result, as the question and the chosen answer.
+    expect(
+      screen.getByRole("heading", { name: "Your answers" })
+    ).toBeInTheDocument();
+    const answers = document.querySelector(".urgency__answers");
+    expect(answers).toHaveTextContent("What is the highest temperature you measured?");
+    expect(answers).toHaveTextContent("39.5°C or higher");
+
+    expect(
+      screen.getByRole("list", { name: "Symptom check steps" }).querySelector('[aria-current="step"]')
+    ).toHaveTextContent("See your result");
+
     expect(
       screen.queryByRole("heading", {
         name: "A few quick questions",
       })
     ).not.toBeInTheDocument();
+  });
+
+  test("an urgent result so far is said on the question card, with a way to see the result now", async () => {
+    const user = userEvent.setup({ delay: null });
+
+    assessUrgency.mockResolvedValue({ ...URGENT_REFINED, confidence: undefined, followUpQuestions: SOON_WITH_QUESTIONS.followUpQuestions });
+
+    await submitSymptoms("Fever since yesterday");
+
+    expect(
+      await screen.findByText("From what you told us so far, you may need care today.")
+    ).toBeInTheDocument();
+    expect(screen.getByText(URGENT_REFINED.action)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "See my result now" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Urgency: Urgent" })
+    ).toBeInTheDocument();
   });
 
   test("skipping the questions keeps the first result as the final one", async () => {
@@ -683,7 +723,7 @@ describe("Symptoms Page", () => {
     await submitSymptoms("Fever since yesterday");
 
     await user.click(
-      await screen.findByRole("button", { name: "Skip questions" })
+      await screen.findByRole("button", { name: "Skip to my result" })
     );
 
     expect(
@@ -722,7 +762,7 @@ describe("Symptoms Page", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("if updating fails, the first result and the questions stay so the user can retry", async () => {
+  test("if updating fails, the questions stay so the user can retry or skip", async () => {
     const user = userEvent.setup({ delay: null });
 
     assessUrgency.mockResolvedValue(SOON_WITH_QUESTIONS);
@@ -740,23 +780,27 @@ describe("Symptoms Page", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Update my urgency" })
+      screen.getByRole("button", { name: "Continue" })
     );
 
     expect(
       await screen.findByText(
-        "We could not update the urgency with your answers. The result above still applies."
+        "We could not send your answer. Try again, or skip to see your result so far."
       )
     ).toBeInTheDocument();
 
     expect(
       screen.getByRole("heading", {
-        name: "Urgency so far: See a doctor soon",
+        name: "A few quick questions",
       })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: "Update my urgency" })
+      screen.getByRole("button", { name: "Continue" })
+    ).toBeEnabled();
+
+    expect(
+      screen.getByRole("button", { name: "Skip to my result" })
     ).toBeEnabled();
   });
 });

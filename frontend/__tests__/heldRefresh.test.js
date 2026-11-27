@@ -65,7 +65,7 @@ describe("emergency never waits", () => {
   });
 
   test("an emergency arriving after a calmer preliminary result drops the entrance class", () => {
-    const { rerender } = render(<UrgencyResult result={result("soon")} preliminary />);
+    const { rerender } = render(<UrgencyResult result={result("soon")} />);
     expect(document.getElementById("symptom-result")).toHaveClass("urgency--enter");
     rerender(<UrgencyResult result={result("emergency")} />);
     expect(document.getElementById("symptom-result")).not.toHaveClass("urgency--enter");
