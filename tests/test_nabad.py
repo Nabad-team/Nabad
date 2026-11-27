@@ -704,6 +704,14 @@ class SignedInWorkflowTests(NabadWebsiteTests):
         self.open("/symptoms")
         self.type_into("symptoms", description)
         self.submit_form_of("symptoms")
+        # The guided check asks its follow-up questions before it shows a result. These
+        # workflows only need the result, so skip the questions when they come.
+        first = self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#urgency-heading, #follow-up")))
+        if first.get_attribute("id") == "follow-up":
+            self.click((
+                By.XPATH,
+                "//form[@id='follow-up']//button[normalize-space()='Skip to my result' or normalize-space()='See my result now']",
+            ))
         # A native emergency modal makes background content inert and may clip it
         # below the viewport. Inspect result presence, then interact with the modal.
         heading = self.wait.until(EC.presence_of_element_located((By.ID, "urgency-heading")))

@@ -66,6 +66,27 @@ function shortSummary(text) {
   return clean.length > 120 ? `${clean.slice(0, 117).trimEnd()}...` : clean;
 }
 
+// The three steps of the guided check, so people know questions come before the result. The current step is marked
+// with aria-current and "(current step)" in words, never by colour alone. Questions are only asked when needed.
+const CHECK_STEPS = ["Describe how you feel", "Answer a few questions", "See your result"];
+function CheckSteps({ current }) {
+  return (
+    <ol className="check-steps" aria-label="Symptom check steps">
+      {CHECK_STEPS.map((label, index) => {
+        const number = index + 1;
+        const state = number === current ? "current" : number < current ? "done" : "todo";
+        return (
+          <li key={label} className={`check-steps__step check-steps__step--${state}`} aria-current={state === "current" ? "step" : undefined}>
+            <span className="check-steps__number" aria-hidden="true">{number}</span>
+            <span className="check-steps__label">{label}</span>
+            {state === "current" && <span className="visually-hidden"> (current step)</span>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export default function SymptomsPage() {
   const {
     activeProfile,
@@ -155,13 +176,22 @@ export default function SymptomsPage() {
   }, []);
   const assessmentRequestRef = useRef(0);
 
+  // The guided check: while the engine still has a question, the page shows the question (step 2) and holds the
+  // result back; the result (step 3) comes when the questions are done or skipped. An emergency never waits: it has
+  // no questions and is shown at once.
   // updated: true when follow-up answers changed an earlier result (the announcement says so).
   function presentAssessment(result, { updated = false } = {}) {
     setUrgency(result);
     if (result.aiUsage) setAiUsage(result.aiUsage);
     setDailyLimitNote(result.dailyLimit?.message || "");
+    const questions = result.level === "emergency" ? [] : (result.followUpQuestions || []);
+    setFollowUps(questions);
+    setFollowUpState(questions.length ? result.followUpState || null : null);
     // Emergencies open the emergency dialog, which takes focus and announces itself (role="alertdialog").
-    if (result.level !== "emergency") {
+    if (questions.length > 0) {
+      setAnnouncement(`${updated ? "Thank you. Next question" : "A few questions first"}: ${questions[0].text}`);
+      setQuestionFocus((value) => value + 1);
+    } else if (result.level !== "emergency") {
       setAnnouncement(`${updated ? "Urgency updated" : "Result ready"}. Urgency: ${result.label}. ${result.action || ""}`.trim());
       setResultFocus((value) => value + 1);
     }
@@ -194,6 +224,30 @@ export default function SymptomsPage() {
     (document.getElementById("urgency-heading") || result).focus({ preventScroll: true });
     result.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
   }, [resultFocus]);
+  // The same for each new question: the card scrolls into view and takes focus, so the person starts at the question.
+  const [questionFocus, setQuestionFocus] = useState(0);
+  useEffect(() => {
+    if (!questionFocus) return;
+    const card = document.getElementById("follow-up");
+    if (!card) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    card.focus({ preventScroll: true });
+    card.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }, [questionFocus]);
+
+  // The follow-up questions answered in this check and the answers chosen, as text ([{ question, answer }]),
+  // for "Your answers" on the result.
+  const [answered, setAnswered] = useState([]);
+
+  // "Skip to my result": the questions end and the result so far is the final one.
+  function skipQuestions() {
+    setFollowUps([]);
+    setFollowUpState(null);
+    if (urgency && urgency.level !== "emergency") {
+      setAnnouncement(`Result ready. Urgency: ${urgency.label}. ${urgency.action || ""}`.trim());
+      setResultFocus((value) => value + 1);
+    }
+  }
 
   // Once a result is shown the form folds into one line: 'You said: "<text>" · Edit' (with "Symptoms recorded for
   // ..." in the same line). Edit opens it again with the words; "Check something else" (end of the result) opens it
@@ -215,6 +269,7 @@ export default function SymptomsPage() {
     setUrgency(null);
     setFollowUps([]);
     setFollowUpState(null);
+    setAnswered([]);
     setRefining(false);
     setMessage("");
     setError("");
@@ -283,6 +338,7 @@ export default function SymptomsPage() {
     setUrgency(null);
     setFollowUps([]);
     setFollowUpState(null);
+    setAnswered([]);
     setRefining(false);
     setEmergencyContact(null);
     setSavedRecord(null);
@@ -482,6 +538,7 @@ export default function SymptomsPage() {
     setEmergencyContact(null);
     setFollowUps([]);
     setFollowUpState(null);
+    setAnswered([]);
     setAnnouncement("");
     answersSoFarRef.current = {};
 
@@ -537,6 +594,9 @@ export default function SymptomsPage() {
 
 
       if (request !== assessmentRequestRef.current) return;
+      // Keep the description so follow-up answers can refine it, and start the question card afresh.
+      setLastDescription(description);
+      setAssessmentCount((count) => count + 1);
       // Alert immediately on detection; storage and contact lookup must never delay it.
       presentAssessment(result);
       setSaid(description);
@@ -553,32 +613,6 @@ export default function SymptomsPage() {
       if (request !== assessmentRequestRef.current) return;
       setSavedRecord(saved);
       setHistory((records) => [saved, ...records]);
-
-
-      // Emergencies normally return
-      // no follow-up questions.
-      setFollowUps(
-        result.followUpQuestions ||
-          []
-      );
-
-      setFollowUpState(
-        result.followUpState ||
-          null
-      );
-
-
-      // Keep the description so
-      // follow-up answers can refine it.
-      setLastDescription(
-        description
-      );
-
-
-      setAssessmentCount(
-        (count) =>
-          count + 1
-      );
 
 
       setMessage(
@@ -634,6 +668,19 @@ export default function SymptomsPage() {
       answersSoFarRef.current =
         allAnswers;
 
+      // This round's answers as text, for "Your answers" on the result.
+      const askedNow = followUps;
+      setAnswered((list) => [
+        ...list,
+        ...Object.entries(answers).map(([id, value]) => {
+          const question = askedNow.find((item) => item.id === id);
+          return question && {
+            question: question.text,
+            answer: question.options.find((option) => option.value === value)?.label || value,
+          };
+        }).filter(Boolean),
+      ]);
+
       presentAssessment(updatedResult, { updated: true });
 
       if (savedRecord?.id) {
@@ -647,23 +694,13 @@ export default function SymptomsPage() {
         setSavedRecord(updated);
         setHistory((records) => records.map((item) => item.id === updated.id ? updated : item));
       }
-
-      // The next round's question, or none when the check is done.
-      setFollowUps(
-        updatedResult.followUpQuestions ||
-          []
-      );
-
-      setFollowUpState(
-        updatedResult.followUpState ||
-          null
-      );
+      // The next round's question (or none when the check is done) was set by presentAssessment.
     } catch (err) {
       if (request !== assessmentRequestRef.current) return;
       console.error(err);
 
       setError(
-        "We could not update the urgency with your answers. The result above still applies."
+        "We could not send your answer. Try again, or skip to see your result so far."
       );
     } finally {
       if (request === assessmentRequestRef.current) setRefining(false);
@@ -673,6 +710,10 @@ export default function SymptomsPage() {
 
   // The Nabad assistant only appears on calm screens: never next to an urgent or emergency result or the emergency dialog.
   const calmScreen = !emergencyAlert && !["urgent", "emergency"].includes(urgency?.level);
+
+  // Step 2 of the guided check: the engine still has a question, so the question shows and the result waits.
+  const interviewing = Boolean(urgency) && urgency.level !== "emergency" && followUps.length > 0;
+  const step = formOpen || !urgency ? 1 : interviewing ? 2 : 3;
 
   const emergencyContactPhone =
     emergencyContact?.phone
@@ -720,6 +761,8 @@ export default function SymptomsPage() {
       <PageTitle lead={simplified ? "Tell us how you feel." : "Tell us how you feel, and we'll help you understand how urgent it is."}>
         Symptom check
       </PageTitle>
+
+      <CheckSteps current={step} />
 
       <p hidden={!formOpen}>
         {simplified
@@ -867,21 +910,23 @@ export default function SymptomsPage() {
         </Alert>
       )}
 
-      <UrgencyResult
-        result={urgency}
-        preliminary={followUps.length > 0}
-        onCheckAgain={checkSomethingElse}
-        followUps={
-          <FollowUpQuestions
-            key={`${assessmentCount}-${followUpState?.round ?? 0}`}
-            questions={followUps}
-            progress={followUpState}
-            onSubmit={handleFollowUpSubmit}
-            onSkip={() => setFollowUps([])}
-            busy={refining}
-          />
-        }
-      />
+      {interviewing ? (
+        <FollowUpQuestions
+          key={`${assessmentCount}-${followUpState?.round ?? 0}`}
+          questions={followUps}
+          progress={followUpState}
+          onSubmit={handleFollowUpSubmit}
+          onSkip={skipQuestions}
+          busy={refining}
+          urgentSoFar={urgency?.level === "urgent" ? urgency : null}
+        />
+      ) : (
+        <UrgencyResult
+          result={urgency}
+          answers={answered}
+          onCheckAgain={checkSomethingElse}
+        />
+      )}
 
 
 

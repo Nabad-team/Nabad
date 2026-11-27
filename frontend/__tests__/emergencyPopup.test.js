@@ -114,10 +114,10 @@ test("follow-up escalation alerts before the updated record is saved", async () 
   const saving = deferred(); updateSymptomRecord.mockReturnValue(saving.promise);
   const user = userEvent.setup(); render(<SymptomsPage />); await submit(user, "Headache today");
   await user.click(await screen.findByLabelText("Severe"));
-  await user.click(screen.getByRole("button", { name: "Update my urgency" }));
+  await user.click(screen.getByRole("button", { name: "Continue" }));
   expect(await screen.findByRole("alertdialog")).toBeInTheDocument();
   expect(updateSymptomRecord).toHaveBeenCalled();
-  expect(screen.queryByRole("button", { name: "Update my urgency" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
   await act(async () => saving.resolve({ id: "record" }));
 });
 
