@@ -39,10 +39,73 @@ describe("which questions are asked", () => {
     assert.equal(ids("no headache, just a cough").includes("headache-sudden"), false);
   });
 
-  test("the general questions are always asked, and there are at most 6 questions", () => {
+  test("the general questions are always asked, and there are at most 7 questions", () => {
     const asked = ids("fever, headache, rash and vomiting");
-    assert.equal(asked.length, 6);
+    assert.equal(asked.length, 7);
     assert.deepEqual(asked.slice(-4), GENERAL_IDS);
+  });
+
+  // The guided check: each complaint gets its own questions, not only the general ones.
+  const specificIds = (text) => ids(text).filter((id) => !GENERAL_IDS.includes(id));
+
+  test("different complaints get different, case-specific questions", () => {
+    assert.deepEqual(specificIds("I am dizzy"), ["dizzy-stroke-signs", "dizzy-faint-heart", "dizzy-kind"]);
+    assert.deepEqual(specificIds("my nail is bleeding"), ["bleeding-pressure", "wound-deep", "bleeding-thinners"]);
+    const cases = {
+      "my nose is bleeding": "nosebleed-pressure",
+      "I hit my head on a cupboard": "head-injury-signs",
+      "I burned my hand on the stove": "burn-size",
+      "twisted my ankle playing football": "sprain-weight",
+      "bee sting on my arm": "allergy-airway",
+      "I have a cough": "cough-red-flags",
+      "sore throat": "throat-swallow",
+      "my ear hurts": "ear-behind",
+      "red itchy eyes": "eye-vision-light",
+      "it burns when i pee": "urinary-kidney",
+      "lower back pain": "back-nerves",
+      "my calf is swollen and painful": "leg-clot",
+      "toothache": "tooth-swelling",
+      "feeling anxious all the time": "mood-safety",
+      "always tired": "tired-sudden-one-side",
+      "my heart is racing": "palpitations-red-flags",
+      "my head hurts": "headache-sudden",
+    };
+    for (const [text, first] of Object.entries(cases)) assert.equal(specificIds(text)[0], first, text);
+    // Diarrhoea is also matched by the vomiting rule, so "can you keep fluids down" comes first, then its own questions.
+    assert.deepEqual(specificIds("diarrhea since yesterday"), ["keep-fluids", "diarrhoea-blood", "diarrhoea-dehydration"]);
+  });
+
+  test("two complaints take turns, so each gets a question about it", () => {
+    assert.deepEqual(specificIds("dizzy and I cut my hand"), ["dizzy-stroke-signs", "bleeding-pressure", "dizzy-faint-heart"]);
+  });
+
+  test("a nosebleed gets nosebleed questions, not the wound ones; burning when peeing is not a burn", () => {
+    assert.equal(specificIds("my nose is bleeding").some((id) => id.startsWith("bleeding-") || id === "wound-deep"), false);
+    assert.equal(specificIds("it burns when i pee").some((id) => id.startsWith("burn-")), false);
+  });
+
+  test("negated complaints don't bring their questions", () => {
+    assert.deepEqual(specificIds("not dizzy, just a runny nose"), []);
+  });
+
+  test("each case-specific question has a topic, a unique id, and answers that can only raise the level", () => {
+    const { SPECIFIC, TOPICS } = require("../src/triage/followUps");
+    const seen = new Set();
+    for (const question of SPECIFIC) {
+      assert.ok(TOPICS[question.topic], `${question.id} has no topic`);
+      assert.equal(seen.has(question.id), false, `${question.id} is listed twice`);
+      seen.add(question.id);
+      assert.ok(question.options.length >= 2, question.id);
+      // Every answer that sets a level says why, so the result can explain it.
+      for (const option of question.options) if (option.minLevel) assert.ok(option.reason, `${question.id}/${option.value}`);
+    }
+  });
+
+  test("a red-flag answer to a case-specific question raises the level", () => {
+    assert.equal(refineUrgency("I am dizzy", { "dizzy-stroke-signs": "yes" }).level, "emergency");
+    assert.equal(refineUrgency("my nail is bleeding", { "bleeding-pressure": "no" }).level, "emergency");
+    assert.equal(refineUrgency("my nail is bleeding", { "bleeding-pressure": "stops", "wound-deep": "no" }).level, "routine");
+    assert.equal(refineUrgency("twisted my ankle", { "sprain-weight": "no" }).level, "urgent");
   });
 
   test("the browser gets each question's text and choices, not the escalation rules", () => {

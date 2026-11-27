@@ -44,7 +44,16 @@ function fakeModel(replyFor) {
 // ---------------------------------------------------------------------------------------------
 describe("the approved question bank", () => {
   test("the must-ask questions are exactly the ones an answer can turn into an emergency", () => {
-    assert.deepEqual(BANK.filter(canRevealEmergency).map((q) => q.id), ["breath-at-rest", "headache-sudden", "rash-glass"]);
+    assert.deepEqual(BANK.filter(canRevealEmergency).map((q) => q.id), [
+      "breath-at-rest", "headache-sudden", "rash-glass", "head-injury-signs", "dizzy-stroke-signs", "palpitations-red-flags",
+      "bleeding-pressure", "allergy-airway", "diarrhoea-blood", "back-nerves", "leg-breath", "mood-safety", "tired-sudden-one-side",
+    ]);
+  });
+
+  test("every must-ask question fits in the rounds: no description gets more than there are rounds", () => {
+    // At most MAX_SPECIFIC specific questions are offered, and that is never more than MAX_ROUNDS.
+    const { MAX_SPECIFIC } = require("../src/triage/followUps");
+    assert.ok(MAX_SPECIFIC <= MAX_ROUNDS);
   });
 
   test("the model is offered the bank's own questions and answers, never anything else", () => {
