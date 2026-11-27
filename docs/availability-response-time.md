@@ -1,12 +1,12 @@
 # Availability and response-time evidence
 
-Sprint 5, SCRUM-350. Measurement snapshot captured on 20 November 2026.
+Sprint 5, SCRUM-350. Availability snapshot and JMeter results recorded on 26 November 2026.
 
 ## Current production availability
 
-The public UptimeRobot page reports **99.588% over its rolling 30-day window** for the Nabad backend monitor at capture time. The monitor was reporting up. Its daily ratios for 17, 18 and 19 November were each 100.000%. The 20 November row was also 100.000% when captured, but that day was still in progress.
+The latest captured public UptimeRobot feed reports **99.577% over its rolling 30-day window** for the Nabad backend monitor at 13:35:40 UTC on 26 November 2026. The monitor was reporting up. Its daily ratios for 24 and 25 November were each 100.000%. The 26 November row was also 100.000% when captured, but that day was still in progress.
 
-The last downtime shown by the public feed began on 1 November 2026 at 14:15:59 UTC (the UptimeRobot account's time zone is GMT/UTC) and lasted 10,672 seconds, or 2 hours 57 minutes 52 seconds, until about 17:13:51 UTC. The feed does not explain the cause, and none is assigned here.
+An earlier downtime began on 1 November 2026 at 14:15:59 UTC (the UptimeRobot account's time zone is GMT/UTC) and lasted 10,672 seconds, or 2 hours 57 minutes 52 seconds, until about 17:13:51 UTC. The feed does not explain the cause, and none is assigned here. The latest captured downtime is the 23 November incident below.
 
 Production was deployed that day. At the time every merge to `main` deployed production, and GitHub's deployment records show 10 successful production deploys on 1 November. The outage began 33 minutes after the deploy of [#163](https://github.com/Nabad-team/Nabad/pull/163) (13:42 UTC) and ended about 7 minutes after the deploy of [#164](https://github.com/Nabad-team/Nabad/pull/164) (17:06 UTC). Render's events for `nabad-backend-nhv5` agree on the deploys: #163 went live at 13:45 UTC and #164 at 17:09 UTC, about 5 minutes before the outage ended (Render Events, copied 26 Nov 2026). They show no "Instance failed", "unhealthy" or "Service recovered" event at all on 1 November. So Render's own health check never saw the backend instance fail during the outage.
 
@@ -29,7 +29,7 @@ UptimeRobot recorded a second, short outage: 23 November 2026 from 15:29:49 UTC 
 
 More detail is in the [DevOps measurement report](devops-measurement.md#2-service).
 
-Source is the public [status page](https://stats.uptimerobot.com/GFwdUOKlhv) and its public monitor feed. The [captured evidence](evidence/uptime-2026-11-20.json) records the exact retrieval timestamp, monitor ID, rolling ratio and recent daily values. Percentages may change after this capture.
+Source is the public [status page](https://stats.uptimerobot.com/GFwdUOKlhv) and its public monitor feed. The [26 November captured evidence](evidence/uptime-2026-11-26.json) records the exact retrieval timestamp, monitor ID, rolling ratio and recent daily values. The [earlier 20 November snapshot](evidence/uptime-2026-11-20.json) reported 99.588% for its own rolling window. Percentages may change after each capture.
 
 The target is 99% per calendar month, as defined in [uptime.md](uptime.md). A rolling 30-day result and a partial sprint do not establish the final November calendar-month or Sprint 5 result. With one request every five minutes, a short failure between samples can be missed. The readiness URL checks the Vercel proxy, Render API and Atlas connection, while AI, mail and other product flows have separate failure paths.
 
