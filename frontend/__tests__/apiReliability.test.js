@@ -16,9 +16,17 @@ describe("bounded API requests",()=>{
   const rejected=expect(pending).rejects.toMatchObject({code:"REQUEST_TIMEOUT"});
   await jest.advanceTimersByTimeAsync(20);await rejected;
  });
- test("AI calls receive their longer deadline",async()=>{
+ test("symptom check requests time out shortly after the backend request limit",async()=>{
   global.fetch.mockImplementation(()=>new Promise(()=>{}));
-  const pending=request("/triage/ai-assess",{method:"POST"});
+  const pending=request("/triage/ai-assess?profileId=self",{method:"POST"});
+  const rejected=expect(pending).rejects.toMatchObject({code:"REQUEST_TIMEOUT"});
+  await jest.advanceTimersByTimeAsync(35000);
+  expect(global.fetch.mock.calls[0][1].signal.aborted).toBe(true);
+  await rejected;
+ });
+ test("other slow AI calls keep their longer deadline",async()=>{
+  global.fetch.mockImplementation(()=>new Promise(()=>{}));
+  const pending=request("/history/ask",{method:"POST"});
   const rejected=expect(pending).rejects.toMatchObject({code:"REQUEST_TIMEOUT"});
   await jest.advanceTimersByTimeAsync(30000);
   expect(global.fetch.mock.calls[0][1].signal.aborted).toBe(false);

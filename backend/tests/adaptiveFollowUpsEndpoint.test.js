@@ -96,11 +96,18 @@ describe("POST /api/triage/ai-assess, follow-up rounds (SCRUM-280)", () => {
     assert.match(provider.requests[2].messages[1].content, /Follow-up round 3 of at most 3/);
   });
 
-  test("stops when the model is confident", async () => {
+  test("a confident model cannot skip the relevant symptom-specific question", async () => {
     provider.reply = () => ({ nextQuestionId: null });
     const res = await call(await signedIn(), { symptoms: "I have a fever" });
-    assert.deepEqual(res.body.followUpQuestions, []);
-    assert.equal(res.body.followUpState.decision, "model_confident");
+    assert.deepEqual(res.body.followUpQuestions.map((question) => question.id), ["fever-temperature"]);
+    assert.equal(res.body.followUpState.decision, "specific_question_kept");
+  });
+
+  test("a general model pick cannot replace the complaint-specific question", async () => {
+    provider.reply = () => ({ nextQuestionId: "severity" });
+    const res = await call(await signedIn(), { symptoms: "I have a fever" });
+    assert.deepEqual(res.body.followUpQuestions.map((question) => question.id), ["fever-temperature"]);
+    assert.equal(res.body.followUpState.decision, "specific_question_kept");
   });
 
   test("a made-up question id from the model is never shown", async () => {

@@ -95,7 +95,7 @@ No request waits for minutes on a stuck AI provider, database or network. All li
 Why these numbers:
 
 - **The symptom check:** 12 s of AI (20 s by default) plus up to 5 s of optional reads fits in 30 s, so the rules or the AI always answer before the request limit. An emergency never calls a model: the rules answer at once.
-- **Every request limit is below the frontend's own** (`frontend/lib/api.js`: 30 s, and 120 s for the slow routes). The server's clear answer arrives first, and the page shows its usual error. The symptom check page shows "We could not check and save your symptoms right now. If you feel very unwell, call 140."
+- **Every request limit is below the frontend's own** (`frontend/lib/api.js`: 30 s for ordinary requests, 35 s for triage, and 120 s for the slow routes). The server's clear answer arrives first, and the page shows its usual error. A stalled symptom check times out shortly after the backend's 30-second limit; a follow-up then unlocks with its retry-or-skip message instead of waiting for the slow-route timeout.
 - **The socket limit (20 s) is above every `maxTimeMS` (5 s)**, so a slow query fails with its own error first.
 
 After the 503 has gone out, the request's handler may still finish. Anything it then tries to send (headers, cookies, body) is dropped, and a late error is logged but not passed on.

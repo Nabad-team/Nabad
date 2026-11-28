@@ -1,8 +1,12 @@
 // Same-site API only. Never retry writes automatically: a timed-out write may already have succeeded.
 const API_BASE = "/api";
-const slowRequest = path => /^\/(?:triage\/ai-assess|reports(?:\/|$)|medical-documents(?:\/|$)|visit-prep(?:\/|$)|prescriptions\/read|history\/ask)/.test(path);
+const slowRequest = path => /^\/(?:reports(?:\/|$)|medical-documents(?:\/|$)|visit-prep(?:\/|$)|prescriptions\/read|history\/ask)/.test(path);
+const TRIAGE_TIMEOUT_MS = 35000; // Backend triage requests end at 30 seconds; leave a short proxy margin.
 export async function request(path, options = {}) {
-  const { timeoutMs = slowRequest(path) ? 120000 : 30000, signal, ...fetchOptions } = options;
+  const defaultTimeoutMs = /^\/triage\/ai-assess(?:[/?]|$)/.test(path)
+    ? TRIAGE_TIMEOUT_MS
+    : slowRequest(path) ? 120000 : 30000;
+  const { timeoutMs = defaultTimeoutMs, signal, ...fetchOptions } = options;
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 120000) throw new RangeError("Invalid request timeout.");
   if (signal?.aborted) throw new DOMException("Request cancelled.", "AbortError");
   const controller = new AbortController();
