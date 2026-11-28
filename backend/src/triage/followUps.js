@@ -21,8 +21,8 @@ const { classifyUrgency, LEVELS, normalise, containsPositive, findEverydayWordin
 const { riskFactors, riskQuestionText } = require("./healthContext");
 
 const MAX_SPECIFIC = 3; // symptom-specific questions asked at most
-// The 4 general questions are always added after them, so a user sees at most 7 (with the AI on, at most 3 rounds
-// of one question each: adaptiveFollowUps.js).
+// The 4 general questions are added after specific questions except for a mood-only check, where they are not
+// relevant. With the AI on, at most 3 rounds of one question each are asked (adaptiveFollowUps.js).
 
 // Case-specific questions: each complaint ("topic") has its own small set, so "I am dizzy" and "my nail is bleeding"
 // get different questions. A topic applies when the description matches it:
@@ -32,7 +32,8 @@ const MAX_SPECIFIC = 3; // symptom-specific questions asked at most
 //   belong to a more specific topic (a nosebleed is not a cut).
 // The topics are checked in this order. When several apply, they take turns: each topic's first question, then each
 // one's second, up to MAX_SPECIFIC, so every complaint described gets at least one question about it.
-// Every question and answer here is the app's own, reviewed text: the AI only chooses which to ask (SCRUM-280).
+// Every question and answer here is the app's own, reviewed text: the AI may reword a selected non-emergency
+// question, but its choices and urgency effects stay fixed (SCRUM-280).
 // These are commonly published red flags and safety-netting questions, guidance not diagnosis, and need the same
 // clinical review as the rules in urgency.js.
 const TOPICS = {
@@ -86,7 +87,11 @@ const TOPICS = {
   "leg-swelling": { phrases: ["calf pain", "pain in my calf", "calf hurts", "calf is swollen", "calf is painful", "calf is sore", "swollen leg", "leg is swollen", "swollen calf", "leg swelling", "one leg is swollen"] },
   tooth: { phrases: ["toothache", "tooth ache", "tooth pain", "tooth hurts", "teeth hurt", "gum pain", "swollen gum"] },
   mood: {
-    phrases: ["anxious", "anxiety", "panic attack", "panic attacks", "depressed", "depression", "low mood", "feeling down", "hopeless", "can't cope", "stressed"],
+    phrases: [
+      "anxious", "anxiety", "panic attack", "panic attacks", "depressed", "depression", "low mood", "feeling down",
+      "hopeless", "can't cope", "stressed", "breakup", "break up", "broke up", "broken up", "relationship ended",
+      "partner left me", "girlfriend left me", "boyfriend left me",
+    ],
     unless: ["self-harm"],
   },
   tiredness: { phrases: ["tired", "tiredness", "fatigue", "exhausted", "no energy", "weak", "weakness"], unless: ["stroke", "suspected-stroke"] },
@@ -584,13 +589,16 @@ function topicApplies(topic, text, matchedRuleIds, understood) {
   return Boolean(byRule || byPhrase);
 }
 
+function matchingTopics(description, matchedRuleIds) {
+  const text = normalise(description);
+  const understood = findEverydayWording(text);
+  return Object.entries(TOPICS).filter(([, topic]) => topicApplies(topic, text, matchedRuleIds, understood));
+}
+
 // The case-specific questions for this description: the topics it matches take turns (each topic's first question,
 // then each one's second, ...) up to MAX_SPECIFIC. Deterministic, so refineUrgency accepts exactly what was asked.
 function specificFor(description, matchedRuleIds) {
-  const text = normalise(description);
-  const understood = findEverydayWording(text);
-  const queues = Object.entries(TOPICS)
-    .filter(([, topic]) => topicApplies(topic, text, matchedRuleIds, understood))
+  const queues = matchingTopics(description, matchedRuleIds)
     .map(([name]) => SPECIFIC.filter((question) => question.topic === name));
   const picked = [];
   for (let turn = 0; picked.length < MAX_SPECIFIC && queues.some((queue) => queue.length > turn); turn += 1) {
@@ -617,7 +625,12 @@ function generalFor(health) {
 // health: from healthContext.readHealth(), or null when there is no profile (SCRUM-279).
 function selectQuestions(description, initial = classifyUrgency(description), health = null) {
   if (initial.level === "emergency") return [];
-  return [...specificFor(description, initial.matchedRuleIds), ...generalFor(health)];
+  const topics = matchingTopics(description, initial.matchedRuleIds);
+  const moodOnly = topics.length === 1 && topics[0][0] === "mood";
+  return [
+    ...specificFor(description, initial.matchedRuleIds),
+    ...(moodOnly ? [] : generalFor(health)),
+  ];
 }
 
 // What the browser sees: the question and its choices, not the escalation rules behind them.

@@ -2,8 +2,9 @@
 // from an approved question bank, up to 3 rounds, and stops once it is confident."
 //
 // The approved question bank is followUps.js (SCRUM-126): the reviewed questions, their answers, and what each
-// answer does to the urgency. The AI never writes a question and never decides what an answer means. It only
-// chooses which approved question to ask next, by id, or says it is confident (null). This file checks that choice.
+// answer does to the urgency. The AI chooses an approved question by id and may rephrase non-emergency questions
+// for context. The answer choices and their urgency effects never change, and mandatory safety questions keep
+// their reviewed wording. This file checks the choice.
 //
 // One check, round by round:
 //   1. The first result comes with one question (round 1). The user answers it.
@@ -64,7 +65,7 @@ function followUpStatus({ symptoms, level, matchedRuleIds, health, answers = {},
 }
 
 // The questions to show now and the state the page sends back next time.
-//   modelChoice: undefined when the AI wasn't used for this round; otherwise { nextQuestionId, trustConfident }.
+//   modelChoice: undefined when the AI wasn't used for this round; otherwise { nextQuestionId, nextQuestionText, trustConfident }.
 //   nextQuestionId from the model's reply: an id, null (it is confident), or undefined (missing or not an id).
 //   trustConfident: false when the model was overruled for rating it less serious than the rules.
 // Returns { questions (what the browser sees), state: { round, maxRounds, asked, oneAtATime, done, decision } }.
@@ -95,9 +96,14 @@ function planFollowUps({ modelChoice, ...input }) {
 
   const mustAsk = eligible.filter(canRevealEmergency);
   const roundsLeft = MAX_ROUNDS - round;
-  const next = (question, decision) => ask([question], decision, { round: round + 1, oneAtATime: true });
+  const next = (question, decision, text) => {
+    const presented = decision === "model_pick" && !canRevealEmergency(question) && text
+      ? { ...question, text }
+      : question;
+    return ask([presented], decision, { round: round + 1, oneAtATime: true });
+  };
 
-  const { nextQuestionId, trustConfident = true } = modelChoice;
+  const { nextQuestionId, nextQuestionText, trustConfident = true } = modelChoice;
   if (nextQuestionId === null && !trustConfident) return next(mustAsk[0] || eligible[0], "model_confidence_ignored");
   if (nextQuestionId === null) {
     // Confident: stop, unless a question that could reveal an emergency hasn't been asked yet.
@@ -107,7 +113,7 @@ function planFollowUps({ modelChoice, ...input }) {
   if (!picked) return next(mustAsk[0] || eligible[0], "model_pick_invalid");
   // A non-must-ask pick is fine only while the rounds after this one still fit every must-ask question.
   if (!mustAsk.includes(picked) && mustAsk.length > roundsLeft - 1) return next(mustAsk[0], "safety_question_kept");
-  return next(picked, "model_pick");
+  return next(picked, "model_pick", nextQuestionText);
 }
 
 // The approved questions the model may choose from this round, for the prompt: [{ id, text, answers }].

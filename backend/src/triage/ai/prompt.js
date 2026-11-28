@@ -8,8 +8,8 @@
 // SCRUM-279: the user message can also carry the person's My health summary (healthProfile.js), the same
 // text the user sees on the My health page, marked as background facts.
 //
-// SCRUM-280: it can also list the approved follow-up questions the model may ask next, by id. The model only
-// picks one (or null when it is confident); adaptiveFollowUps.js checks the pick.
+// SCRUM-280: it can also list the approved follow-up questions the model may ask next, by id. The model picks one
+// (or null when it is confident) and may reword a non-emergency question; adaptiveFollowUps.js checks the pick.
 //
 // The user's text is treated as data, never as instructions: it is cleaned (guardrails.js) so it
 // cannot close the <symptoms> tag early, and the system message tells the model to ignore any
@@ -43,6 +43,7 @@ Rules you must always follow:
 10. "careTypeId" must be exactly one id from this list, in English, for the kind of care that fits best. Choose a specialist only when the symptoms clearly belong to that specialty; otherwise choose the general option for the level:
 ${CARE_TYPE_LIST}
 11. "nextQuestionId": the message may list approved follow-up questions with their ids. If one more answer could change the level, choose the single most useful one: the question whose answer is most likely to make the level more serious. Prefer a question about the specific symptoms described over the general ones ("risk-group", "severity", "duration", "trend") when both could change the level. Use null if you are confident the level would not change whatever the answer, or if no questions are listed. Never invent a question or an id, and never pick a question the symptoms, the answers or the My health background already answer.
+12. "nextQuestionText": when you choose an approved question, write one short, natural rewording of that exact question in the same language as the symptoms. Keep its meaning, scope and urgency thresholds unchanged; add no symptoms, diagnoses, risk factors or advice. The approved answer choices stay fixed. For any question whose answer could reveal an emergency, use its exact approved wording. If nextQuestionId is null, nextQuestionText must be null.
 
 Reply with one JSON object and nothing else, in this exact shape:
 {"level": "emergency" | "urgent" | "soon" | "routine",
@@ -50,7 +51,8 @@ Reply with one JSON object and nothing else, in this exact shape:
  "careType": "the kind of care to seek, e.g. Emergency department, Urgent care clinic, General practitioner, Self-care at home",
  "careTypeId": "one id from the list in rule 10",
  "selfCare": ["0 to 4 short, safe self-care steps, only when the level is routine; otherwise an empty list"],
- "nextQuestionId": "one id from the approved follow-up questions listed, or null"}`;
+ "nextQuestionId": "one id from the approved follow-up questions listed, or null",
+ "nextQuestionText": "a context-adapted rewording of that approved question, or null"}`;
 
 // answered: [{ question: "How bad are the symptoms right now?", answer: "Severe: I can hardly function" }]
 // The questions and answer labels come from the app's own follow-up list (followUps.js), never from free text.
@@ -79,7 +81,7 @@ function buildMessages({ symptoms, minimumLevel, answered = [], priorConversatio
   }
   if (followUp) {
     if (followUp.choices.length > 0) {
-      lines.push("", `Follow-up round ${followUp.round + 1} of at most ${followUp.maxRounds}. Approved questions you may ask next (choose at most one id, or null):`);
+      lines.push("", `Follow-up round ${followUp.round + 1} of at most ${followUp.maxRounds}. Approved questions you may ask next (choose at most one id, or null; if you choose one, reword it without changing its meaning):`);
       for (const choice of followUp.choices) lines.push(`- "${choice.id}": ${choice.text} (answers: ${choice.answers.join("; ")})`);
     } else {
       lines.push("", "No follow-up questions are left to ask: set nextQuestionId to null.");

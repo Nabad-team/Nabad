@@ -141,9 +141,13 @@ async function assessWithAi(symptoms, { client = null, answers, location, priorC
 
   // The model said less serious than the rules: its explanation describes a milder situation and
   // would contradict the level shown, so the rules' reasons are used instead.
-  // SCRUM-280: the model's pick of the next question (checked in adaptiveFollowUps.js).
+  // SCRUM-280: the model's question choice and optional rewording (checked in adaptiveFollowUps.js).
   // When the model rated it less serious than the rules, its "I'm confident" isn't trusted either.
-  const modelChoice = { nextQuestionId: reply.nextQuestionId, trustConfident: applied !== "model_lower_ignored" };
+  const modelChoice = {
+    nextQuestionId: reply.nextQuestionId,
+    nextQuestionText: applied === "model_lower_ignored" ? undefined : reply.nextQuestionText,
+    trustConfident: applied !== "model_lower_ignored",
+  };
   if (applied === "model_lower_ignored") return result(level, { reasons: floor.reasons, ai, modelChoice });
 
   // Same level: the model's explanation first, then the rules' (unless the rules matched nothing).
