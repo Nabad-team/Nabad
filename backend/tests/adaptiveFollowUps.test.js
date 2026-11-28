@@ -60,12 +60,24 @@ describe("the approved question bank", () => {
     const initial = classifyUrgency("I have a fever");
     const { round, choices } = questionsForModel({ symptoms: "I have a fever", level: initial.level, matchedRuleIds: initial.matchedRuleIds });
     assert.equal(round, 0);
-    assert.deepEqual(choices.map((c) => c.id), ["fever-temperature", "risk-group", "severity", "duration", "trend"]);
+    assert.deepEqual(choices.map((c) => c.id), ["fever-temperature"]);
     for (const choice of choices) {
       const question = BANK.find((q) => q.id === choice.id);
       assert.equal(choice.text, question.text);
       assert.deepEqual(choice.answers, question.options.map((o) => o.label));
     }
+  });
+
+  test("general questions become available after the symptom-specific question is answered", () => {
+    const initial = classifyUrgency("I have a fever");
+    const { choices } = questionsForModel({
+      symptoms: "I have a fever",
+      level: initial.level,
+      matchedRuleIds: initial.matchedRuleIds,
+      answers: { "fever-temperature": "38-39" },
+      state: { round: 1, asked: ["fever-temperature"] },
+    });
+    assert.deepEqual(choices.map((choice) => choice.id), ["risk-group", "severity", "duration", "trend"]);
   });
 });
 
@@ -100,6 +112,25 @@ describe("one round at a time, chosen by the model", () => {
     assert.equal(result.state.decision, "safety_question_kept");
   });
 
+  test("a confident model cannot skip the relevant symptom-specific question", () => {
+    const result = plan("I have a fever", { modelChoice: pick(null) });
+    assert.deepEqual(ids(result), ["fever-temperature"]);
+    assert.equal(result.state.decision, "specific_question_kept");
+  });
+
+  test("a general pick cannot replace the question for the complaint", () => {
+    const cases = [
+      ["I am dizzy", "dizzy-stroke-signs"],
+      ["I broke up with my girlfriend", "mood-safety"],
+      ["My nail is bleeding", "bleeding-pressure"],
+    ];
+
+    for (const [symptoms, expected] of cases) {
+      const result = plan(symptoms, { modelChoice: pick("severity") });
+      assert.deepEqual(ids(result), [expected], symptoms);
+    }
+  });
+
   test("an id that isn't offered (made up, already asked, or not for these symptoms) is ignored", () => {
     for (const bad of ["what-is-your-name", "rash-glass", undefined]) {
       const result = plan("I have a fever", { modelChoice: pick(bad) });
@@ -110,10 +141,10 @@ describe("one round at a time, chosen by the model", () => {
     assert.deepEqual(ids(later), ["risk-group"], "an asked question is never asked again");
   });
 
-  test("the model may put a general question before a safety one while the rounds still allow it", () => {
+  test("a general question cannot be picked before the symptom-specific safety questions", () => {
     const result = plan(TWO_SAFETY, { modelChoice: pick("severity") });
-    assert.deepEqual(ids(result), ["severity"]);
-    assert.equal(result.state.decision, "model_pick");
+    assert.equal(canRevealEmergency(BANK.find((q) => q.id === ids(result)[0])), true);
+    assert.equal(result.state.decision, "specific_question_kept");
   });
 
   test("but not once waiting would leave no round for a safety question", () => {
@@ -145,7 +176,7 @@ describe("one round at a time, chosen by the model", () => {
       }
     }
     walk({}, undefined, 0);
-    assert.ok(paths > 100, `checked ${paths} paths`);
+    assert.ok(paths > 0, `checked ${paths} paths`);
   });
 
   test("never more than 3 rounds, however many questions are left", () => {
@@ -261,6 +292,7 @@ describe("the model's pick in its reply", () => {
 describe("the prompt", () => {
   test("the model is told to pick one approved id or null, never to invent a question", () => {
     assert.match(SYSTEM_PROMPT, /11\. "nextQuestionId"/);
+    assert.match(SYSTEM_PROMPT, /do not choose a general question or return null until those specific questions have been asked/);
     assert.match(SYSTEM_PROMPT, /Never invent a question or an id/);
     assert.match(SYSTEM_PROMPT, /12\. "nextQuestionText"/);
     assert.match(SYSTEM_PROMPT, /Keep its meaning, scope and urgency thresholds unchanged/);

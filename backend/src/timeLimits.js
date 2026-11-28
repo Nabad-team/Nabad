@@ -7,7 +7,7 @@
 //                      without (previous checks, health summary): past that, the check goes on without them
 //   whole request      REQUEST_MS, after which the API answers 503 "request_timeout"
 // so the rules or the AI always answer well before the request limit, and the request limit fires before the
-// frontend's own (lib/api.js: 30 s, or 120 s for the slow routes) gives up with a vaguer "took too long".
+// frontend's own (lib/api.js: 30 s, 35 s for triage, or 120 s for the slow routes) gives up with a vaguer "took too long".
 const timeLimits = {
   // The models' share of one symptom check when LLM_TRIAGE_DEADLINE_MS is not set. Below REQUEST_MS so the rules
   // answer (ai.reason "timeout") before the request limit; production should still set 12000.

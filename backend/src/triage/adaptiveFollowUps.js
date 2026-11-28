@@ -3,13 +3,14 @@
 //
 // The approved question bank is followUps.js (SCRUM-126): the reviewed questions, their answers, and what each
 // answer does to the urgency. The AI chooses an approved question by id and may rephrase non-emergency questions
-// for context. The answer choices and their urgency effects never change, and mandatory safety questions keep
-// their reviewed wording. This file checks the choice.
+// for context. Complaint-specific questions are offered before general questions and cannot be skipped while one
+// remains. The answer choices and their urgency effects never change, and mandatory safety questions keep their
+// reviewed wording. This file checks the choice.
 //
 // One check, round by round:
 //   1. The first result comes with one question (round 1). The user answers it.
 //   2. The answers so far go back with the same description; the level is worked out again from scratch
-//      (answers can still only raise it), and the AI picks the next question, or none.
+//      (answers can still only raise it), and the AI picks the next question, or none once the specific questions are done.
 //   3. At most 3 rounds. It stops earlier when the AI is confident, when no approved question is left, or
 //      when the result is an emergency (no questions then, ever: the user is sent to care at once).
 //
@@ -21,6 +22,7 @@
 //   - An id that isn't one of the questions offered is ignored; the next question in the bank's order is asked.
 //   - When the model rated the symptoms less serious than the rules (and was overruled), its "confident" isn't
 //     trusted: the next question is asked anyway.
+//   - The model cannot skip an unanswered complaint-specific question in favor of a general question or confidence.
 //   - When the AI isn't used for a round (off, unavailable, its reply rejected), every remaining approved
 //     question is shown at once in one last round, as before SCRUM-280. Nothing is lost when the AI drops out.
 //
@@ -64,6 +66,11 @@ function followUpStatus({ symptoms, level, matchedRuleIds, health, answers = {},
   return { ...base, eligible, stop: null };
 }
 
+function preferredQuestions(eligible) {
+  const specific = eligible.filter((question) => question.topic);
+  return specific.length ? specific : eligible;
+}
+
 // The questions to show now and the state the page sends back next time.
 //   modelChoice: undefined when the AI wasn't used for this round; otherwise { nextQuestionId, nextQuestionText, trustConfident }.
 //   nextQuestionId from the model's reply: an id, null (it is confident), or undefined (missing or not an id).
@@ -90,6 +97,8 @@ function planFollowUps({ modelChoice, ...input }) {
 
   if (status.stop) return finish(status.stop);
   const { eligible, round } = status;
+  const preferred = preferredQuestions(eligible);
+  const specific = eligible.filter((question) => question.topic);
 
   // No AI for this round: everything left at once, as the last round.
   if (!modelChoice) return ask(eligible, "rules_all", { round: MAX_ROUNDS, oneAtATime: false });
@@ -104,13 +113,19 @@ function planFollowUps({ modelChoice, ...input }) {
   };
 
   const { nextQuestionId, nextQuestionText, trustConfident = true } = modelChoice;
-  if (nextQuestionId === null && !trustConfident) return next(mustAsk[0] || eligible[0], "model_confidence_ignored");
+  if (nextQuestionId === null && !trustConfident) return next(mustAsk[0] || preferred[0], "model_confidence_ignored");
   if (nextQuestionId === null) {
-    // Confident: stop, unless a question that could reveal an emergency hasn't been asked yet.
-    return mustAsk.length ? next(mustAsk[0], "safety_question_kept") : finish("model_confident");
+    // Keep an unanswered safety or complaint-specific question even when the model is confident.
+    if (mustAsk.length) return next(mustAsk[0], "safety_question_kept");
+    if (specific.length) return next(specific[0], "specific_question_kept");
+    return finish("model_confident");
   }
   const picked = eligible.find((q) => q.id === nextQuestionId);
-  if (!picked) return next(mustAsk[0] || eligible[0], "model_pick_invalid");
+  if (!picked) return next(mustAsk[0] || preferred[0], "model_pick_invalid");
+  if (specific.length > 0 && !picked.topic) {
+    if (mustAsk.length > roundsLeft - 1) return next(mustAsk[0], "safety_question_kept");
+    return next(mustAsk[0] || specific[0], "specific_question_kept");
+  }
   // A non-must-ask pick is fine only while the rounds after this one still fit every must-ask question.
   if (!mustAsk.includes(picked) && mustAsk.length > roundsLeft - 1) return next(mustAsk[0], "safety_question_kept");
   return next(picked, "model_pick", nextQuestionText);
@@ -123,7 +138,7 @@ function questionsForModel(input) {
   if (status.stop) return { round: status.round, choices: [] };
   return {
     round: status.round,
-    choices: status.eligible.map((q) => ({ id: q.id, text: q.text, answers: q.options.map((o) => o.label) })),
+    choices: preferredQuestions(status.eligible).map((q) => ({ id: q.id, text: q.text, answers: q.options.map((o) => o.label) })),
   };
 }
 
