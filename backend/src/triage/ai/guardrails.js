@@ -16,6 +16,7 @@
 //     emergency number is dangerous), a certain diagnosis, or false reassurance.
 //   - nextQuestionId (SCRUM-280): only read as an id or null here; adaptiveFollowUps.js checks it is one of the
 //     approved questions offered, and ignores it otherwise.
+//   - nextQuestionText (SCRUM-280): bounded and filtered; only used to reword an approved non-emergency question.
 //   - applySafetyFloor: the final level is the MORE serious of the rules' level and the model's.
 //     The model can raise the urgency, never lower it, so it can never hide a red flag.
 
@@ -35,6 +36,7 @@ const MAX_SELF_CARE = 4;
 const MAX_REASON_CHARS = 300;
 const MAX_SELF_CARE_CHARS = 200;
 const MAX_CARE_TYPE_CHARS = 80;
+const MAX_FOLLOW_UP_QUESTION_CHARS = 240;
 
 // ---------- Input ----------
 
@@ -124,9 +126,27 @@ function readNextQuestionId(value) {
   return QUESTION_ID.test(id) ? id : undefined;
 }
 
+function readNextQuestionText(value, questionId, removed) {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string" || typeof questionId !== "string") {
+    removed.push("unpaired_follow_up_question");
+    return undefined;
+  }
+  const result = filterText(value, MAX_FOLLOW_UP_QUESTION_CHARS);
+  if (result.removed) {
+    removed.push(`follow_up_${result.removed}`);
+    return undefined;
+  }
+  if (!/[?؟]$/.test(result.text) || /[?؟].*[?؟]/.test(result.text)) {
+    removed.push("invalid_follow_up_question");
+    return undefined;
+  }
+  return result.text;
+}
+
 // Turns the model's raw reply into a checked result, or throws GuardrailError.
-// Returns { level, reasons, careType, careTypeId, selfCare, nextQuestionId, removed } where removed lists the
-// dropped sentences' reasons.
+// Returns { level, reasons, careType, careTypeId, selfCare, nextQuestionId, nextQuestionText, removed } where removed
+// lists the dropped sentences' reasons.
 function parseModelReply(raw) {
   const value = extractJson(raw);
   const level = typeof value.level === "string" ? value.level.trim().toLowerCase() : "";
@@ -146,7 +166,17 @@ function parseModelReply(raw) {
 
   // Only present when the model gave one, so replies without it look exactly as before.
   const nextQuestionId = readNextQuestionId(value.nextQuestionId);
-  return { level, reasons, careType: careTypeResult.text, careTypeId, selfCare, ...(nextQuestionId !== undefined ? { nextQuestionId } : {}), removed };
+  const nextQuestionText = readNextQuestionText(value.nextQuestionText, nextQuestionId, removed);
+  return {
+    level,
+    reasons,
+    careType: careTypeResult.text,
+    careTypeId,
+    selfCare,
+    ...(nextQuestionId !== undefined ? { nextQuestionId } : {}),
+    ...(nextQuestionText !== undefined ? { nextQuestionText } : {}),
+    removed,
+  };
 }
 
 // ---------- Combining with the rules ----------

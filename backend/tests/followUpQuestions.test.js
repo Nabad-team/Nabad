@@ -75,6 +75,10 @@ describe("which questions are asked", () => {
     assert.deepEqual(specificIds("diarrhea since yesterday"), ["keep-fluids", "diarrhoea-blood", "diarrhoea-dehydration"]);
   });
 
+  test("a relationship breakup gets mood questions, not generic medical questions", () => {
+    assert.deepEqual(ids("I broke up with my girlfriend"), ["mood-safety", "mood-coping"]);
+  });
+
   test("two complaints take turns, so each gets a question about it", () => {
     assert.deepEqual(specificIds("dizzy and I cut my hand"), ["dizzy-stroke-signs", "bleeding-pressure", "dizzy-faint-heart"]);
   });

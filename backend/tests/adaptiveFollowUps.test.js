@@ -26,7 +26,7 @@ const ids = (result) => result.questions.map((q) => q.id);
 // An answer that never makes it more urgent, for walking through rounds.
 const calmAnswer = (id) => BANK.find((q) => q.id === id).options.find((o) => !o.minLevel && !o.raiseOne)?.value
   ?? BANK.find((q) => q.id === id).options.at(-1).value;
-const pick = (nextQuestionId) => ({ nextQuestionId });
+const pick = (nextQuestionId, nextQuestionText) => ({ nextQuestionId, nextQuestionText });
 
 function fakeModel(replyFor) {
   const calls = [];
@@ -75,6 +75,16 @@ describe("one round at a time, chosen by the model", () => {
     assert.deepEqual(ids(result), ["fever-temperature"]);
     assert.deepEqual(result.state, { round: 1, maxRounds: 3, asked: ["fever-temperature"], oneAtATime: true, done: false, decision: "model_pick" });
     assert.deepEqual(Object.keys(result.questions[0]).sort(), ["id", "options", "text"], "the browser never sees what an answer does");
+  });
+
+  test("contextual wording keeps the approved choices and cannot reword a safety question", () => {
+    const wording = "Since you mentioned a fever, what is the highest temperature you measured?";
+    const fever = plan("I have a fever", { modelChoice: pick("fever-temperature", wording) });
+    assert.equal(fever.questions[0].text, wording);
+    assert.deepEqual(fever.questions[0].options, SPECIFIC.find((q) => q.id === "fever-temperature").options.map(({ value, label }) => ({ value, label })));
+
+    const safety = plan("I am dizzy", { modelChoice: pick("dizzy-stroke-signs", "Could this dizziness be a stroke?") });
+    assert.equal(safety.questions[0].text, SPECIFIC.find((q) => q.id === "dizzy-stroke-signs").text);
   });
 
   test("the model is confident and nothing could reveal an emergency: no questions", () => {
@@ -228,12 +238,33 @@ describe("the model's pick in its reply", () => {
     }
     assert.equal("nextQuestionId" in parseModelReply(JSON.stringify({ level: "routine", reasons: ["Fine."] })), false, "a reply without it looks as before");
   });
+
+  test("a contextual question must be one safe question paired with a selected id", () => {
+    const parsed = parseModelReply(raw("severity").replace(
+      '"nextQuestionId":"severity"',
+      '"nextQuestionId":"severity","nextQuestionText":"Since you mentioned these symptoms, how severe are they right now?"',
+    ));
+    assert.equal(parsed.nextQuestionText, "Since you mentioned these symptoms, how severe are they right now?");
+    const unsafe = parseModelReply(JSON.stringify({
+      level: "routine", reasons: ["Fine."], nextQuestionId: "severity", nextQuestionText: "Take 500 mg now?",
+    }));
+    assert.equal(unsafe.nextQuestionText, undefined);
+    assert.ok(unsafe.removed.includes("follow_up_medication_dose"));
+    const unpaired = parseModelReply(JSON.stringify({
+      level: "routine", reasons: ["Fine."], nextQuestionText: "How are you feeling?",
+    }));
+    assert.equal(unpaired.nextQuestionText, undefined);
+    assert.ok(unpaired.removed.includes("unpaired_follow_up_question"));
+  });
 });
 
 describe("the prompt", () => {
   test("the model is told to pick one approved id or null, never to invent a question", () => {
     assert.match(SYSTEM_PROMPT, /11\. "nextQuestionId"/);
     assert.match(SYSTEM_PROMPT, /Never invent a question or an id/);
+    assert.match(SYSTEM_PROMPT, /12\. "nextQuestionText"/);
+    assert.match(SYSTEM_PROMPT, /Keep its meaning, scope and urgency thresholds unchanged/);
+    assert.match(SYSTEM_PROMPT, /For any question whose answer could reveal an emergency, use its exact approved wording/);
     assert.match(SYSTEM_PROMPT, /"nextQuestionId": "one id from the approved follow-up questions listed, or null"/);
   });
 
@@ -251,6 +282,22 @@ describe("the prompt", () => {
 });
 
 describe("a whole check, round by round (fake model)", () => {
+  test("returns the model's contextual rewording with the bank's unchanged choices", async () => {
+    const text = "Since you mentioned a fever, what is the highest temperature you measured?";
+    const model = fakeModel({ level: "soon", nextQuestionId: "fever-temperature", nextQuestionText: text });
+    const result = await assessWithAi("I have a fever", { client: model });
+    assert.equal(result.followUpQuestions[0].text, text);
+    assert.deepEqual(
+      result.followUpQuestions[0].options,
+      SPECIFIC.find((question) => question.id === "fever-temperature").options.map(({ value, label }) => ({ value, label })),
+    );
+
+    const lowerRating = fakeModel({ nextQuestionId: "fever-temperature", nextQuestionText: text });
+    const cautious = await assessWithAi("I have a fever", { client: lowerRating });
+    assert.equal(cautious.ai.guardrails[0], "model_lower_ignored");
+    assert.equal(cautious.followUpQuestions[0].text, SPECIFIC.find((question) => question.id === "fever-temperature").text);
+  });
+
   test("asks one question per round, sends every answer so far, and stops at 3 rounds", async () => {
     // A model that always asks for one more question, in the order it is offered.
     const model = fakeModel((messages) => {
